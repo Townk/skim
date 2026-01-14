@@ -1,0 +1,502 @@
+# QMK Keycode Mappings
+# This file maps QMK keycodes to their display labels for keymap visualization.
+#
+# Special syntax:
+#   @@KEYCODE; - Reference to another keycode (will be resolved recursively)
+#   %%icon; - NerdFont icon reference
+
+# This dictionary entry is the main entry for this file. Any code resolution of
+# `@@KEYCODE;` will use this entry for search
+keycodes:
+  # Letters
+  KC_A: A
+  KC_B: B
+  KC_C: C
+  KC_D: D
+  KC_E: E
+  KC_F: F
+  KC_G: G
+  KC_H: H
+  KC_I: I
+  KC_J: J
+  KC_K: K
+  KC_L: L
+  KC_M: M
+  KC_N: N
+  KC_O: O
+  KC_P: P
+  KC_Q: Q
+  KC_R: R
+  KC_S: S
+  KC_T: T
+  KC_U: U
+  KC_V: V
+  KC_W: W
+  KC_X: X
+  KC_Y: Y
+  KC_Z: Z
+
+  # Numbers
+  KC_0: "0"
+  KC_1: "1"
+  KC_2: "2"
+  KC_3: "3"
+  KC_4: "4"
+  KC_5: "5"
+  KC_6: "6"
+  KC_7: "7"
+  KC_8: "8"
+  KC_9: "9"
+
+  # Function keys
+  KC_F1: F1
+  KC_F2: F2
+  KC_F3: F3
+  KC_F4: F4
+  KC_F5: F5
+  KC_F6: F6
+  KC_F7: F7
+  KC_F8: F8
+  KC_F9: F9
+  KC_F10: F10
+  KC_F11: F11
+  KC_F12: F12
+  KC_F13: F13
+  KC_F14: F14
+  KC_F15: F15
+  KC_F16: F16
+  KC_F17: F17
+  KC_F18: F18
+  KC_F19: F19
+  KC_F20: F20
+  KC_F21: F21
+  KC_F22: F22
+  KC_F23: F23
+  KC_F24: F24
+
+  # Number pad numbers
+  KC_KP_0: "0"
+  KC_KP_1: "1"
+  KC_KP_2: "2"
+  KC_KP_3: "3"
+  KC_KP_4: "4"
+  KC_KP_5: "5"
+  KC_KP_6: "6"
+  KC_KP_7: "7"
+  KC_KP_8: "8"
+  KC_KP_9: "9"
+
+  # Mouse buttons
+  KC_BTN1: "L %%nf-md-cursor_default_click;"
+  KC_MS_BTN1: "L %%nf-md-cursor_default_click;"
+  KC_BTN2: "R %%nf-md-cursor_default_click;"
+  KC_MS_BTN2: "R %%nf-md-cursor_default_click;"
+  KC_BTN3: "M %%nf-md-cursor_default_click;"
+  KC_MS_BTN3: "M %%nf-md-cursor_default_click;"
+  KC_BTN4: "4 %%nf-md-cursor_default_click;"
+  KC_MS_BTN4: "4 %%nf-md-cursor_default_click;"
+  KC_BTN5: "5 %%nf-md-cursor_default_click;"
+  KC_MS_BTN5: "5 %%nf-md-cursor_default_click;"
+  KC_BTN6: "6 %%nf-md-cursor_default_click;"
+  KC_MS_BTN6: "6 %%nf-md-cursor_default_click;"
+  KC_BTN7: "7 %%nf-md-cursor_default_click;"
+  KC_MS_BTN7: "7 %%nf-md-cursor_default_click;"
+  KC_BTN8: "8 %%nf-md-cursor_default_click;"
+  KC_MS_BTN8: "8 %%nf-md-cursor_default_click;"
+
+  # Punctuation and symbols
+  KC_ENTER: "%%nf-md-keyboard_return;"
+  KC_ENT: "@@KC_ENTER;"
+  KC_ESC: "%%nf-md-keyboard_esc;"
+  KC_ESCAPE: "@@KC_ESC;"
+  KC_BACKSPACE: "%%nf-md-backspace;"
+  KC_BSPC: "@@KC_BACKSPACE;"
+  KC_BSPACE: "@@KC_BACKSPACE;"
+  KC_TAB: "%%nf-md-keyboard_tab;"
+  KC_SPACE: "%%nf-md-keyboard_space;"
+  KC_SPC: "@@KC_SPACE;"
+  KC_MINUS: "-"
+  KC_MINS: "@@KC_MINUS;"
+  KC_EQUAL: "="
+  KC_EQL: "@@KC_EQUAL;"
+  KC_LEFT_BRACKET: "["
+  KC_LBRC: "@@KC_LEFT_BRACKET;"
+  KC_LBRACKET: "@@KC_LEFT_BRACKET;"
+  KC_RIGHT_BRACKET: "]"
+  KC_RBRC: "@@KC_RIGHT_BRACKET;"
+  KC_BACKSLASH: "\\"
+  KC_RBRACKET: "@@KC_RIGHT_BRACKET;"
+  KC_BSLS: "@@KC_BACKSLASH;"
+  KC_BSLASH: "@@KC_BACKSLASH;"
+  KC_NONUS_HASH: "#"
+  KC_NUHS: "@@KC_NONUS_HASH;"
+  KC_SEMICOLON: ";"
+  KC_SCLN: "@@KC_SEMICOLON;"
+  KC_SCOLON: "@@KC_SEMICOLON;"
+  KC_QUOTE: "'"
+  KC_QUOT: "@@KC_QUOTE;"
+  KC_GRAVE: "`"
+  KC_GRV: "@@KC_GRAVE;"
+  KC_COMMA: ","
+  KC_COMM: "@@KC_COMMA;"
+  KC_DOT: "."
+  KC_SLASH: "/"
+  KC_SLSH: "@@KC_SLASH;"
+  KC_NONUS_BACKSLASH: "\\"
+  KC_NUBS: "@@KC_NONUS_BACKSLASH;"
+
+  # Lock keys
+  KC_CAPS_LOCK: "%%nf-md-apple_keyboard_caps;"
+  KC_CAPS: "@@KC_CAPS_LOCK;"
+  KC_SCROLL_LOCK: "ScrLK"
+  KC_SCRL: "@@KC_SCROLL_LOCK;"
+  KC_NUM_LOC: "NumLK"
+  KC_NUM: "@@KC_NUM_LOC;"
+  KC_LOCKING_CAPS_LOCK: "LKCaps"
+  KC_LCAP: "@@KC_LOCKING_CAPS_LOCK;"
+  KC_LOCKING_NUM_LOCK: "LKNum"
+  KC_LNUM: "@@KC_LOCKING_NUM_LOCK;"
+  KC_LOCKING_SCROLL_LOCK: "LKScrLK"
+  KC_LSCR: "@@KC_LOCKING_SCROLL_LOCK;"
+
+  # Modifiers with NerdFont icons
+  KC_LEFT_SHIFT: "%%nf-md-apple_keyboard_shift;"
+  KC_RIGHT_SHIFT: "@@KC_LEFT_SHIFT;"
+  KC_LSFT: "@@KC_LEFT_SHIFT;"
+  KC_LSHIFT: "@@KC_LEFT_SHIFT;"
+  KC_RSFT: "@@KC_LEFT_SHIFT;"
+  KC_RSHIFT: "@@KC_LEFT_SHIFT;"
+  KC_LEFT_CTRL: "%%nf-md-apple_keyboard_control;"
+  KC_RIGHT_CTRL: "@@KC_LEFT_CTRL;"
+  KC_LCTL: "@@KC_LEFT_CTRL;"
+  KC_LCTRL: "@@KC_LEFT_CTRL;"
+  KC_RCTL: "@@KC_LEFT_CTRL;"
+  KC_RCTRL: "@@KC_LEFT_CTRL;"
+  KC_LEFT_ALT: "%%nf-md-apple_keyboard_option;"
+  KC_RIGHT_ALT: "@@KC_LEFT_ALT;"
+  KC_LALT: "@@KC_LEFT_ALT;"
+  KC_RALT: "@@KC_LEFT_ALT;"
+  KC_LOPT: "@@KC_LEFT_ALT;"
+  KC_ROPT: "@@KC_LEFT_ALT;"
+  KC_LEFT_GUI: "%%nf-md-apple_keyboard_command;"
+  KC_RIGHT_GUI: "@@KC_LEFT_GUI;"
+  KC_LGUI: "@@KC_LEFT_GUI;"
+  KC_RGUI: "@@KC_LEFT_GUI;"
+  KC_LCMD: "@@KC_LEFT_GUI;"
+  KC_RCMD: "@@KC_LEFT_GUI;"
+  KC_LWIN: "@@KC_LEFT_GUI;"
+  KC_RWIN: "@@KC_LEFT_GUI;"
+
+  # Command keys
+  KC_PRINT_SCREEN: "%%nf-md-monitor_screenshot;"
+  KC_PSCR: "@@KC_PRINT_SCREEN;"
+  KC_PAUSE: "%%nf-md-pause_circle_outline;"
+  KC_PAUS: "@@KC_PAUSE;"
+  KC_BRK: "@@KC_PAUSE;"
+  KC_INSERT: "Ins"
+  KC_INS: "@@KC_INSERT;"
+  KC_HOME: "↖"
+  KC_PAGE_UP: "⇞"
+  KC_PGUP: "@@KC_PAGE_UP;"
+  KC_DELETE: "%%nf-md-backspace_reverse;"
+  KC_DEL: "@@KC_DELETE;"
+  KC_END: "↘"
+  KC_PAGE_DOWN: "⇟"
+  KC_PGDN: "@@KC_PAGE_DOWN;"
+  KC_PGDOWN: "@@KC_PAGE_DOWN;"
+  KC_RIGHT: "%%nf-fa-arrow_right;"
+  KC_RGHT: "%%nf-fa-arrow_right;"
+  KC_LEFT: "%%nf-fa-arrow_left;"
+  KC_DOWN: "%%nf-fa-arrow_down;"
+  KC_UP: "%%nf-fa-arrow_up;"
+  KC_APPLICATION: "%%nf-md-application;"
+  KC_APP: "%%nf-md-application;"
+  KC_KB_POWER: "%%nf-md-power_plug;"
+  KC_EXECUTE: "%%nf-md-run_fast;"
+  KC_EXEC: "@@KC_EXECUTE;"
+  KC_HELP: "%%nf-md-help;"
+  KC_MENU: "%%nf-md-menu;"
+  KC_SELECT: "%%nf-md-select;"
+  KC_SLCT: "@@KC_SELECT;"
+  KC_STOP: "%nf-fa-stop"
+  KC_AGAIN: "%%nf-md-redo;"
+  KC_AGIN: "@@KC_AGAIN;"
+  KC_UNDO: "%%nf-md-undo;"
+  KC_CUT: "%%nf-md-content_cut;"
+  KC_COPY: "%%nf-md-content_copy;"
+  KC_PASTE: "%%nf-md-content_paste;"
+  KC_PSTE: "@@KC_PASTE;"
+  KC_FIND: "%%nf-md-file_find;"
+  KC_KB_MUTE: "%%nf-fa-volume_xmark;"
+  KC_KB_VOLUME_UP: "%nf-fa-volume_up"
+  KC_KB_VOLUME_DOWN: "%%nf-fa-volume_down;"
+  KC_ALTERNATE_ERASE: "%%nf-md-eraser;"
+  KC_ERAS: "@@KC_ALTERNATE_ERASE;"
+  KC_SYSTEM_REQUEST: "SysReq"
+  KC_SYRQ: "@@KC_SYSTEM_REQUEST;"
+  KC_CANCEL: "%%nf-md-cancel;"
+  KC_CNCL: "@@KC_CANCEL;"
+  KC_CLEAR: "%%nf-md-broom;"
+  KC_CLR: "@@KC_CLEAR;"
+  KC_PRIOR: "@@KC_PGUP;"
+  KC_PRIR: "@@KC_PGUP;"
+  KC_NEXT: "@@KC_PGDN;"
+  KC_RETURN: "⌅"
+  KC_RETN: "@@KC_RETURN;"
+  KC_SEPARATOR: "%%nf-md-decimal;"
+  KC_SEPR: "@@KC_SEPARATOR;"
+  KC_OUT: "%%nf-md-exit_to_app;"
+  KC_OPER: "%%nf-fa-terminal;"
+  KC_CLEAR_AGAIN: "@@KC_CLEAR;²"
+  KC_CLAG: "@@KC_CLEAR_AGAIN;"
+  KC_CRSEL: "%%nf-md-form_textbox;"
+  KC_CRSL: "@@KC_CRSEL;"
+  KC_EXSEL: "%%nf-md-form_textbox;+"
+  KC_EXSL: "@@KC_EXSEL;+"
+
+  # Media keys with icons
+  KC_SYSTEM_POWER: "%%nf-md-power;"
+  KC_PWR: "@@KC_SYSTEM_POWER;"
+  KC_SYSTEM_SLEEP: "%%nf-md-power_sleep;"
+  KC_SLEP: "@@KC_SYSTEM_SLEEP;"
+  KC_SYSTEM_WAKE: "%%nf-md-alarm;"
+  KC_WAKE: "@@KC_SYSTEM_WAKE;"
+  KC_AUDIO_MUTE: "%%nf-md-volume_mute;"
+  KC_MUTE: "@@KC_AUDIO_MUTE;"
+  KC_AUDIO_VOL_UP: "%%nf-md-volume_plus;"
+  KC_VOLU: "@@KC_AUDIO_VOL_UP;"
+  KC_AUDIO_VOL_DOWN: "%%nf-md-volume_minus;"
+  KC_VOLD: "@@KC_AUDIO_VOL_DOWN;"
+  KC_MEDIA_NEXT_TRACK: "%%nf-md-skip_next;"
+  KC_MNXT: "@@KC_MEDIA_NEXT_TRACK;"
+  KC_MEDIA_PREV_TRACK: "%%nf-md-skip_previous;"
+  KC_MPRV: "@@KC_MEDIA_PREV_TRACK;"
+  KC_MEDIA_STOP: "%%nf-md-stop;"
+  KC_MSTP: "@@KC_MEDIA_STOP;"
+  KC_MEDIA_PLAY_PAUSE: "%%nf-md-play_pause;"
+  KC_MPLY: "@@KC_MEDIA_PLAY_PAUSE;"
+  KC_MEDIA_SELECT: "%%nf-oct-file_media;"
+  KC_MSEL: "@@KC_MEDIA_SELECT;"
+  KC_MEDIA_EJECT: "%%nf-fa-eject;"
+  KC_EJCT: "@@KC_MEDIA_EJECT;"
+  KC_MAIL: "%%nf-cod-mail;"
+  KC_CALCULATOR: "%%nf-md-calculator;"
+  KC_CALC: "@@KC_CALCULATOR;"
+  KC_MY_COMPUTER: "%%nf-md-desktop_classic;"
+  KC_MYCM: "@@KC_MY_COMPUTER;"
+  KC_WWW_SEARCH: "%%nf-md-search_web;"
+  KP_WSCH: "@@KC_WWW_SEARCH;"
+  KC_WWW_HOME: "%%nf-fa-home;"
+  KC_WHOM: "@@KC_WWW_HOME;"
+  KC_WWW_BACK: "%%nf-md-arrow_left_bold;"
+  KC_WBAK: "@@KC_WWW_BACK;"
+  KC_WWW_FORWARD: "%%nf-md-arrow_right_bold;"
+  KC_WFWD: "@@KC_WWW_FORWARD;"
+  KC_WWW_STOP: "%%nf-fa-stop;"
+  KC_WSTP: "@@KC_WWW_STOP;"
+  KC_WWW_REFRESH: "%%nf-md-web_refresh;"
+  KC_WREF: "@@KC_WWW_REFRESH;"
+  KC_WWW_FAVORITES: "%%nf-seti-favicon;"
+  KC_WFAV: "@@KC_WWW_FAVORITES;"
+  KC_MEDIA_FAST_FORWARD: "%%nf-md-fast_forward;"
+  KC_MFFD: "@@KC_MEDIA_FAST_FORWARD;"
+  KC_MEDIA_REWIND: "%%nf-md-rewind;"
+  KC_MRWD: "@@KC_MEDIA_REWIND;"
+  KC_BRIGHTNESS_UP: "%%nf-md-brightness_7;"
+  KC_BRIU: "@@KC_BRIGHTNESS_UP;"
+  KC_BRMU: "@@KC_BRIGHTNESS_UP;"
+  KC_BRIGHTNESS_DOWN: "%%nf-md-brightness_5;"
+  KC_BRID: "@@KC_BRIGHTNESS_DOWN;"
+  KC_BRMD: "@@KC_BRIGHTNESS_DOWN;"
+  KC_CONTROL_PANEL: "%%nf-cod-settings_gear;"
+  KC_CPNL: "@@KC_CONTROL_PANEL;"
+  KC_ASSISTANT: "%%nf-md-assistant;"
+  KC_ASST: "@@KC_ASSISTANT;"
+  KC_MISSION_CONTROL: "%%nf-md-application_settings;"
+  KC_MCTL: "@@KC_MISSION_CONTROL;"
+  KC_LAUNCHPAD: "%%nf-md-apps_box;"
+  KC_LPAD: "@@KC_LAUNCHPAD;"
+
+  # Number pad keys
+  KC_KP_SLASH: "/"
+  KC_PSLS: "@@KC_KP_SLASH;"
+  KC_KP_ASTERISK: "*"
+  KC_PAST: "@@KC_KP_ASTERISK;"
+  KC_KP_MINUS: "-"
+  KC_PMNS: "@@KC_KP_MINUS;"
+  KC_KP_PLUS: "+"
+  KC_PPLS: "@@KC_KP_PLUS;"
+  KC_KP_ENTER: "%%nf-md-keyboard_return;"
+  KC_PENT: "@@KC_KP_ENTER;"
+  KC_KP_DOT: "."
+  KC_PDOT: "@@KC_KP_DOT;"
+  KC_KP_EQUAL: "="
+  KC_PEQL: "@@KC_KP_EQUAL;"
+  KC_KP_COMMA: ","
+  KC_PCMM: "@@KC_KP_COMMA;"
+  KC_KP_EQUAL_AS400: "@@KC_KP_EQUAL;"
+
+  # Special keys
+  KC_NO: ""
+  XXXXXXX: "@@KC_NO;"
+  KC_TRANSPARENT: ""
+  KC_TRNS: "@@KC_TRANSPARENT;"
+  _______: "@@KC_TRANSPARENT;"
+
+  # Shifted symbols
+  KC_TILDE: "~"
+  KC_TILD: "@@KC_TILDE;"
+  KC_EXCLAIM: "!"
+  KC_EXLM: "@@KC_EXCLAIM;"
+  KC_AT: "@"
+  KC_HASH: "#"
+  KC_DOLLAR: "$"
+  KC_DLR: "@@KC_DOLLAR;"
+  KC_PERCENT: "%"
+  KC_PERC: "@@KC_PERCENT;"
+  KC_CIRCUMFLEX: "^"
+  KC_CIRC: "@@KC_CIRCUMFLEX;"
+  KC_AMPERSAND: "&"
+  KC_AMPR: "@@KC_AMPERSAND;"
+  KC_ASTERISK: "*"
+  KC_ASTR: "@@KC_ASTERISK;"
+  KC_LEFT_PAREN: "("
+  KC_LPRN: "@@KC_LEFT_PAREN;"
+  KC_RIGHT_PAREN: ")"
+  KC_RPRN: "@@KC_RIGHT_PAREN;"
+  KC_UNDERSCORE: "_"
+  KC_UNDS: "@@KC_UNDERSCORE;"
+  KC_PLUS: "+"
+  KC_LEFT_CURLY_BRACE: "{"
+  KC_LCBR: "@@KC_LEFT_CURLY_BRACE;"
+  KC_RIGHT_CURLY_BRACE: "}"
+  KC_RCBR: "@@KC_RIGHT_CURLY_BRACE;"
+  KC_PIPE: "|"
+  KC_COLON: ":"
+  KC_COLN: "@@KC_COLON;"
+  KC_DOUBLE_QUOTE: "\""
+  KC_DQUO: "@@KC_DOUBLE_QUOTE;"
+  KC_DQT: "@@KC_DOUBLE_QUOTE;"
+  KC_LEFT_ANGLE_BRACKET: "<"
+  KC_LABK: "@@KC_LEFT_ANGLE_BRACKET;"
+  KC_LT: "@@KC_LEFT_ANGLE_BRACKET;"
+  KC_RIGHT_ANGLE_BRACKET: ">"
+  KC_RABK: "@@KC_RIGHT_ANGLE_BRACKET;"
+  KC_GT: "@@KC_RIGHT_ANGLE_BRACKET;"
+  KC_QUESTION: "?"
+  KC_QUES: "@@KC_QUESTION;"
+
+  # QMK Quantum keycodes
+  QK_CAPS_WORD_TOGGLE: "%%nf-md-apple_keyboard_caps;"
+  CW_TOGG: "%%nf-md-apple_keyboard_caps;"
+  QK_REPEAT_KEY: "%%nf-fa-repeat; REP"
+  QK_REP: "%%nf-fa-repeat; REP"
+
+  # Svalboard keys
+  SV_LEFT_DPI_INC: "L %%nf-md-mouse_move_up;"
+  USER00: "@@SV_LEFT_DPI_INC;"
+  SV_LEFT_DPI_DEC: "L %%nf-md-mouse_move_down;"
+  USER01: "@@SV_LEFT_DPI_DEC;"
+  SV_RIGHT_DPI_INC: "R %%nf-md-mouse_move_up;"
+  USER02: "@@SV_RIGHT_DPI_INC;"
+  SV_RIGHT_DPI_DEC: "R %%nf-md-mouse_move_down;"
+  USER03: "@@SV_RIGHT_DPI_DEC;"
+  SV_LEFT_SCROLL_TOGGLE: "L %%nf-md-mouse_move_vertical;%%nf-md-toggle_switch_off_outline;"
+  USER04: "@@SV_LEFT_SCROLL_TOGGLE;"
+  SV_RIGHT_SCROLL_TOGGLE: "R %%nf-md-mouse_move_vertical;%%nf-md-toggle_switch_off_outline;"
+  USER05: "@@SV_RIGHT_SCROLL_TOGGLE;"
+  SV_CAPS_WORD: "@@KC_CAPS; W"
+  USER08: "@@SV_CAPS_WORD;"
+  SV_AXIS_SCROLL_LOCK: "%%nf-md-mouse_move_vertical;%%nf-oct-lock;"
+  USER09: "@@SV_AXIS_SCROLL_LOCK;"
+  SV_OUTPUT_STATUS: "%%nf-oct-log;"
+  USER17: "@@SV_OUTPUT_STATUS;"
+  SV_SNIPER_2: "%%nf-md-crosshairs;2"
+  USER12: "@@SV_SNIPER_2;"
+  SV_SNIPER_3: "%%nf-md-crosshairs;3"
+  USER13: "@@SV_SNIPER_3;"
+  SV_SNIPER_5: "%%nf-md-crosshairs;5"
+  USER14: "@@SV_SNIPER_5;"
+
+# This entry is used to do a first pass on keymaps from Vial and Keybard which
+# resolve the QMK alias keycode into the combo keycodes it outputs like
+# `S(KC_1)` that is what the GUI displays when the keymap uses `KC_EXLM`.
+reversed_alias:
+  "LSFT(KC_GRAVE)": "@@KC_TILD;"
+  "LSFT(KC_1)": "@@KC_EXLM;"
+  "LSFT(KC_2)": "@@KC_AT;"
+  "LSFT(KC_3)": "@@KC_HASH;"
+  "LSFT(KC_4)": "@@KC_DLR;"
+  "LSFT(KC_5)": "@@KC_PERC;"
+  "LSFT(KC_6)": "@@KC_CIRC;"
+  "LSFT(KC_7)": "@@KC_AMPR;"
+  "LSFT(KC_8)": "@@KC_ASTR;"
+  "LSFT(KC_9)": "@@KC_LPRN;"
+  "LSFT(KC_0)": "@@KC_RPRN;"
+  "LSFT(KC_MINUS)": "@@KC_UNDS;"
+  "LSFT(KC_EQUAL)": "@@KC_PLUS;"
+  "LSFT(KC_LEFT_BRACKET)": "@@KC_LCBR;"
+  "LSFT(KC_LBRACKET)": "@@KC_LCBR;"
+  "LSFT(KC_RIGHT_BRACKET)": "@@KC_RCBR;"
+  "LSFT(KC_RBRACKET)": "@@KC_RCBR;"
+  "LSFT(KC_BACKSLASH)": "@@KC_PIPE;"
+  "LSFT(KC_BSLASH)": "@@KC_PIPE;"
+  "LSFT(KC_SEMICOLON)": "@@KC_COLN;"
+  "LSFT(KC_SCOLON)": "@@KC_COLN;"
+  "LSFT(KC_QUOTE)": "@@KC_DQUO;"
+  "LSFT(KC_COMMA)": "@@KC_LABK;"
+  "LSFT(KC_DOT)": "@@KC_RABK;"
+  "LSFT(KC_SLASH)": "@@KC_QUES;"
+
+## This entry is to resolve modifier functions on QMK like `S(KEYCODE)`
+modifiers:
+  S: "@@KC_LEFT_SHIFT;"
+  C: "@@KC_LEFT_CTRL;"
+  A: "@@KC_LEFT_ALT;"
+  G: "@@KC_LEFT_GUI;"
+  ALGR: "@@KC_LEFT_ALT;"
+  HYPR: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI;"
+  MEH: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT;"
+  LSFT: "@@KC_LEFT_SHIFT;"
+  LCTL: "@@KC_LEFT_CTRL;"
+  LALT: "@@KC_LEFT_ALT;"
+  LOPT: "@@KC_LEFT_ALT;"
+  LGUI: "@@KC_LEFT_GUI;"
+  LCMD: "@@KC_LEFT_GUI;"
+  LWIN: "@@KC_LEFT_GUI;"
+  RSFT: "@@KC_RIGHT_SHIFT;"
+  RCTL: "@@KC_RIGHT_CTRL;"
+  RALT: "@@KC_RIGHT_ALT;"
+  ROPT: "@@KC_RIGHT_ALT;"
+  RGUI: "@@KC_RIGHT_GUI;"
+  RCMD: "@@KC_RIGHT_GUI;"
+  RWIN: "@@KC_RIGHT_GUI;"
+  LSA: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT;"
+  LAG: "@@KC_LEFT_ALT; @@KC_LEFT_GUI;"
+  LSG: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI;"
+  LCG: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI;"
+  RSA: "@@KC_RIGHT_SHIFT; @@KC_RIGHT_ALT;"
+  RAG: "@@KC_RIGHT_ALT; @@KC_RIGHT_GUI;"
+  RSG: "@@KC_RIGHT_SHIFT; @@KC_RIGHT_GUI;"
+  RCG: "@@KC_RIGHT_CTRL; @@KC_RIGHT_GUI;"
+  LCA: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT;"
+  RCS: "@@KC_RIGHT_CTRL; @@KC_RIGHT_SHIFT;"
+  LCAG: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT;"
+  SAGR: "@@KC_RIGHT_SHIFT; @@KC_RIGHT_ALT;"
+  SGUI: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI;"
+  SCMD: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI;"
+  SWIN: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI;"
+
+# Mapping of symbols to be used as key labels when a key is defined to one of
+# the layer activation keycodes.
+layer_symbols:
+  DF: "%%nf-md-layers;"
+  PDF: "%%nf-md-layers;"
+  MO: "%%nf-md-layers_outline;"
+  LM: "%%nf-md-layers_outline;"
+  LT: "%%nf-md-layers_outline;"
+  OSL: "%%nf-md-layers_outline;"
+  TG: "%%nf-md-layers_plus;"
+  TO: "%%nf-md-layers_edit;"
+  TT: "%%nf-md-layers;"
+

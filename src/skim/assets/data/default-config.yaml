@@ -1,0 +1,31 @@
+layers:
+  - base_color: "#347156"
+  - base_color: "#89511C"
+  - base_color: "#41687E"
+  - base_color: "#8C3B2C"
+  - base_color: "#5F4B7E"
+  - base_color: "#7E6E1E"
+  - base_color: "#772828"
+  - base_color: "#772828"
+  - base_color: "#77284F"
+  - base_color: "#4E2877"
+  - base_color: "#773C28"
+  - base_color: "#28774F"
+  - base_color: "#287577"
+  - base_color: "#287677"
+  - base_color: "#9C2927"
+  - base_color: "#8C3396"
+
+layer_keycode: null
+
+keycodes: null
+
+appearance:
+  colors:
+    text: "#000000"
+    background: "#FFFFFF"
+    neutral: "#70768B"
+  border:
+    color: "#000000"
+    radius: 20
+  named_colors: null
