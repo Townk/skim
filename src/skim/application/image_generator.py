@@ -224,6 +224,9 @@ class ImageGenerator:
         if config.keycodes:
             mappings["keycodes"].update(config.keycodes)
 
+        if config.reversed_alias:
+            mappings["reversed_alias"].update(config.reversed_alias)
+
         transformer = KeycodeTransformer(
             mappings["keycodes"],
             mappings["reversed_alias"],

@@ -25,7 +25,7 @@ from skim.domain.colors import hex_str
 class QmkColorParser:
     """Parses QMK color definitions from C header files.
 
-    Extracts RGB_* and HSV_* color definitions from QMK color.h files,
+    Extracts ``RGB_*`` and ``HSV_*`` color definitions from QMK color.h files,
     converting them to hexadecimal color strings. When both RGB and HSV
     definitions exist for the same color name, HSV takes precedence.
 
@@ -44,8 +44,8 @@ class QmkColorParser:
     def parse(self, content: str) -> dict[str, str]:
         """Parse C header content and return color name to hex mapping.
 
-        Extracts both RGB_* and HSV_* color definitions from the content.
-        For each color name (without the RGB_/HSV_ prefix), returns the
+        Extracts both ``RGB_*`` and ``HSV_*`` color definitions from the content.
+        For each color name (without the ``RGB_``/``HSV_`` prefix), returns the
         hexadecimal color value. If both RGB and HSV are defined for
         the same name, HSV definition takes precedence.
 

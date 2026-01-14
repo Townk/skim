@@ -16,3 +16,6 @@ htmlcov/
 
 # Linting/Formatting
 .ruff_cache/
+
+# Documentation
+docs/build/
