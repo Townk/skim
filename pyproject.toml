@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [project.scripts]
-skim = "skim.ui.cli:main"
+skim = "skim:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

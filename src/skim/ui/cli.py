@@ -142,6 +142,11 @@ def main(verbosity: str, quiet: bool) -> None:
     multiple=True,
     help="Layers to generate (all, all-layers, overview, N, N-M).",
 )
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Overwrite existing files without confirmation.",
+)
 @click.argument("stdin_marker", required=False, type=click.STRING)
 def generate(
     config: Path | None,
@@ -149,6 +154,7 @@ def generate(
     output_dir: Path,
     format: str,
     layer: tuple,
+    force: bool,
     stdin_marker: str | None,
 ) -> None:
     """Generate keymap visualization images.
@@ -179,11 +185,31 @@ def generate(
 
     try:
         generator = ImageGenerator(config, output_dir, format)
+
+        # First pass: Check for existing files if force is not enabled
+        if not force:
+            try:
+                generator.generate(
+                    keymap_path=keymap,
+                    keymap_content=keymap_content,
+                    layers=list(layer) if layer else None,
+                    check_overwrite=True,
+                )
+            except FileExistsError as e:
+                click.confirm(
+                    f"{e}. Do you want to overwrite?",
+                    abort=True,
+                )
+
+        # Second pass: Actually generate the files
         generator.generate(
             keymap_path=keymap,
             keymap_content=keymap_content,
             layers=list(layer) if layer else None,
         )
+    except click.Abort:
+        click.echo("Aborted.", err=True)
+        sys.exit(1)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)

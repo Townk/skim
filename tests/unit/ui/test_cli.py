@@ -36,11 +36,10 @@ class TestCli:
             assert result.exit_code == 0
             mock_generator.assert_called_once()
             instance = mock_generator.return_value
-            instance.generate.assert_called_once()
+            assert instance.generate.call_count == 2
 
-            # Verify default args
             call_args = instance.generate.call_args[1]
-            assert call_args["layers"] is None  # Default None (all)
+            assert call_args["layers"] is None
 
     def test_generate_command_stdin(self, runner, mock_generator):
         """Test generate command reading from stdin."""

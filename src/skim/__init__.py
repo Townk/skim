@@ -23,18 +23,11 @@ from importlib.metadata import metadata
 
 _metadata = metadata("qmk-skim")
 __version__ = _metadata["Version"]
-__prog_name__ = f"{_metadata['Summary']} ({_metadata['Name']})"
+__prog_name__ = f"{_metadata['Summary']} (skim)"
 
+# We need this import to happen *after* the initialization of __version__ and
+# __prog_name__ so other packages can import it without creating a circular
+# depencency.
+from skim.ui.cli import main  # noqa: E402
 
-def main() -> None:
-    """Entry point placeholder for the skim package.
-
-    This function serves as a simple entry point for package verification.
-    The actual CLI functionality is provided by the :mod:`skim.ui.cli` module
-    through Click commands.
-
-    Note:
-        For CLI usage, invoke ``skim`` directly or use
-        ``python -m skim.ui.cli``.
-    """
-    print("Hello from skim!")
+__all__ = ["main"]

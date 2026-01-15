@@ -129,7 +129,8 @@ class ImageGenerator:
         keymap_path: Path | None = None,
         keymap_content: str | None = None,
         layers: list[str] | None = None,
-    ) -> None:
+        check_overwrite: bool = False,
+    ) -> list[Path]:
         """Generate keymap visualization images.
 
         Main entry point for the generation pipeline. Accepts keymap data
@@ -141,7 +142,8 @@ class ImageGenerator:
             2. Parse keymap content and detect format
             3. Setup keycode transformer with mappings
             4. Build Layer objects with labels, colors, and toggles
-            5. Compile Typst templates to output images
+            5. Determine target files and check overwrite (if enabled)
+            6. Compile Typst templates to output images
 
         Args:
             keymap_path: Path to keymap file (.kbi, .vil, or .json).
@@ -150,26 +152,28 @@ class ImageGenerator:
                 Used when reading from stdin or other sources.
             layers: Optional list of layer specifiers to generate.
                 Supported values:
-                - "all" or "all-layers": Generate all individual layers
-                - "overview": Generate overview image with all layers
-                - "N": Generate layer N (1-indexed)
-                - "N-M": Generate layers N through M (inclusive, 1-indexed)
+                    - "all" or "all-layers": Generate all individual layers
+                    - "overview": Generate overview image with all layers
+                    - "N": Generate layer N (1-indexed)
+                    - "N-M": Generate layers N through M (inclusive, 1-indexed)
                 If None, generates all layers plus overview.
+            check_overwrite: If True, calculates expected output files and
+                raises FileExistsError if any exist. Does not generate images
+                in this case.
+
+        Returns:
+            List of Path objects for the files that would be (or were) generated.
+            If check_overwrite is True and files exist, raises exception.
 
         Raises:
             ValueError: If no keymap is provided, or if the keymap
                 format cannot be detected or is unsupported.
             FileNotFoundError: If keymap_path doesn't exist.
+            FileExistsError: If check_overwrite is True and output files exist.
 
         Example:
             >>> # Generate all layers from file
             >>> generator.generate(keymap_path=Path("layout.kbi"))
-
-            >>> # Generate specific layers from content
-            >>> generator.generate(
-            ...     keymap_content=json_string,
-            ...     layers=["1", "2", "overview"],
-            ... )
         """
         logger.info("Loading configuration...", extra={"emoji": "⚙️ "})
         if self._config_path:
@@ -384,6 +388,31 @@ class ImageGenerator:
                         file_path.unlink()
                         logger.debug(f"Deleted {file_path}")
 
+        generated_files = []
+        if check_overwrite:
+            if selected_layer_indices:
+                for i in selected_layer_indices:
+                    generated_files.append(
+                        self._output_dir / f"keymap-{i + 1}.{self._format}"
+                    )
+            if gen_overview:
+                generated_files.append(
+                    self._output_dir / f"keymap-overview.{self._format}"
+                )
+
+            existing_files = [f for f in generated_files if f.exists()]
+            if existing_files:
+                raise FileExistsError(
+                    f"Files already exist: {', '.join(f.name for f in existing_files)}"
+                )
+            return generated_files
+
+        if selected_layer_indices:
+            for i in selected_layer_indices:
+                generated_files.append(
+                    self._output_dir / f"keymap-{i + 1}.{self._format}"
+                )
+
         if gen_overview:
             logger.info("Compiling overview image...", extra={"emoji": "📊"})
             compiler.compile(
@@ -392,11 +421,13 @@ class ImageGenerator:
                 sys_inputs=sys_inputs,
                 font_paths=[typst_assets / "fonts"],
             )
+            generated_files.append(self._output_dir / f"keymap-overview.{self._format}")
 
         logger.info(
             f"Generation complete. Output directory: {self._output_dir}",
             extra={"emoji": "✨"},
         )
+        return generated_files
 
     def _detect_format_from_path(self, path: Path) -> str:
         """Detect keymap format from file extension and content.
