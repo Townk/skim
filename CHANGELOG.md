@@ -7,13 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-01-14
+
 ### Added
 - Pre-release GitHub Actions workflow to auto-build versions on commit
 - Package keywords and classifiers in pyproject.toml
+- Automated coverage badge updates via pre-commit hook
+- Sphinx documentation theme changed to Furo with GitHub integration
+- New helper script `scripts/update_coverage.py`
 
 ### Changed
 - Renamed package to `qmk-skim`
 - Updated uv build configuration
+- Updated README badges for coverage, build status, and PyPI version
+
 
 ## [0.4.0] - 2025-01-14
 
@@ -33,5 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sphinx documentation with GitHub Pages deployment workflow
 - Pre-commit hooks for ruff formatting/linting and basedpyright type checking
 
-[Unreleased]: https://github.com/Townk/skim/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Townk/skim/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Townk/skim/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Townk/skim/releases/tag/v0.4.0

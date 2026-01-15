@@ -1,8 +1,9 @@
 # Svalboard Keymap Image Maker (skim)
 
-[![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](https://github.com)
+[![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen.svg)](https://github.com/Townk/skim)
 [![Python Version](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com)
+[![Build Status](https://github.com/Townk/skim/actions/workflows/prerelease.yml/badge.svg)](https://github.com/Townk/skim/actions/workflows/prerelease.yml)
+[![PyPI version](https://badge.fury.io/py/qmk-skim.svg)](https://badge.fury.io/py/qmk-skim)
 
 A Python CLI tool for generating keymap layout images for the [Svalboard](https://svalboard.com) keyboard.
 

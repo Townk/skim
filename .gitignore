@@ -19,3 +19,4 @@ htmlcov/
 
 # Documentation
 docs/build/
+docs/_build/
