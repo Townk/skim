@@ -139,6 +139,7 @@ jobs:
           name: ${{ steps.version.outputs.release_name }}
           draft: false
           prerelease: ${{ steps.version.outputs.is_prerelease == 'true' }}
+          make_latest: ${{ steps.version.outputs.is_prerelease == 'false' }}
           files: dist/*
           generate_release_notes: true
 

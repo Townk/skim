@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""Post-commit hook: bump to next dev version after a release commit."""
+"""
+Reference-transaction hook: auto-bump to dev version after pushing a release.
+
+This hook is triggered when git updates references. After a successful push
+of a release version (X.Y.Z without .dev suffix) to mainline, it automatically:
+1. Bumps the version to X.Y.(Z+1).dev
+2. Commits the change
+3. Pushes the dev commit
+
+This ensures the release commit is pushed alone, triggering the GitHub release
+workflow correctly, while automating the follow-up dev version bump.
+"""
 
 import re
 import subprocess
@@ -25,29 +36,28 @@ def get_version_from_pyproject() -> tuple[int, int, int, bool] | None:
     )
 
 
-def is_rebase_or_merge_in_progress() -> bool:
-    git_dir = Path(".git")
-    return (
-        (git_dir / "rebase-merge").exists()
-        or (git_dir / "rebase-apply").exists()
-        or (git_dir / "MERGE_HEAD").exists()
-    )
-
-
-def was_pyproject_in_last_commit() -> bool:
-    result = subprocess.run(
-        ["git", "diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD"],
-        capture_output=True,
-        text=True,
-    )
-    return "pyproject.toml" in result.stdout
+def is_mainline_push_to_remote(stdin_lines: list[str]) -> bool:
+    for line in stdin_lines:
+        parts = line.strip().split()
+        if len(parts) >= 3:
+            ref_name = parts[2]
+            if ref_name == "refs/remotes/origin/mainline":
+                return True
+    return False
 
 
 def main() -> int:
-    if is_rebase_or_merge_in_progress():
+    if len(sys.argv) < 2:
         return 0
 
-    if not was_pyproject_in_last_commit():
+    state = sys.argv[1]
+
+    if state != "committed":
+        return 0
+
+    stdin_lines = sys.stdin.readlines()
+
+    if not is_mainline_push_to_remote(stdin_lines):
         return 0
 
     version_info = get_version_from_pyproject()
@@ -75,9 +85,12 @@ def main() -> int:
     subprocess.run(
         ["git", "commit", "-m", f"🔖 Start of pre-release v{next_version}"],
         check=True,
+        env={**dict(subprocess.os.environ), "GIT_EDITOR": ":"},
     )
 
-    print(f"Auto-bumped version to {next_version}")
+    subprocess.run(["git", "push"], check=True)
+
+    print(f"\nAuto-bumped version to {next_version} and pushed")
     return 0
 
 

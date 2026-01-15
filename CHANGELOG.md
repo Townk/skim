@@ -7,24 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.4.2] - 2026-01-15
+## [0.4.3] - 2026-01-15
 
 ### Added
-
-- Overwrite protection with interactive confirmation prompt when output files
-  exist
-- `--force` flag for `skim generate` to skip overwrite confirmation
-- OpenSpec framework for AI-assisted change management (`openspec/`)
 - Version validation script (`scripts/validate_version.py`)
 - Git hooks for release automation (`scripts/hooks/`)
 - Hook setup script (`scripts/setup-hooks.sh`)
 
 ### Changed
-
 - Release workflow now supports both dev and release versions from
   `pyproject.toml`
 - Renamed `prerelease.yml` to `release.yml`
-- Post-commit hook auto-bumps to next dev version after release commits
+- Release automation via `reference-transaction` hook auto-bumps and pushes
+  dev version after release push
+
+## [0.4.2] - 2026-01-15
+
+### Added
+- Overwrite protection with interactive confirmation prompt when output files
+  exist
+- `--force` flag for `skim generate` to skip overwrite confirmation
+- OpenSpec framework for AI-assisted change management (`openspec/`)
 
 ## [0.4.1] - 2026-01-14
 
@@ -60,7 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sphinx documentation with GitHub Pages deployment workflow
 - Pre-commit hooks for ruff formatting/linting and basedpyright type checking
 
-[Unreleased]: https://github.com/Townk/skim/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/Townk/skim/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/Townk/skim/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/Townk/skim/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Townk/skim/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Townk/skim/releases/tag/v0.4.0
