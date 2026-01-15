@@ -7,14 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Modified the release workflow to call the publish workflow directly to
+  guarantee PyPI always receives a new release version when there is one.
+
 ## [0.4.3] - 2026-01-15
 
 ### Added
+
 - Version validation script (`scripts/validate_version.py`)
 - Git hooks for release automation (`scripts/hooks/`)
 - Hook setup script (`scripts/setup-hooks.sh`)
 
 ### Changed
+
 - Release workflow now supports both dev and release versions from
   `pyproject.toml`
 - Renamed `prerelease.yml` to `release.yml`
@@ -24,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.2] - 2026-01-15
 
 ### Added
+
 - Overwrite protection with interactive confirmation prompt when output files
   exist
 - `--force` flag for `skim generate` to skip overwrite confirmation

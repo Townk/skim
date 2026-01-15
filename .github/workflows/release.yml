@@ -12,6 +12,9 @@ jobs:
   release:
     name: Build and Release
     runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.check_tag.outputs.exists == 'false' }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
 
     steps:
       - name: Checkout code
@@ -147,3 +150,10 @@ jobs:
         if: steps.check_tag.outputs.exists == 'true'
         run: |
           echo "::notice::Skipping release - tag v${{ steps.version.outputs.version }} already exists"
+
+  publish-package:
+    name: Publish to PyPI
+    needs: release
+    if: needs.release.outputs.released == 'true' && needs.release.outputs.is_prerelease == 'false'
+    uses: ./.github/workflows/publish.yml
+
