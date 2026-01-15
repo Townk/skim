@@ -1,10 +1,24 @@
 [project]
-name = "skim"
+name = "qmk-skim"
 version = "0.4.0"
 description = "Svalboard Keymap Image Maker"
 readme = "README.md"
 authors = [
     { name = "Thiago Alves", email = "thiago@rapinialves.com" }
+]
+keywords = ["svalboard", "keyboard", "keymap", "layout", "image", "svg", "png", "typst"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Utilities",
 ]
 requires-python = ">=3.10"
 dependencies = [
@@ -88,6 +102,9 @@ reportUnusedVariable = true
 [build-system]
 requires = ["uv_build>=0.9.22,<0.10.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "skim"
 
 [dependency-groups]
 dev = [

@@ -21,7 +21,7 @@ Example:
 
 from importlib.metadata import metadata
 
-_metadata = metadata("skim")
+_metadata = metadata("qmk-skim")
 __version__ = _metadata["Version"]
 __prog_name__ = f"{_metadata['Summary']} ({_metadata['Name']})"
 

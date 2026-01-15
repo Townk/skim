@@ -1,0 +1,107 @@
+name: Pre-release
+
+on:
+  push:
+    branches: [ mainline ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-prerelease:
+    name: Build Pre-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Calculate and Update Version
+        id: version
+        run: |
+          python -c "
+          import re
+          import subprocess
+          import os
+          import sys
+
+          print('Calculating pre-release version...')
+
+          # Read current version
+          try:
+              with open('pyproject.toml', 'r') as f:
+                  content = f.read()
+          except FileNotFoundError:
+              print('Error: pyproject.toml not found')
+              sys.exit(1)
+
+          # Extract version (simple regex for standard pyproject.toml)
+          # Matches: version = \"0.4.0\"
+          version_match = re.search(r'version\s*=\s*\"(\d+)\.(\d+)\.(\d+)(.*)\"', content)
+          if not version_match:
+              print('Error: Could not find valid version string in pyproject.toml')
+              sys.exit(1)
+
+          major = int(version_match.group(1))
+          minor = int(version_match.group(2))
+          patch = int(version_match.group(3))
+
+          # Increment patch as requested (PATCH+1)
+          new_patch = patch + 1
+
+          # Get commit count (N)
+          try:
+              # Try to find the last tag to count commits since then
+              last_tag = subprocess.check_output(['git', 'describe', '--tags', '--abbrev=0'], stderr=subprocess.DEVNULL, text=True).strip()
+              commits = subprocess.check_output(['git', 'rev-list', '--count', f'{last_tag}..HEAD'], text=True).strip()
+              print(f'Counting commits since tag {last_tag}: {commits}')
+          except subprocess.CalledProcessError:
+              # No tags found, count all commits
+              commits = subprocess.check_output(['git', 'rev-list', '--count', 'HEAD'], text=True).strip()
+              print(f'No tags found. Total commit count: {commits}')
+
+          # Construct Version
+          # User requested: MAJOR.MINOR.PATCH+1+build-N
+          # Python Standard for Pre-releases: MAJOR.MINOR.PATCH+1.devN
+          # We will use the standard .devN format to ensure compatibility with PyPI and tools.
+          # If specifically +build-N is needed, it would be f'{major}.{minor}.{new_patch}+build.{commits}'
+          # But + implies a local version of the FINAL release, not a pre-release.
+          # We use .devN for 'pre-release'.
+          
+          prerelease_version = f'{major}.{minor}.{new_patch}.dev{commits}'
+          print(f'Generated Pre-release Version: {prerelease_version}')
+
+          # Update pyproject.toml
+          # We use regex to replace only the version line
+          new_content = re.sub(r'version\s*=\s*\".*\"', f'version = \"{prerelease_version}\"', content, count=1)
+
+          with open('pyproject.toml', 'w') as f:
+              f.write(new_content)
+
+          # Output for GITHUB_OUTPUT
+          if 'GITHUB_OUTPUT' in os.environ:
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+                  print(f'version={prerelease_version}', file=fh)
+          "
+
+      - name: Build package
+        run: uv build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
