@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-prerelease:
@@ -77,9 +77,6 @@ jobs:
           # User requested: MAJOR.MINOR.PATCH+1+build-N
           # Python Standard for Pre-releases: MAJOR.MINOR.PATCH+1.devN
           # We will use the standard .devN format to ensure compatibility with PyPI and tools.
-          # If specifically +build-N is needed, it would be f'{major}.{minor}.{new_patch}+build.{commits}'
-          # But + implies a local version of the FINAL release, not a pre-release.
-          # We use .devN for 'pre-release'.
           
           prerelease_version = f'{major}.{minor}.{new_patch}.dev{commits}'
           print(f'Generated Pre-release Version: {prerelease_version}')
@@ -100,8 +97,12 @@ jobs:
       - name: Build package
         run: uv build
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: dist
-          path: dist/
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Pre-release v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: true
+          files: dist/*
+          generate_release_notes: true
