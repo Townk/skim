@@ -10,9 +10,8 @@ your layouts with the community.
 What is skim?
 -------------
 
-If you use a Svalboard or similar split keyboard with QMK, Vial, or Keybard
-firmware, you've probably wanted to visualize your keymap layout. Maybe you
-want to:
+If you use a Svalboard split keyboard with QMK firmware, you've probably wanted
+to visualize your keymap layout. Maybe you want to:
 
 - Create a quick reference card to keep nearby while learning a new layout
 - Document your configuration for others to learn from
@@ -43,10 +42,10 @@ skim can read keymap files from three popular sources:
      - Description
    * - **Keybard**
      - ``.kbi``
-     - Keybard's native JSON export format
+     - Keybard's native export format (JSON)
    * - **Vial**
      - ``.vil``
-     - Vial's JSON layout format
+     - Vial's layout format (JSON)
    * - **QMK c2json**
      - ``.json``
      - QMK's ``qmk c2json`` output format

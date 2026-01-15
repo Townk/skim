@@ -1,6 +1,6 @@
 [project]
 name = "qmk-skim"
-version = "0.4.1"
+version = "0.4.2.dev"
 description = "Svalboard Keymap Image Maker"
 readme = "README.md"
 authors = [
@@ -35,7 +35,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "--cov=skim --cov-report=html --cov-report=term-missing"
+addopts = "--cov=skim --cov-report=html:out/coverage --cov-report=term-missing"
 minversion = "8.0"
 
 [tool.coverage.run]

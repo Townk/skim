@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parents[2] / "src"))
+sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
 from skim import __prog_name__, __version__
 
@@ -29,7 +29,7 @@ html_css_files = ["custom.css"]
 html_theme_options = {
     "source_repository": "https://github.com/Townk/skim",
     "source_branch": "main",
-    "source_directory": "docs/source/",
+    "source_directory": "docs/",
 }
 
 intersphinx_mapping = {

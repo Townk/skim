@@ -74,8 +74,7 @@ uv run pytest tests/unit/domain/test_colors.py
 ### Building Documentation
 
 ```bash
-cd docs
-sphinx-build -b html . _build
+sphinx-build -b html docs out/docs
 ```
 
 ## License
