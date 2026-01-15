@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+
+if git diff --cached --name-only | grep -q "^pyproject.toml$"; then
+    echo "Validating version format..."
+    python scripts/validate_version.py
+fi
+
+echo "Running ruff format..."
+uv run ruff format --check src/ tests/
+
+echo "Running ruff check..."
+uv run ruff check src/ tests/
+
+echo "Running basedpyright..."
+uv run basedpyright src/
+
+echo "Running tests and updating coverage..."
+uv run python scripts/update_coverage.py
+
+echo "Pre-commit checks passed!"
