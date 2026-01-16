@@ -165,7 +165,12 @@ class KeycodeTransformer:
         """
         layer_funcs = ["MO", "LM", "LT", "OSL", "TG", "TO", "TT", "DF", "PDF"]
 
-        match = re.match(r"^([A-Z0-9_]+)\(([^,)]+)(?:,.*)?\)$", keycode)
+        # First resolve any reversed aliases (e.g., CKC_BSPC -> LT(_NAV, ...))
+        # Note: We don't resolve standard aliases (@@...) here because
+        # layer functions must be explicit in the raw keycode or reversed alias.
+        resolved_keycode = self._apply_reversed_alias(keycode)
+
+        match = re.match(r"^([A-Z0-9_]+)\(([^,)]+)(?:,.*)?\)$", resolved_keycode)
         if match:
             func_name = match.group(1)
             if func_name in layer_funcs:

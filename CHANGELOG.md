@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed incorrect nesting of `named_colors` in generated configuration files (now directly under `appearance`).
+- Fixed issue where layer toggle targets were not identified when using aliased keycodes in `reversed_alias`.
 
 ## [0.4.3] - 2026-01-15
 
