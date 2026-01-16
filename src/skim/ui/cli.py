@@ -287,11 +287,14 @@ def configure(
 
         if output:
             if output.exists() and not force:
-                click.echo(
-                    f"Error: File {output} already exists. Use --force to overwrite.",
-                    err=True,
-                )
-                sys.exit(1)
+                try:
+                    click.confirm(
+                        f"File {output} already exists. Do you want to overwrite?",
+                        abort=True,
+                    )
+                except click.Abort:
+                    click.echo("Aborted.", err=True)
+                    sys.exit(1)
             output.write_text(content)
             click.echo(f"Configuration written to {output}")
         else:

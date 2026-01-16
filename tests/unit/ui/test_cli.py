@@ -217,8 +217,8 @@ class TestCli:
             assert result.exit_code == 1
             assert "Error: No keymap provided" in result.output
 
-    def test_configure_file_exists_error(self, runner, mock_config_gen):
-        """Test error when output file exists and no force flag."""
+    def test_configure_file_exists_prompt(self, runner, mock_config_gen):
+        """Test prompt when output file exists and no force flag."""
         with runner.isolated_filesystem():
             with open("existing.yaml", "w") as f:
                 f.write("old")
@@ -226,11 +226,13 @@ class TestCli:
             mock_gen_instance = mock_config_gen.return_value
             mock_gen_instance.generate.return_value = "new"
 
+            # No input -> Abort
             result = runner.invoke(main, ["configure", "-o", "existing.yaml"])
 
             assert result.exit_code == 1
             assert "already exists" in result.output
-            assert "Use --force" in result.output
+            assert "Do you want to overwrite?" in result.output
+            assert "Aborted" in result.output
 
     def test_configure_command_flags(self, runner, mock_config_gen):
         """Test configure command with adjustment flags."""

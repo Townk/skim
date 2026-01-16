@@ -342,6 +342,26 @@ class ImageGenerator:
                     [i for i in target_set if 0 <= i < len(processed_layers)]
                 )
 
+        # Check for existing files BEFORE starting compilation
+        generated_files = []
+        if check_overwrite:
+            if selected_layer_indices:
+                for i in selected_layer_indices:
+                    generated_files.append(
+                        self._output_dir / f"keymap-{i + 1}.{self._format}"
+                    )
+            if gen_overview:
+                generated_files.append(
+                    self._output_dir / f"keymap-overview.{self._format}"
+                )
+
+            existing_files = [f for f in generated_files if f.exists()]
+            if existing_files:
+                raise FileExistsError(
+                    f"Files already exist: {', '.join(f.name for f in existing_files)}"
+                )
+            return generated_files
+
         logger.info("Preparing compilation...", extra={"emoji": "🔨"})
         compiler = TypstCompiler()
         typst_assets = self._assets_path / "typst"
@@ -387,25 +407,6 @@ class ImageGenerator:
                     if i not in selected_layer_indices and file_path.exists():
                         file_path.unlink()
                         logger.debug(f"Deleted {file_path}")
-
-        generated_files = []
-        if check_overwrite:
-            if selected_layer_indices:
-                for i in selected_layer_indices:
-                    generated_files.append(
-                        self._output_dir / f"keymap-{i + 1}.{self._format}"
-                    )
-            if gen_overview:
-                generated_files.append(
-                    self._output_dir / f"keymap-overview.{self._format}"
-                )
-
-            existing_files = [f for f in generated_files if f.exists()]
-            if existing_files:
-                raise FileExistsError(
-                    f"Files already exist: {', '.join(f.name for f in existing_files)}"
-                )
-            return generated_files
 
         if selected_layer_indices:
             for i in selected_layer_indices:
