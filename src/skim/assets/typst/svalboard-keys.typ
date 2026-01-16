@@ -1,20 +1,6 @@
 #import "@preview/one-liner:0.2.0": *
 #import "@preview/nerd-icons:0.2.0": *
-
-// [
-//    0,  1,  2,  3,  4,  5,
-//    6,  7,  8,  9, 10, 11,
-//   12, 13, 14, 15, 16, 17,
-//   18, 19, 20, 21, 22, 23,
-//
-//   24, 25, 26, 27, 28, 29,
-//   30, 31, 32, 33, 34, 35,
-//   36, 37, 38, 39, 40, 41,
-//   42, 43, 44, 45, 46, 47,
-//
-//   48, 49, 50, 51, 52, 53,
-//   54, 55, 56, 57, 58, 59,
-// ]
+#import "@preview/cetz:0.1.0": *
 
 #let FR1 = 0
 #let FR2 = 1
@@ -119,7 +105,7 @@
 #let layerToggleColor2(keymap, layer, cluster, key) = {
   let targetIndex = layerToggleIndex2(layer, cluster, key)
   if targetIndex == none or targetIndex < 0 or targetIndex >= keymap.layers.len() {
-    return none
+    return targetIndex
   }
   return layerPrimaryColor(keymap.layers.at(targetIndex))
 }
@@ -241,7 +227,7 @@
     fill: fill,
     stroke: stroke,
   )
-  place(bottom + center, dy: -size.at(1) * 0.14, label)
+  place(bottom + center, dy: -size.at(1) * 0.1, label)
 })
 
 #let double-down-key(
@@ -365,42 +351,147 @@
   let side_aware_width = if side == left { cluster_width } else { -cluster_width }
 
   // Down
-  place(top + center, down-key(
-    size: (cluster_width * 0.23, cluster_height),
-    fill: keyColor(layer, CDOWN),
-    label: text(
-      font: "Roboto",
-      weight: "black",
-      fill: white,
-      fit-to-width(max-text-size: cluster_width * 0.075, keyLabel(layer, cluster, DOWN)),
-    ),
-  ))
+  let downLayerToggleColor = layerToggleColor2(
+    keymap,
+    layer,
+    if side == left { TCL } else { TCR },
+    DOWN,
+  )
+  place(top + center, box({
+    down-key(
+      size: (cluster_width * 0.23, cluster_height),
+      fill: keyColor(layer, CDOWN),
+      label: text(
+        font: "Roboto",
+        weight: "black",
+        fill: white,
+        fit-to-width(max-text-size: cluster_width * 0.075, keyLabel(layer, cluster, DOWN)),
+      ),
+    )
+    if downLayerToggleColor != none {
+      let downLayerToggleLabel = layerToggleLabel2(layer, if side == left { TCL } else { TCR }, DOWN)
+      place(bottom + center, dy: -cluster_width * 0.16, circle(
+        radius: cluster_height * 0.06,
+        fill: downLayerToggleColor,
+        stroke: (paint: white, thickness: cluster_height * 0.01, cap: "round"),
+      )[
+        #set align(center + horizon)
+        #text(
+          font: "Roboto",
+          weight: "black",
+          tracking: 1pt,
+          size: cluster_height * 0.065,
+          fill: white,
+          downLayerToggleLabel,
+        )
+      ])
+    }
+  }))
 
   // Double-Down
-  place(top + center, dy: 20pt, double-down-key(
-    size: (cluster_width * 0.11, cluster_height * 0.235),
-    fill: keyColor(layer, CDDOWN),
-    stroke: (paint: white, thickness: cluster_height * 0.011, cap: "round"),
-    label: text(fill: white, fit-to-width(max-text-size: cluster_width * 0.06, keyLabel(layer, cluster, DDOWN))),
-  ))
+  let dDownLayerToggleColor = layerToggleColor2(
+    keymap,
+    layer,
+    if side == left { TCL } else { TCR },
+    DDOWN,
+  )
+  place(top + center, dy: 20pt, box({
+    double-down-key(
+      size: (cluster_width * 0.11, cluster_height * 0.235),
+      fill: keyColor(layer, CDDOWN),
+      stroke: (paint: white, thickness: cluster_height * 0.011, cap: "round"),
+      label: text(
+        font: "Roboto",
+        weight: "black",
+        fill: white,
+        fit-to-width(max-text-size: cluster_width * 0.06, keyLabel(layer, cluster, DDOWN)),
+      ),
+    )
+    if dDownLayerToggleColor != none {
+      let dDownLayerToggleLabel = layerToggleLabel2(layer, if side == left { TCL } else { TCR }, DDOWN)
+      place(
+        top + other_side,
+        dx: if side == left { side_aware_width * 0.04 } else { 0pt },
+        line(
+          start: (side_aware_width * 0.04, -cluster_width * 0.10),
+          end: (-side_aware_width * 0.025, cluster_width * 0.021),
+          stroke: (paint: white, thickness: cluster_height * 0.03),
+        ),
+      )
+      place(top + other_side, dx: side_aware_width * 0.1, dy: -cluster_width * 0.17, circle(
+        radius: cluster_height * 0.07,
+        fill: dDownLayerToggleColor,
+        stroke: (paint: white, thickness: cluster_height * 0.011, cap: "round"),
+      )[
+        #set align(center + horizon)
+        #text(
+          font: "Roboto",
+          weight: "black",
+          tracking: 1pt,
+          size: cluster_height * 0.063,
+          fill: white,
+          dDownLayerToggleLabel,
+        )
+      ])
+      place(top + other_side, dx: -side_aware_width * 0.015, dy: cluster_width * 0.011, circle(
+        radius: cluster_height * 0.02,
+        fill: dDownLayerToggleColor,
+        stroke: (paint: white, thickness: cluster_height * 0.007, cap: "round"),
+      ))
+      place(
+        top + other_side,
+        dx: if side == left { side_aware_width * 0.04 } else { 0pt },
+        line(
+          start: (side_aware_width * 0.04, -cluster_width * 0.10),
+          end: (-side_aware_width * 0.025, cluster_width * 0.021),
+          stroke: (paint: dDownLayerToggleColor, thickness: cluster_height * 0.015),
+        ),
+      )
+    }
+  }))
 
   // Up
-  place(bottom + side, dx: side_aware_width * 0.1, dy: -cluster_height * 0.39, up-key(
-    size: (cluster_width * 0.38, cluster_height * 0.2),
-    fill: keyColor(layer, CUP),
-    side: side,
-    stroke: (
-      paint: white,
-      thickness: cluster_height * 0.017,
-      cap: "round",
-    ),
-    label: text(
-      font: "Roboto",
-      weight: "black",
-      fill: white,
-      fit-to-width(max-text-size: cluster_width * 0.05, keyLabel(layer, cluster, UP)),
-    ),
-  ))
+  let upLayerToggleColor = layerToggleColor2(
+    keymap,
+    layer,
+    if side == left { TCL } else { TCR },
+    UP,
+  )
+  place(bottom + side, dx: side_aware_width * 0.1, dy: -cluster_height * 0.39, box({
+    up-key(
+      size: (cluster_width * 0.38, cluster_height * 0.2),
+      fill: keyColor(layer, CUP),
+      side: side,
+      stroke: (
+        paint: white,
+        thickness: cluster_height * 0.017,
+        cap: "round",
+      ),
+      label: text(
+        font: "Roboto",
+        weight: "black",
+        fill: white,
+        fit-to-width(max-text-size: cluster_width * 0.05, keyLabel(layer, cluster, UP)),
+      ),
+    )
+    if upLayerToggleColor != none {
+      let upLayerToggleLabel = layerToggleLabel2(layer, if side == left { TCL } else { TCR }, UP)
+      place(horizon + side, dx: side_aware_width * 0.03, circle(
+        radius: cluster_height * 0.05,
+        fill: upLayerToggleColor,
+        stroke: (paint: white, thickness: cluster_height * 0.008, cap: "round"),
+      )[
+        #set align(center + horizon)
+        #text(
+          font: "Roboto",
+          weight: "black",
+          size: cluster_height * 0.048,
+          fill: white,
+          upLayerToggleLabel,
+        )
+      ])
+    }
+  }))
 
   // Pad
   let padLayerToggleColor = layerToggleColor2(keymap, layer, if side == left { TCL } else { TCR }, PAD)

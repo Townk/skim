@@ -33,8 +33,9 @@
 
 #context {
   let tableRows = ()
+  let range_start = keymap.selectedLayers.len()-1
 
-  for i in range(keymap.selectedLayers.len()-1, -1, step: -1) {
+  for i in range(range_start, -1, step: -1) {
     let layerIdx = keymap.selectedLayers.at(i)
     let layer = keymap.layers.at(layerIdx)
     let layerName = if i > 0 { layer.name } else { "LETTERS" }
@@ -43,7 +44,7 @@
     let vertInset = if i == 7 { 21pt } else { 50pt }
     tableRows += (
       box(inset: (top: vertInset), width: 370pt)[
-        #if i == 7 {
+        #if i == range_start {
           box(inset: (left: 15pt), text(
             font: "Roboto",
             weight: "black",
