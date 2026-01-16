@@ -15,10 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Updated config generator to create `USER##` mappings for custom keycodes found in Keybard files.
+- Improved config generator to prevent duplicate custom key entries if they already exist in internal mappings.
 - Refactored keycode transformer to use a unified, data-driven pipeline for
   resolving all function-style keycodes (modifiers, layers, macros).
 - Modified the release workflow to call the publish workflow directly to
   guarantee PyPI always receives a new release version when there is one.
+
+### Fixed
+
+- Fixed incorrect nesting of `named_colors` in generated configuration files (now directly under `appearance`).
 
 ## [0.4.3] - 2026-01-15
 

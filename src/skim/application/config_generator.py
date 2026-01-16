@@ -28,6 +28,7 @@ import re
 
 import yaml
 
+from skim.application.keycode_loader import KeycodeMappingLoader
 from skim.application.parsers.keybard_parser import KeybardParser
 from skim.application.parsers.qmk_color_parser import QmkColorParser
 from skim.domain.colors import adjust_color, hex_str
@@ -96,6 +97,10 @@ class ConfigGenerator:
         parser = KeybardParser()
         metadata = parser.extract_metadata(keybard_content)
 
+        # Load internal keycode mappings to check for existing keys
+        loader = KeycodeMappingLoader()
+        internal_mappings = loader.load_bundled().get("keycodes", {})
+
         def apply_adjustment(hex_c: str) -> str:
             if adjust_lightness is not None or adjust_saturation is not None:
                 return adjust_color(hex_c, adjust_lightness, adjust_saturation)
@@ -135,9 +140,26 @@ class ConfigGenerator:
         overrides = {}
         for item in metadata.get("custom_keycodes", []):
             if "name" in item and "shortName" in item:
+                # specific keycode already exists in internal mapping? skip it
+                if item["name"] in internal_mappings:
+                    continue
+
                 short_name = item["shortName"]
                 short_name = re.sub(r"\s+", " ", short_name).strip()
                 overrides[item["name"]] = short_name
+
+        # Also add USER## mappings for custom keycodes found in keybard file
+        # USER## -> @@KC_CUSTOM_NAME;
+        # Where ## is the index in the custom_keycodes list
+        for idx, item in enumerate(metadata.get("custom_keycodes", [])):
+            if "name" in item:
+                # Skip if original keycode is known AND overrides for it are skipped
+                # Check if the KEYCODE ITSELF was added to overrides
+                if item["name"] not in overrides:
+                    continue
+
+                user_key = f"USER{idx:02d}"
+                overrides[user_key] = f"@@{item['name']};"
 
         config_dict = {
             "layers": layers_config,

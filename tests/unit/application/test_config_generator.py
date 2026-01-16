@@ -29,18 +29,22 @@ class TestConfigGenerator:
         """
 
         result = generator.generate(content)
+        data = yaml.safe_load(result)
 
         # Check essential parts of YAML
-        assert "layers:" in result
+        assert "layers" in data
         # Check color conversion (Hue 0 -> Red #FF0000)
-        # Note: yaml dump quotes might vary, check content
-        assert "#ff0000" in result.lower()
-        assert "name: Red Layer" in result
+        assert data["layers"][0]["base_color"].lower() == "#ff0000"
+        assert data["layers"][0]["name"] == "Red Layer"
         # Label heuristic: "Red Layer".upper()[:4] -> "RED "
-        assert "label: RED" in result
+        assert data["layers"][0]["label"] == "RED"
 
-        assert "keycodes:" in result
-        assert "KC_CUSTOM: CST" in result
+        assert "keycodes" in data
+        assert data["keycodes"]["KC_CUSTOM"] == "CST"
+
+        # Verify USER mapping
+        assert "USER00" in data["keycodes"]
+        assert data["keycodes"]["USER00"] == "@@KC_CUSTOM;"
 
     def test_generate_with_qmk_colors(self):
         """Generate config with QMK colors."""
@@ -79,13 +83,13 @@ class TestConfigGenerator:
         content = """
         {
             "custom_keycodes": [
-                {"name": "KC_ENTER", "shortName": "En\\nter"},
-                {"name": "KC_SPACE", "shortName": "Spa  ce"}
+                {"name": "KC_CUSTOM_ENTER", "shortName": "En\\nter"},
+                {"name": "KC_CUSTOM_SPACE", "shortName": "Spa  ce"}
             ]
         }
         """
 
         result = generator.generate(content)
 
-        assert "KC_ENTER: En ter" in result
-        assert "KC_SPACE: Spa ce" in result
+        assert "KC_CUSTOM_ENTER: En ter" in result
+        assert "KC_CUSTOM_SPACE: Spa ce" in result
