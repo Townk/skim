@@ -5,8 +5,7 @@ keycode strings into human-readable labels suitable for display in keymap
 images. The transformer handles various QMK keycode formats including:
 
     - Basic keycodes (KC_A, KC_SPACE, KC_ENTER)
-    - Modifier functions (S(KC_A), C(KC_C), MEH(KC_X))
-    - Layer functions (MO(1), TG(2), LT(3,KC_SPACE))
+    - Macro functions (S(KC_A), MO(1), LT(1,KC_SPACE), LSFT_T(KC_A))
     - Alias references (@@KEYCODE;)
     - NerdFont icons (%%nf-md-icon;)
 
@@ -16,11 +15,14 @@ Example:
         transformer = KeycodeTransformer(
             keycodes={"KC_A": "A", "KC_SPACE": "Space"},
             reversed_alias={"LSFT(KC_1)": "@@KC_EXLM;"},
-            modifiers={"S": "@@MOD_SHIFT;"},
-            layer_symbols={"MO": "⬓", "TG": "⬔"},
+            macro_functions={
+                "S": "@@KC_LEFT_SHIFT; @0;",
+                "MO": "%%nf-md-layers_outline; #0;",
+            },
+            modifier_union={"MOD_LCTL": "@@KC_LEFT_CTRL;"},
         )
         label = transformer.transform("KC_A")  # Returns "A"
-        label = transformer.transform("MO(2)")  # Returns "⬓"
+        label = transformer.transform("MO(2)")  # Returns "󰧾 2"
 
     Batch transformation::
 
@@ -29,6 +31,8 @@ Example:
 """
 
 import re
+
+SEPARATOR_CHAR = "│"
 
 
 class KeycodeTransformer:
@@ -41,66 +45,50 @@ class KeycodeTransformer:
           corresponding labels, enabling label reuse and composition.
         - **Reversed alias mapping**: Converts modifier+key combinations to
           their alias forms (e.g., ``LSFT(KC_1)`` → ``KC_EXLM``).
-        - **Modifier functions**: Prefixes labels with modifier symbols for
-          ``S()``, ``C()``, ``A()``, ``G()``, ``MEH()``, ``HYPR()`` functions.
-        - **Layer functions**: Converts layer-switching keycodes (``MO()``,
-          ``TG()``, ``LT()``, etc.) to symbolic representations.
+        - **Macro functions**: Resolves function-style keycodes using templates
+          with placeholders for layer numbers (#N;), keycodes (@N;), and
+          separators (|;).
         - **NerdFont passthrough**: ``%%nf-CLASS;`` patterns are preserved
           for icon rendering in Typst.
 
     Attributes:
         _keycodes: Main keycode to label mapping dictionary.
         _reversed_alias: Keycode function pattern to alias mapping.
-        _modifiers: Modifier function name to prefix label mapping.
-        _layer_symbols: Layer function name to symbol mapping.
+        _macro_functions: Macro function templates with placeholders.
+        _modifier_union: Modifier bit to label mapping.
 
     Example:
         >>> transformer = KeycodeTransformer(
         ...     keycodes={"KC_A": "A", "KC_EXLM": "!"},
         ...     reversed_alias={"LSFT(KC_1)": "@@KC_EXLM;"},
-        ...     modifiers={"S": "Shift"},
-        ...     layer_symbols={"MO": "⬓"},
+        ...     macro_functions={"S": "@@KC_LEFT_SHIFT; @0;"},
+        ...     modifier_union={"MOD_LCTL": "@@KC_LEFT_CTRL;"},
         ... )
         >>> transformer.transform("KC_A")
         'A'
         >>> transformer.transform("LSFT(KC_1)")
         '!'
-        >>> transformer.transform("MO(2)")
-        '⬓'
     """
 
     def __init__(
         self,
         keycodes: dict[str, str],
         reversed_alias: dict[str, str],
-        modifiers: dict[str, str],
-        layer_symbols: dict[str, str],
+        macro_functions: dict[str, str],
+        modifier_union: dict[str, str],
     ) -> None:
-        """Initialize the keycode transformer with mapping dictionaries.
-
-        Args:
-            keycodes: Dictionary mapping QMK keycode names to display labels.
-                Example: {"KC_A": "A", "KC_SPACE": "Space"}
-            reversed_alias: Dictionary mapping keycode function patterns to
-                alias references. Example: {"LSFT(KC_1)": "@@KC_EXLM;"}
-            modifiers: Dictionary mapping modifier function names to their
-                display prefixes. Example: {"S": "@@MOD_SHIFT;", "C": "Ctrl"}
-            layer_symbols: Dictionary mapping layer function names to their
-                symbolic representations. Example: {"MO": "⬓", "TG": "⬔"}
-        """
         self._keycodes = keycodes
         self._reversed_alias = reversed_alias
-        self._modifiers = modifiers
-        self._layer_symbols = layer_symbols
+        self._macro_functions = macro_functions
+        self._modifier_union = modifier_union
 
     def transform(self, keycode: str) -> str:
         """Transform a single QMK keycode into a display label.
 
         Applies the full transformation pipeline:
-        1. Apply reversed alias mapping if applicable
-        2. Parse and handle modifier functions (S, C, A, G, MEH, HYPR)
-        3. Parse and handle layer functions (MO, TG, LT, etc.)
-        4. Resolve basic keycode lookup with alias expansion
+        1. Apply reversed alias mapping if applicable (MUST be first)
+        2. Parse and handle macro functions
+        3. Resolve basic keycode lookup with alias expansion
 
         Args:
             keycode: QMK keycode string to transform.
@@ -127,13 +115,9 @@ class KeycodeTransformer:
 
         keycode = self._apply_reversed_alias(keycode)
 
-        modifier_result = self._parse_modifier_function(keycode)
-        if modifier_result:
-            return modifier_result
-
-        layer_result = self._parse_layer_function(keycode)
-        if layer_result:
-            return layer_result
+        macro_result = self._parse_macro_function(keycode)
+        if macro_result is not None:
+            return macro_result
 
         return self._resolve_keycode(keycode)
 
@@ -181,7 +165,7 @@ class KeycodeTransformer:
         """
         layer_funcs = ["MO", "LM", "LT", "OSL", "TG", "TO", "TT", "DF", "PDF"]
 
-        match = re.match(r"^([A-Z]+)\(([^,)]+)(?:,.*)?\)$", keycode)
+        match = re.match(r"^([A-Z0-9_]+)\(([^,)]+)(?:,.*)?\)$", keycode)
         if match:
             func_name = match.group(1)
             if func_name in layer_funcs:
@@ -189,105 +173,121 @@ class KeycodeTransformer:
         return None
 
     def _apply_reversed_alias(self, keycode: str) -> str:
-        """Apply reversed alias mapping as the first transformation step.
-
-        Checks if the keycode has a reversed alias mapping (e.g.,
-        LSFT(KC_1) -> @@KC_EXLM;) and applies it before further processing.
-
-        Args:
-            keycode: Original keycode string.
-
-        Returns:
-            Resolved keycode if an alias was found, original otherwise.
-        """
         if keycode in self._reversed_alias:
             alias_target = self._reversed_alias[keycode]
             return self._resolve_aliases_in_label(alias_target, set())
         return keycode
 
-    def _parse_modifier_function(self, keycode: str) -> str | None:
-        """Parse modifier functions like S(KC_A), MEH(KC_B), etc.
+    def _parse_macro_function(self, keycode: str) -> str | None:
+        """Parse macro functions and resolve their templates.
 
-        Handles QMK modifier wrapper functions by extracting the modifier
-        prefix and recursively transforming the inner keycode.
-
-        Args:
-            keycode: Keycode string that may contain a modifier function.
-
-        Returns:
-            Combined "modifier inner_label" string if this is a modifier
-            function, None if not a modifier function.
-
-        Example:
-            Input: "S(KC_A)" with modifiers={"S": "Shift"}
-            Output: "Shift A"
+        Handles all QMK function-style keycodes by:
+        1. Extracting function name and arguments
+        2. Looking up the template in macro_functions
+        3. Resolving placeholders (#N; for layers, @N; for keycodes, |; for separator)
+        4. Recursively resolving the result
         """
-        match = re.match(r"^([A-Z]+)\((.+)\)$", keycode)
+        match = re.match(r"^([A-Z0-9_]+)\((.+)\)$", keycode)
         if not match:
             return None
 
         func_name = match.group(1)
-        inner_keycode = match.group(2)
+        args_str = match.group(2)
 
-        if func_name not in self._modifiers:
+        if func_name not in self._macro_functions:
             return None
 
-        modifier_prefix = self._modifiers[func_name]
-        modifier_label = self._resolve_aliases_in_label(modifier_prefix, set())
+        template = self._macro_functions[func_name]
+        args = self._parse_function_arguments(args_str)
 
-        inner_label = self.transform(inner_keycode)
+        resolved = self._resolve_template_placeholders(template, args)
 
-        return f"{modifier_label} {inner_label}"
+        return self._resolve_aliases_in_label(resolved, set())
 
-    def _parse_layer_function(self, keycode: str) -> str | None:
-        """Parse layer functions like MO(2), TG(3), LT(2,KC_SPACE), etc.
+    def _parse_function_arguments(self, args_str: str) -> list[str]:
+        args = []
+        current = []
+        depth = 0
 
-        Converts layer-switching keycodes to their symbolic representation
-        from the layer_symbols mapping.
+        for char in args_str:
+            if char == "(":
+                depth += 1
+                current.append(char)
+            elif char == ")":
+                depth -= 1
+                current.append(char)
+            elif char == "," and depth == 0:
+                args.append("".join(current).strip())
+                current = []
+            else:
+                current.append(char)
 
-        Args:
-            keycode: Keycode string that may contain a layer function.
+        if current:
+            args.append("".join(current).strip())
 
-        Returns:
-            Layer symbol string if this is a recognized layer function,
-            None if not a layer function.
+        return args
 
-        Example:
-            Input: "MO(2)" with layer_symbols={"MO": "⬓"}
-            Output: "⬓"
-        """
-        match = re.match(r"^([A-Z]+)\(([^,)]+)(?:,.*)?\)$", keycode)
-        if match:
-            func_name = match.group(1)
+    def _resolve_template_placeholders(self, template: str, args: list[str]) -> str:
+        result = template
 
-            if func_name in self._layer_symbols:
-                return self._layer_symbols[func_name]
+        result = result.replace("|;", SEPARATOR_CHAR)
 
-        return None
+        result = re.sub(
+            r"#(\d+);",
+            lambda m: self._resolve_layer_argument(args, int(m.group(1))),
+            result,
+        )
+
+        result = re.sub(
+            r"@(\d+);",
+            lambda m: self._resolve_keycode_argument(args, int(m.group(1))),
+            result,
+        )
+
+        return result
+
+    def _resolve_layer_argument(self, args: list[str], index: int) -> str:
+        if index >= len(args):
+            return ""
+
+        arg = args[index]
+        if arg.isdigit():
+            return str(int(arg) + 1)
+        return arg
+
+    def _resolve_keycode_argument(self, args: list[str], index: int) -> str:
+        if index >= len(args):
+            return ""
+
+        arg = args[index]
+
+        if arg in self._keycodes:
+            return self._resolve_keycode(arg)
+
+        if self._is_modifier_union(arg):
+            return self._resolve_modifier_union(arg)
+
+        return self.transform(arg)
+
+    def _is_modifier_union(self, arg: str) -> bool:
+        return arg.startswith("MOD_") or "|" in arg and "MOD_" in arg
+
+    def _resolve_modifier_union(self, arg: str) -> str:
+        parts = arg.split("|")
+        resolved_parts = []
+
+        for part in parts:
+            part = part.strip()
+            if part in self._modifier_union:
+                label = self._modifier_union[part]
+                resolved = self._resolve_aliases_in_label(label, set())
+                resolved_parts.append(resolved)
+            else:
+                resolved_parts.append(part)
+
+        return " ".join(resolved_parts)
 
     def _resolve_keycode(self, keycode: str, visited: set | None = None) -> str:
-        """Recursively resolve a keycode to its final display label.
-
-        Looks up the keycode in the keycodes dictionary and resolves any
-        alias references (@@KEYCODE;) found in the label. Tracks visited
-        keycodes to detect and prevent circular references.
-
-        Args:
-            keycode: Keycode or alias to resolve.
-            visited: Set of already-visited keycodes for cycle detection.
-
-        Returns:
-            Final resolved display label. Returns the original keycode
-            if no mapping is found.
-
-        Raises:
-            ValueError: If a circular alias reference is detected.
-
-        Example:
-            >>> # With keycodes={"KC_A": "A", "MY_KEY": "@@KC_A;"}
-            >>> transformer._resolve_keycode("MY_KEY")
-            'A'
-        """
         if visited is None:
             visited = set()
 
@@ -301,7 +301,7 @@ class KeycodeTransformer:
 
         label = self._keycodes[keycode]
 
-        if not self._contains_alias(label):
+        if "@@" not in label:
             return label
 
         visited.add(keycode)
@@ -310,30 +310,7 @@ class KeycodeTransformer:
 
         return resolved_label
 
-    def _contains_alias(self, label: str) -> bool:
-        """Check if a label string contains alias references.
-
-        Args:
-            label: Label string to check.
-
-        Returns:
-            True if the label contains ``@@KEYCODE;`` patterns.
-        """
-        return "@@" in label
-
     def _resolve_aliases_in_label(self, label: str, visited: set) -> str:
-        """Resolve all alias references in a label string.
-
-        Finds all ``@@KEYCODE;`` patterns in the label and replaces them
-        with their resolved labels.
-
-        Args:
-            label: Label string potentially containing aliases.
-            visited: Set of visited keycodes for cycle detection.
-
-        Returns:
-            Label with all aliases resolved to their final values.
-        """
         pattern = r"@@([A-Z0-9_]+);"
 
         def replace_alias(match: re.Match) -> str:

@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for QMK hold-tap keys (e.g., `LT(1, KC_SPC)`, `LSFT_T(KC_A)`).
+- Support for complex macro functions via `macro_functions` mapping.
+- Support for modifier union arguments (e.g., `OSM(MOD_LCTL|MOD_LSFT)`).
+
 ### Changed
 
+- Refactored keycode transformer to use a unified, data-driven pipeline for
+  resolving all function-style keycodes (modifiers, layers, macros).
 - Modified the release workflow to call the publish workflow directly to
   guarantee PyPI always receives a new release version when there is one.
 

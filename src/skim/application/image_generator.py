@@ -234,8 +234,8 @@ class ImageGenerator:
         transformer = KeycodeTransformer(
             mappings["keycodes"],
             mappings["reversed_alias"],
-            mappings["modifiers"],
-            mappings["layer_symbols"],
+            mappings["macro_functions"],
+            mappings["modifier_union"],
         )
 
         layer_id_to_index = {}

@@ -68,8 +68,8 @@ class TestImageGenerator:
             mock_loader.load_bundled.return_value = {
                 "keycodes": {},
                 "reversed_alias": {},
-                "modifiers": {},
-                "layer_symbols": {},
+                "macro_functions": {},
+                "modifier_union": {},
             }
 
             mock_transformer = MagicMock()

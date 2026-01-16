@@ -1,8 +1,5 @@
-# keycode-mapping Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change setup-initial-specs. Update Purpose after archive.
-## Requirements
 ### Requirement: Mapping File Structure
 The application SHALL support a YAML-based mapping file to define how QMK keycodes are translated into display labels.
 
@@ -62,22 +59,3 @@ The application SHALL support a YAML-based mapping file to define how QMK keycod
 #### Scenario: Unknown macro function
 - **WHEN** a keycode uses a function pattern not defined in `macro_functions`
 - **THEN** the keycode is returned as-is without transformation.
-
-### Requirement: User Overrides
-The application SHALL allow users to extend or override the default keycode mappings via configuration.
-
-#### Scenario: Custom keycode definition
-- **WHEN** the user provides a custom configuration with `keycodes` definitions
-- **THEN** these definitions take precedence over the built-in default mappings.
-
-#### Scenario: Custom reversed alias definition
-- **WHEN** the user provides a custom configuration with `reversed_alias` definitions
-- **THEN** these definitions are merged with or override the default reversed aliases.
-
-### Requirement: Default Mapping
-The application SHALL provide a built-in default mapping covering standard QMK keycodes.
-
-#### Scenario: Fallback behavior
-- **WHEN** a custom mapping file is not provided
-- **THEN** the application loads the internal default mapping.
-

@@ -7,8 +7,8 @@ are translated to human-readable labels for display in keymap images.
 The mapping files contain several dictionaries:
     - ``keycodes``: Direct keycode to label mappings (e.g., "KC_A" -> "A")
     - ``reversed_alias``: Function patterns to alias keycodes (e.g., "LSFT(KC_1)" -> "KC_EXLM")
-    - ``modifiers``: Modifier function prefixes (e.g., "S" -> "Shift")
-    - ``layer_symbols``: Layer function symbols (e.g., "MO" -> "⬓")
+    - ``macro_functions``: Macro function templates with placeholders (e.g., "LT" -> "%%nf-md-layers_outline; #0;|;@1;")
+    - ``modifier_union``: Modifier bit mappings (e.g., "MOD_LCTL" -> "@@KC_LEFT_CTRL;")
 
 Example:
     Loading and using keycode mappings::
@@ -18,7 +18,7 @@ Example:
 
         # Access individual mapping dictionaries
         keycodes = mappings["keycodes"]
-        modifiers = mappings["modifiers"]
+        macro_functions = mappings["macro_functions"]
 
     Merging custom mappings with bundled defaults::
 
@@ -47,16 +47,16 @@ class KeycodeMappingLoader:
         >>> mappings = loader.load_bundled()
         >>> mappings["keycodes"]["KC_A"]
         'A'
-        >>> mappings["modifiers"]["S"]
-        '%%nf-md-apple_keyboard_shift;'
+        >>> mappings["macro_functions"]["S"]
+        '@@KC_LEFT_SHIFT; @0;'
     """
 
     def load_bundled(self) -> dict[str, Any]:
         """Load the bundled default keycode mappings.
 
         Returns:
-            Dictionary containing 'keycodes', 'reversed_alias', 'modifiers',
-            and 'layer_symbols' mapping dictionaries.
+            Dictionary containing 'keycodes', 'reversed_alias', 'macro_functions',
+            and 'modifier_union' mapping dictionaries.
 
         Raises:
             FileNotFoundError: If the bundled mapping file is missing.
@@ -112,7 +112,7 @@ class KeycodeMappingLoader:
         Example:
             >>> loader = KeycodeMappingLoader()
             >>> base = loader.load_bundled()
-            >>> custom = {"keycodes": {"KC_A": "Custom A"}, "modifiers": {}}
+            >>> custom = {"keycodes": {"KC_A": "Custom A"}}
             >>> merged = loader.merge_mappings(base, custom)
             >>> merged["keycodes"]["KC_A"]
             'Custom A'
@@ -123,10 +123,11 @@ class KeycodeMappingLoader:
                 **base.get("reversed_alias", {}),
                 **override.get("reversed_alias", {}),
             },
-            "modifiers": {**base.get("modifiers", {}), **override.get("modifiers", {})},
-            "layer_symbols": {
-                **base.get("layer_symbols", {}),
-                **override.get("layer_symbols", {}),
+            "macro_functions": {
+                **base.get("macro_functions", {}),
+            },
+            "modifier_union": {
+                **base.get("modifier_union", {}),
             },
         }
         return result

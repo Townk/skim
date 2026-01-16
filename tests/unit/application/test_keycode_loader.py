@@ -11,8 +11,8 @@ class TestKeycodeMappingLoader:
         assert mappings is not None
         assert "keycodes" in mappings
         assert "reversed_alias" in mappings
-        assert "modifiers" in mappings
-        assert "layer_symbols" in mappings
+        assert "macro_functions" in mappings
+        assert "modifier_union" in mappings
 
     def test_keycodes_contain_expected_entries(self):
         loader = KeycodeMappingLoader()
@@ -23,24 +23,26 @@ class TestKeycodeMappingLoader:
         assert keycodes["KC_A"] == "A"
         assert "KC_ENTER" in keycodes
 
-    def test_modifiers_contain_expected_entries(self):
+    def test_macro_functions_contain_expected_entries(self):
         loader = KeycodeMappingLoader()
         mappings = loader.load_bundled()
 
-        modifiers = mappings["modifiers"]
-        assert "S" in modifiers
-        assert "C" in modifiers
-        assert "A" in modifiers
-        assert "G" in modifiers
+        macro_functions = mappings["macro_functions"]
+        assert "S" in macro_functions
+        assert "C" in macro_functions
+        assert "MO" in macro_functions
+        assert "LT" in macro_functions
+        assert "LSFT_T" in macro_functions
 
-    def test_layer_symbols_contain_expected_entries(self):
+    def test_modifier_union_contain_expected_entries(self):
         loader = KeycodeMappingLoader()
         mappings = loader.load_bundled()
 
-        layer_symbols = mappings["layer_symbols"]
-        assert "MO" in layer_symbols
-        assert "TG" in layer_symbols
-        assert "DF" in layer_symbols
+        modifier_union = mappings["modifier_union"]
+        assert "MOD_LCTL" in modifier_union
+        assert "MOD_LSFT" in modifier_union
+        assert "MOD_LALT" in modifier_union
+        assert "MOD_LGUI" in modifier_union
 
     def test_reversed_alias_entries(self):
         loader = KeycodeMappingLoader()
@@ -55,8 +57,8 @@ class TestKeycodeMappingLoader:
 keycodes:
   CUSTOM_KEY: "CUSTOM"
 reversed_alias: {}
-modifiers: {}
-layer_symbols: {}
+macro_functions: {}
+modifier_union: {}
 """)
 
         loader = KeycodeMappingLoader()
@@ -72,8 +74,6 @@ keycodes:
   KC_A: "CustomA"
   CUSTOM_KEY: "CUSTOM"
 reversed_alias: {}
-modifiers: {}
-layer_symbols: {}
 """)
 
         loader = KeycodeMappingLoader()
@@ -84,3 +84,20 @@ layer_symbols: {}
         assert merged["keycodes"]["KC_A"] == "CustomA"
         assert merged["keycodes"]["CUSTOM_KEY"] == "CUSTOM"
         assert "KC_B" in merged["keycodes"]
+
+    def test_merge_does_not_override_macro_functions(self, tmp_path):
+        custom_yaml = tmp_path / "custom.yaml"
+        custom_yaml.write_text("""
+keycodes:
+  KC_A: "CustomA"
+macro_functions:
+  CUSTOM_FUNC: "custom template"
+""")
+
+        loader = KeycodeMappingLoader()
+        bundled = loader.load_bundled()
+        custom = loader.load_from_file(custom_yaml)
+        merged = loader.merge_mappings(bundled, custom)
+
+        assert "MO" in merged["macro_functions"]
+        assert "CUSTOM_FUNC" not in merged["macro_functions"]

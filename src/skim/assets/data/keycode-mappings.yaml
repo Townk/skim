@@ -87,22 +87,82 @@ keycodes:
   KC_KP_9: "9"
 
   # Mouse buttons
-  KC_BTN1: "L %%nf-md-cursor_default_click;"
-  KC_MS_BTN1: "L %%nf-md-cursor_default_click;"
-  KC_BTN2: "R %%nf-md-cursor_default_click;"
-  KC_MS_BTN2: "R %%nf-md-cursor_default_click;"
-  KC_BTN3: "M %%nf-md-cursor_default_click;"
-  KC_MS_BTN3: "M %%nf-md-cursor_default_click;"
-  KC_BTN4: "4 %%nf-md-cursor_default_click;"
-  KC_MS_BTN4: "4 %%nf-md-cursor_default_click;"
-  KC_BTN5: "5 %%nf-md-cursor_default_click;"
-  KC_MS_BTN5: "5 %%nf-md-cursor_default_click;"
-  KC_BTN6: "6 %%nf-md-cursor_default_click;"
-  KC_MS_BTN6: "6 %%nf-md-cursor_default_click;"
-  KC_BTN7: "7 %%nf-md-cursor_default_click;"
-  KC_MS_BTN7: "7 %%nf-md-cursor_default_click;"
-  KC_BTN8: "8 %%nf-md-cursor_default_click;"
-  KC_MS_BTN8: "8 %%nf-md-cursor_default_click;"
+  QK_MOUSE_BUTTON_1: "L %%nf-md-cursor_default_click;"
+  QK_MOUSE_BUTTON_2: "R %%nf-md-cursor_default_click;"
+  QK_MOUSE_BUTTON_3: "M %%nf-md-cursor_default_click;"
+  QK_MOUSE_BUTTON_4: "4 %%nf-md-cursor_default_click;"
+  QK_MOUSE_BUTTON_5: "5 %%nf-md-cursor_default_click;"
+  QK_MOUSE_BUTTON_6: "6 %%nf-md-cursor_default_click;"
+  QK_MOUSE_BUTTON_7: "7 %%nf-md-cursor_default_click;"
+  QK_MOUSE_BUTTON_8: "8 %%nf-md-cursor_default_click;"
+  MS_BTN1: "@@QK_MOUSE_BUTTON_1;"
+  MS_BTN2: "@@QK_MOUSE_BUTTON_2;"
+  MS_BTN3: "@@QK_MOUSE_BUTTON_3;"
+  MS_BTN4: "@@QK_MOUSE_BUTTON_4;"
+  MS_BTN5: "@@QK_MOUSE_BUTTON_5;"
+  MS_BTN6: "@@QK_MOUSE_BUTTON_6;"
+  MS_BTN7: "@@QK_MOUSE_BUTTON_7;"
+  MS_BTN8: "@@QK_MOUSE_BUTTON_8;"
+  KC_MS_BTN1: "@@QK_MOUSE_BUTTON_1;"
+  KC_MS_BTN2: "@@QK_MOUSE_BUTTON_2;"
+  KC_MS_BTN3: "@@QK_MOUSE_BUTTON_3;"
+  KC_MS_BTN4: "@@QK_MOUSE_BUTTON_4;"
+  KC_MS_BTN5: "@@QK_MOUSE_BUTTON_5;"
+  KC_MS_BTN6: "@@QK_MOUSE_BUTTON_6;"
+  KC_MS_BTN7: "@@QK_MOUSE_BUTTON_7;"
+  KC_MS_BTN8: "@@QK_MOUSE_BUTTON_8;"
+  KC_BTN1: "@@QK_MOUSE_BUTTON_1;"
+  KC_BTN2: "@@QK_MOUSE_BUTTON_2;"
+  KC_BTN3: "@@QK_MOUSE_BUTTON_3;"
+  KC_BTN4: "@@QK_MOUSE_BUTTON_4;"
+  KC_BTN5: "@@QK_MOUSE_BUTTON_5;"
+  KC_BTN6: "@@QK_MOUSE_BUTTON_6;"
+  KC_BTN7: "@@QK_MOUSE_BUTTON_7;"
+  KC_BTN8: "@@QK_MOUSE_BUTTON_8;"
+  QK_MOUSE_CURSOR_UP: "%%nf-md-mouse;%%nf-fa-arrow_up;"
+  QK_MOUSE_CURSOR_DOWN: "%%nf-md-mouse;%%nf-fa-arrow_down;"
+  QK_MOUSE_CURSOR_LEFT: "%%nf-md-mouse;%%nf-fa-arrow_left;"
+  QK_MOUSE_CURSOR_RIGHT: "%%nf-md-mouse;%%nf-fa-arrow_right;"
+  MS_UP: "@@QK_MOUSE_CURSOR_UP;"
+  MS_DOWN: "@@QK_MOUSE_CURSOR_DOWN;"
+  MS_LEFT: "@@QK_MOUSE_CURSOR_LEFT;"
+  MS_RIGHT: "@@QK_MOUSE_CURSOR_RIGHT;"
+  KC_MS_UP: "@@QK_MOUSE_CURSOR_UP;"
+  KC_MS_DOWN: "@@QK_MOUSE_CURSOR_DOWN;"
+  KC_MS_LEFT: "@@QK_MOUSE_CURSOR_LEFT;"
+  KC_MS_RIGHT: "@@QK_MOUSE_CURSOR_RIGHT;"
+  KC_MS_U: "@@QK_MOUSE_CURSOR_UP;"
+  KC_MS_D: "@@QK_MOUSE_CURSOR_DOWN;"
+  KC_MS_L: "@@QK_MOUSE_CURSOR_LEFT;"
+  KC_MS_R: "@@QK_MOUSE_CURSOR_RIGHT;"
+  QK_MOUSE_WHEEL_UP: "%%nf-md-chevron_triple_up;"
+  QK_MOUSE_WHEEL_DOWN: "%%nf-md-chevron_triple_down;"
+  QK_MOUSE_WHEEL_LEFT: "%%nf-md-chevron_triple_left;"
+  QK_MOUSE_WHEEL_RIGHT: "%%nf-md-chevron_triple_right;"
+  MS_WHLU: "@@QK_MOUSE_WHEEL_UP;"
+  MS_WHLD: "@@QK_MOUSE_WHEEL_DOWN;"
+  MS_WHLL: "@@QK_MOUSE_WHEEL_LEFT;"
+  MS_WHLR: "@@QK_MOUSE_WHEEL_RIGHT;"
+  KC_MS_WH_UP: "@@QK_MOUSE_WHEEL_UP;"
+  KC_MS_WH_DOWN: "@@QK_MOUSE_WHEEL_DOWN;"
+  KC_MS_WH_LEFT: "@@QK_MOUSE_WHEEL_LEFT;"
+  KC_MS_WH_RIGHT: "@@QK_MOUSE_WHEEL_RIGHT;"
+  KC_WH_U: "@@QK_MOUSE_WHEEL_UP;"
+  KC_WH_D: "@@QK_MOUSE_WHEEL_DOWN;"
+  KC_WH_L: "@@QK_MOUSE_WHEEL_LEFT;"
+  KC_WH_R: "@@QK_MOUSE_WHEEL_RIGHT;"
+  QK_MOUSE_ACCELERATION_0: "%%nf-md-speedometer_slow;"
+  QK_MOUSE_ACCELERATION_1: "%%nf-md-speedometer_medium;"
+  QK_MOUSE_ACCELERATION_2: "%%nf-md-speedometer;"
+  MS_ACL0: "@@QK_MOUSE_ACCELERATION_0;"
+  MS_ACL1: "@@QK_MOUSE_ACCELERATION_1;"
+  MS_ACL2: "@@QK_MOUSE_ACCELERATION_2;"
+  KC_MS_ACCEL0: "@@QK_MOUSE_ACCELERATION_0;"
+  KC_MS_ACCEL1: "@@QK_MOUSE_ACCELERATION_1;"
+  KC_MS_ACCEL2: "@@QK_MOUSE_ACCELERATION_2;"
+  KC_ACCEL0: "@@QK_MOUSE_ACCELERATION_0;"
+  KC_ACCEL1: "@@QK_MOUSE_ACCELERATION_1;"
+  KC_ACCEL2: "@@QK_MOUSE_ACCELERATION_2;"
 
   # Punctuation and symbols
   KC_ENTER: "%%nf-md-keyboard_return;"
@@ -152,6 +212,7 @@ keycodes:
   KC_SCRL: "@@KC_SCROLL_LOCK;"
   KC_NUM_LOC: "NumLK"
   KC_NUM: "@@KC_NUM_LOC;"
+  KC_NUMLOCK: "@@KC_NUM_LOC;"
   KC_LOCKING_CAPS_LOCK: "LKCaps"
   KC_LCAP: "@@KC_LOCKING_CAPS_LOCK;"
   KC_LOCKING_NUM_LOCK: "LKNum"
@@ -339,6 +400,7 @@ keycodes:
   # Special keys
   KC_NO: ""
   XXXXXXX: "@@KC_NO;"
+  QK_BASIC_MAX: "@@KC_NO;"
   KC_TRANSPARENT: ""
   KC_TRNS: "@@KC_TRANSPARENT;"
   _______: "@@KC_TRANSPARENT;"
@@ -405,18 +467,29 @@ keycodes:
   USER04: "@@SV_LEFT_SCROLL_TOGGLE;"
   SV_RIGHT_SCROLL_TOGGLE: "R %%nf-md-mouse_move_vertical;%%nf-md-toggle_switch_off_outline;"
   USER05: "@@SV_RIGHT_SCROLL_TOGGLE;"
+  SV_RECALIBRATE_POINTER: "%%nf-md-tune_vertical;%%nf-fa-arrow_pointer;"
+  USER06: "@@SV_RECALIBRATE_POINTER;"
+  SV_MH_CHANGE_TIMEOUTS: "%%nf-md-mouse;%%nf-weather-time_9;"
+  USER07: "@@SV_MH_CHANGE_TIMEOUTS;"
   SV_CAPS_WORD: "@@KC_CAPS; W"
   USER08: "@@SV_CAPS_WORD;"
   SV_AXIS_SCROLL_LOCK: "%%nf-md-mouse_move_vertical;%%nf-oct-lock;"
   USER09: "@@SV_AXIS_SCROLL_LOCK;"
-  SV_OUTPUT_STATUS: "%%nf-oct-log;"
-  USER17: "@@SV_OUTPUT_STATUS;"
   SV_SNIPER_2: "%%nf-md-crosshairs;2"
   USER12: "@@SV_SNIPER_2;"
   SV_SNIPER_3: "%%nf-md-crosshairs;3"
   USER13: "@@SV_SNIPER_3;"
   SV_SNIPER_5: "%%nf-md-crosshairs;5"
   USER14: "@@SV_SNIPER_5;"
+  SV_SCROLL_HOLD: "%%nf-oct-pin;%%nf-md-mouse_move_vertical;"
+  USER15: "@@SV_SCROLL_HOLD;"
+  SV_SCROLL_TOGGLE: "%%nf-md-mouse_move_vertical;%%nf-md-toggle_switch_off_outline;"
+  USER16: "@@SV_SCROLL_TOGGLE;"
+  SV_OUTPUT_STATUS: "%%nf-oct-log;"
+  USER17: "@@SV_OUTPUT_STATUS;"
+  SV_TOGGLE_AUTOMOUSE: "%%nf-md-mouse;"
+  USER18: "@@SV_TOGGLE_AUTOMOUSE;"
+
 
 # This entry is used to do a first pass on keymaps from Vial and Keybard which
 # resolve the QMK alias keycode into the combo keycodes it outputs like
@@ -447,56 +520,194 @@ reversed_alias:
   "LSFT(KC_COMMA)": "@@KC_LABK;"
   "LSFT(KC_DOT)": "@@KC_RABK;"
   "LSFT(KC_SLASH)": "@@KC_QUES;"
+  "LSFT(KC_TAB)": "%%nf-md-keyboard_tab_reverse;"
 
-## This entry is to resolve modifier functions on QMK like `S(KEYCODE)`
-modifiers:
-  S: "@@KC_LEFT_SHIFT;"
-  C: "@@KC_LEFT_CTRL;"
-  A: "@@KC_LEFT_ALT;"
-  G: "@@KC_LEFT_GUI;"
-  ALGR: "@@KC_LEFT_ALT;"
-  HYPR: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI;"
-  MEH: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT;"
-  LSFT: "@@KC_LEFT_SHIFT;"
-  LCTL: "@@KC_LEFT_CTRL;"
-  LALT: "@@KC_LEFT_ALT;"
-  LOPT: "@@KC_LEFT_ALT;"
-  LGUI: "@@KC_LEFT_GUI;"
-  LCMD: "@@KC_LEFT_GUI;"
-  LWIN: "@@KC_LEFT_GUI;"
-  RSFT: "@@KC_RIGHT_SHIFT;"
-  RCTL: "@@KC_RIGHT_CTRL;"
-  RALT: "@@KC_RIGHT_ALT;"
-  ROPT: "@@KC_RIGHT_ALT;"
-  RGUI: "@@KC_RIGHT_GUI;"
-  RCMD: "@@KC_RIGHT_GUI;"
-  RWIN: "@@KC_RIGHT_GUI;"
-  LSA: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT;"
-  LAG: "@@KC_LEFT_ALT; @@KC_LEFT_GUI;"
-  LSG: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI;"
-  LCG: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI;"
-  RSA: "@@KC_RIGHT_SHIFT; @@KC_RIGHT_ALT;"
-  RAG: "@@KC_RIGHT_ALT; @@KC_RIGHT_GUI;"
-  RSG: "@@KC_RIGHT_SHIFT; @@KC_RIGHT_GUI;"
-  RCG: "@@KC_RIGHT_CTRL; @@KC_RIGHT_GUI;"
-  LCA: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT;"
-  RCS: "@@KC_RIGHT_CTRL; @@KC_RIGHT_SHIFT;"
-  LCAG: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT;"
-  SAGR: "@@KC_RIGHT_SHIFT; @@KC_RIGHT_ALT;"
-  SGUI: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI;"
-  SCMD: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI;"
-  SWIN: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI;"
 
-# Mapping of symbols to be used as key labels when a key is defined to one of
-# the layer activation keycodes.
-layer_symbols:
-  DF: "%%nf-md-layers;"
-  PDF: "%%nf-md-layers;"
-  MO: "%%nf-md-layers_outline;"
-  LM: "%%nf-md-layers_outline;"
-  LT: "%%nf-md-layers_outline;"
-  OSL: "%%nf-md-layers_outline;"
-  TG: "%%nf-md-layers_plus;"
-  TO: "%%nf-md-layers_edit;"
-  TT: "%%nf-md-layers;"
+# Mapping to help resolve macro functions arguments that are modifier bits. The
+# `modifier_union` specification is:
+#
+#   MOD_BITS := MOD |
+#               MOD "|" MOD_BITS
+#   MOD := `modifier_union` key
+#
+# In summary, it can be one or more of the keys in this mapping separated by a
+# pipe ("|") character.
+modifier_union:
+  MOD_LCTL: "@@KC_LEFT_CTRL;"
+  MOD_LSFT: "@@KC_LEFT_SHIFT;"
+  MOD_LALT: "@@KC_LEFT_ALT;"
+  MOD_LGUI: "@@KC_LEFT_GUI;"
+  MOD_RCTL: "@@KC_RIGHT_CTRL;"
+  MOD_RSFT: "@@KC_RIGHT_SHIFT;"
+  MOD_RALT: "@@KC_RIGHT_ALT;"
+  MOD_RGUI: "@@KC_RIGHT_GUI;"
+  MOD_HYPR: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI;"
+  MOD_MEH: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT;"
 
+# The macro_functions mapping describe how keys that are defined by macro
+# functions should be displayed. This function can be any kind of macro
+# function, from tap-hold to one-shot keys.
+#
+# In the QMK mapping, these macro functions always have the same format:
+#
+#   FUNC_NAME(COMMA_SEPARATED_ARGS)
+#
+# Args in a macro function can be one of three types:
+#
+# 1. A standard keycode - defined in the `keycodes` mapping in this file.
+# 2. A modifier union - one or more modifiers separated by a `|` character.
+# 3. Other macro function - this is resolved recursively.
+#
+# The syntax to describe a macro function is the same as the keycode mapping:
+#
+#   FUNC_NAME: "a string representing the key label"
+#
+# Like the `keycodes` mapping, the `macro_functions` mapping have special
+# placeholder that are resolved before anything. These placeholders are:
+#
+# - ` |; ` (separator) - Resolved to the separator character. This is useful to
+#   distinguish between different behaviors the key have.
+# - `#N;` (layer arg) - Resolved to a layer number, even when is a layer ID. `N`
+#   is the argument index for the function, so `#0;` will resolve by calling the
+#   layer ID resolution and passing the first argument of the macro function to
+#   it.
+# - `@N;` (keycode arg) - Resolved by checking if the arg is an entry in the
+#   `keycodes` map and using its value if it is. If it is not, try to resolve it
+#   as a `modifier_union` and using the result if it is. If the previous two
+#   resolutins failed, pass the argument as is to the standard keycode
+#   resolution to allow skim to recursively resolve other macro functions and
+#   special cases.
+#
+# When resolving a macro function, skim will first get the content of the
+# `macro_functions` mapping that represents the function being resolved. Then
+# it resolves any argument in the string. Onece that part is done, it will send
+# the resolved string to the standard keymap resolution function.
+#
+# For instance, assume the following mapping:
+#
+#   LT: "%%nf-md-layers_outline; #0; |; @1;"
+#
+# Now, when the keycode transformer finds the keycode `LT(_NAV, LSFT(KC_1))`, it
+# will resolve it to: "󰧾 2│!".
+#
+# The argument 0 is resolved to the NerdFont symbol "󰧾" followed by a space and
+# a layer number (which, in this example, is the second layer defined that has
+# the ID `_NAV` representing it).
+#
+# Then the transformer adds a separator "│", followed by the standard label
+# resolution for the `LSFT(KC_1)` keycode, which first gets replaced by
+# `@@KC_EXLM;` due to the `reversed_alias` entry, and since the label is not
+# fully resolved, it recursively resolve the transformed keycode into `!`.
+macro_functions:
+  C: "@@KC_LEFT_CTRL; @0;"
+  S: "@@KC_LEFT_SHIFT; @0;"
+  A: "@@KC_LEFT_ALT; @0;"
+  G: "@@KC_LEFT_GUI; @0;"
+  LCTL: "@@KC_LEFT_CTRL; @0;"
+  LSFT: "@@KC_LEFT_SHIFT; @0;"
+  LALT: "@@KC_LEFT_ALT; @0;"
+  LOPT: "@@KC_LEFT_ALT; @0;"
+  LGUI: "@@KC_LEFT_GUI; @0;"
+  LCMD: "@@KC_LEFT_GUI; @0;"
+  LWIN: "@@KC_LEFT_GUI; @0;"
+  LCS: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @0;"
+  LCA: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; @0;"
+  LCG: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @0;"
+  LSA: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @0;"
+  LSG: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI; @0;"
+  LAG: "@@KC_LEFT_ALT; @@KC_LEFT_GUI; @0;"
+  LCSG: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_GUI; @0;"
+  LCAG: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; @@KC_LEFT_GUI; @0;"
+  LSAG: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI; @0;"
+  RCTL: "@@KC_RIGHT_CTRL; @0;"
+  RSFT: "@@KC_RIGHT_SHIFT; @0;"
+  RALT: "@@KC_RIGHT_ALT; @0;"
+  ROPT: "@@KC_RIGHT_ALT; @0;"
+  ALGR: "@@KC_RIGHT_ALT; @0;"
+  RGUI: "@@KC_RIGHT_GUI; @0;"
+  RCMD: "@@KC_RIGHT_GUI; @0;"
+  RWIN: "@@KC_RIGHT_GUI; @0;"
+  RCS: "@@KC_RIGHT_CTRL; @@KC_RIGHT_SHIFT; @0;"
+  RCA: "@@KC_RIGHT_CTRL; @@KC_RIGHT_ALT; @0;"
+  RCG: "@@KC_RIGHT_CTRL; @@KC_RIGHT_GUI; @0;"
+  RSA: "@@KC_RIGHT_SHIFT; @@KC_RIGHT_ALT; @0;"
+  RSG: "@@KC_RIGHT_SHIFT; @@KC_RIGHT_GUI; @0;"
+  RAG: "@@KC_RIGHT_ALT; @@KC_RIGHT_GUI; @0;"
+  RCSG: "@@KC_RIGHT_CTRL; @@KC_RIGHT_SHIFT; @@KC_RIGHT_GUI; @0;"
+  RCAG: "@@KC_RIGHT_CTRL; @@KC_RIGHT_ALT; @@KC_RIGHT_GUI; @0;"
+  RSAG: "@@KC_RIGHT_SHIFT; @@KC_RIGHT_ALT; @@KC_RIGHT_GUI; @0;"
+  MEH: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @0;"
+  HYPR: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI; @0;"
+  SAGR: "@@KC_RIGHT_SHIFT; @@KC_RIGHT_ALT; @0;"
+  SGUI: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI; @0;"
+  SCMD: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI; @0;"
+  SWIN: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI; @0;"
+  OSM: "@0;¹" # ⇧¹ | ⌃¹ | ⌥¹ | ⌘¹
+  MT: "@0; |; @1;"
+  CTL_T: "@@KC_LEFT_CTRL; |; @0;"
+  SFT_T: "@@KC_LEFT_SHIFT; |; @0;"
+  ALT_T: "@@KC_LEFT_ALT; |; @0;"
+  OPT_T: "@@KC_LEFT_ALT; |; @0;"
+  GUI_T: "@@KC_LEFT_GUI; |; @0;"
+  CMD_T: "@@KC_LEFT_GUI; |; @0;"
+  WIN_T: "@@KC_LEFT_GUI; |; @0;"
+  LCTL_T: "@@KC_LEFT_CTRL; |; @0;"
+  LSFT_T: "@@KC_LEFT_SHIFT; |; @0;"
+  LALT_T: "@@KC_LEFT_ALT; |; @0;"
+  LOPT_T: "@@KC_LEFT_ALT; |; @0;"
+  LGUI_T: "@@KC_LEFT_GUI; |; @0;"
+  LCMD_T: "@@KC_LEFT_GUI; |; @0;"
+  LWIN_T: "@@KC_LEFT_GUI; |; @0;"
+  LCS_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; |; @0;"
+  LCA_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; |; @0;"
+  LCG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; |; @0;"
+  LSA_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; |; @0;"
+  LSG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI; |; @0;"
+  LAG_T: "@@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
+  LCSG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_GUI; |; @0;"
+  LCAG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
+  LSAG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
+  RCTL_T: "@@KC_LEFT_CTRL; |; @0;"
+  RSFT_T: "@@KC_LEFT_SHIFT; |; @0;"
+  RALT_T: "@@KC_LEFT_ALT; |; @0;"
+  ROPT_T: "@@KC_LEFT_ALT; |; @0;"
+  ALGR_T: "@@KC_LEFT_ALT; |; @0;"
+  RGUI_T: "@@KC_LEFT_GUI; |; @0;"
+  RCMD_T: "@@KC_LEFT_GUI; |; @0;"
+  RWIN_T: "@@KC_LEFT_GUI; |; @0;"
+  RCS_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; |; @0;"
+  RCA_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; |; @0;"
+  RCG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; |; @0;"
+  RSA_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; |; @0;"
+  RSG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI; |; @0;"
+  RAG_T: "@@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
+  RCSG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_GUI; |; @0;"
+  RCAG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
+  RSAG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
+  MEH_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT; |; @0;"
+  HYPR_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
+  DF: "%%nf-md-memory; %%nf-md-layers;" # 󰍛 󰌨 3 - Swap default layer until power down
+  PDF: "%%nf-fa-floppy_disk; %%nf-md-layers;" #  󰌨 4 - Make permanent default layer (persist after power down)
+  MO: "%%nf-md-layers_outline;" # 󰧾 5 - Momentary layer
+  LM: "@1; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LT: "%%nf-md-layers_outline; |; @1;" # 󰧾 11 - Tap-hold layer or key
+  OSL: "%%nf-md-layers_outline;¹" # 󰧾¹ 2 - One-shot layer
+  TG: "%%nf-md-layers_triple;" # 󰽘 9 - Toggle layer on or off
+  TO: "%%nf-md-layers;" # 󰌨 13 - Turn on target layer and off all other layer except base
+  TT: "%%nf-md-layers_triple_outline;" # 󰽙 16 - Momentary layer on hold, toggle on multi-tap
+  LT0: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT1: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT2: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT3: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT4: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT5: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT6: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT7: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT8: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT9: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT10: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT11: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT12: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT13: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT14: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT15: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
