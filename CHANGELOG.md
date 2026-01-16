@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed issue where layer toggle targets were not identified when using aliased keycodes in `reversed_alias`.
 - Fixed bug where `skim generate` would create files even when user aborted the overwrite prompt.
 - Fixed inconsistent behavior in `skim configure` by adding an overwrite confirmation prompt (matching `generate`).
+- Fixed false positive overwrite prompt in `skim configure` when output is an existing directory (now targets `skim-config.yaml` inside it).
 
 ## [0.4.3] - 2026-01-15
 

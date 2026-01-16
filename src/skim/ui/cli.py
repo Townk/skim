@@ -286,6 +286,9 @@ def configure(
             content = asset_path.read_text()
 
         if output:
+            if output.is_dir():
+                output = output / "skim-config.yaml"
+
             if output.exists() and not force:
                 try:
                     click.confirm(
