@@ -1,5 +1,7 @@
 """Unit tests for ConfigGenerator."""
 
+import yaml
+
 from skim.application.config_generator import ConfigGenerator
 
 
@@ -52,6 +54,11 @@ class TestConfigGenerator:
         # RED -> #FF0000 (Red)
         assert "RED" in result
         assert "#FF0000" in result
+
+        # Verify strict nesting structure
+        data = yaml.safe_load(result)
+        assert "named_colors" in data["appearance"]
+        assert "named_colors" not in data["appearance"]["colors"]
 
     def test_generate_with_color_adjustment(self):
         """Generate with lightness/saturation adjustment."""

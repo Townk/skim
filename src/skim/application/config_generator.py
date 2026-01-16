@@ -151,7 +151,7 @@ class ConfigGenerator:
         }
 
         if qmk_colors:
-            config_dict["appearance"]["colors"]["named_colors"] = qmk_colors
+            config_dict["appearance"]["named_colors"] = qmk_colors
 
         if overrides:
             config_dict["keycodes"] = overrides
