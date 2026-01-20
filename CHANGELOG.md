@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [0.4.4] - 2026-01-19
+
+### Added
+
 - Support for QMK hold-tap keys (e.g., `LT(1, KC_SPC)`, `LSFT_T(KC_A)`).
 - Support for complex macro functions via `macro_functions` mapping.
 - Support for modifier union arguments (e.g., `OSM(MOD_LCTL|MOD_LSFT)`).
