@@ -27,7 +27,7 @@ __prog_name__ = f"{_metadata['Summary']} (skim)"
 
 # We need this import to happen *after* the initialization of __version__ and
 # __prog_name__ so other packages can import it without creating a circular
-# depencency.
-from skim.ui.cli import main  # noqa: E402
+# dependency.
+from skim.cli import main  # noqa: E402
 
-__all__ = ["main"]
+__all__ = ["main", "__version__", "__prog_name__"]

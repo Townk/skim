@@ -1,0 +1,160 @@
+"""Centralized access to bundled package assets with validation.
+
+Provides a frozen, slotted dataclass that validates all bundled assets
+exist at first access—fail fast on broken installations.
+
+Example:
+    >>> from skim.assets import ASSETS
+    >>> mappings_path = ASSETS.keycode_mappings
+    >>> font_path = ASSETS.font_roboto_regular
+"""
+
+from dataclasses import dataclass, field
+from importlib import resources
+from pathlib import Path
+from typing import cast
+
+
+@dataclass(frozen=True, slots=True)
+class BundleAssets:
+    """Centralized access to bundled package assets.
+
+    All properties are cached and validated on first access.
+    Missing assets raise FileNotFoundError immediately.
+
+    Example:
+        >>> assets = BundleAssets()
+        >>> str(assets.keycode_mappings)
+        '.../assets/data/keycode-mappings.yaml'
+    """
+
+    _cache: dict[str, Path] = field(default_factory=dict, init=False, repr=False, compare=False)
+
+    @property
+    def keycode_mappings(self) -> Path:
+        """Path to the keycode-mappings.yaml file.
+
+        Returns:
+            Path to the bundled keycode mappings configuration.
+
+        Raises:
+            FileNotFoundError: If the file is missing from the installation.
+        """
+        return self._get_cached("keycode_mappings", "data", "keycode-mappings.yaml")
+
+    @property
+    def nerd_font_glyphs(self) -> Path:
+        """Path to the nerd_glyphnames.json file.
+
+        Returns:
+            Path to the bundled Nerd Font glyph mappings.
+
+        Raises:
+            FileNotFoundError: If the file is missing from the installation.
+        """
+        return self._get_cached("nerd_font_glyphs", "data", "nerd_glyphnames.json")
+
+    @property
+    def font_roboto_regular(self) -> Path:
+        """Path to the Roboto-Regular.ttf font file.
+
+        Returns:
+            Path to the bundled Roboto Regular font.
+
+        Raises:
+            FileNotFoundError: If the file is missing from the installation.
+        """
+        return self._get_cached("font_roboto_regular", "fonts", "Roboto-Regular.ttf")
+
+    @property
+    def font_roboto_black(self) -> Path:
+        """Path to the Roboto-Black.ttf font file.
+
+        Returns:
+            Path to the bundled Roboto Black font.
+
+        Raises:
+            FileNotFoundError: If the file is missing from the installation.
+        """
+        return self._get_cached("font_roboto_black", "fonts", "Roboto-Black.ttf")
+
+    @property
+    def font_roboto_thin(self) -> Path:
+        """Path to the Roboto-Thin.ttf font file.
+
+        Returns:
+            Path to the bundled Roboto Thin font.
+
+        Raises:
+            FileNotFoundError: If the file is missing from the installation.
+        """
+        return self._get_cached("font_roboto_thin", "fonts", "Roboto-Thin.ttf")
+
+    @property
+    def font_symbols_nerd(self) -> Path:
+        """Path to the SymbolsNerdFont-Regular.ttf font file.
+
+        Returns:
+            Path to the bundled Nerd Font symbols font.
+
+        Raises:
+            FileNotFoundError: If the file is missing from the installation.
+        """
+        return self._get_cached("font_symbols_nerd", "fonts", "SymbolsNerdFont-Regular.ttf")
+
+    @property
+    def logo_svalboard(self) -> Path:
+        """Path to the svalboard-logo.svg image file.
+
+        Returns:
+            Path to the bundled Svalboard logo SVG.
+
+        Raises:
+            FileNotFoundError: If the file is missing from the installation.
+        """
+        return self._get_cached("logo_svalboard", "images", "svalboard-logo.svg")
+
+    def _get_cached(self, cache_key: str, *parts: str) -> Path:
+        """Get asset path from cache or resolve and cache it.
+
+        Args:
+            cache_key: Key for the cache dictionary.
+            *parts: Path components relative to the assets package.
+
+        Returns:
+            Absolute path to the asset file.
+
+        Raises:
+            FileNotFoundError: If the asset file does not exist.
+        """
+        if cache_key not in self._cache:
+            object.__setattr__(self, "_cache", {**self._cache, cache_key: self._resolve(*parts)})
+        return self._cache[cache_key]
+
+    def _resolve(self, *parts: str) -> Path:
+        """Resolve asset path and validate existence.
+
+        Args:
+            *parts: Path components relative to the assets package.
+
+        Returns:
+            Absolute path to the asset file.
+
+        Raises:
+            FileNotFoundError: If the asset file does not exist.
+        """
+        path = resources.files("skim.assets")
+        for part in parts:
+            path = path / part
+
+        path_obj = cast(Path, path)
+
+        if not path_obj.is_file():
+            raise FileNotFoundError(
+                f"Bundled asset missing: {path_obj}. Installation may be corrupted."
+            )
+        return path_obj
+
+
+# Module-level singleton for direct import
+ASSETS = BundleAssets()

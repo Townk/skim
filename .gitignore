@@ -21,3 +21,14 @@ htmlcov/
 # Documentation
 docs/build/
 docs/_build/
+
+# PyCharm
+.idea/
+
+# AI
+prototype/
+.opencode/
+.claude/
+.sisyphus/
+CLAUDE.md
+AGENTS.md

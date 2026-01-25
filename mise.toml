@@ -1,0 +1,4 @@
+[tools]
+just = "latest"
+python = "3.10"
+uv = "latest"

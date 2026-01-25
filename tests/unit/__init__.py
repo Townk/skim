@@ -1,1 +1,1 @@
-"""Unit tests for Skim."""
+# Unit tests for skim

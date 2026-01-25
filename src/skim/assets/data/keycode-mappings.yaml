@@ -452,17 +452,21 @@ keycodes:
   # QMK Quantum keycodes
   QK_CAPS_WORD_TOGGLE: "%%nf-md-apple_keyboard_caps;"
   CW_TOGG: "%%nf-md-apple_keyboard_caps;"
-  QK_REPEAT_KEY: "%%nf-fa-repeat; REP"
-  QK_REP: "%%nf-fa-repeat; REP"
+  QK_REPEAT_KEY: "%%nf-fa-repeat; REP"
+  QK_REP: "@@QK_REPEAT_KEY;"
 
   # Svalboard keys
   SV_LEFT_DPI_INC: "L %%nf-md-mouse_move_up;"
+  SV_LDPU: "@@SV_LEFT_DPI_INC;"
   USER00: "@@SV_LEFT_DPI_INC;"
   SV_LEFT_DPI_DEC: "L %%nf-md-mouse_move_down;"
+  SV_LDPD: "@@SV_LEFT_DPI_DEC;"
   USER01: "@@SV_LEFT_DPI_DEC;"
   SV_RIGHT_DPI_INC: "R %%nf-md-mouse_move_up;"
+  SV_RDPU: "@@SV_RIGHT_DPI_INC;"
   USER02: "@@SV_RIGHT_DPI_INC;"
   SV_RIGHT_DPI_DEC: "R %%nf-md-mouse_move_down;"
+  SV_RDPD: "@@SV_RIGHT_DPI_DEC;"
   USER03: "@@SV_RIGHT_DPI_DEC;"
   SV_LEFT_SCROLL_TOGGLE: "L %%nf-md-mouse_move_vertical;%%nf-md-toggle_switch_off_outline;"
   USER04: "@@SV_LEFT_SCROLL_TOGGLE;"
@@ -487,6 +491,7 @@ keycodes:
   SV_SCROLL_TOGGLE: "%%nf-md-mouse_move_vertical;%%nf-md-toggle_switch_off_outline;"
   USER16: "@@SV_SCROLL_TOGGLE;"
   SV_OUTPUT_STATUS: "%%nf-oct-log;"
+  SV_SOUT: "@@SV_OUTPUT_STATUS;"
   USER17: "@@SV_OUTPUT_STATUS;"
   SV_TOGGLE_AUTOMOUSE: "%%nf-md-mouse;"
   USER18: "@@SV_TOGGLE_AUTOMOUSE;"
@@ -495,32 +500,32 @@ keycodes:
 # This entry is used to do a first pass on keymaps from Vial and Keybard which
 # resolve the QMK alias keycode into the combo keycodes it outputs like
 # `S(KC_1)` that is what the GUI displays when the keymap uses `KC_EXLM`.
-reversed_alias:
-  "LSFT(KC_GRAVE)": "@@KC_TILD;"
-  "LSFT(KC_1)": "@@KC_EXLM;"
-  "LSFT(KC_2)": "@@KC_AT;"
-  "LSFT(KC_3)": "@@KC_HASH;"
-  "LSFT(KC_4)": "@@KC_DLR;"
-  "LSFT(KC_5)": "@@KC_PERC;"
-  "LSFT(KC_6)": "@@KC_CIRC;"
-  "LSFT(KC_7)": "@@KC_AMPR;"
-  "LSFT(KC_8)": "@@KC_ASTR;"
-  "LSFT(KC_9)": "@@KC_LPRN;"
-  "LSFT(KC_0)": "@@KC_RPRN;"
-  "LSFT(KC_MINUS)": "@@KC_UNDS;"
-  "LSFT(KC_EQUAL)": "@@KC_PLUS;"
-  "LSFT(KC_LEFT_BRACKET)": "@@KC_LCBR;"
-  "LSFT(KC_LBRACKET)": "@@KC_LCBR;"
-  "LSFT(KC_RIGHT_BRACKET)": "@@KC_RCBR;"
-  "LSFT(KC_RBRACKET)": "@@KC_RCBR;"
-  "LSFT(KC_BACKSLASH)": "@@KC_PIPE;"
-  "LSFT(KC_BSLASH)": "@@KC_PIPE;"
-  "LSFT(KC_SEMICOLON)": "@@KC_COLN;"
-  "LSFT(KC_SCOLON)": "@@KC_COLN;"
-  "LSFT(KC_QUOTE)": "@@KC_DQUO;"
-  "LSFT(KC_COMMA)": "@@KC_LABK;"
-  "LSFT(KC_DOT)": "@@KC_RABK;"
-  "LSFT(KC_SLASH)": "@@KC_QUES;"
+pre_processing:
+  "LSFT(KC_GRAVE)": "KC_TILD;"
+  "LSFT(KC_1)": "KC_EXLM;"
+  "LSFT(KC_2)": "KC_AT;"
+  "LSFT(KC_3)": "KC_HASH;"
+  "LSFT(KC_4)": "KC_DLR;"
+  "LSFT(KC_5)": "KC_PERC;"
+  "LSFT(KC_6)": "KC_CIRC;"
+  "LSFT(KC_7)": "KC_AMPR;"
+  "LSFT(KC_8)": "KC_ASTR;"
+  "LSFT(KC_9)": "KC_LPRN;"
+  "LSFT(KC_0)": "KC_RPRN;"
+  "LSFT(KC_MINUS)": "KC_UNDS;"
+  "LSFT(KC_EQUAL)": "KC_PLUS;"
+  "LSFT(KC_LEFT_BRACKET)": "KC_LCBR;"
+  "LSFT(KC_LBRACKET)": "KC_LCBR;"
+  "LSFT(KC_RIGHT_BRACKET)": "KC_RCBR;"
+  "LSFT(KC_RBRACKET)": "KC_RCBR;"
+  "LSFT(KC_BACKSLASH)": "KC_PIPE;"
+  "LSFT(KC_BSLASH)": "KC_PIPE;"
+  "LSFT(KC_SEMICOLON)": "KC_COLN;"
+  "LSFT(KC_SCOLON)": "KC_COLN;"
+  "LSFT(KC_QUOTE)": "KC_DQUO;"
+  "LSFT(KC_COMMA)": "KC_LABK;"
+  "LSFT(KC_DOT)": "KC_RABK;"
+  "LSFT(KC_SLASH)": "KC_QUES;"
   "LSFT(KC_TAB)": "%%nf-md-keyboard_tab_reverse;"
 
 
@@ -566,7 +571,7 @@ modifier_union:
 # Like the `keycodes` mapping, the `macro_functions` mapping have special
 # placeholder that are resolved before anything. These placeholders are:
 #
-# - ` |; ` (separator) - Resolved to the separator character. This is useful to
+# - `|;` (separator) - Resolved to the separator character. This is useful to
 #   distinguish between different behaviors the key have.
 # - `#N;` (layer arg) - Resolved to a layer number, even when is a layer ID. `N`
 #   is the argument index for the function, so `#0;` will resolve by calling the
@@ -586,7 +591,7 @@ modifier_union:
 #
 # For instance, assume the following mapping:
 #
-#   LT: "%%nf-md-layers_outline; #0; |; @1;"
+#   LT: "%%nf-md-layers_outline; #0;|;@1;"
 #
 # Now, when the keycode transformer finds the keycode `LT(_NAV, LSFT(KC_1))`, it
 # will resolve it to: "󰧾 2│!".
@@ -644,71 +649,87 @@ macro_functions:
   SCMD: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI; @0;"
   SWIN: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI; @0;"
   OSM: "@0;¹" # ⇧¹ | ⌃¹ | ⌥¹ | ⌘¹
-  MT: "@0; |; @1;"
-  CTL_T: "@@KC_LEFT_CTRL; |; @0;"
-  SFT_T: "@@KC_LEFT_SHIFT; |; @0;"
-  ALT_T: "@@KC_LEFT_ALT; |; @0;"
-  OPT_T: "@@KC_LEFT_ALT; |; @0;"
-  GUI_T: "@@KC_LEFT_GUI; |; @0;"
-  CMD_T: "@@KC_LEFT_GUI; |; @0;"
-  WIN_T: "@@KC_LEFT_GUI; |; @0;"
-  LCTL_T: "@@KC_LEFT_CTRL; |; @0;"
-  LSFT_T: "@@KC_LEFT_SHIFT; |; @0;"
-  LALT_T: "@@KC_LEFT_ALT; |; @0;"
-  LOPT_T: "@@KC_LEFT_ALT; |; @0;"
-  LGUI_T: "@@KC_LEFT_GUI; |; @0;"
-  LCMD_T: "@@KC_LEFT_GUI; |; @0;"
-  LWIN_T: "@@KC_LEFT_GUI; |; @0;"
-  LCS_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; |; @0;"
-  LCA_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; |; @0;"
-  LCG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; |; @0;"
-  LSA_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; |; @0;"
-  LSG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI; |; @0;"
-  LAG_T: "@@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
-  LCSG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_GUI; |; @0;"
-  LCAG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
-  LSAG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
-  RCTL_T: "@@KC_LEFT_CTRL; |; @0;"
-  RSFT_T: "@@KC_LEFT_SHIFT; |; @0;"
-  RALT_T: "@@KC_LEFT_ALT; |; @0;"
-  ROPT_T: "@@KC_LEFT_ALT; |; @0;"
-  ALGR_T: "@@KC_LEFT_ALT; |; @0;"
-  RGUI_T: "@@KC_LEFT_GUI; |; @0;"
-  RCMD_T: "@@KC_LEFT_GUI; |; @0;"
-  RWIN_T: "@@KC_LEFT_GUI; |; @0;"
-  RCS_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; |; @0;"
-  RCA_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; |; @0;"
-  RCG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; |; @0;"
-  RSA_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; |; @0;"
-  RSG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI; |; @0;"
-  RAG_T: "@@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
-  RCSG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_GUI; |; @0;"
-  RCAG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
-  RSAG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
-  MEH_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT; |; @0;"
-  HYPR_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI; |; @0;"
+  MT: "@0;|;@1;"
+  CTL_T: "@@KC_LEFT_CTRL;|;@0;"
+  SFT_T: "@@KC_LEFT_SHIFT;|;@0;"
+  ALT_T: "@@KC_LEFT_ALT;|;@0;"
+  OPT_T: "@@KC_LEFT_ALT;|;@0;"
+  GUI_T: "@@KC_LEFT_GUI;|;@0;"
+  CMD_T: "@@KC_LEFT_GUI;|;@0;"
+  WIN_T: "@@KC_LEFT_GUI;|;@0;"
+  LCTL_T: "@@KC_LEFT_CTRL;|;@0;"
+  LSFT_T: "@@KC_LEFT_SHIFT;|;@0;"
+  LALT_T: "@@KC_LEFT_ALT;|;@0;"
+  LOPT_T: "@@KC_LEFT_ALT;|;@0;"
+  LGUI_T: "@@KC_LEFT_GUI;|;@0;"
+  LCMD_T: "@@KC_LEFT_GUI;|;@0;"
+  LWIN_T: "@@KC_LEFT_GUI;|;@0;"
+  LCS_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT;|;@0;"
+  LCA_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT;|;@0;"
+  LCG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI;|;@0;"
+  LSA_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT;|;@0;"
+  LSG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI;|;@0;"
+  LAG_T: "@@KC_LEFT_ALT; @@KC_LEFT_GUI;|;@0;"
+  LCSG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_GUI;|;@0;"
+  LCAG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; @@KC_LEFT_GUI;|;@0;"
+  LSAG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI;|;@0;"
+  RCTL_T: "@@KC_LEFT_CTRL;|;@0;"
+  RSFT_T: "@@KC_LEFT_SHIFT;|;@0;"
+  RALT_T: "@@KC_LEFT_ALT;|;@0;"
+  ROPT_T: "@@KC_LEFT_ALT;|;@0;"
+  ALGR_T: "@@KC_LEFT_ALT;|;@0;"
+  RGUI_T: "@@KC_LEFT_GUI;|;@0;"
+  RCMD_T: "@@KC_LEFT_GUI;|;@0;"
+  RWIN_T: "@@KC_LEFT_GUI;|;@0;"
+  RCS_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT;|;@0;"
+  RCA_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT;|;@0;"
+  RCG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI;|;@0;"
+  RSA_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT;|;@0;"
+  RSG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_GUI;|;@0;"
+  RAG_T: "@@KC_LEFT_ALT; @@KC_LEFT_GUI;|;@0;"
+  RCSG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_GUI;|;@0;"
+  RCAG_T: "@@KC_LEFT_CTRL; @@KC_LEFT_ALT; @@KC_LEFT_GUI;|;@0;"
+  RSAG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI;|;@0;"
+  MEH_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT;|;@0;"
+  HYPR_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI;|;@0;"
   DF: "%%nf-md-memory; %%nf-md-layers;" # 󰍛 󰌨 3 - Swap default layer until power down
   PDF: "%%nf-fa-floppy_disk; %%nf-md-layers;" #  󰌨 4 - Make permanent default layer (persist after power down)
   MO: "%%nf-md-layers_outline;" # 󰧾 5 - Momentary layer
   LM: "@1; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
-  LT: "%%nf-md-layers_outline; |; @1;" # 󰧾 11 - Tap-hold layer or key
+  LT: "%%nf-md-layers_outline;|;@1;" # 󰧾 11 - Tap-hold layer or key
   OSL: "%%nf-md-layers_outline;¹" # 󰧾¹ 2 - One-shot layer
   TG: "%%nf-md-layers_triple;" # 󰽘 9 - Toggle layer on or off
   TO: "%%nf-md-layers;" # 󰌨 13 - Turn on target layer and off all other layer except base
   TT: "%%nf-md-layers_triple_outline;" # 󰽙 16 - Momentary layer on hold, toggle on multi-tap
-  LT0: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT1: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT2: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT3: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT4: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT5: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT6: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT7: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT8: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT9: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT10: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT11: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT12: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT13: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT14: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
-  LT15: "%%nf-md-layers_outline; |; @0;" # 󰧾 11 - Tap-hold layer or key
+  LT0: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT1: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT2: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT3: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT4: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT5: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT6: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT7: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT8: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT9: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT10: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT11: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT12: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT13: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT14: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LT15: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  LM0: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM1: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM2: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM3: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM4: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM5: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM6: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM7: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM8: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM9: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM10: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM11: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM12: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM13: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM14: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
+  LM15: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers

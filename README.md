@@ -1,6 +1,6 @@
 # Svalboard Keymap Image Maker (skim)
 
-[![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen.svg)](https://github.com/Townk/skim)
+[![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen.svg)](https://github.com/Townk/skim)
 [![Python Version](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/)
 [![Build Status](https://github.com/Townk/skim/actions/workflows/release.yml/badge.svg)](https://github.com/Townk/skim/actions/workflows/release.yml)
 [![PyPI version](https://badge.fury.io/py/qmk-skim.svg)](https://badge.fury.io/py/qmk-skim)
