@@ -33,6 +33,7 @@ from .keys import (
     DoubleDownKey,
     DoubleSouthKey,
     DownKey,
+    Key,
     KnuckleKey,
     NailKey,
     PadKey,
@@ -193,6 +194,7 @@ class ThumbClusterComponent(KeyCluster[ThumbCluster[SvalboardTargetKey]]):
     )
 
     _layout: ThumbClusterLayout
+    _cluster: ThumbCluster[Key | None]
 
     def __init__(
         self,
@@ -219,6 +221,11 @@ class ThumbClusterComponent(KeyCluster[ThumbCluster[SvalboardTargetKey]]):
             render_context,
             **kwargs,
         )
+        self._build_key_cluster()
+
+    @property
+    def cluster(self):
+        return self._cluster
 
     @override
     def override_args(self, side: KeyboardSide, layout: Boundary, kwargs: dict) -> dict:
@@ -252,6 +259,20 @@ class ThumbClusterComponent(KeyCluster[ThumbCluster[SvalboardTargetKey]]):
         kwargs["transform"] = full_transform
         return kwargs
 
+    def _build_key_cluster(self):
+        keys = self._adjust_hold_symbol_positions(self._keymap_cluster)
+        metrics = self._layout.metrics
+        ctx = ClusterRenderContext.from_render_context(self._render_context, self._side)
+
+        self._cluster = ThumbCluster(
+            down_key=DownKey(ctx, keys.down_key, metrics.down_key),
+            pad_key=PadKey(ctx, keys.pad_key, metrics.pad_key),
+            up_key=UpKey(ctx, keys.up_key, metrics.up_key),
+            nail_key=NailKey(ctx, keys.nail_key, metrics.nail_key),
+            knuckle_key=KnuckleKey(ctx, keys.knuckle_key, metrics.knuckle_key),
+            double_down_key=DoubleDownKey(ctx, keys.double_down_key, metrics.double_down_key),
+        )
+
     @override
     def build(self) -> DrawingElement:
         """Build the SVG element for this thumb cluster.
@@ -259,15 +280,9 @@ class ThumbClusterComponent(KeyCluster[ThumbCluster[SvalboardTargetKey]]):
         Returns:
             This component with all key elements appended.
         """
-        keys = self._adjust_hold_symbol_positions(self._keymap_cluster)
-        metrics = self._layout.metrics
-        ctx = ClusterRenderContext.from_render_context(self._render_context, self._side)
-        self.append(DownKey(ctx, keys.down_key, metrics.down_key))
-        self.append(DoubleDownKey(ctx, keys.double_down_key, metrics.double_down_key))
-        self.append(PadKey(ctx, keys.pad_key, metrics.pad_key))
-        self.append(NailKey(ctx, keys.nail_key, metrics.nail_key))
-        self.append(UpKey(ctx, keys.up_key, metrics.up_key))
-        self.append(KnuckleKey(ctx, keys.knuckle_key, metrics.knuckle_key))
+        for key in self._cluster:
+            self.append(key)
+
         return self
 
     def _adjust_hold_symbol_positions(
@@ -332,6 +347,7 @@ class FingerClusterComponent(KeyCluster[FingerCluster[SvalboardTargetKey]]):
     )
 
     _layout: FingerClusterLayout
+    _cluster: FingerCluster[Key | None]
 
     def __init__(
         self,
@@ -363,6 +379,11 @@ class FingerClusterComponent(KeyCluster[FingerCluster[SvalboardTargetKey]]):
         self._layout = FingerClusterLayout(
             self._boundary, FingerClusterComponent._CLUSTER_WIDTH_PROPORTIONS
         )
+        self._build_key_cluster()
+
+    @property
+    def cluster(self):
+        return self._cluster
 
     @override
     def override_args(self, side: KeyboardSide, layout: Boundary, kwargs: dict) -> dict:
@@ -385,6 +406,29 @@ class FingerClusterComponent(KeyCluster[FingerCluster[SvalboardTargetKey]]):
             kwargs["transform"] = full_transform
         return kwargs
 
+    def _build_key_cluster(self):
+        ctx = ClusterRenderContext.from_render_context(self._render_context, self._side)
+        k = self._adjust_hold_symbol_positions(self._keymap_cluster)
+        c = self._get_key_colors(self._render_context)
+        m = self._layout.metrics
+
+        self._cluster = FingerCluster(
+            center_key=CenterKey(ctx, k.center_key, c.center_key, m.center_key),
+            north_key=DirectionalKey(
+                ctx, k.north_key, c.north_key, KeyDirection.NORTH, m.north_key
+            ),
+            east_key=DirectionalKey(ctx, k.east_key, c.east_key, KeyDirection.EAST, m.east_key),
+            south_key=DirectionalKey(
+                ctx, k.south_key, c.south_key, KeyDirection.SOUTH, m.south_key
+            ),
+            west_key=DirectionalKey(ctx, k.west_key, c.west_key, KeyDirection.WEST, m.west_key),
+            double_south_key=DoubleSouthKey(
+                ctx, k.double_south_key, c.double_south_key, m.double_south_key
+            )
+            if self._render_context.has_double_south
+            else None,
+        )
+
     @override
     def build(self) -> DrawingElement:
         """Build the SVG element for this finger cluster.
@@ -392,20 +436,10 @@ class FingerClusterComponent(KeyCluster[FingerCluster[SvalboardTargetKey]]):
         Returns:
             This component with all key elements appended.
         """
-        ctx = ClusterRenderContext.from_render_context(self._render_context, self._side)
-        k = self._adjust_hold_symbol_positions(self._keymap_cluster)
-        c = self._get_key_colors(self._render_context)
-        m = self._layout.metrics
+        for key in self._cluster:
+            if key:
+                self.append(key)
 
-        self.append(DirectionalKey(ctx, k.north_key, c.north_key, KeyDirection.NORTH, m.north_key))
-        self.append(DirectionalKey(ctx, k.south_key, c.south_key, KeyDirection.SOUTH, m.south_key))
-        self.append(DirectionalKey(ctx, k.east_key, c.east_key, KeyDirection.EAST, m.east_key))
-        self.append(DirectionalKey(ctx, k.west_key, c.west_key, KeyDirection.WEST, m.west_key))
-        self.append(CenterKey(ctx, k.center_key, c.center_key, m.center_key))
-        if self._render_context.has_double_south:
-            self.append(
-                DoubleSouthKey(ctx, k.double_south_key, c.double_south_key, m.double_south_key)
-            )
         return self
 
     def _adjust_hold_symbol_positions(

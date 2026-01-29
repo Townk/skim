@@ -36,9 +36,9 @@ import click
 from skim import __prog_name__, __version__
 
 # from skim.application.config_generator import ConfigGenerator
-from skim.application.keymap_generator import generate_keymap
-from skim.application.logging_config import setup_logging
-from skim.data.cli import InputFiles, KeymapGeneratorTargets, OutputFiles
+from skim.application import generate_keymap, setup_logging
+from skim.application.exporter import get_available_export_formats
+from skim.data import InputFiles, KeymapGeneratorTargets, OutputFiles, RenderEngine
 
 
 class AliasedGroup(click.Group):
@@ -135,15 +135,28 @@ def main(verbosity: str, quiet: bool) -> None:
     "--format",
     "-f",
     "output_format",
-    type=click.Choice(["svg", "png", "jpeg", "webp", "avif"]),
+    type=click.Choice(get_available_export_formats()),
     default="svg",
-    help="Output format.",
+    help="Output format. Raster formats (png, jpeg, webp, avif) require a render engine.",
 )
 @click.option(
     "--layer",
     "-l",
     multiple=True,
     help="Layers to generate (all, all-layers, overview, N, N-M).",
+)
+@click.option(
+    "--use-system-fonts",
+    "-S",
+    is_flag=True,
+    help="Use system fonts instead of embedding fonts in SVG.",
+)
+@click.option(
+    "--render-engine",
+    "-e",
+    type=click.Choice(["chromium", "cairo"]),
+    default=None,
+    help="Render engine for non-vector formats. 'chromium' uses Playwright, 'cairo' uses Cairo library. Only shown when both are available.",
 )
 @click.option(
     "--force",
@@ -158,15 +171,22 @@ def generate(
     output_format: str,
     layer: tuple,
     force: bool,
+    use_system_fonts: bool,
+    render_engine: str | None,
     stdin_marker: str | None,
 ) -> None:
     """Generate keymap visualization images.
 
-    Parses a keymap file and generates SVG or PNG images for each layer.
+    Parses a keymap file and generates a keymap image for each layer.
     Optionally generates an overview image showing all layers.
+
+    The supported output formats depend on the dependencies installed. For
+    non-vector images (PNG, JPEG, WEBP, and AVIF), the Playwright Chromium
+    Browser, or the Cairo library must be installed in the system.
 
     STDIN_MARKER: Pass '-' to read keymap from stdin instead of file.
 
+    \b
     Layer selection examples:
         -l overview       Generate only the overview image
         -l 1              Generate only layer 1
@@ -178,7 +198,8 @@ def generate(
 
     try:
         inputs = InputFiles(config, keymap, stdin_marker == "-")
-        outputs = OutputFiles(output_dir, output_format, force)
+        engine = RenderEngine(render_engine) if render_engine else None
+        outputs = OutputFiles(output_dir, output_format, force, use_system_fonts, engine)
         targets = KeymapGeneratorTargets.from_args(layer, partial(click.echo, err=True))
         generate_keymap(inputs, outputs, targets)
     except click.Abort as e:

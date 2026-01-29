@@ -8,23 +8,22 @@ separators, and multi-part labels.
 from __future__ import annotations
 
 import base64
-from collections.abc import Sequence
 from enum import Enum
 from functools import cached_property, lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TypeVar
 
 import drawsvg as draw
 from PIL import ImageFont
 
 from skim.application.loaders import load_nerdfont_glyphs
 from skim.assets import ASSETS
+from skim.data import SvalboardLayout
+from skim.domain import SEPARATOR_CHAR
 
 from .styling import adjust_luminance
 
-if TYPE_CHECKING:
-    from skim.data.keyboard import SvalboardKeymap
-    from skim.domain.domain_types import SvalboardTargetKey
+LabelT = TypeVar("LabelT", bound="Label | None")
 
 
 @lru_cache(maxsize=256)
@@ -103,23 +102,23 @@ class Font(Enum):
         """
         return _load_font(self.path, font_size)
 
-    def embed_into(self, drawing: draw.Drawing) -> None:
-        """Embed this font's CSS into an SVG drawing.
+    def get_system_font_family(self) -> str:
+        """Get the system font family name for CSS when not embedding fonts.
 
-        Args:
-            drawing: The drawsvg Drawing to add the font CSS to.
+        Returns:
+            The CSS font-family string to use when relying on system fonts.
         """
-        drawing.append_css(self.css_style)
-
-    @staticmethod
-    def embed_fonts_into(drawing: draw.Drawing) -> None:
-        """Embed all fonts into an SVG drawing.
-
-        Args:
-            drawing: The drawsvg Drawing to add all font CSS to.
-        """
-        for font in Font:
-            font.embed_into(drawing)
+        match self:
+            case Font.FINGER_KEY:
+                return "Roboto, sans-serif"
+            case Font.THUMB_KEY:
+                return "'Roboto Black', 'Arial Black', sans-serif"
+            case Font.TITLE:
+                return "'Roboto Thin', 'Helvetica Neue', Arial, sans-serif"
+            case Font.SYMBOLS:
+                return "'Symbols Nerd Font', 'Nerd Fonts', monospace"
+            case _:
+                return "sans-serif"
 
 
 class LabelPart:
@@ -129,6 +128,7 @@ class LabelPart:
         text: The text content of this label part.
     """
 
+    _text: str
     _text_color: str
     _font: Font
 
@@ -188,6 +188,8 @@ class TextPart(LabelPart):
 
 
 class SymbolPart(LabelPart):
+    name: str
+
     def __init__(self, name: str, char: str, fill: str = "#000"):
         super().__init__(char, fill, Font.SYMBOLS)
         self.name = name
@@ -200,7 +202,6 @@ class SymbolPart(LabelPart):
 
 
 class SeparatorPart(LabelPart):
-    SEPARATOR_CHAR = "│"
     SEPARATOR_DARKEN_FACTOR = 0.7
     # This is not a magic number! This ratio is exactly what this particular
     # Unicode character I use as a separator needs to render properly using
@@ -352,13 +353,16 @@ class Label:
 
         return result
 
-    def build_text(self, x: float, y: float, font_size: int) -> draw.DrawingParentElement:
+    def build_text(
+        self, x: float, y: float, font_size: int, use_system_fonts: bool = False
+    ) -> draw.DrawingParentElement:
         """Build an SVG text element from this label.
 
         Args:
             x: The x coordinate for the text.
             y: The y coordinate for the text.
             font_size: The font size in points.
+            use_system_fonts: Whether to use system font families instead of embedded fonts.
 
         Returns:
             A drawsvg Text element with TSpan children for each part.
@@ -374,6 +378,11 @@ class Label:
                 letter_spacing=self.letter_spacing,
             )
 
+        first_font = (
+            self.parts[0].font.get_system_font_family()
+            if use_system_fonts
+            else self.parts[0].font_family
+        )
         text = draw.Text(
             self.parts[0].text,
             font_size,
@@ -383,14 +392,15 @@ class Label:
             text_anchor=self.text_anchor,
             dominant_baseline=self.dominant_baseline,
             letter_spacing=self.letter_spacing,
-            font_family=self.parts[0].font_family,
+            font_family=first_font,
         )
         for part in self.parts[1:]:
+            part_font = part.font.get_system_font_family() if use_system_fonts else part.font_family
             text.append(
                 draw.TSpan(
                     text=part.text,
                     fill=part.text_color,
-                    font_family=part.font_family,
+                    font_family=part_font,
                     dominant_baseline=self.dominant_baseline,
                 )
             )
@@ -477,7 +487,7 @@ class Label:
                     i = end_pos
                 else:
                     part += label[i]
-            elif label[i] == SeparatorPart.SEPARATOR_CHAR:
+            elif label[i] == SEPARATOR_CHAR:
                 if part:
                     self.add_text(part)
                     part = ""
@@ -491,13 +501,13 @@ class Label:
 
 
 class FontUsageAnalyzer:
-    """Analyzes a SvalboardKeymap to determine which characters are used from each font.
+    """Analyzes a SvalboardLayout to determine which characters are used from
+    each font.
 
     Scans key labels and collects characters by font type for font subsetting.
-    Font assignment: FINGER_KEY for finger clusters, THUMB_KEY for thumb clusters,
-    TITLE for layer names, SYMBOLS for Nerd Font glyphs (%%nf-* tokens).
-
-    All fonts include ASCII 32-126 as a safety margin.
+    Font assignment: FINGER_KEY for finger clusters, THUMB_KEY for thumb
+    clusters, TITLE for layer names, SYMBOLS for Nerd Font glyphs (%%nf-*
+    tokens).
     """
 
     _char_sets: dict[Font, set[str]]
@@ -505,49 +515,204 @@ class FontUsageAnalyzer:
     def __init__(self) -> None:
         self._char_sets = {font: set() for font in Font}
 
-        # Safety margin: ASCII 32-126 ensures common characters are always available
-        ascii_chars = {chr(i) for i in range(32, 127)}
-        for font in Font:
-            self._char_sets[font].update(ascii_chars)
-
-        self._char_sets[Font.FINGER_KEY].add(SeparatorPart.SEPARATOR_CHAR)
-        self._char_sets[Font.THUMB_KEY].add(SeparatorPart.SEPARATOR_CHAR)
-
     def analyze_keymap(
         self,
-        keymap: SvalboardKeymap[SvalboardTargetKey],
-        layer_names: Sequence[str] | None = None,
+        layout: SvalboardLayout[LabelT],
+        layer_name: str | None = None,
     ) -> None:
-        """Analyze a keymap to collect character usage for each font.
+        """Analyze a Svalboard Layout (layer) to collect character usage for
+        each font.
 
         Args:
-            keymap: The keymap to analyze containing SvalboardTargetKey values.
-            layer_names: Optional layer names to collect for TITLE font.
+            layout: The layout (a.k.a. layer) to analyze containing Label
+                objects for each key.
+            layer_names: Optional layer name to collect characters for the
+                TITLE font.
         """
-        for layer in keymap.layers:
-            for side in (layer.left, layer.right):
-                for finger_cluster in side.fingers:
-                    for key in finger_cluster:
-                        self._collect_from_label(key.label, Font.FINGER_KEY)
-                for key in side.thumb:
-                    self._collect_from_label(key.label, Font.THUMB_KEY)
+        for side in (layout.left, layout.right):
+            for finger_cluster in side.fingers:
+                for label in finger_cluster:
+                    self._collect_from_label(label)
+            for label in side.thumb:
+                self._collect_from_label(label)
 
-        if layer_names:
-            for name in layer_names:
-                self._collect_from_label(name, Font.TITLE)
+        if layer_name:
+            self._collect_from_label(Label(layer_name, Font.TITLE, text_color="#000"))
 
     def get_used_chars(self, font: Font) -> set[str]:
         """Get the set of characters used from a specific font."""
         return self._char_sets[font].copy()
 
-    def _collect_from_label(self, label: str, font: Font) -> None:
+    def _collect_from_label(self, label: Label | None) -> None:
         if not label:
             return
+        for part in label.parts:
+            self._char_sets[part.font].update(set(part.text))
 
-        parsed = Label(label, font, text_color="#000")
 
-        for part in parsed.parts:
-            if isinstance(part, SymbolPart):
-                self._char_sets[Font.SYMBOLS].add(part.text)
-            else:
-                self._char_sets[font].update(part.text)
+class FontSubsetter:
+    """Subsets fonts based on characters used in a layer.
+
+    Uses fonttools to create minimized font files containing only the glyphs
+    needed for a specific layer, significantly reducing SVG file sizes.
+
+    Works on a per-layer basis with FontUsageAnalyzer to determine which
+    characters are needed from each font.
+
+    Example:
+        analyzer = FontUsageAnalyzer()
+        analyzer.analyze_keymap(layout, layer_name="Base")
+
+        subsetter = FontSubsetter(analyzer)
+        css = subsetter.generate_subsetted_css()
+    """
+
+    _analyzer: FontUsageAnalyzer
+
+    def __init__(self, analyzer: FontUsageAnalyzer) -> None:
+        """Initialize the subsetter with a FontUsageAnalyzer.
+
+        Args:
+            analyzer: The analyzer containing character usage data.
+        """
+        self._analyzer = analyzer
+
+    def generate_subsetted_css(self) -> str:
+        """Generate CSS @font-face rules with subsetted font data.
+
+        Creates subsetted versions of each font based on characters collected
+        by the analyzer, then generates CSS with embedded base64 font data.
+
+        Returns:
+            CSS string containing @font-face rules for all subsetted fonts.
+        """
+        from fontTools.subset import Options, Subsetter, load_font
+
+        css_rules = []
+
+        for font in Font:
+            chars = self._analyzer.get_used_chars(font)
+
+            if not chars:
+                continue
+
+            unicodes = {ord(c) for c in chars}
+
+            options = Options()
+            options.layout_features = ["*"]
+            options.glyph_names = True
+            options.symbol_cmap = True
+            options.legacy_cmap = True
+            options.notdef_glyph = True
+            options.notdef_outline = True
+            options.recommended_glyphs = True
+            options.name_IDs = [0, 1, 2, 3, 4, 5, 6, 7]
+            options.name_legacy = True
+            options.name_languages = [0x0409]
+            options.drop_tables = ["PfEd"]
+
+            try:
+                tt_font = load_font(str(font.path), options)
+
+                subsetter = Subsetter(options=options)
+                subsetter.populate(unicodes=unicodes)
+                subsetter.subset(tt_font)
+
+                import io
+
+                output = io.BytesIO()
+                tt_font.save(output)
+                font_data = output.getvalue()
+
+                encoded = base64.b64encode(font_data).decode("utf-8")
+
+                css_rules.append(f"""
+                @font-face {{
+                    font-family: '{font.value}';
+                    src: url("data:font/ttf;base64,{encoded}") format('truetype');
+                }}
+                """)
+
+            except Exception:
+                encoded = base64.b64encode(font.path.read_bytes()).decode("utf-8")
+                css_rules.append(f"""
+                @font-face {{
+                    font-family: '{font.value}';
+                    src: url("data:font/ttf;base64,{encoded}") format('truetype');
+                }}
+                """)
+
+        return "\n".join(css_rules)
+
+    def subset_font(self, font: Font) -> bytes | None:
+        """Create a subsetted font file for a specific font.
+
+        Args:
+            font: The font to subset.
+
+        Returns:
+            The subsetted font file as bytes, or None if no characters
+            are needed from this font.
+        """
+        from fontTools.subset import Options, Subsetter, load_font
+
+        chars = self._analyzer.get_used_chars(font)
+
+        if not chars:
+            return None
+
+        unicodes = {ord(c) for c in chars}
+
+        options = Options()
+        options.layout_features = ["*"]
+        options.glyph_names = True
+        options.symbol_cmap = True
+        options.legacy_cmap = True
+        options.notdef_glyph = True
+        options.notdef_outline = True
+        options.recommended_glyphs = True
+        options.name_IDs = [0, 1, 2, 3, 4, 5, 6, 7]
+        options.name_legacy = True
+        options.name_languages = [0x0409]
+        options.drop_tables = ["PfEd"]
+
+        tt_font = load_font(str(font.path), options)
+
+        subsetter = Subsetter(options=options)
+        subsetter.populate(unicodes=unicodes)
+        subsetter.subset(tt_font)
+
+        import io
+
+        output = io.BytesIO()
+        tt_font.save(output)
+        return output.getvalue()
+
+    def get_size_reduction(self, font: Font) -> tuple[int, int]:
+        """Get the file size reduction for a subsetted font.
+
+        Args:
+            font: The font to analyze.
+
+        Returns:
+            A tuple of (original_size, subsetted_size) in bytes.
+        """
+        original_size = font.path.stat().st_size
+        subsetted_data = self.subset_font(font)
+
+        if subsetted_data is None:
+            return (original_size, 0)
+
+        return (original_size, len(subsetted_data))
+
+    def generate_full_fonts_css(self) -> str:
+        css_rules = []
+        for font in Font:
+            encoded = base64.b64encode(font.path.read_bytes()).decode("utf-8")
+            css_rules.append(f"""
+            @font-face {{
+                font-family: '{font.value}';
+                src: url("data:font/ttf;base64,{encoded}") format('truetype');
+            }}
+            """)
+        return "\n".join(css_rules)

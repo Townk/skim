@@ -89,6 +89,7 @@ class Key(draw.Group, metaclass=ABCMeta):
         letter_spacing: float | None = None,
         fill_color: str = "#666",
         stroke_color: str = "#FFF",
+        use_system_fonts: bool = False,
         **kwargs,
     ):
         """Initialize a key.
@@ -104,7 +105,7 @@ class Key(draw.Group, metaclass=ABCMeta):
             letter_spacing: Optional letter spacing in SVG units.
             fill_color: The fill color. Default: "#666".
             stroke_color: The stroke/text color. Default: "#FFF".
-            show_debug_lines: Whether to show debug lines. Default: False.
+            use_system_fonts: Whether to use system font families. Default: False.
             **kwargs: Additional arguments passed to the parent Group.
         """
         super().__init__(**kwargs)
@@ -124,6 +125,7 @@ class Key(draw.Group, metaclass=ABCMeta):
         self.font = font
         self.fill_color = fill_color
         self.stroke_color = stroke_color
+        self._use_system_fonts = use_system_fonts
         self.build()
 
     def build(self) -> None:
@@ -137,7 +139,7 @@ class Key(draw.Group, metaclass=ABCMeta):
             self.label_width,
             round(self.height * self.font_height_multi),
         )
-        self.append(self.label.build_text(label_x, label_y, font_size))
+        self.append(self.label.build_text(label_x, label_y, font_size, self._use_system_fonts))
 
     @property
     def text_anchor(self) -> str:
@@ -223,6 +225,7 @@ class DownKey(Key):
             font_height_multi=self.CONFIG.font_height_multiplier,
             fill_color=ctx.key_fill_color(key, ctx.layer_colors.base_color),
             stroke_color=ctx.palette.key_label_color,
+            use_system_fonts=ctx.use_system_fonts,
             **kwargs,
         )
 
@@ -296,6 +299,7 @@ class DoubleDownKey(Key):
             stroke_color=ctx.palette.key_label_color,
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
+            use_system_fonts=ctx.use_system_fonts,
             **kwargs,
         )
 
@@ -372,6 +376,7 @@ class UpKey(Key):
             stroke_color=ctx.palette.key_label_color,
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
+            use_system_fonts=ctx.use_system_fonts,
             **kwargs,
         )
 
@@ -483,6 +488,7 @@ class PadKey(Key):
             stroke_color=ctx.palette.key_label_color,
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
+            use_system_fonts=ctx.use_system_fonts,
             **kwargs,
         )
 
@@ -565,6 +571,7 @@ class NailKey(Key):
             stroke_color=ctx.palette.key_label_color,
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
+            use_system_fonts=ctx.use_system_fonts,
             **kwargs,
         )
 
@@ -647,6 +654,7 @@ class KnuckleKey(Key):
             stroke_color=ctx.palette.key_label_color,
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
+            use_system_fonts=ctx.use_system_fonts,
             **kwargs,
         )
 
@@ -724,6 +732,7 @@ class CenterKey(Key):
             stroke_color=ctx.palette.key_label_color,
             font=Font.FINGER_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
+            use_system_fonts=ctx.use_system_fonts,
             **kwargs,
         )
 
@@ -797,6 +806,7 @@ class DoubleSouthKey(Key):
             stroke_color=ctx.palette.key_label_color,
             font=Font.FINGER_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
+            use_system_fonts=ctx.use_system_fonts,
             **kwargs,
         )
 
@@ -897,6 +907,7 @@ class DirectionalKey(Key):
             font_height_multi=self.CONFIG.font_height_multiplier,
             fill_color=ctx.key_fill_color(key, colors.primary),
             stroke_color=ctx.palette.key_label_color,
+            use_system_fonts=ctx.use_system_fonts,
             **kwargs,
         )
 

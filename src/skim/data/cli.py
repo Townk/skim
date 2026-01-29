@@ -16,7 +16,20 @@ Example:
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
+
+
+class RenderEngine(Enum):
+    """Available render engines for non-vector image generation.
+
+    Attributes:
+        CHROMIUM: Use Playwright with Chromium browser for rendering.
+        CAIRO: Use Cairo graphics library for rendering.
+    """
+
+    CHROMIUM = "chromium"
+    CAIRO = "cairo"
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +47,11 @@ class OutputFiles:
             "svg", "png", "jpeg", "webp", and "avif". Defaults to "svg".
         force_overwrite: Whether to overwrite existing files without
             prompting for confirmation. Defaults to False.
+        use_system_fonts: Whether to use system fonts instead of embedding
+            fonts in SVG. Defaults to False.
+        render_engine: Which render engine to use for non-vector formats.
+            Options are CHROMIUM (Playwright) or CAIRO. If None, uses the
+            first available engine. Defaults to None.
 
     Example:
         >>> output = OutputFiles(
@@ -48,6 +66,8 @@ class OutputFiles:
     output_dir: Path = field(default_factory=Path)
     output_format: str = "svg"
     force_overwrite: bool = False
+    use_system_fonts: bool = False
+    render_engine: RenderEngine | None = None
 
 
 @dataclass(frozen=True, slots=True)

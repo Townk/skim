@@ -1,6 +1,6 @@
 """Image exporter using Playwright for high-fidelity SVG-to-image conversion.
 
-This module provides the ImageExporter class and associated context manager
+This module provides the ChromiumExporter class and associated context manager
 for converting SVG drawings to raster image formats (PNG, JPEG, WebP, AVIF)
 using a headless Chromium browser via Playwright.
 
@@ -11,12 +11,12 @@ Example:
     >>> import asyncio
     >>> from pathlib import Path
     >>> import drawsvg as draw
-    >>> from skim.application.exporter.image_exporter import image_exporter
+    >>> from skim.application.exporter.chromium_exporter import chromium_exporter
     >>>
     >>> async def export_example():
     ...     drawing = draw.Drawing(100, 100)
     ...     drawing.append(draw.Circle(50, 50, 40, fill="red"))
-    ...     async with image_exporter() as exporter:
+    ...     async with chromium_exporter() as exporter:
     ...         await exporter.save(drawing, Path("output.png"))
     >>>
     >>> # asyncio.run(export_example())
@@ -34,7 +34,7 @@ from PIL import Image
 from playwright.async_api import Browser, async_playwright
 
 
-class ImageExporter:
+class ChromiumExporter:
     """Exports SVG drawings to raster image formats using a headless browser.
 
     This class uses Playwright to render SVG content in a headless Chromium
@@ -43,13 +43,13 @@ class ImageExporter:
     complex SVG features.
 
     The exporter requires an active Playwright browser instance, which should
-    be obtained through the :func:`image_exporter` async context manager.
+    be obtained through the :func:`chromium_exporter` async context manager.
 
     Attributes:
         _browser: The Playwright Browser instance used for rendering.
 
     Example:
-        >>> async with image_exporter() as exporter:
+        >>> async with chromium_exporter() as exporter:
         ...     await exporter.save(drawing, Path("keymap.png"))
     """
 
@@ -111,21 +111,21 @@ class ImageExporter:
 
 
 @asynccontextmanager
-async def image_exporter() -> AsyncIterator[ImageExporter]:
-    """Async context manager providing an ImageExporter instance.
+async def chromium_exporter() -> AsyncIterator[ChromiumExporter]:
+    """Async context manager providing a ChromiumExporter instance.
 
-    Creates a Playwright browser instance and yields an ImageExporter
+    Creates a Playwright browser instance and yields a ChromiumExporter
     configured to use it. The browser is automatically closed when the
     context manager exits.
 
-    This is the recommended way to obtain an ImageExporter instance, as
+    This is the recommended way to obtain a ChromiumExporter instance, as
     it properly manages the browser lifecycle.
 
     Yields:
-        An ImageExporter instance ready to save drawings.
+        A ChromiumExporter instance ready to save drawings.
 
     Example:
-        >>> async with image_exporter() as exporter:
+        >>> async with chromium_exporter() as exporter:
         ...     await exporter.save(drawing1, Path("layer1.png"))
         ...     await exporter.save(drawing2, Path("layer2.png"))
 
@@ -136,6 +136,6 @@ async def image_exporter() -> AsyncIterator[ImageExporter]:
     async with async_playwright() as p:
         browser: Browser = await p.chromium.launch()
         try:
-            yield ImageExporter(browser)
+            yield ChromiumExporter(browser)
         finally:
             await browser.close()

@@ -1,7 +1,7 @@
 from types import MappingProxyType
 from typing import TypeAlias
 
-from .cli import InputFiles, KeymapGeneratorTargets, OutputFiles
+from .cli import InputFiles, KeymapGeneratorTargets, OutputFiles, RenderEngine
 from .config import (
     Border,
     Keyboard,
@@ -36,6 +36,7 @@ __all__ = [
     "InputFiles",
     "KeymapGeneratorTargets",
     "OutputFiles",
+    "RenderEngine",
     "Border",
     "Keyboard",
     "KeyboardFeatures",

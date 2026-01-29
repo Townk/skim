@@ -25,23 +25,19 @@ Example:
 import logging
 from pathlib import Path
 
-from skim.application.exporter import save_drawings
-from skim.application.loaders import load_keycode_mappings, load_keymap, load_skim_config
-from skim.application.render import draw_keymap
-from skim.application.render.styling import make_gradient
-from skim.data.cli import InputFiles, KeymapGeneratorTargets, OutputFiles
-from skim.data.config import SkimConfig
-from skim.data.keyboard import (
-    SvalboardKeymap,
-)
+from skim.data import InputFiles, KeymapGeneratorTargets, OutputFiles, SkimConfig, SvalboardKeymap
+from skim.domain import SvalboardTargetKey
 from skim.domain.adapters import KeycodeLabelAdapter, KeymapTargetAdapter
-from skim.domain.domain_types import SvalboardTargetKey
+
+from .exporter import save_drawings
+from .loaders import load_keycode_mappings, load_keymap, load_skim_config
+from .render import draw_keymap, make_gradient
 
 logger = logging.getLogger(__name__)
 """Module-level logger for keymap generation operations."""
 
 
-def _get_config(config_path: Path | None) -> SkimConfig:
+def _get_config(config_path: Path | None, use_system_fonts: bool = False) -> SkimConfig:
     """Load and enhance configuration with generated gradients.
 
     Loads the skim configuration from the specified file (or uses defaults)
@@ -51,6 +47,8 @@ def _get_config(config_path: Path | None) -> SkimConfig:
     Args:
         config_path: Path to the configuration YAML file, or None to use
             default configuration.
+        use_system_fonts: Whether to use system fonts instead of embedding
+            fonts in the SVG output.
 
     Returns:
         A SkimConfig instance with all layer colors having gradient tuples
@@ -66,7 +64,9 @@ def _get_config(config_path: Path | None) -> SkimConfig:
     )
 
     new_palette = config.output.style.palette.model_copy(update={"layers": new_layers})
-    new_style = config.output.style.model_copy(update={"palette": new_palette})
+    new_style = config.output.style.model_copy(
+        update={"palette": new_palette, "use_system_fonts": use_system_fonts}
+    )
     new_output = config.output.model_copy(update={"style": new_style})
     return config.model_copy(update={"output": new_output})
 
@@ -139,8 +139,8 @@ def generate_keymap(
     if not outputs.output_dir.exists():
         outputs.output_dir.mkdir()
 
-    config: SkimConfig = _get_config(inputs.config)
+    config: SkimConfig = _get_config(inputs.config, outputs.use_system_fonts)
     input_keymap = _get_input_keymap(inputs)
     keymap = _resolve_keymap(config, input_keymap)
     drawings = draw_keymap(config, keymap, targets)
-    save_drawings(outputs, drawings)
+    save_drawings(outputs, drawings, outputs.render_engine)

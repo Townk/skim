@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from skim.data.cli import InputFiles, KeymapGeneratorTargets, OutputFiles
+from skim.data.cli import InputFiles, KeymapGeneratorTargets, OutputFiles, RenderEngine
 
 
 class TestOutputFiles:
@@ -287,3 +287,44 @@ class TestKeymapGeneratorTargetsFromArgsComplexCases:
         """Default logger is print (doesn't raise)."""
         targets = KeymapGeneratorTargets.from_args(("invalid",))
         assert targets.selected_layers == []
+
+
+class TestRenderEngine:
+    """Tests for RenderEngine enum."""
+
+    def test_chromium_value(self):
+        """CHROMIUM has correct value."""
+        assert RenderEngine.CHROMIUM.value == "chromium"
+
+    def test_cairo_value(self):
+        """CAIRO has correct value."""
+        assert RenderEngine.CAIRO.value == "cairo"
+
+    def test_enum_comparison(self):
+        """Can compare enum values."""
+        assert RenderEngine.CHROMIUM != RenderEngine.CAIRO
+        assert RenderEngine.CHROMIUM == RenderEngine.CHROMIUM
+
+
+class TestOutputFilesWithRenderEngine:
+    """Tests for OutputFiles with render_engine field."""
+
+    def test_render_engine_defaults_to_none(self):
+        """render_engine defaults to None."""
+        output = OutputFiles()
+        assert output.render_engine is None
+
+    def test_render_engine_can_be_set(self):
+        """render_engine can be set to a RenderEngine value."""
+        output = OutputFiles(render_engine=RenderEngine.CAIRO)
+        assert output.render_engine == RenderEngine.CAIRO
+
+    def test_use_system_fonts_defaults_to_false(self):
+        """use_system_fonts defaults to False."""
+        output = OutputFiles()
+        assert output.use_system_fonts is False
+
+    def test_use_system_fonts_can_be_set(self):
+        """use_system_fonts can be set to True."""
+        output = OutputFiles(use_system_fonts=True)
+        assert output.use_system_fonts is True

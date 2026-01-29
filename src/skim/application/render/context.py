@@ -26,6 +26,7 @@ class RenderContext:
     has_double_south: bool
     use_layer_colors_on_keys: bool
     hold_symbol_position: SplitSidePosition
+    use_system_fonts: bool = False
     layer_colors: LayerColor = field(init=False, repr=False, compare=False, hash=False)
 
     def __post_init__(self) -> None:
@@ -66,7 +67,7 @@ class ClusterRenderContext(RenderContext):
         side: The keyboard side (LEFT or RIGHT) for this cluster.
     """
 
-    side: KeyboardSide
+    side: KeyboardSide = KeyboardSide.LEFT
 
     @classmethod
     def from_render_context(cls, render_context: RenderContext, side: KeyboardSide) -> Self:
@@ -86,6 +87,7 @@ class ClusterRenderContext(RenderContext):
             has_double_south=render_context.has_double_south,
             use_layer_colors_on_keys=render_context.use_layer_colors_on_keys,
             hold_symbol_position=render_context.hold_symbol_position,
+            use_system_fonts=render_context.use_system_fonts,
             side=side,
         )
 

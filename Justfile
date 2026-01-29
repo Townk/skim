@@ -15,7 +15,7 @@ sync: venv
     uv sync --dev --group docs
 
 # Run all tests (unit + integration)
-tests:
+tests: install-browsers
     uv run pytest tests/ --cov=skim --cov-report=html:out/coverage --cov-report=term-missing --html=out/tests/test-report.html --junitxml=out/tests/test-report.xml
 
 # Run only unit tests
@@ -23,7 +23,7 @@ unit-tests:
     uv run pytest tests/unit/
 
 # Run only integration tests (requires Playwright browsers)
-integration-tests:
+integration-tests: install-browsers
     uv run pytest tests/integration/ -m integration
 
 # Run all checks: lint, format check, and type check

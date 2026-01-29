@@ -201,10 +201,10 @@ class TestGenerateCommand:
     def test_generate_with_format_option(self, mock_setup, mock_generate, tmp_path):
         """Accepts format option."""
         runner = CliRunner()
-        runner.invoke(main, ["generate", "-o", str(tmp_path), "-f", "png"])
+        runner.invoke(main, ["generate", "-o", str(tmp_path), "-f", "svg"])
         mock_generate.assert_called_once()
         args = mock_generate.call_args[0]
-        assert args[1].output_format == "png"
+        assert args[1].output_format == "svg"
 
     @patch("skim.cli.generate_keymap")
     @patch("skim.cli.setup_logging")

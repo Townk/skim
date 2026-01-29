@@ -582,6 +582,7 @@ class Style(BaseModel):
     hold_symbol_position: SplitSidePositionStr = Field(default=SplitSidePosition.OUTWARD)
     border: Border | None = Field(default_factory=Border)
     palette: Palette = Field(default_factory=Palette)
+    use_system_fonts: bool = False
 
 
 class Output(BaseModel):

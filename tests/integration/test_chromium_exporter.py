@@ -1,4 +1,4 @@
-"""Integration tests for skim.application.exporter.image_exporter module.
+"""Integration tests for skim.application.exporter.chromium_exporter module.
 
 These tests require Playwright browsers to be installed:
     playwright install chromium
@@ -12,8 +12,8 @@ import pytest
 from PIL import Image
 
 from skim.application.exporter import _save_keymap_images_async, save_drawings
-from skim.application.exporter.image_exporter import ImageExporter, image_exporter
-from skim.data.cli import OutputFiles
+from skim.application.exporter.chromium_exporter import ChromiumExporter, chromium_exporter
+from skim.data.cli import OutputFiles, RenderEngine
 
 
 def create_test_drawing(width: int = 200, height: int = 100) -> draw.Drawing:
@@ -26,8 +26,8 @@ def create_test_drawing(width: int = 200, height: int = 100) -> draw.Drawing:
 
 
 @pytest.mark.integration
-class TestImageExporterIntegration:
-    """Integration tests for ImageExporter class."""
+class TestChromiumExporterIntegration:
+    """Integration tests for ChromiumExporter class."""
 
     @pytest.mark.asyncio
     async def test_save_creates_png_file(self, tmp_path):
@@ -35,7 +35,7 @@ class TestImageExporterIntegration:
         drawing = create_test_drawing()
         output_path = tmp_path / "test_output.png"
 
-        async with image_exporter() as exporter:
+        async with chromium_exporter() as exporter:
             await exporter.save(drawing, output_path)
 
         assert output_path.exists()
@@ -50,7 +50,7 @@ class TestImageExporterIntegration:
         drawing = create_test_drawing()
         output_path = tmp_path / "test_output.jpg"
 
-        async with image_exporter() as exporter:
+        async with chromium_exporter() as exporter:
             await exporter.save(drawing, output_path)
 
         assert output_path.exists()
@@ -63,7 +63,7 @@ class TestImageExporterIntegration:
         drawing = create_test_drawing()
         output_path = tmp_path / "test_output.webp"
 
-        async with image_exporter() as exporter:
+        async with chromium_exporter() as exporter:
             await exporter.save(drawing, output_path)
 
         assert output_path.exists()
@@ -79,7 +79,7 @@ class TestImageExporterIntegration:
             (create_test_drawing(400, 200), tmp_path / "drawing3.png"),
         ]
 
-        async with image_exporter() as exporter:
+        async with chromium_exporter() as exporter:
             for drawing, output_path in drawings:
                 await exporter.save(drawing, output_path)
 
@@ -93,7 +93,7 @@ class TestImageExporterIntegration:
         drawing = create_test_drawing(width, height)
         output_path = tmp_path / "sized_output.png"
 
-        async with image_exporter() as exporter:
+        async with chromium_exporter() as exporter:
             await exporter.save(drawing, output_path)
 
         with Image.open(output_path) as img:
@@ -103,14 +103,14 @@ class TestImageExporterIntegration:
 
 
 @pytest.mark.integration
-class TestImageExporterContextManager:
-    """Integration tests for image_exporter context manager."""
+class TestChromiumExporterContextManager:
+    """Integration tests for chromium_exporter context manager."""
 
     @pytest.mark.asyncio
     async def test_context_manager_provides_working_exporter(self, tmp_path):
         """Context manager provides a functional exporter."""
-        async with image_exporter() as exporter:
-            assert isinstance(exporter, ImageExporter)
+        async with chromium_exporter() as exporter:
+            assert isinstance(exporter, ChromiumExporter)
             assert exporter._browser is not None
 
             # Verify it can actually export
@@ -124,7 +124,7 @@ class TestImageExporterContextManager:
         """Browser is closed when context exits."""
         browser_ref = None
 
-        async with image_exporter() as exporter:
+        async with chromium_exporter() as exporter:
             browser_ref = exporter._browser
             assert browser_ref is not None
 
@@ -140,7 +140,7 @@ class TestImageExporterContextManager:
             pass
 
         with pytest.raises(TestError):
-            async with image_exporter() as exporter:
+            async with chromium_exporter() as exporter:
                 # Do something, then raise
                 drawing = create_test_drawing()
                 await exporter.save(drawing, tmp_path / "before_error.png")
@@ -159,7 +159,7 @@ class TestSaveKeymapImagesAsyncIntegration:
         drawing = create_test_drawing()
         drawings = {"layer-0": drawing, "layer-1": drawing}
 
-        await _save_keymap_images_async(drawings, tmp_path, "svg")
+        await _save_keymap_images_async(drawings, tmp_path, "svg", None, False)
 
         assert (tmp_path / "layer-0.svg").exists()
         assert (tmp_path / "layer-1.svg").exists()
@@ -173,7 +173,7 @@ class TestSaveKeymapImagesAsyncIntegration:
         drawing = create_test_drawing()
         drawings = {"keymap-layer-0": drawing}
 
-        await _save_keymap_images_async(drawings, tmp_path, "png")
+        await _save_keymap_images_async(drawings, tmp_path, "png", RenderEngine.CHROMIUM, False)
 
         output_file = tmp_path / "keymap-layer-0.png"
         assert output_file.exists()
@@ -190,7 +190,7 @@ class TestSaveKeymapImagesAsyncIntegration:
             "overview": create_test_drawing(400, 300),
         }
 
-        await _save_keymap_images_async(drawings, tmp_path, "png")
+        await _save_keymap_images_async(drawings, tmp_path, "png", RenderEngine.CHROMIUM, False)
 
         for name in drawings:
             assert (tmp_path / f"{name}.png").exists()

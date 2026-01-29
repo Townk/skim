@@ -180,7 +180,7 @@ class TestGenerateKeymap:
         mock_get_input_keymap.assert_called_once_with(inputs)
         mock_resolve_keymap.assert_called_once_with(mock_config, mock_input_keymap)
         mock_draw_keymap.assert_called_once_with(mock_config, mock_resolved_keymap, targets)
-        mock_save_drawings.assert_called_once_with(outputs, mock_drawings)
+        mock_save_drawings.assert_called_once_with(outputs, mock_drawings, None)
 
     @patch("skim.application.keymap_generator.logger")
     def test_exits_when_output_path_is_file(self, mock_logger, tmp_path):

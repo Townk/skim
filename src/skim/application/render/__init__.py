@@ -1,29 +1,34 @@
 import drawsvg as draw
 
-from skim.application.render.components import (
-    FingerClusterComponent,
-    ThumbClusterComponent,
-)
-from skim.application.render.context import RenderContext
-from skim.application.render.geometry import AspectRatio
-from skim.application.render.layout import Boundary, KeymapLayout
-from skim.application.render.text import Font
 from skim.assets import ASSETS
-from skim.data.cli import KeymapGeneratorTargets
-from skim.data.config import SkimConfig
-from skim.data.keyboard import SvalboardKeymap, SvalboardLayout
-from skim.domain.domain_types import KeyboardSide, SvalboardTargetKey
+from skim.data import (
+    KeymapGeneratorTargets,
+    SkimConfig,
+    SplitSide,
+    SvalboardKeymap,
+    SvalboardLayout,
+)
+from skim.domain import KeyboardSide, SvalboardTargetKey
+
+from .components import FingerClusterComponent, ThumbClusterComponent
+from .context import RenderContext
+from .geometry import AspectRatio
+from .layout import Boundary, KeymapLayout
+from .styling import make_gradient
+from .text import Font, FontSubsetter, FontUsageAnalyzer, Label
 
 
 def _draw_layer(
     config: SkimConfig, layer: SvalboardLayout[SvalboardTargetKey], layer_idx: int
 ) -> draw.Drawing:
+    use_system_fonts = config.output.style.use_system_fonts
     render_context = RenderContext(
         palette=config.output.style.palette,
         layer_index=layer_idx,
         has_double_south=config.keyboard.features.double_south,
         use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
         hold_symbol_position=config.output.style.hold_symbol_position,
+        use_system_fonts=use_system_fonts,
     )
     layer_layout = KeymapLayout(config)
     m = layer_layout.metrics
@@ -73,7 +78,45 @@ def _draw_layer(
 
     # Create drawing
     d = draw.Drawing(m.width, canvas_height)
-    Font.embed_fonts_into(d)
+
+    # Layer title
+    layer_title = (
+        f"Layer {layer_idx}"
+        if layer_idx >= len(config.keyboard.layers)
+        else config.keyboard.layers[layer_idx].name
+    )
+    if "layer" not in layer_title.lower():
+        layer_title += " Layer"
+
+    labels_keymap: SvalboardLayout[Label | None] = SvalboardLayout(
+        left=SplitSide(
+            index=finger_clusters[0].cluster,
+            middle=finger_clusters[1].cluster,
+            ring=finger_clusters[2].cluster,
+            pinky=finger_clusters[3].cluster,
+            thumb=left_thumb.cluster,
+        ),
+        right=SplitSide(
+            index=finger_clusters[4].cluster,
+            middle=finger_clusters[5].cluster,
+            ring=finger_clusters[6].cluster,
+            pinky=finger_clusters[7].cluster,
+            thumb=right_thumb.cluster,
+        ),
+    ).map(lambda key: None if key is None else key.label)
+
+    use_system_fonts = config.output.style.use_system_fonts
+
+    if not use_system_fonts:
+        font_analyzer = FontUsageAnalyzer()
+        font_analyzer.analyze_keymap(labels_keymap, layer_title)
+
+        font_subsetter = FontSubsetter(font_analyzer)
+        subsetted_css = font_subsetter.generate_subsetted_css()
+        if subsetted_css:
+            d.append_css(subsetted_css)
+        else:
+            d.append_css(font_subsetter.generate_full_fonts_css())
 
     # Background rectangle
     border = config.output.style.border
@@ -97,24 +140,16 @@ def _draw_layer(
     d.append(left_thumb.build())
     d.append(right_thumb.build())
 
-    # Layer title
-    title = (
-        f"Layer {layer_idx}"
-        if layer_idx >= len(config.keyboard.layers)
-        else config.keyboard.layers[layer_idx].name
-    )
-    if "layer" not in title.lower():
-        title += " Layer"
-
+    title_font = Font.TITLE.get_system_font_family() if use_system_fonts else Font.TITLE.value
     d.append(
         draw.Text(
-            title,
+            layer_title,
             font_size=canvas_height * 0.08,
             x=m.start,
             y=right_thumb.y + right_thumb.height,
             text_anchor="start",
             dominant_baseline="text-after-edge",
-            font_family=Font.TITLE.value,
+            font_family=title_font,
         )
     )
 
@@ -154,3 +189,9 @@ def draw_keymap(
     for idx, layer in _selected_layers(keymap, targets):
         keymap_images[f"keymap-layer-{idx}"] = _draw_layer(config, layer, idx)
     return keymap_images
+
+
+__all__ = [
+    "draw_keymap",
+    "make_gradient",
+]

@@ -11,6 +11,7 @@ from skim.application.render.text import (
     SymbolPart,
     TextPart,
 )
+from skim.domain import SEPARATOR_CHAR
 
 
 class TestFont:
@@ -67,36 +68,6 @@ def test_load_font_with_different_sizes():
 
 class TestFontEmbedding:
     """Tests for font embedding into drawings."""
-
-    def test_embed_into_drawing(self):
-        """embed_into adds CSS to drawing."""
-
-        class MockDrawing:
-            def __init__(self):
-                self.css = []
-
-            def append_css(self, css):
-                self.css.append(css)
-
-        drawing = MockDrawing()
-        Font.FINGER_KEY.embed_into(drawing)
-        assert len(drawing.css) == 1
-        assert "@font-face" in drawing.css[0]
-
-    def test_embed_fonts_into_drawing(self):
-        """embed_fonts_into adds all fonts to drawing."""
-
-        class MockDrawing:
-            def __init__(self):
-                self.css = []
-
-            def append_css(self, css):
-                self.css.append(css)
-
-        drawing = MockDrawing()
-        Font.embed_fonts_into(drawing)
-        # Should have CSS for all fonts
-        assert len(drawing.css) == len(Font)
 
 
 class TestLabelPart:
@@ -210,7 +181,7 @@ class TestSeparatorPart:
 
     def test_separator_char_constant(self):
         """SEPARATOR_CHAR is defined."""
-        assert SeparatorPart.SEPARATOR_CHAR == "│"
+        assert SEPARATOR_CHAR == "│"
 
     def test_separator_darken_factor(self):
         """SEPARATOR_DARKEN_FACTOR is defined."""
@@ -218,13 +189,13 @@ class TestSeparatorPart:
 
     def test_text_color_is_darkened(self):
         """text_color is darkened from background."""
-        part = SeparatorPart(SeparatorPart.SEPARATOR_CHAR, "#FFFFFF")
+        part = SeparatorPart(SEPARATOR_CHAR, "#FFFFFF")
         # Should be darker than white
         assert part.text_color != "#FFFFFF"
 
     def test_repr_shows_separatorpart(self):
         """__repr__ shows SeparatorPart class name."""
-        part = SeparatorPart(SeparatorPart.SEPARATOR_CHAR)
+        part = SeparatorPart(SEPARATOR_CHAR)
         assert "SeparatorPart" in repr(part)
 
 
@@ -246,7 +217,7 @@ class TestLabel:
 
     def test_label_with_separator(self):
         """Parse a label with separator character."""
-        label = Label(f"A{SeparatorPart.SEPARATOR_CHAR}B", Font.FINGER_KEY, "#000")
+        label = Label(f"A{SEPARATOR_CHAR}B", Font.FINGER_KEY, "#000")
         assert len(label.parts) == 3
         assert isinstance(label.parts[0], TextPart)
         assert isinstance(label.parts[1], SeparatorPart)
@@ -292,7 +263,7 @@ class TestLabelMethods:
     def test_add_separator(self):
         """add_separator adds a SeparatorPart."""
         label = Label("", Font.FINGER_KEY, "#000")
-        label.add_separator(SeparatorPart.SEPARATOR_CHAR)
+        label.add_separator(SEPARATOR_CHAR)
         assert len(label.parts) == 1
         assert isinstance(label.parts[0], SeparatorPart)
 
@@ -347,7 +318,7 @@ class TestLabelBuildText:
 
     def test_build_text_multi_part(self):
         """build_text creates Text with TSpan for multi-part label."""
-        label = Label(f"A{SeparatorPart.SEPARATOR_CHAR}B", Font.FINGER_KEY, "#000")
+        label = Label(f"A{SEPARATOR_CHAR}B", Font.FINGER_KEY, "#000")
         text_elem = label.build_text(x=100, y=50, font_size=12)
         assert text_elem is not None
 
@@ -402,7 +373,7 @@ class TestLabelRepr:
 
     def test_str_concatenates_parts(self):
         """__str__ concatenates all part texts."""
-        label = Label(f"A{SeparatorPart.SEPARATOR_CHAR}B", Font.FINGER_KEY, "#000")
+        label = Label(f"A{SEPARATOR_CHAR}B", Font.FINGER_KEY, "#000")
         result = str(label)
         # Should contain all characters
         assert "A" in result
@@ -410,7 +381,7 @@ class TestLabelRepr:
 
     def test_repr_shows_all_parts(self):
         """__repr__ shows all label parts."""
-        label = Label(f"A{SeparatorPart.SEPARATOR_CHAR}B", Font.FINGER_KEY, "#000")
+        label = Label(f"A{SEPARATOR_CHAR}B", Font.FINGER_KEY, "#000")
         result = repr(label)
         assert "Label[" in result
         assert "TextPart" in result or "A" in result

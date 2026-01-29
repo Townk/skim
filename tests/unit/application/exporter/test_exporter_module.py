@@ -34,7 +34,9 @@ class TestSaveDrawingsRasterExport:
         """Save drawings in PNG format."""
         drawings = {"test": mock_drawing}
         save_drawings(output_files, drawings)
-        mock_save.assert_called_once_with(drawings, output_files.output_dir, "png")
+        mock_save.assert_called_once_with(
+            drawings, output_files.output_dir, "png", None, False, False
+        )
 
     @patch("skim.application.exporter._save_keymap_images")
     def test_saves_jpeg_format(self, mock_save, tmp_path):
@@ -51,7 +53,7 @@ class TestSaveDrawingsRasterExport:
         drawings = {"test": drawing}
 
         save_drawings(output_files, drawings)
-        mock_save.assert_called_once_with(drawings, tmp_path, "jpeg")
+        mock_save.assert_called_once_with(drawings, tmp_path, "jpeg", None, False, False)
 
     @patch("skim.application.exporter._save_keymap_images")
     def test_saves_webp_format(self, mock_save, tmp_path):
@@ -68,7 +70,7 @@ class TestSaveDrawingsRasterExport:
         drawings = {"test": drawing}
 
         save_drawings(output_files, drawings)
-        mock_save.assert_called_once_with(drawings, tmp_path, "webp")
+        mock_save.assert_called_once_with(drawings, tmp_path, "webp", None, False, False)
 
 
 class TestSaveDrawingsConfirmation:
@@ -199,7 +201,7 @@ class TestSaveDrawingsConfirmation:
         # Verify confirmation was shown
         mock_confirm.assert_called_once()
         # Verify save operation was executed
-        mock_save.assert_called_once_with(drawings, tmp_path, "svg")
+        mock_save.assert_called_once_with(drawings, tmp_path, "svg", None, False, False)
 
 
 class TestSaveKeymapImagesAsync:
@@ -213,7 +215,7 @@ class TestSaveKeymapImagesAsync:
 
         drawings = {"layer-0": drawing, "layer-1": drawing}
 
-        await _save_keymap_images_async(drawings, tmp_path, "svg")
+        await _save_keymap_images_async(drawings, tmp_path, "svg", None, False, False)
 
         assert drawing.save_svg.call_count == 2
 
@@ -225,11 +227,14 @@ class TestSaveKeymapImagesAsync:
 
         mock_exporter = AsyncMock()
 
-        with patch("skim.application.exporter.image_exporter") as mock_image_exporter:
-            mock_image_exporter.return_value.__aenter__ = AsyncMock(return_value=mock_exporter)
-            mock_image_exporter.return_value.__aexit__ = AsyncMock(return_value=None)
+        with (
+            patch("skim.application.exporter._chromium_exporter") as mock_chromium_exporter,
+            patch("skim.application.exporter._PLAYWRIGHT_AVAILABLE", True),
+        ):
+            mock_chromium_exporter.return_value.__aenter__ = AsyncMock(return_value=mock_exporter)
+            mock_chromium_exporter.return_value.__aexit__ = AsyncMock(return_value=None)
 
-            await _save_keymap_images_async(drawings, tmp_path, "png")
+            await _save_keymap_images_async(drawings, tmp_path, "png", None, False, False)
 
             mock_exporter.save.assert_called_once_with(drawing, tmp_path / "layer-0.png")
 
@@ -242,10 +247,13 @@ class TestSaveKeymapImagesAsync:
 
         mock_exporter = AsyncMock()
 
-        with patch("skim.application.exporter.image_exporter") as mock_image_exporter:
-            mock_image_exporter.return_value.__aenter__ = AsyncMock(return_value=mock_exporter)
-            mock_image_exporter.return_value.__aexit__ = AsyncMock(return_value=None)
+        with (
+            patch("skim.application.exporter._chromium_exporter") as mock_chromium_exporter,
+            patch("skim.application.exporter._PLAYWRIGHT_AVAILABLE", True),
+        ):
+            mock_chromium_exporter.return_value.__aenter__ = AsyncMock(return_value=mock_exporter)
+            mock_chromium_exporter.return_value.__aexit__ = AsyncMock(return_value=None)
 
-            await _save_keymap_images_async(drawings, tmp_path, "jpeg")
+            await _save_keymap_images_async(drawings, tmp_path, "jpeg", None, False, False)
 
             assert mock_exporter.save.call_count == 2
