@@ -5,10 +5,14 @@ utilities for displaying key labels with support for Nerd Font glyphs,
 separators, and multi-part labels.
 """
 
+from __future__ import annotations
+
 import base64
+from collections.abc import Sequence
 from enum import Enum
 from functools import cached_property, lru_cache
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import drawsvg as draw
 from PIL import ImageFont
@@ -17,6 +21,10 @@ from skim.application.loaders import load_nerdfont_glyphs
 from skim.assets import ASSETS
 
 from .styling import adjust_luminance
+
+if TYPE_CHECKING:
+    from skim.data.keyboard import SvalboardKeymap
+    from skim.domain.domain_types import SvalboardTargetKey
 
 
 @lru_cache(maxsize=256)
@@ -480,3 +488,66 @@ class Label:
 
         if part:
             self.add_text(part)
+
+
+class FontUsageAnalyzer:
+    """Analyzes a SvalboardKeymap to determine which characters are used from each font.
+
+    Scans key labels and collects characters by font type for font subsetting.
+    Font assignment: FINGER_KEY for finger clusters, THUMB_KEY for thumb clusters,
+    TITLE for layer names, SYMBOLS for Nerd Font glyphs (%%nf-* tokens).
+
+    All fonts include ASCII 32-126 as a safety margin.
+    """
+
+    _char_sets: dict[Font, set[str]]
+
+    def __init__(self) -> None:
+        self._char_sets = {font: set() for font in Font}
+
+        # Safety margin: ASCII 32-126 ensures common characters are always available
+        ascii_chars = {chr(i) for i in range(32, 127)}
+        for font in Font:
+            self._char_sets[font].update(ascii_chars)
+
+        self._char_sets[Font.FINGER_KEY].add(SeparatorPart.SEPARATOR_CHAR)
+        self._char_sets[Font.THUMB_KEY].add(SeparatorPart.SEPARATOR_CHAR)
+
+    def analyze_keymap(
+        self,
+        keymap: SvalboardKeymap[SvalboardTargetKey],
+        layer_names: Sequence[str] | None = None,
+    ) -> None:
+        """Analyze a keymap to collect character usage for each font.
+
+        Args:
+            keymap: The keymap to analyze containing SvalboardTargetKey values.
+            layer_names: Optional layer names to collect for TITLE font.
+        """
+        for layer in keymap.layers:
+            for side in (layer.left, layer.right):
+                for finger_cluster in side.fingers:
+                    for key in finger_cluster:
+                        self._collect_from_label(key.label, Font.FINGER_KEY)
+                for key in side.thumb:
+                    self._collect_from_label(key.label, Font.THUMB_KEY)
+
+        if layer_names:
+            for name in layer_names:
+                self._collect_from_label(name, Font.TITLE)
+
+    def get_used_chars(self, font: Font) -> set[str]:
+        """Get the set of characters used from a specific font."""
+        return self._char_sets[font].copy()
+
+    def _collect_from_label(self, label: str, font: Font) -> None:
+        if not label:
+            return
+
+        parsed = Label(label, font, text_color="#000")
+
+        for part in parsed.parts:
+            if isinstance(part, SymbolPart):
+                self._char_sets[Font.SYMBOLS].add(part.text)
+            else:
+                self._char_sets[font].update(part.text)
