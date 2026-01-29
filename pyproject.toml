@@ -24,6 +24,7 @@ requires-python = ">=3.10"
 dependencies = [
     "click>=8.1.0",
     "drawsvg[raster]>=2.4.1",
+    "fonttools>=4.61.0",
     "pillow>=12.1.0",
     "pillow-avif-plugin>=1.5.5",
     "playwright>=1.57.0",
