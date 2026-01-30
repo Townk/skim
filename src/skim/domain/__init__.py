@@ -1,7 +1,15 @@
-"""Domain layer for Skim.
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
 
-This layer contains business logic and domain models with no dependencies
-on external frameworks or infrastructure.
+"""Domain layer for skim.
+
+This package contains the core business logic and domain entities, independent
+of frameworks or external details. It includes:
+- Domain types and enumerations
+- Adapter interfaces and implementations
+- Utility functions
 """
 
 from .domain_types import (

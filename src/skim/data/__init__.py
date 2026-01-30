@@ -1,3 +1,18 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+"""Data models and structures for skim.
+
+This package contains the core data structures used throughout the application,
+including:
+- Configuration models (Pydantic)
+- Keyboard layout structures (Finger/Thumb clusters)
+- CLI argument transfer objects
+- Trie implementation for prefix matching
+"""
+
 from types import MappingProxyType
 from typing import TypeAlias
 

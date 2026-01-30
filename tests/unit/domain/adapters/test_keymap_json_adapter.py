@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 from skim.domain.adapters.keymap_json_adapter import (
     CONFIG_UI_LEFT_FINGER_CLUSTERS_KEYS,
     CONFIG_UI_LEFT_THUMB_CLUSTER_KEYS,

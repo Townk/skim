@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Loader for keycode-to-label mapping configuration.
 
 This module provides the load_keycode_mappings function, which loads and

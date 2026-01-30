@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Text rendering components for keyboard labels.
 
 This module provides font management, label parsing, and text rendering
@@ -354,7 +359,11 @@ class Label:
         return result
 
     def build_text(
-        self, x: float, y: float, font_size: int, use_system_fonts: bool = False
+        self,
+        x: float,
+        y: float,
+        font_size: int,
+        use_system_fonts: bool = False,
     ) -> draw.DrawingParentElement:
         """Build an SVG text element from this label.
 
@@ -415,36 +424,16 @@ class Label:
 
     @staticmethod
     def _is_nerd_font_token_start(label: str, pos: int, size: int) -> bool:
-        """Check if a position marks the start of a Nerd Font token (%%...).
-
-        Args:
-            label: The label string.
-            pos: The current position.
-            size: The length of the label string.
-
-        Returns:
-            True if this position starts a Nerd Font token.
-        """
+        """Check if a position marks the start of a Nerd Font token (%%...)."""
         return label[pos] == "%" and pos < (size - 3) and label[pos + 1] == "%"
 
     def _parse_nerd_font_token(
-        self, label: str, start_pos: int, size: int
+        self,
+        label: str,
+        start_pos: int,
+        size: int,
     ) -> tuple[int, str | None, str | None]:
-        """Parse a Nerd Font token from the label string.
-
-        Tokens have the format: %%nf-icon-name; or %%icon-name;
-
-        Args:
-            label: The label string.
-            start_pos: The position of the first '%' character.
-            size: The length of the label string.
-
-        Returns:
-            Tuple of (end_position, class_name, character) where:
-            - end_position: Position after the token (or start_pos if invalid)
-            - class_name: The Nerd Font class name, or None if not found
-            - character: The Unicode character for the glyph, or None if not found
-        """
+        """Parse a Nerd Font token from the label string."""
         nf_class = ""
         j = start_pos + 2
         while j < size and label[j] != ";":
@@ -461,14 +450,7 @@ class Label:
         return j, nf_class, char
 
     def _parse_label(self, label: str) -> None:
-        """Parse the label string and populate the parts list.
-
-        Processes Nerd Font tokens (%%nf-icon-name;), separator characters,
-        and regular text, creating appropriate LabelPart objects.
-
-        Args:
-            label: The label string to parse.
-        """
+        """Parse the label string and populate the parts list."""
         part = ""
         label_size = len(label)
         i = 0
@@ -570,22 +552,11 @@ class FontSubsetter:
     _analyzer: FontUsageAnalyzer
 
     def __init__(self, analyzer: FontUsageAnalyzer) -> None:
-        """Initialize the subsetter with a FontUsageAnalyzer.
-
-        Args:
-            analyzer: The analyzer containing character usage data.
-        """
+        """Initialize the subsetter with a FontUsageAnalyzer."""
         self._analyzer = analyzer
 
     def generate_subsetted_css(self) -> str:
-        """Generate CSS @font-face rules with subsetted font data.
-
-        Creates subsetted versions of each font based on characters collected
-        by the analyzer, then generates CSS with embedded base64 font data.
-
-        Returns:
-            CSS string containing @font-face rules for all subsetted fonts.
-        """
+        """Generate CSS @font-face rules with subsetted font data."""
         from fontTools.subset import Options, Subsetter, load_font
 
         css_rules = []
@@ -645,15 +616,7 @@ class FontSubsetter:
         return "\n".join(css_rules)
 
     def subset_font(self, font: Font) -> bytes | None:
-        """Create a subsetted font file for a specific font.
-
-        Args:
-            font: The font to subset.
-
-        Returns:
-            The subsetted font file as bytes, or None if no characters
-            are needed from this font.
-        """
+        """Create a subsetted font file for a specific font."""
         from fontTools.subset import Options, Subsetter, load_font
 
         chars = self._analyzer.get_used_chars(font)
@@ -689,14 +652,7 @@ class FontSubsetter:
         return output.getvalue()
 
     def get_size_reduction(self, font: Font) -> tuple[int, int]:
-        """Get the file size reduction for a subsetted font.
-
-        Args:
-            font: The font to analyze.
-
-        Returns:
-            A tuple of (original_size, subsetted_size) in bytes.
-        """
+        """Get the file size reduction for a subsetted font."""
         original_size = font.path.stat().st_size
         subsetted_data = self.subset_font(font)
 

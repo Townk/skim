@@ -1,11 +1,12 @@
-# Svalboard Keymap Image Maker (skim)
+# qmk-skim (Svalboard Keymap Image Maker)
 
 [![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen.svg)](https://github.com/Townk/skim)
 [![Python Version](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/)
 [![Build Status](https://github.com/Townk/skim/actions/workflows/release.yml/badge.svg)](https://github.com/Townk/skim/actions/workflows/release.yml)
 [![PyPI version](https://badge.fury.io/py/qmk-skim.svg)](https://badge.fury.io/py/qmk-skim)
 
-A Python CLI tool for generating keymap layout images for the [Svalboard](https://svalboard.com) keyboard.
+A Python CLI tool for generating high-quality keymap layout images for the
+[Svalboard](https://svalboard.com) keyboard.
 
 ## Features
 
@@ -16,15 +17,35 @@ A Python CLI tool for generating keymap layout images for the [Svalboard](https:
   - Vial (`.vil`)
   - QMK c2json (`.json`)
 - Configurable colors and appearance
-- High-quality SVG and PNG output
+- High-quality output in multiple formats:
+  - Vector: SVG
+  - Raster: PNG, JPEG, WEBP, AVIF
 
 ## Installation
 
+You can install `qmk-skim` using `pip`, `pipx`, or `uv`.
+
+### Using uv (Recommended)
+
 ```bash
-pip install skim
+uv tool install qmk-skim
+```
+
+### Using pipx
+
+```bash
+pipx install qmk-skim
+```
+
+### Using pip
+
+```bash
+pip install qmk-skim
 ```
 
 ## Usage
+
+The package installs the `skim` command-line tool.
 
 ### Generate keymap images
 
@@ -48,33 +69,53 @@ skim configure --qmk-color-header /path/to/qmk/quantum/color.h --output skim-con
 
 ## Development
 
+This project uses `uv` for dependency management and `just` as a command runner.
+
 ### Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-repo/skim.git
+git clone https://github.com/Townk/skim.git
 cd skim
 
-# Create virtual environment and install dependencies
-uv venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-uv sync --dev
+# Install dependencies
+just sync
 ```
 
 ### Testing
 
 ```bash
-# Run tests with coverage
-uv run pytest
+# Run all tests (unit + integration)
+just tests
 
-# Run specific test file
-uv run pytest tests/unit/domain/test_colors.py
+# Run only unit tests
+just unit-tests
+
+# Run only integration tests
+just integration-tests
+```
+
+### Code Quality
+
+Run the full suite of checks (linting, formatting, type checking) before
+submitting a PR:
+
+```bash
+just check
+```
+
+Individual checks:
+
+```bash
+just lint      # Run ruff linter
+just format    # Format code with ruff
+just typecheck # Run basedpyright
 ```
 
 ### Building Documentation
 
 ```bash
-sphinx-build -b html docs out/docs
+just build-docs
 ```
 
 ## License

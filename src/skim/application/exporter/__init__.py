@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Image exporter with support for Playwright and Cairo backends."""
 
 import asyncio
@@ -173,7 +178,7 @@ def save_drawings(
             )
 
     # Determine if we need to convert text to paths
-    # Cairo always needs text-to-paths because CairoSVG has poor font fallback and baseline support
+    # Cairo always needs text-to_paths because CairoSVG has poor font fallback and baseline support
     convert_text_to_paths = render_engine == RenderEngine.CAIRO or (
         render_engine is None and _CAIRO_AVAILABLE and not _PLAYWRIGHT_AVAILABLE
     )

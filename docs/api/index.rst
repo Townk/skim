@@ -7,6 +7,7 @@ use skim as a library or extend its functionality.
 .. toctree::
    :maxdepth: 2
 
+   data
    domain
    application
    ui

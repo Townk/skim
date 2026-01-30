@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Integration tests for skim.application.exporter.chromium_exporter module.
 
 These tests require Playwright browsers to be installed:

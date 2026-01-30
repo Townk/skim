@@ -6,7 +6,7 @@ Command-line interface and user interaction components.
 CLI
 ---
 
-.. automodule:: skim.ui.cli
+.. automodule:: skim.cli
    :members:
    :undoc-members:
    :show-inheritance:
@@ -14,7 +14,7 @@ CLI
 Logging Configuration
 ---------------------
 
-.. automodule:: skim.ui.logging_config
+.. automodule:: skim.application.logging_config
    :members:
    :undoc-members:
    :show-inheritance:

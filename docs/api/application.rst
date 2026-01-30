@@ -3,10 +3,10 @@ Application Layer
 
 Business logic and processing components.
 
-Image Generator
----------------
+Keymap Generator
+----------------
 
-.. automodule:: skim.application.image_generator
+.. automodule:: skim.application.keymap_generator
    :members:
    :undoc-members:
    :show-inheritance:
@@ -19,69 +19,26 @@ Config Generator
    :undoc-members:
    :show-inheritance:
 
-Keycode Transformer
--------------------
-
-.. automodule:: skim.application.keycode_transformer
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Keycode Loader
---------------
-
-.. automodule:: skim.application.keycode_loader
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Layer Transformer
------------------
-
-.. automodule:: skim.application.layer_transformer
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Typst Compiler
---------------
-
-.. automodule:: skim.application.typst_compiler
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Parsers
+Loaders
 -------
 
-C2JSON Parser
-^^^^^^^^^^^^^
-
-.. automodule:: skim.application.parsers.c2json_parser
+.. automodule:: skim.application.loaders
    :members:
    :undoc-members:
    :show-inheritance:
 
-Vial Parser
-^^^^^^^^^^^
+Render
+------
 
-.. automodule:: skim.application.parsers.vial_parser
+.. automodule:: skim.application.render
    :members:
    :undoc-members:
    :show-inheritance:
 
-Keybard Parser
-^^^^^^^^^^^^^^
+Exporter
+--------
 
-.. automodule:: skim.application.parsers.keybard_parser
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-QMK Color Parser
-^^^^^^^^^^^^^^^^
-
-.. automodule:: skim.application.parsers.qmk_color_parser
+.. automodule:: skim.application.exporter
    :members:
    :undoc-members:
    :show-inheritance:

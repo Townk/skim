@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Domain types and value objects for skim keymap processing.
 
 This module defines the core domain types used throughout the skim application,
@@ -244,7 +249,7 @@ of the non-breaking space behaves just like the hold symbol in a hold-tap key.
 
 Example:
     A label like "⌘ Cmd" could use NBSP_CHAR to make the symbol show outward
-    the key cluster: "⌘\\u00a0Cmd".
+    the key cluster: "⌘\u00a0Cmd".
 
     This would display "⌘ Cmd" on keys at the left side of the cluster and
     "Cmd ⌘" on keys at the right of the cluster.

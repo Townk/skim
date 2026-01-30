@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Command-line interface for the Svalboard Keymap Image Maker tool.
 
 This module provides the CLI entry points for the skim tool using Click.

@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Availability checks for render engines."""
 
 import os
@@ -46,8 +51,8 @@ def check_cairo_available() -> bool:
         # Setup cairo library path before checking availability
         setup_cairo_library_path()
 
-        import cairocffi  # noqa: F401
-        import cairosvg  # noqa: F401
+        import cairocffi  # noqa: F401  # pyright: ignore[reportUnusedImport]
+        import cairosvg  # noqa: F401  # pyright: ignore[reportUnusedImport]
 
         return True
     except (ImportError, OSError):

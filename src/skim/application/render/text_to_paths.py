@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Text to SVG path conversion using fontTools.
 
 This module provides functionality to convert text to SVG path elements,
@@ -9,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, cast
 
 import drawsvg as draw
 from fontTools.pens.svgPathPen import SVGPathPen
@@ -38,7 +44,7 @@ class FontReader:
         self.font_path = font_path
         self._font = TTFont(str(font_path))
         self._glyph_set = self._font.getGlyphSet()
-        self.units_per_em = self._font["head"].unitsPerEm
+        self.units_per_em = cast(Any, self._font["head"]).unitsPerEm
         self.ascent = self._font["hhea"].ascender
         self.descent = self._font["hhea"].descender
 

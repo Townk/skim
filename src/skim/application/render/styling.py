@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Color utilities for converting and manipulating colors.
 
 This module provides functions for color format conversion (hex to RGB,

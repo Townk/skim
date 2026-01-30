@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Geometric shapes and aspect ratio utilities for SVG rendering.
 
 This module provides custom SVG shapes (Trapezoid) and aspect ratio handling

@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Image exporter using Playwright for high-fidelity SVG-to-image conversion.
 
 This module provides the ChromiumExporter class and associated context manager

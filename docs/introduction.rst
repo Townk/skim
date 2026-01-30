@@ -1,14 +1,14 @@
 Introduction
 ============
 
-**skim** (Svalboard Keymap Image Maker) is a command-line tool that generates
+**qmk-skim** (Svalboard Keymap Image Maker) is a command-line tool that generates
 beautiful, publication-ready images of your keyboard layouts. It takes keymap
 configuration files from popular keyboard firmware tools and produces SVG or
-PNG images that you can use for documentation, reference cards, or sharing
+raster images (PNG, JPEG, etc.) that you can use for documentation, reference cards, or sharing
 your layouts with the community.
 
-What is skim?
--------------
+What is qmk-skim?
+-----------------
 
 If you use a Svalboard split keyboard with QMK firmware, you've probably wanted
 to visualize your keymap layout. Maybe you want to:
@@ -25,13 +25,13 @@ to visualize your keymap layout. Maybe you want to:
       :align: center
       :width: 80%
 
-**skim** automates this process by reading your keymap files directly and
+**qmk-skim** automates this process by reading your keymap files directly and
 generating consistent, professional-looking images.
 
 Supported Formats
 -----------------
 
-skim can read keymap files from three popular sources:
+qmk-skim can read keymap files from three popular sources:
 
 .. list-table::
    :header-rows: 1
@@ -68,7 +68,7 @@ Documentation
 ^^^^^^^^^^^^^
 
 If you maintain a keyboard configuration repository or write about keyboards,
-skim can generate consistent images for all your documentation needs.
+qmk-skim can generate consistent images for all your documentation needs.
 
 .. code-block:: bash
 
@@ -87,7 +87,7 @@ on social media or keyboard forums.
 Selective Layer Export
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Only need specific layers? skim can generate just the layers you want.
+Only need specific layers? qmk-skim can generate just the layers you want.
 
 .. code-block:: bash
 
@@ -104,7 +104,7 @@ Key Features
 ------------
 
 - **Multiple input formats**: Supports Keybard, Vial, and QMK c2json files
-- **Flexible output**: Generate SVG (scalable) or PNG (raster) images
+- **Flexible output**: Generate vector (SVG) or raster (PNG, JPEG, WEBP, AVIF) images
 - **Layer selection**: Generate all layers, specific layers, or overview images
 - **Customizable appearance**: Configure colors, borders, and layer names
 - **QMK color import**: Import named colors from your QMK ``color.h`` file
@@ -113,5 +113,5 @@ Key Features
 Next Steps
 ----------
 
-- :doc:`getting-started` - Install skim and generate your first images
+- :doc:`getting-started` - Install qmk-skim and generate your first images
 - :doc:`configuration` - Customize colors, layer names, and appearance

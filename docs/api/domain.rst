@@ -3,26 +3,18 @@ Domain Layer
 
 Core domain models and configuration classes.
 
-Models
-------
+Domain Types
+------------
 
-.. automodule:: skim.domain.models
+.. automodule:: skim.domain.domain_types
    :members:
    :undoc-members:
    :show-inheritance:
 
-Configuration
--------------
+Adapters
+--------
 
-.. automodule:: skim.domain.config
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Colors
-------
-
-.. automodule:: skim.domain.colors
+.. automodule:: skim.domain.adapters
    :members:
    :undoc-members:
    :show-inheritance:

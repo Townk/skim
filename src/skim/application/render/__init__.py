@@ -1,3 +1,19 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+"""Rendering module for generating keymap visualizations.
+
+This package contains the core rendering logic for transforming
+keymap data into SVG drawings. It handles:
+- Layout calculation (Finger/Thumb clusters)
+- Component rendering (Keys, Clusters)
+- Styling and coloring
+- Text and font management
+- Geometry and shape generation
+"""
+
 import drawsvg as draw
 
 from skim.assets import ASSETS

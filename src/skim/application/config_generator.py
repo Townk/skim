@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Configuration Generator for creating Skim config from source files.
 
 This module provides the :class:`ConfigGenerator` which extracts metadata

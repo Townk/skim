@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Comprehensive unit tests for text_to_paths module to achieve 95%+ coverage."""
 
 from unittest.mock import MagicMock, patch

@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Unit tests for skim.application.loaders.keymap_loader module.
 
 Tests cover keymap loading from various formats (Vial, Keybard, C2JSON),

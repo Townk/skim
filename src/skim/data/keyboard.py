@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Keyboard cluster data structures for Svalboard key layouts.
 
 This module provides generic container classes for representing key clusters
