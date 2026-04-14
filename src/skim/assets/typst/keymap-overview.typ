@@ -46,7 +46,7 @@
       box(inset: (top: vertInset), width: 370pt)[
         #if i == range_start {
           box(inset: (left: 15pt), text(
-            font: "Roboto",
+            font: ("DejaVu Sans Condensed", "Roboto"),
             weight: "black",
             fill: text.fill.darken(30%),
             tracking: 2pt,
@@ -60,7 +60,7 @@
           radius: 5pt,
           fill: layerColor,
           text(
-            font: "Roboto",
+            font: ("DejaVu Sans Condensed", "Roboto"),
             weight: "black",
             fill: white,
             tracking: 2pt,
@@ -70,7 +70,7 @@
         )
         #if layerSubName != none {
           box(inset: (left: 15pt), text(
-            font: "Roboto",
+            font: ("DejaVu Sans Condensed", "Roboto"),
             weight: "black",
             fill: layerColor,
             tracking: 2pt,
@@ -90,7 +90,7 @@
       stroke: none,
       image(width: 300pt, "svalboard-logo.svg"),
       box(inset: (top: 37pt), text(
-        font: "Roboto",
+        font: ("DejaVu Sans Condensed", "Roboto"),
         weight: "black",
         fill: text.fill.darken(70%),
         size: 32pt,
@@ -104,7 +104,7 @@
           radius: 5pt,
           fill: text.fill,
           text(
-            font: "Roboto",
+            font: ("DejaVu Sans Condensed", "Roboto"),
             weight: "black",
             fill: white,
             tracking: 2pt,

@@ -362,7 +362,7 @@
       size: (cluster_width * 0.23, cluster_height),
       fill: keyColor(layer, CDOWN),
       label: text(
-        font: "Roboto",
+        font: ("DejaVu Sans Condensed", "Roboto"),
         weight: "black",
         fill: white,
         fit-to-width(max-text-size: cluster_width * 0.075, keyLabel(layer, cluster, DOWN)),
@@ -377,7 +377,7 @@
       )[
         #set align(center + horizon)
         #text(
-          font: "Roboto",
+          font: ("DejaVu Sans Condensed", "Roboto"),
           weight: "black",
           tracking: 1pt,
           size: cluster_height * 0.065,
@@ -401,7 +401,7 @@
       fill: keyColor(layer, CDDOWN),
       stroke: (paint: white, thickness: cluster_height * 0.011, cap: "round"),
       label: text(
-        font: "Roboto",
+        font: ("DejaVu Sans Condensed", "Roboto"),
         weight: "black",
         fill: white,
         fit-to-width(max-text-size: cluster_width * 0.06, keyLabel(layer, cluster, DDOWN)),
@@ -425,7 +425,7 @@
       )[
         #set align(center + horizon)
         #text(
-          font: "Roboto",
+          font: ("DejaVu Sans Condensed", "Roboto"),
           weight: "black",
           tracking: 1pt,
           size: cluster_height * 0.063,
@@ -468,7 +468,7 @@
         cap: "round",
       ),
       label: text(
-        font: "Roboto",
+        font: ("DejaVu Sans Condensed", "Roboto"),
         weight: "black",
         fill: white,
         fit-to-width(max-text-size: cluster_width * 0.05, keyLabel(layer, cluster, UP)),
@@ -483,7 +483,7 @@
       )[
         #set align(center + horizon)
         #text(
-          font: "Roboto",
+          font: ("DejaVu Sans Condensed", "Roboto"),
           weight: "black",
           size: cluster_height * 0.048,
           fill: white,
@@ -502,7 +502,7 @@
       fill: layerSecondaryColor(layer),
       stroke: none,
       label: text(
-        font: "Roboto",
+        font: ("DejaVu Sans Condensed", "Roboto"),
         weight: "black",
         fill: white,
         fit-to-width(max-text-size: cluster_width * 0.1, keyLabel(layer, cluster, PAD)),
@@ -517,7 +517,7 @@
       )[
         #set align(center + horizon)
         #text(
-          font: "Roboto",
+          font: ("DejaVu Sans Condensed", "Roboto"),
           weight: "black",
           tracking: 1pt,
           size: cluster_height * 0.065,
@@ -537,7 +537,7 @@
       fill: layerSecondaryColor(layer),
       stroke: none,
       label: text(
-        font: "Roboto",
+        font: ("DejaVu Sans Condensed", "Roboto"),
         weight: "black",
         fill: white,
         fit-to-width(max-text-size: cluster_width * 0.1, keyLabel(layer, cluster, NAIL)),
@@ -552,7 +552,7 @@
       )[
         #set align(center + horizon)
         #text(
-          font: "Roboto",
+          font: ("DejaVu Sans Condensed", "Roboto"),
           weight: "black",
           tracking: 1pt,
           size: cluster_height * 0.065,
@@ -572,7 +572,7 @@
       fill: layerSecondaryColor(layer),
       stroke: none,
       label: text(
-        font: "Roboto",
+        font: ("DejaVu Sans Condensed", "Roboto"),
         weight: "black",
         fill: white,
         fit-to-width(max-text-size: cluster_width * 0.1, keyLabel(layer, cluster, KNUCKLE)),
@@ -586,7 +586,7 @@
         stroke: (paint: white, thickness: cluster_height * 0.011, cap: "round"),
       )[
         #set align(center + horizon)
-        #text(font: "Roboto", weight: "black", size: cluster_height * 0.065, fill: white, knuckleLayerToggleLabel)
+        #text(font: ("DejaVu Sans Condensed", "Roboto"), weight: "black", size: cluster_height * 0.065, fill: white, knuckleLayerToggleLabel)
       ])
     }
   }))
@@ -607,7 +607,7 @@
     fill: keyColor(layer, CCENTER),
   )[
     #set align(center + horizon)
-    #text(font: "Roboto", weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.16, keyLabel(
+    #text(font: ("DejaVu Sans Condensed", "Roboto"), weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.16, keyLabel(
       layer,
       cluster,
       CENTER,
@@ -624,7 +624,7 @@
       inset: (top: cluster_width * 0.04, bottom: cluster_width * 0.02),
     )[
       #set align(center + horizon)
-      #text(font: "Roboto", weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.16, keyLabel(
+      #text(font: ("DejaVu Sans Condensed", "Roboto"), weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.16, keyLabel(
         layer,
         cluster,
         SOUTH,
@@ -655,7 +655,7 @@
       fill: keyColorAccent(layer, CDSOUTH),
     ))
     place(center + horizon, box(inset: (top: cluster_width * 0.04, bottom: cluster_width * 0.02))[
-      #text(font: "Roboto", weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.14, keyLabel(
+      #text(font: ("DejaVu Sans Condensed", "Roboto"), weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.14, keyLabel(
         layer,
         cluster,
         DSOUTH,
@@ -672,7 +672,7 @@
       inset: (left: cluster_width * 0.078, right: cluster_width * 0.02),
     )[
       #set align(center + horizon)
-      #text(font: "Roboto", weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.16, keyLabel(
+      #text(font: ("DejaVu Sans Condensed", "Roboto"), weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.16, keyLabel(
         layer,
         cluster,
         EAST,
@@ -696,7 +696,7 @@
       inset: (bottom: cluster_width * 0.06, top: cluster_width * 0.02),
     )[
       #set align(center + horizon)
-      #text(font: "Roboto", weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.16, keyLabel(
+      #text(font: ("DejaVu Sans Condensed", "Roboto"), weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.16, keyLabel(
         layer,
         cluster,
         NORTH,
@@ -720,7 +720,7 @@
       inset: (right: cluster_width * 0.078, left: cluster_width * 0.02),
     )[
       #set align(center + horizon)
-      #text(font: "Roboto", weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.16, keyLabel(
+      #text(font: ("DejaVu Sans Condensed", "Roboto"), weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.16, keyLabel(
         layer,
         cluster,
         WEST,
@@ -787,7 +787,7 @@
       place(bottom + right, image.decode(new-svg, width: 20%))
     }
   } else {
-    place(bottom + left, dy: -30pt, text(font: "Roboto", weight: "thin", size: 45pt)[#layer.name Layer])
+    place(bottom + left, dy: -30pt, text(font: ("DejaVu Sans Condensed", "Roboto"), weight: "thin", size: 45pt)[#layer.name Layer])
   }
 })
 

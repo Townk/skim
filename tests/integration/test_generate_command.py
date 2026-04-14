@@ -19,12 +19,11 @@ class TestIntegrationGenerate:
 
     @pytest.fixture
     def samples_dir(self):
-        # Locate samples directory relative to project root (parent of skim dir)
-        # We are in skim/tests/integration
-        # __file__ is skim/tests/integration/test_generate_command.py
-        # root is ../../..
+        # Locate samples directory relative to project root
+        # We are in skim/tests/integration/test_generate_command.py
+        # Project root is parent of tests/ (i.e., skim directory)
         return (
-            Path(__file__).parent.parent.parent.parent / "docs/spec/samples/keymaps"
+            Path(__file__).parent.parent.parent / "docs/spec/samples/keymaps"
         ).resolve()
 
     @pytest.fixture
@@ -115,3 +114,55 @@ class TestIntegrationGenerate:
 
             # Layer 0 key 0 is "MO(5)" in the file too
             assert keymap_data["layers"][0]["labels"][0][0] != ""
+
+    def test_generate_international_characters(
+        self, runner, samples_dir, mock_typst_compile
+    ):
+        """Test generation with international characters (Swedish å, ä, ö)."""
+        sample_path = samples_dir / "swedish-sample.json"
+        config_path = (
+            Path(__file__).parent.parent.parent
+            / "src/skim/assets/data/keymaps/sv-SE.yaml"
+        )
+        if not sample_path.exists():
+            pytest.skip(f"Sample file not found: {sample_path}")
+        if not config_path.exists():
+            pytest.skip(f"Config file not found: {config_path}")
+
+        with runner.isolated_filesystem():
+            result = runner.invoke(
+                main, ["generate", "-k", str(sample_path), "-c", str(config_path)]
+            )
+
+            if result.exit_code != 0:
+                print(result.output)
+            assert result.exit_code == 0
+
+            assert mock_typst_compile.called
+            call_kwargs = mock_typst_compile.call_args[1]
+            sys_inputs = call_kwargs["sys_inputs"]
+
+            # Verify UTF-8 encoding (should NOT have escape sequences)
+            assert "å" in sys_inputs["keymap"]
+            assert "ä" in sys_inputs["keymap"]
+            assert "ö" in sys_inputs["keymap"]
+            # New Swedish characters
+            assert "´" in sys_inputs["keymap"]
+            assert "¨" in sys_inputs["keymap"]
+            assert "-" in sys_inputs["keymap"]
+            assert "\\u" not in sys_inputs["keymap"]
+
+            keymap_data = json.loads(sys_inputs["keymap"])
+
+            # Verify Swedish characters appear in labels
+            # Layer 0: KC_SCOLON=ö, KC_QUOTE=ä, KC_LBRC=å
+            # KC_EQUAL=´, KC_SLASH=-, KC_BACKSLASH=¨
+            layer0_labels = [
+                label for row in keymap_data["layers"][0]["labels"] for label in row
+            ]
+            assert "ö" in layer0_labels
+            assert "ä" in layer0_labels
+            assert "å" in layer0_labels
+            assert "´" in layer0_labels
+            assert "¨" in layer0_labels
+            assert "-" in layer0_labels

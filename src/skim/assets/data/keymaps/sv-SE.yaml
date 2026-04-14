@@ -1,0 +1,102 @@
+# Swedish Keycode Overrides
+#
+# This config maps QMK keycodes to their Swedish keyboard layout characters.
+# QMK keycodes are named by US keyboard physical positions, so keycodes
+# like KC_SCOLON produce different characters on Swedish keyboards.
+#
+# Usage: skim generate -k keyboard.kbi -c keymaps/sv-SE.yaml -o output
+#
+# Swedish keyboard layout mappings:
+# - KC_SCOLON (US key right of L) -> ö
+# - KC_QUOTE (US key right of ;) -> ä
+# - KC_LBRC/LBRACKET (US key left of Enter) -> å
+# - KC_RBRC (US key right of ') -> ' (apostrophe)
+# - KC_SLASH (US key next to right shift) -> -
+# - KC_MINUS (US key top row, right of 0) -> - (same)
+# - KC_EQUAL (US key right of 0) -> ´ (acute)
+# - KC_BACKSLASH (US key below Enter) -> ¨ (umlaut, 3-level: ¨/^/~)
+# - KC_GRAVE (US key left of 1) -> ` (accent grave)
+# - KC_COMMA (US key below left shift) -> , (same)
+# - KC_DOT (US key below comma) -> . (same)
+
+keycodes:
+  # Row 2: Punctuation row (right of U/I/O)
+  KC_SCOLON: "ö"
+  KC_SEMICOLON: "ö"
+  
+  # Row 2: Quote key (right of L)
+  KC_QUOTE: "ä"
+  KC_QUOT: "ä"
+  
+  # Row 3: Bracket keys (left of Enter)
+  # Swedish: å (unshifted), Å (shifted)
+  KC_LBRC: "å"
+  KC_LBRACKET: "å"
+  KC_LEFT_BRACKET: "å"
+  
+  # Row 3: Right bracket/quote key (right of ' on Swedish)
+  # US ']' key produces ' (apostrophe) on Swedish, not ¨
+  KC_RBRC: "'"
+  KC_RIGHT_BRACKET: "'"
+  KC_RBRACKET: "'"
+  
+  # Row 1: Number row punctuation
+  # KC_SLASH on US (next to right shift) is - on Swedish
+  KC_SLASH: "-"
+  KC_SLSH: "-"
+  # KC_EQUAL (right of 0) is ´ (acute) on Swedish
+  KC_EQUAL: "´"
+  KC_EQL: "´"
+  # KC_MINUS (key right of 0 in Swedish) is still minus
+  KC_MINUS: "-"
+  
+  # Row 3: Backslash (below Enter on US)
+  # Swedish 3-level: ¨ (base), ^ (shift), ~ (alt)
+  KC_BACKSLASH: "¨"
+  KC_BSLS: "¨"
+  KC_BSLASH: "¨"
+  "RALT(KC_BACKSLASH)": "~"
+  
+  # Row 1: Grave accent (left of 1 on US, ` on SE but differs)
+  KC_GRAVE: "`"
+  KC_GRV: "`"
+  
+  # Bottom row: comma and dot (same on both)
+  KC_COMMA: ","
+  KC_COMM: ","
+  KC_DOT: "."
+  
+  # Shifted versions (Shift + base key)
+  "LSFT(KC_SCOLON)": "Ö"
+  "LSFT(KC_SEMICOLON)": "Ö"
+  "LSFT(KC_QUOTE)": "Ä"
+  "LSFT(KC_LBRC)": "Å"
+  "LSFT(KC_LBRACKET)": "Å"
+  "LSFT(KC_LEFT_BRACKET)": "Å"
+  "LSFT(KC_SLASH)": "_"
+  "LSFT(KC_MINUS)": "_"
+  "LSFT(KC_EQUAL)": "`"
+  "LSFT(KC_BACKSLASH)": "^"
+  "LSFT(KC_GRAVE)": "~"
+  "LSFT(KC_COMMA)": ";"
+  "LSFT(KC_DOT)": ":"
+
+  # Number row shifted: Swedish uses ) ( instead of ( )
+  # US shifted: KC_8=(, KC_9=), KC_0=)
+  # Swedish shifted: KC_8=), KC_9=(, KC_0=)
+  "LSFT(KC_8)": "("
+  "LSFT(KC_9)": ")"
+  "LSFT(KC_0)": ")"
+
+# Override reversed_alias for Swedish layout
+# US: LSFT(KC_9)='(', LSFT(KC_0)=')', LSFT(KC_8)='('
+# Swedish: LSFT(KC_9)='(', LSFT(KC_0)=')', LSFT(KC_8)=')'
+reversed_alias:
+  "LSFT(KC_9)": ")"
+  "LSFT(KC_0)": "="
+  "LSFT(KC_8)": "("
+  
+  # Also map reversed_alias for shifted keys (these are what Vial/Keybard may output)
+  "LSFT(KC_ASTERISK)": ")"  # KC_ASTERISK is shifted 8 on US
+  "LSFT(KC_LEFT_PAREN)": ")"  # KC_LEFT_PAREN = shifted (
+  "LSFT(KC_RIGHT_PAREN)": "("  # KC_RIGHT_PAREN = shifted )

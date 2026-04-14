@@ -370,8 +370,8 @@ class ImageGenerator:
         keymap_dict["selectedLayers"] = selected_layer_indices
 
         sys_inputs = {
-            "keymap": json.dumps(keymap_dict),
-            "appearance": json.dumps(config.appearance.to_dict()),
+            "keymap": json.dumps(keymap_dict, ensure_ascii=False),
+            "appearance": json.dumps(config.appearance.to_dict(), ensure_ascii=False),
         }
 
         if logger.isEnabledFor(logging.DEBUG):
