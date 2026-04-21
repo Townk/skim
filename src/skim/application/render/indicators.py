@@ -333,7 +333,7 @@ class LayerIndicatorOverlay:
 
             # Center key needs a larger gap so the diagonal circle clears
             # adjacent keys (E/W and S)
-            key_gap = gap * 2.25 if key_name == "center_key" else gap
+            key_gap = gap * 3 if key_name == "center_key" else gap
 
             indicators.append(LayerIndicator(
                 key_x=layout.pos.x,
