@@ -62,17 +62,23 @@ class OverviewLayout:
         badge_dims: Pre-computed badge dimensions.
     """
 
-    def __init__(self, config: SkimConfig, badge_dims: BadgeDimensions) -> None:
+    def __init__(
+        self,
+        config: SkimConfig,
+        badge_dims: BadgeDimensions,
+        routing_column_count: int = 0,
+    ) -> None:
         self._config = config
         self._base_metrics = KeymapLayoutMetrics.from_config(config)
         self._num_layers = len(config.keyboard.layers)
         self._badge_dims = badge_dims
         self._has_double_south = config.keyboard.features.double_south
+        self._routing_column_count = routing_column_count
         self._compute()
 
     def _compute(self) -> None:
         m = self._base_metrics
-        total_width = m.width
+        config_width = m.width
 
         # Outer padding — bigger than single-layer images
         padding = max(m.inset * 2, 40.0)
@@ -81,16 +87,14 @@ class OverviewLayout:
         col1_width = padding + self._badge_dims.width
 
         # Gap between col 1 and col 2 — at least as wide as the thumb cluster gap
-        # (we'll compute that from the right column sizing below)
         col_gap = m.inset * 4  # generous gap, refined below
 
-        # Column 2 starts after col1 + gap
+        # Column 2 starts after col1 + gap.
+        # Its width is based on the config width MINUS badge and routing areas.
         col2_x = col1_width + col_gap
-        col2_width = total_width - col2_x - padding
+        col2_width = config_width - col2_x - padding
 
         # Scale finger clusters to fit within col2.
-        # We need 8 clusters (4 per side) + gaps between them + center gap.
-        # Use uniform scaling from the base metrics.
         scale = col2_width / (m.side_width * 2 + m.inset * 2)
         finger_cluster_width = m.finger_cluster_width * scale
         finger_key_size = m.finger_key_size * scale
@@ -99,13 +103,12 @@ class OverviewLayout:
         side_width = m.side_width * scale
 
         # Refine col_gap: ensure it's at least the thumb cluster gap
-        # Thumb gap = center gap between left and right thumb clusters
         thumb_center_gap = col2_width - 2 * (side_width - thumb_cluster_width) - 2 * thumb_cluster_width
         col_gap = max(col_gap, thumb_center_gap, m.inset * 3)
 
         # Recompute col2 with refined gap
         col2_x = col1_width + col_gap
-        col2_width = total_width - col2_x - padding
+        col2_width = config_width - col2_x - padding
 
         # Rescale with the final col2_width
         scale = col2_width / (m.side_width * 2 + m.inset * 2)
@@ -114,6 +117,23 @@ class OverviewLayout:
         thumb_cluster_width = m.thumb_cluster_width * scale
         inset = m.inset * scale
         side_width = m.side_width * scale
+
+        # N key width for routing column spacing
+        nk = finger_cluster_width * _OUTER_KEY_PROPORTION
+
+        # Routing area: to the right of the cluster area.
+        # Each routing column is 1 N key wide, plus padding + 1 N key gap
+        # from the rightmost cluster edge.
+        routing_area_width = 0.0
+        if self._routing_column_count > 0:
+            routing_area_width = (
+                padding  # gap between clusters and routing
+                + nk  # minimum final LEFT segment
+                + self._routing_column_count * nk  # routing columns
+            )
+
+        # Total canvas width = clusters area + routing area
+        total_width = config_width + routing_area_width
 
         # Finger cluster height: 1:1 normally, 3:4 with double_south
         if self._has_double_south:

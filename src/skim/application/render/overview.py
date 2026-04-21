@@ -267,7 +267,6 @@ def _draw_connector_lines(
     end_x = max_cluster_right
 
     # Routing columns: staggered to the right, each ≥ N key apart.
-    # Base starts at cluster_right + doc_padding + 1 N key.
     target_layers_used = sorted(set(ln[2] for ln in lines))
     base_routing_x = end_x + layout.padding + nk
     routing_x_by_layer = {
@@ -275,7 +274,39 @@ def _draw_connector_lines(
         for i, layer in enumerate(target_layers_used)
     }
 
-    for cx, cy, target_layer, offset_dir in lines:
+    # Y-stagger: lines escaping in the same vertical direction from nearby
+    # positions need different escape distances so they don't overlap
+    # horizontally. Sort by start position and assign increasing escape
+    # multipliers within each direction group.
+    up_lines = sorted(
+        [(i, cx, cy) for i, (cx, cy, _, od) in enumerate(lines)
+         if _escape_direction(od) == "VERTICAL" and lines[i][2] in layer_to_row
+         and (layer_to_row[lines[i][2]], all_row_bounds) and
+         (all_row_bounds[layer_to_row[lines[i][2]]][1] + ew_offset + nk / 2.0) < cy],
+        key=lambda t: t[2],  # sort by Y descending (highest circle = smallest escape)
+        reverse=True,
+    )
+    down_lines = sorted(
+        [(i, cx, cy) for i, (cx, cy, _, od) in enumerate(lines)
+         if _escape_direction(od) == "VERTICAL" and lines[i][2] in layer_to_row
+         and (all_row_bounds[layer_to_row[lines[i][2]]][1] + ew_offset + nk / 2.0) >= cy],
+        key=lambda t: t[2],  # sort by Y ascending (lowest circle = smallest escape)
+    )
+    right_lines = [
+        (i, cx, cy) for i, (cx, cy, _, od) in enumerate(lines)
+        if _escape_direction(od) == "RIGHT"
+    ]
+
+    # Assign escape multipliers (1-based: 1*nk, 2*nk, 3*nk...)
+    escape_mult: dict[int, int] = {}
+    for rank, (idx, _, _) in enumerate(up_lines):
+        escape_mult[idx] = rank + 1
+    for rank, (idx, _, _) in enumerate(down_lines):
+        escape_mult[idx] = rank + 1
+    for rank, (idx, _, _) in enumerate(right_lines):
+        escape_mult[idx] = rank + 1
+
+    for line_idx, (cx, cy, target_layer, offset_dir) in enumerate(lines):
         if 0 <= target_layer < len(palette.layers):
             stroke_color = palette.layers[target_layer][4]
         else:
@@ -285,47 +316,36 @@ def _draw_connector_lines(
         tgt_x, tgt_y, tgt_w, tgt_h = all_row_bounds[target_row_idx]
         target_ew_center_y = tgt_y + ew_offset + nk / 2.0
         routing_x = routing_x_by_layer[target_layer]
+        mult = escape_mult.get(line_idx, 1)
 
         escape = _escape_direction(offset_dir)
         pts: list[tuple[float, float]] = [(cx, cy)]
 
         if escape == "RIGHT":
-            # Circle is ABOVE key → escape RIGHT ≥ 1 N key, clearing clusters
-            escape_x = max(cx + nk, max_cluster_right + nk)
+            # Circle is ABOVE key → escape RIGHT, clearing clusters
+            escape_x = max(cx + mult * nk, max_cluster_right + nk)
             pts.append((escape_x, cy))
 
-            # Continue RIGHT to routing column if needed
             if escape_x < routing_x:
                 pts.append((routing_x, cy))
 
-            # Are we already at the target Y? (within tolerance)
             final_x = max(escape_x, routing_x)
             if abs(cy - target_ew_center_y) > 1.0:
-                # Need to go UP/DOWN to target Y, then LEFT to end_x
                 pts.append((final_x, target_ew_center_y))
                 pts.append((end_x, target_ew_center_y))
-            else:
-                # Already at target Y — this RIGHT segment IS the endpoint
-                pass
 
         else:  # VERTICAL escape
-            # Circle is LEFT/RIGHT/DIAGONAL → escape UP or DOWN ≥ 1 N key
-            # Direction: toward the target row if possible
             if target_ew_center_y < cy:
-                escape_y = cy - nk  # UP
+                escape_y = cy - mult * nk  # UP, staggered
             else:
-                escape_y = cy + nk  # DOWN
+                escape_y = cy + mult * nk  # DOWN, staggered
 
             pts.append((cx, escape_y))
-
-            # Go RIGHT to routing column
             pts.append((routing_x, escape_y))
 
-            # Go UP/DOWN to target E key center Y
             if abs(escape_y - target_ew_center_y) > 1.0:
                 pts.append((routing_x, target_ew_center_y))
 
-            # Go LEFT to aligned end X
             pts.append((end_x, target_ew_center_y))
 
         # Build SVG path
@@ -357,15 +377,16 @@ def draw_overview(
     base_metrics = KeymapLayoutMetrics.from_config(config)
 
     # Compute badge dimensions and layout.
-    # Use a preliminary layout to get the cluster width, compute badge dims
-    # from that, then rebuild the final layout. The badge font size is
-    # determined by the badge height (which comes from the cluster key size),
-    # so we fix the cluster width from the first pass and don't re-derive
-    # the font size to avoid circular dependency.
+    # First pass: get cluster width to size badges.
+    # Second pass: count routing columns needed for connector lines.
     prelim_badge = BadgeDimensions(width=200, height=40, border_radius=8)
     prelim_layout = OverviewLayout(config, prelim_badge)
     badge_dims = _compute_badge_dims(config, render_layer_count, prelim_layout.finger_cluster_width)
-    layout = OverviewLayout(config, badge_dims)
+
+    # Count unique target layers for routing column reservation
+    routing_column_count = render_layer_count  # worst case: one column per layer
+
+    layout = OverviewLayout(config, badge_dims, routing_column_count)
 
     canvas_w = layout.canvas_width
     canvas_h = layout.canvas_height
