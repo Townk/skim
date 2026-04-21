@@ -608,6 +608,8 @@ class Output(BaseModel):
             Defaults to a Layout instance with default values.
         style: Visual styling configuration. Defaults to a Style
             instance with default values.
+        copyright: Optional copyright notice displayed in the overview
+            image. Defaults to None.
 
     Example:
         >>> output = Output(
@@ -622,6 +624,7 @@ class Output(BaseModel):
 
     layout: Layout = Field(default_factory=Layout)
     style: Style = Field(default_factory=Style)
+    copyright: str | None = None
 
 
 class SkimConfig(BaseModel):
