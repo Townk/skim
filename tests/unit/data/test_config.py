@@ -122,3 +122,17 @@ class TestKeyboardLayerSubtitle:
         dumped = layer.model_dump()
         assert "subtitle" in dumped
         assert dumped["subtitle"] == "COLEMAK"
+
+
+class TestOutputCopyright:
+    """Tests for Output.copyright field."""
+
+    def test_copyright_defaults_to_none(self):
+        """copyright defaults to None when not specified."""
+        output = Output()
+        assert output.copyright is None
+
+    def test_copyright_can_be_set(self):
+        """copyright can be set to a string value."""
+        output = Output(copyright="© 2026 My Layout")
+        assert output.copyright == "© 2026 My Layout"
