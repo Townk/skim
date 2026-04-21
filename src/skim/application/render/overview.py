@@ -212,11 +212,14 @@ def _compute_connector_paths(
     ew_offset: float,
     max_cluster_right: float,
     padding: float,
+    thumb_bbox: tuple[float, float, float, float] | None = None,
 ) -> list[tuple[list[tuple[float, float]], int]]:
     """Compute connector line paths without drawing them.
 
     Returns list of (points, target_layer) for each connector line.
     Points start from the circle perimeter, not center.
+    UP/DOWN escapes clear the entire thumb cluster area so horizontal
+    segments don't cross any thumb keys.
     """
     lines = [
         (cx, cy, r, tgt, kn, sd) for cx, cy, r, tgt, kn, sd in all_indicators
@@ -226,6 +229,17 @@ def _compute_connector_paths(
         return []
 
     end_x = max_cluster_right
+
+    # Thumb cluster top/bottom for clearance
+    if thumb_bbox:
+        tb_x, tb_y, tb_w, tb_h = thumb_bbox
+        thumb_top = tb_y
+        thumb_bottom = tb_y + tb_h
+    else:
+        # Fallback: use circle positions
+        all_cy = [cy for _, cy, _, _, _, _ in lines]
+        thumb_top = min(all_cy) - nk
+        thumb_bottom = max(all_cy) + nk
 
     # Routing columns staggered to the right
     target_layers_used = sorted(set(ln[3] for ln in lines))
@@ -249,9 +263,9 @@ def _compute_connector_paths(
         else:
             right_indices.append((i, cx))
 
-    # UP: highest circle (largest cy) = smallest escape
+    # UP: highest circle (largest cy) = smallest rank (closest to thumb_top)
     up_indices.sort(key=lambda t: t[1], reverse=True)
-    # DOWN: lowest circle (smallest cy) = smallest escape
+    # DOWN: lowest circle (smallest cy) = smallest rank (closest to thumb_bottom)
     down_indices.sort(key=lambda t: t[1])
     # RIGHT: leftmost = smallest escape
     right_indices.sort(key=lambda t: t[1])
@@ -276,25 +290,24 @@ def _compute_connector_paths(
         escape = _THUMB_ESCAPE_DIRECTIONS.get((key_name, side), "RIGHT")
 
         if escape == "UP":
-            # Start from top of circle perimeter
+            # Must clear ABOVE entire thumb area, then stagger from there
             start_y = cy - radius
-            escape_y = cy - radius - mult * nk
+            escape_y = thumb_top - mult * nk
             pts = [(cx, start_y), (cx, escape_y), (routing_x, escape_y)]
             if abs(escape_y - target_ew_center_y) > 1.0:
                 pts.append((routing_x, target_ew_center_y))
             pts.append((end_x, target_ew_center_y))
 
         elif escape == "DOWN":
-            # Start from bottom of circle perimeter
+            # Must clear BELOW entire thumb area, then stagger from there
             start_y = cy + radius
-            escape_y = cy + radius + mult * nk
+            escape_y = thumb_bottom + mult * nk
             pts = [(cx, start_y), (cx, escape_y), (routing_x, escape_y)]
             if abs(escape_y - target_ew_center_y) > 1.0:
                 pts.append((routing_x, target_ew_center_y))
             pts.append((end_x, target_ew_center_y))
 
         else:  # RIGHT
-            # Start from right of circle perimeter
             start_x = cx + radius
             escape_x = max(cx + radius + mult * nk, max_cluster_right + nk)
             pts = [(start_x, cy), (escape_x, cy)]
@@ -404,9 +417,18 @@ def draw_overview(
             all_row_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
             max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
             indicators = _collect_thumb_indicators(left_thumb_prelim, right_thumb_prelim, keymap)
+
+            def _thumb_bb(lt: ThumbClusterComponent, rt: ThumbClusterComponent):
+                bx = lt.x
+                by = min(lt.y, rt.y)
+                br = rt.x + rt.width
+                bb = max(lt.y + lt.height, rt.y + rt.height)
+                return (bx, by, br - bx, bb - by)
+
+            tb = _thumb_bb(left_thumb_prelim, right_thumb_prelim)
             connector_paths = _compute_connector_paths(
                 indicators, all_row_bounds, layer_to_row,
-                nk, ew_offset, max_cluster_right, layout.padding,
+                nk, ew_offset, max_cluster_right, layout.padding, tb,
             )
 
             # Find clearance needed: only check the ESCAPE segment
@@ -441,14 +463,22 @@ def draw_overview(
                 all_row_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
                 max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
                 indicators = _collect_thumb_indicators(left_thumb_final, right_thumb_final, keymap)
+                tb = _thumb_bb(left_thumb_final, right_thumb_final)
                 connector_paths = _compute_connector_paths(
                     indicators, all_row_bounds, layer_to_row,
-                    nk, ew_offset, max_cluster_right, layout.padding,
+                    nk, ew_offset, max_cluster_right, layout.padding, tb,
                 )
                 # Re-adjust canvas for the final escape extents
                 final_escape_ys = [py for pts, _ in connector_paths for _, py in pts[:2]]
                 final_max_y = max(final_escape_ys) if final_escape_ys else layout.thumb_row_y
                 layout.adjust_for_connectors(layout.thumb_row_y, final_max_y)
+
+                # Adjust canvas width to fit actual routing columns (+ padding)
+                max_path_x = max(
+                    (max(px for px, _ in pts) for pts, _ in connector_paths),
+                    default=layout.canvas_width,
+                )
+                layout.adjust_canvas_width(max_path_x + layout.padding)
 
     # --- Phase 3: Render everything at final positions ---
     canvas_w = layout.canvas_width

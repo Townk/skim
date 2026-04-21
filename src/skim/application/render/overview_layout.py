@@ -318,6 +318,10 @@ class OverviewLayout:
         if bottom_need > self._canvas_height:
             self._canvas_height = bottom_need
 
+    def adjust_canvas_width(self, needed_width: float) -> None:
+        """Set canvas width to fit routing columns, shrinking if over-allocated."""
+        self._canvas_width = max(needed_width, self._col2_x + self._col2_width + self._padding)
+
     def layer_row_bounding_box(self, row_idx: int) -> tuple[float, float, float, float]:
         row_y = self._layer_row_y_positions[row_idx]
         x = self._col2_x
