@@ -588,6 +588,7 @@ class Style(BaseModel):
     border: Border | None = Field(default_factory=Border)
     palette: Palette = Field(default_factory=Palette)
     use_system_fonts: bool = False
+    show_layer_indicators: bool = True
 
 
 class Output(BaseModel):

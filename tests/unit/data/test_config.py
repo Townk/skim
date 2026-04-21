@@ -13,7 +13,7 @@ Tests cover LayerColor methods that are not exercised by other tests:
 
 import pytest
 
-from skim.data.config import Keyboard, KeyboardLayer, LayerColor
+from skim.data.config import Keyboard, KeyboardLayer, LayerColor, Style
 
 
 class TestLayerColorGetItem:
@@ -87,3 +87,17 @@ class TestKeyboardLayerIndex:
         """layer_index returns None when key is None."""
         keyboard = Keyboard(layers=[KeyboardLayer(label="1", name="Base")])
         assert keyboard.layer_index(None) is None
+
+
+class TestStyleShowLayerIndicators:
+    """Tests for Style.show_layer_indicators field."""
+
+    def test_default_is_true(self):
+        """show_layer_indicators defaults to True."""
+        style = Style()
+        assert style.show_layer_indicators is True
+
+    def test_can_be_set_to_false(self):
+        """show_layer_indicators can be explicitly set to False."""
+        style = Style(show_layer_indicators=False)
+        assert style.show_layer_indicators is False
