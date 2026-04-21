@@ -16,6 +16,10 @@ from enum import Enum
 import drawsvg as draw
 
 from skim.data.config import Palette
+from skim.data.keyboard import FingerCluster, ThumbCluster
+from skim.domain.domain_types import KeyboardSide, SvalboardTargetKey
+
+from .layout import Boundary
 
 
 class SVGGroup(draw.Group):
@@ -223,3 +227,147 @@ class LayerIndicator:
         ))
 
         return g
+
+
+def _finger_cluster_offset(
+    key_name: str, side: KeyboardSide
+) -> tuple[OffsetDirection, ConnectorType]:
+    """Get the offset direction and connector type for a finger cluster key."""
+    match key_name:
+        case "north_key" | "east_key" | "west_key":
+            return OffsetDirection.ABOVE, ConnectorType.VERTICAL
+        case "center_key":
+            if side == KeyboardSide.LEFT:
+                return OffsetDirection.DIAGONAL_RIGHT, ConnectorType.DIAGONAL
+            return OffsetDirection.DIAGONAL_LEFT, ConnectorType.DIAGONAL
+        case "south_key" | "double_south_key":
+            if side == KeyboardSide.LEFT:
+                return OffsetDirection.LEFT, ConnectorType.HORIZONTAL
+            return OffsetDirection.RIGHT, ConnectorType.HORIZONTAL
+        case _:
+            return OffsetDirection.ABOVE, ConnectorType.VERTICAL
+
+
+_FINGER_KEY_NAMES = [
+    "center_key", "north_key", "east_key", "south_key", "west_key", "double_south_key"
+]
+
+
+def _thumb_cluster_offset(
+    key_name: str, side: KeyboardSide
+) -> tuple[OffsetDirection, ConnectorType]:
+    """Get the offset direction and connector type for a thumb cluster key."""
+    is_left = side == KeyboardSide.LEFT
+    outward = OffsetDirection.LEFT if is_left else OffsetDirection.RIGHT
+    inward = OffsetDirection.RIGHT if is_left else OffsetDirection.LEFT
+
+    match key_name:
+        case "pad_key" | "up_key" | "down_key":
+            return outward, ConnectorType.HORIZONTAL
+        case "nail_key" | "knuckle_key":
+            return inward, ConnectorType.HORIZONTAL
+        case "double_down_key":
+            return OffsetDirection.ABOVE, ConnectorType.VERTICAL
+        case _:
+            return outward, ConnectorType.HORIZONTAL
+
+
+_THUMB_KEY_NAMES = [
+    "down_key", "pad_key", "up_key", "nail_key", "knuckle_key", "double_down_key"
+]
+
+
+class LayerIndicatorOverlay:
+    """Orchestrates drawing layer indicators for an entire cluster."""
+
+    def __init__(self, indicators: list[LayerIndicator]) -> None:
+        self._indicators = indicators
+
+    def build(self) -> list[SVGGroup]:
+        """Build all indicator SVG groups."""
+        return [ind.build() for ind in self._indicators]
+
+    @classmethod
+    def for_finger_cluster(
+        cls,
+        keys: FingerCluster[SvalboardTargetKey],
+        metrics: FingerCluster[Boundary],
+        side: KeyboardSide,
+        palette: Palette,
+        circle_diameter: float,
+        gap: float,
+        has_double_south: bool,
+    ) -> "LayerIndicatorOverlay":
+        """Create an overlay for a finger cluster."""
+        indicators: list[LayerIndicator] = []
+
+        for key_name in _FINGER_KEY_NAMES:
+            if key_name == "double_south_key" and not has_double_south:
+                continue
+
+            key: SvalboardTargetKey = getattr(keys, key_name)
+            if key.layer_switch is None:
+                continue
+
+            layout: Boundary = getattr(metrics, key_name)
+            offset_dir, conn_type = _finger_cluster_offset(key_name, side)
+
+            indicators.append(LayerIndicator(
+                key_x=layout.pos.x,
+                key_y=layout.pos.y,
+                key_width=layout.width,
+                key_height=layout.width,  # finger cluster keys are square
+                target_layer=key.layer_switch,
+                palette=palette,
+                circle_diameter=circle_diameter,
+                gap=gap,
+                offset_direction=offset_dir,
+                connector_type=conn_type,
+            ))
+
+        return cls(indicators)
+
+    @classmethod
+    def for_thumb_cluster(
+        cls,
+        keys: ThumbCluster[SvalboardTargetKey],
+        metrics: ThumbCluster[Boundary],
+        down_key_metrics: Boundary,
+        side: KeyboardSide,
+        palette: Palette,
+        circle_diameter: float,
+        gap: float,
+    ) -> "LayerIndicatorOverlay":
+        """Create an overlay for a thumb cluster."""
+        indicators: list[LayerIndicator] = []
+
+        for key_name in _THUMB_KEY_NAMES:
+            key: SvalboardTargetKey = getattr(keys, key_name)
+            if key.layer_switch is None:
+                continue
+
+            layout: Boundary = getattr(metrics, key_name)
+            offset_dir, conn_type = _thumb_cluster_offset(key_name, side)
+
+            # DD: gap measured from Down key's top edge, not DD's own edge
+            if key_name == "double_down_key":
+                ref_y = down_key_metrics.pos.y
+                ref_height = down_key_metrics.pos.y - layout.pos.y + layout.width
+            else:
+                ref_y = layout.pos.y
+                ref_height = layout.width
+
+            indicators.append(LayerIndicator(
+                key_x=layout.pos.x,
+                key_y=ref_y,
+                key_width=layout.width,
+                key_height=ref_height,
+                target_layer=key.layer_switch,
+                palette=palette,
+                circle_diameter=circle_diameter,
+                gap=gap,
+                offset_direction=offset_dir,
+                connector_type=conn_type,
+            ))
+
+        return cls(indicators)

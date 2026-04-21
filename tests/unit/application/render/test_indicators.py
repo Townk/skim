@@ -7,8 +7,16 @@
 
 import pytest
 
-from skim.application.render.indicators import ConnectorType, LayerIndicator, OffsetDirection
+from skim.application.render.indicators import (
+    ConnectorType,
+    LayerIndicator,
+    LayerIndicatorOverlay,
+    OffsetDirection,
+)
+from skim.application.render.layout import Boundary, Position
 from skim.data.config import LayerColor, Palette
+from skim.data.keyboard import FingerCluster, ThumbCluster
+from skim.domain.domain_types import KeyboardSide, SvalboardTargetKey
 
 
 @pytest.fixture
@@ -182,3 +190,166 @@ class TestLayerIndicator:
         )
         svg_str = indicator.build().as_svg()
         assert "<circle" in svg_str
+
+
+def _make_finger_cluster_keys(layer_switches):
+    """Helper: create FingerCluster with given layer_switch values."""
+    names = ["center", "north", "east", "south", "west", "double_south"]
+    return FingerCluster(**{
+        f"{n}_key": SvalboardTargetKey(label=n.upper(), layer_switch=ls)
+        for n, ls in zip(names, layer_switches)
+    })
+
+
+def _make_finger_cluster_metrics():
+    """Helper: create a simple FingerCluster of Boundary for layout metrics."""
+    return FingerCluster(
+        center_key=Boundary(width=50, pos=Position(x=75, y=60)),
+        north_key=Boundary(width=55, pos=Position(x=72, y=0)),
+        east_key=Boundary(width=55, pos=Position(x=135, y=55)),
+        south_key=Boundary(width=55, pos=Position(x=72, y=120)),
+        west_key=Boundary(width=55, pos=Position(x=10, y=55)),
+        double_south_key=Boundary(width=55, pos=Position(x=72, y=185)),
+    )
+
+
+class TestFingerClusterOverlay:
+    def test_skips_keys_without_layer_switch(self, sample_palette):
+        keys = _make_finger_cluster_keys([None, None, None, None, None, None])
+        metrics = _make_finger_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_finger_cluster(
+            keys=keys, metrics=metrics, side=KeyboardSide.LEFT,
+            palette=sample_palette, circle_diameter=28, gap=10, has_double_south=True,
+        )
+        assert len(overlay.build()) == 0
+
+    def test_north_key_gets_above_indicator(self, sample_palette):
+        keys = _make_finger_cluster_keys([None, 2, None, None, None, None])
+        metrics = _make_finger_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_finger_cluster(
+            keys=keys, metrics=metrics, side=KeyboardSide.LEFT,
+            palette=sample_palette, circle_diameter=28, gap=10, has_double_south=True,
+        )
+        assert len(overlay.build()) == 1
+
+    def test_south_left_hand_gets_left_indicator(self, sample_palette):
+        keys = _make_finger_cluster_keys([None, None, None, 1, None, None])
+        metrics = _make_finger_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_finger_cluster(
+            keys=keys, metrics=metrics, side=KeyboardSide.LEFT,
+            palette=sample_palette, circle_diameter=28, gap=10, has_double_south=True,
+        )
+        assert len(overlay.build()) == 1
+
+    def test_south_right_hand_gets_right_indicator(self, sample_palette):
+        keys = _make_finger_cluster_keys([None, None, None, 1, None, None])
+        metrics = _make_finger_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_finger_cluster(
+            keys=keys, metrics=metrics, side=KeyboardSide.RIGHT,
+            palette=sample_palette, circle_diameter=28, gap=10, has_double_south=True,
+        )
+        assert len(overlay.build()) == 1
+
+    def test_center_left_hand_gets_diagonal_right(self, sample_palette):
+        keys = _make_finger_cluster_keys([1, None, None, None, None, None])
+        metrics = _make_finger_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_finger_cluster(
+            keys=keys, metrics=metrics, side=KeyboardSide.LEFT,
+            palette=sample_palette, circle_diameter=28, gap=10, has_double_south=True,
+        )
+        assert len(overlay.build()) == 1
+
+    def test_center_right_hand_gets_diagonal_left(self, sample_palette):
+        keys = _make_finger_cluster_keys([1, None, None, None, None, None])
+        metrics = _make_finger_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_finger_cluster(
+            keys=keys, metrics=metrics, side=KeyboardSide.RIGHT,
+            palette=sample_palette, circle_diameter=28, gap=10, has_double_south=True,
+        )
+        assert len(overlay.build()) == 1
+
+    def test_double_south_skipped_when_no_double_south(self, sample_palette):
+        keys = _make_finger_cluster_keys([None, None, None, None, None, 2])
+        metrics = _make_finger_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_finger_cluster(
+            keys=keys, metrics=metrics, side=KeyboardSide.LEFT,
+            palette=sample_palette, circle_diameter=28, gap=10, has_double_south=False,
+        )
+        assert len(overlay.build()) == 0
+
+    def test_multiple_keys_produce_multiple_indicators(self, sample_palette):
+        keys = _make_finger_cluster_keys([1, 2, None, 0, None, None])
+        metrics = _make_finger_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_finger_cluster(
+            keys=keys, metrics=metrics, side=KeyboardSide.LEFT,
+            palette=sample_palette, circle_diameter=28, gap=10, has_double_south=True,
+        )
+        assert len(overlay.build()) == 3
+
+
+def _make_thumb_cluster_keys(layer_switches):
+    """Helper: create ThumbCluster with given layer_switch values."""
+    names = ["down", "pad", "up", "nail", "knuckle", "double_down"]
+    return ThumbCluster(**{
+        f"{n}_key": SvalboardTargetKey(label=n.upper(), layer_switch=ls)
+        for n, ls in zip(names, layer_switches)
+    })
+
+
+def _make_thumb_cluster_metrics():
+    """Helper: create ThumbCluster of Boundary for layout metrics."""
+    return ThumbCluster(
+        down_key=Boundary(width=40, pos=Position(x=130, y=0)),
+        pad_key=Boundary(width=110, pos=Position(x=10, y=10)),
+        up_key=Boundary(width=100, pos=Position(x=30, y=80)),
+        nail_key=Boundary(width=110, pos=Position(x=180, y=10)),
+        knuckle_key=Boundary(width=100, pos=Position(x=180, y=80)),
+        double_down_key=Boundary(width=34, pos=Position(x=133, y=20)),
+    )
+
+
+class TestThumbClusterOverlay:
+    def test_skips_keys_without_layer_switch(self, sample_palette):
+        keys = _make_thumb_cluster_keys([None, None, None, None, None, None])
+        metrics = _make_thumb_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_thumb_cluster(
+            keys=keys, metrics=metrics, down_key_metrics=metrics.down_key,
+            side=KeyboardSide.LEFT, palette=sample_palette, circle_diameter=28, gap=10,
+        )
+        assert len(overlay.build()) == 0
+
+    def test_pad_left_hand_gets_left_indicator(self, sample_palette):
+        keys = _make_thumb_cluster_keys([None, 1, None, None, None, None])
+        metrics = _make_thumb_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_thumb_cluster(
+            keys=keys, metrics=metrics, down_key_metrics=metrics.down_key,
+            side=KeyboardSide.LEFT, palette=sample_palette, circle_diameter=28, gap=10,
+        )
+        assert len(overlay.build()) == 1
+
+    def test_pad_right_hand_gets_right_indicator(self, sample_palette):
+        keys = _make_thumb_cluster_keys([None, 1, None, None, None, None])
+        metrics = _make_thumb_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_thumb_cluster(
+            keys=keys, metrics=metrics, down_key_metrics=metrics.down_key,
+            side=KeyboardSide.RIGHT, palette=sample_palette, circle_diameter=28, gap=10,
+        )
+        assert len(overlay.build()) == 1
+
+    def test_double_down_gets_above_indicator(self, sample_palette):
+        keys = _make_thumb_cluster_keys([None, None, None, None, None, 2])
+        metrics = _make_thumb_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_thumb_cluster(
+            keys=keys, metrics=metrics, down_key_metrics=metrics.down_key,
+            side=KeyboardSide.LEFT, palette=sample_palette, circle_diameter=28, gap=10,
+        )
+        assert len(overlay.build()) == 1
+
+    def test_multiple_thumb_keys(self, sample_palette):
+        keys = _make_thumb_cluster_keys([1, 2, 0, None, None, None])
+        metrics = _make_thumb_cluster_metrics()
+        overlay = LayerIndicatorOverlay.for_thumb_cluster(
+            keys=keys, metrics=metrics, down_key_metrics=metrics.down_key,
+            side=KeyboardSide.LEFT, palette=sample_palette, circle_diameter=28, gap=10,
+        )
+        assert len(overlay.build()) == 3
