@@ -278,6 +278,21 @@ def _compute_connector_paths(
     for rank, (idx, _) in enumerate(right_indices):
         escape_mult[idx] = rank + 1
 
+    # Pre-compute all UP escape Y values so RIGHT lines can avoid them
+    up_escape_ys: set[int] = set()
+    for idx, _ in up_indices:
+        mult_val = escape_mult[idx]
+        up_escape_ys.add(round(thumb_top - mult_val * nk))
+
+    # Also pre-compute DOWN escape Y values
+    down_escape_ys: set[int] = set()
+    for idx, _ in down_indices:
+        mult_val = escape_mult[idx]
+        down_escape_ys.add(round(thumb_bottom + mult_val * nk))
+
+    # All reserved horizontal Y values (UP + DOWN escapes)
+    reserved_ys = up_escape_ys | down_escape_ys
+
     result: list[tuple[list[tuple[float, float]], int]] = []
 
     for line_idx, (cx, cy, radius, target_layer, key_name, side) in enumerate(lines):
@@ -290,7 +305,6 @@ def _compute_connector_paths(
         escape = _THUMB_ESCAPE_DIRECTIONS.get((key_name, side), "RIGHT")
 
         if escape == "UP":
-            # Must clear ABOVE entire thumb area, then stagger from there
             start_y = cy - radius
             escape_y = thumb_top - mult * nk
             pts = [(cx, start_y), (cx, escape_y), (routing_x, escape_y)]
@@ -299,7 +313,6 @@ def _compute_connector_paths(
             pts.append((end_x, target_ew_center_y))
 
         elif escape == "DOWN":
-            # Must clear BELOW entire thumb area, then stagger from there
             start_y = cy + radius
             escape_y = thumb_bottom + mult * nk
             pts = [(cx, start_y), (cx, escape_y), (routing_x, escape_y)]
@@ -310,13 +323,32 @@ def _compute_connector_paths(
         else:  # RIGHT
             start_x = cx + radius
             escape_x = max(cx + radius + mult * nk, max_cluster_right + nk)
-            pts = [(start_x, cy), (escape_x, cy)]
-            if escape_x < routing_x:
-                pts.append((routing_x, cy))
-            final_x = max(escape_x, routing_x)
-            if abs(cy - target_ew_center_y) > 1.0:
-                pts.append((final_x, target_ew_center_y))
+
+            # Check if this line's horizontal Y (cy) collides with any
+            # reserved UP/DOWN escape Y. If so, the line's horizontal
+            # segment at the routing area would overlap — avoid by going
+            # UP to the next free slot above thumb_top.
+            rounded_cy = round(cy)
+            collides = any(abs(rounded_cy - ry) < nk for ry in reserved_ys)
+
+            if collides:
+                # Find the next free Y above thumb_top
+                slot = max(len(up_escape_ys), len(down_escape_ys)) + 1
+                escape_y = thumb_top - slot * nk
+                reserved_ys.add(round(escape_y))
+                pts = [(start_x, cy), (escape_x, cy), (escape_x, escape_y),
+                       (routing_x, escape_y)]
+                if abs(escape_y - target_ew_center_y) > 1.0:
+                    pts.append((routing_x, target_ew_center_y))
                 pts.append((end_x, target_ew_center_y))
+            else:
+                pts = [(start_x, cy), (escape_x, cy)]
+                if escape_x < routing_x:
+                    pts.append((routing_x, cy))
+                final_x = max(escape_x, routing_x)
+                if abs(cy - target_ew_center_y) > 1.0:
+                    pts.append((final_x, target_ew_center_y))
+                    pts.append((end_x, target_ew_center_y))
 
         result.append((pts, target_layer))
 
