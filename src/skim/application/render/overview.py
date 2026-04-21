@@ -228,7 +228,8 @@ def _compute_connector_paths(
     if not lines:
         return []
 
-    end_x = max_cluster_right
+    # Lines end at cluster right edge + document padding
+    end_x = max_cluster_right + padding
 
     # Thumb cluster top/bottom for clearance
     if thumb_bbox:
@@ -305,7 +306,7 @@ def _compute_connector_paths(
         escape = _THUMB_ESCAPE_DIRECTIONS.get((key_name, side), "RIGHT")
 
         if escape == "UP":
-            start_y = cy - radius
+            start_y = cy - radius - 4.0  # 4px gap from circle perimeter
             escape_y = thumb_top - mult * nk
             pts = [(cx, start_y), (cx, escape_y), (routing_x, escape_y)]
             if abs(escape_y - target_ew_center_y) > 1.0:
@@ -313,7 +314,7 @@ def _compute_connector_paths(
             pts.append((end_x, target_ew_center_y))
 
         elif escape == "DOWN":
-            start_y = cy + radius
+            start_y = cy + radius + 4.0  # 4px gap from circle perimeter
             escape_y = thumb_bottom + mult * nk
             pts = [(cx, start_y), (cx, escape_y), (routing_x, escape_y)]
             if abs(escape_y - target_ew_center_y) > 1.0:
@@ -321,8 +322,8 @@ def _compute_connector_paths(
             pts.append((end_x, target_ew_center_y))
 
         else:  # RIGHT
-            start_x = cx + radius
-            escape_x = max(cx + radius + mult * nk, max_cluster_right + nk)
+            start_x = cx + radius + 4.0  # 4px gap from circle perimeter
+            escape_x = max(start_x + mult * nk, max_cluster_right + nk)
 
             # Check if this line's horizontal Y (cy) collides with any
             # reserved UP/DOWN escape Y. If so, the line's horizontal
