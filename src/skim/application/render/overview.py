@@ -14,7 +14,7 @@ overview SVG image showing all keymap layers in a two-column layout:
 import drawsvg as draw
 
 from skim.assets import ASSETS
-from skim.data import SkimConfig, SplitSide, SvalboardKeymap, SvalboardLayout
+from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .components import FingerClusterComponent, ThumbClusterComponent
@@ -23,7 +23,7 @@ from .geometry import AspectRatio
 from .indicators import LayerIndicator, _finger_cluster_offset, _FINGER_KEY_NAMES
 from .layout import Boundary, KeymapLayoutMetrics
 from .overview_layout import OverviewLayout
-from .text import Font, Label
+from .text import Font
 
 
 # Svalboard logo aspect ratio (original dimensions: 2333.333 x 458.333)
@@ -39,26 +39,24 @@ _CONNECTOR_ROUTING_MARGIN = 12.0
 def _collect_indicator_positions(
     all_finger_clusters: list[list[FingerClusterComponent]],
     keymap: SvalboardKeymap[SvalboardTargetKey],
+    row_to_layer: list[int],
 ) -> list[tuple[int, float, float, int]]:
     """Collect absolute positions of all layer indicator circles.
 
-    Iterates over every finger cluster across all layers and finds keys
-    with a ``layer_switch`` value. For each such key, creates a temporary
-    ``LayerIndicator`` in cluster-local coordinates and converts the circle
-    center to absolute canvas coordinates.
-
     Args:
-        all_finger_clusters: Nested list ``[layer_idx][cluster_idx]`` of
+        all_finger_clusters: Nested list ``[row_idx][cluster_idx]`` of
             ``FingerClusterComponent`` objects already placed on the canvas.
         keymap: The full ``SvalboardKeymap`` used to retrieve per-key data.
+        row_to_layer: Mapping from row index to layer index.
 
     Returns:
-        A list of ``(source_layer_idx, abs_cx, abs_cy, target_layer_idx)``
+        A list of ``(row_idx, abs_cx, abs_cy, target_layer_idx)``
         tuples, one entry per indicator circle.
     """
     results: list[tuple[int, float, float, int]] = []
 
-    for layer_idx, layer_clusters in enumerate(all_finger_clusters):
+    for row_idx, layer_clusters in enumerate(all_finger_clusters):
+        layer_idx = row_to_layer[row_idx]
         layer_data = keymap.layers[layer_idx]
 
         for cluster_idx, cluster_comp in enumerate(layer_clusters):
@@ -107,7 +105,7 @@ def _collect_indicator_positions(
                 abs_cx = cluster_comp.x + indicator.circle_center_x
                 abs_cy = cluster_comp.y + indicator.circle_center_y
 
-                results.append((layer_idx, abs_cx, abs_cy, key.layer_switch))
+                results.append((row_idx, abs_cx, abs_cy, key.layer_switch))
 
     return results
 
@@ -117,24 +115,19 @@ def _draw_connector_lines(
     layout: OverviewLayout,
     indicator_positions: list[tuple[int, float, float, int]],
     config: SkimConfig,
-    all_cluster_bounds: list[tuple[float, float, float, float]],
+    all_row_bounds: list[tuple[float, float, float, float]],
+    layer_to_row: dict[int, int],
 ) -> None:
     """Draw orthogonal dashed connector lines from indicators to target rows.
-
-    For each indicator position, draws an L-shaped (or Z-shaped) SVG path
-    from the circle to the bounding region of the target layer's row.  The
-    path routes horizontally first to just outside the right edge of the
-    cluster area, then vertically to the target row's centre, then
-    horizontally back to the row edge.
 
     Args:
         d: The ``drawsvg.Drawing`` to append elements to.
         layout: The ``OverviewLayout`` for positional information.
         indicator_positions: List of
-            ``(source_layer_idx, abs_cx, abs_cy, target_layer_idx)`` tuples.
+            ``(row_idx, abs_cx, abs_cy, target_layer_idx)`` tuples.
         config: The ``SkimConfig`` for palette lookups.
-        all_cluster_bounds: Bounding boxes
-            ``(x, y, width, height)`` for each layer row.
+        all_row_bounds: Bounding boxes ``(x, y, width, height)`` per row.
+        layer_to_row: Mapping from layer index to row index.
     """
     if not indicator_positions:
         return
@@ -142,15 +135,20 @@ def _draw_connector_lines(
     palette = config.output.style.palette
     right_edge = layout.canvas_width
 
-    for _src_layer, abs_cx, abs_cy, target_layer in indicator_positions:
+    for _src_row, abs_cx, abs_cy, target_layer in indicator_positions:
+        # Skip if target layer is not rendered
+        if target_layer not in layer_to_row:
+            continue
+
         # Resolve stroke color from target layer palette
         if 0 <= target_layer < len(palette.layers):
             stroke_color = palette.layers[target_layer][4]
         else:
             stroke_color = "#808080"
 
-        # Target row bounding box
-        tgt_x, tgt_y, tgt_w, tgt_h = all_cluster_bounds[target_layer]
+        # Target row bounding box (look up by row, not layer)
+        target_row_idx = layer_to_row[target_layer]
+        tgt_x, tgt_y, tgt_w, tgt_h = all_row_bounds[target_row_idx]
         target_row_mid_y = tgt_y + tgt_h / 2.0
         target_row_right_x = tgt_x + tgt_w  # right edge of target row
 
@@ -286,9 +284,14 @@ def draw_overview(
     badge_padding_x = inset * 0.3
     badge_border_radius = badge_height * 0.2
 
-    for layer_idx in range(num_layers):
-        row_y = layout.layer_row_y_positions[layer_idx]
-        row_h = layout.layer_row_heights[layer_idx]
+    # Render layers from highest (top) to lowest (bottom)
+    # Row 0 = highest layer, Row N-1 = layer 0
+    render_layer_count = min(len(keymap.layers), num_layers)
+    row_to_layer = list(reversed(range(render_layer_count)))
+
+    for row_idx, layer_idx in enumerate(row_to_layer):
+        row_y = layout.layer_row_y_positions[row_idx]
+        row_h = layout.layer_row_heights[row_idx]
         # Center the badge vertically within the row
         badge_center_y = row_y + row_h / 2.0
         badge_y = badge_center_y - badge_height / 2.0
@@ -312,8 +315,8 @@ def draw_overview(
             )
         )
 
-        # Badge text: "N LAYERNAME" in white bold
-        badge_text = f"{layer_cfg.label} {layer_cfg.name}"
+        # Badge text: layer name in uppercase
+        badge_text = layer_cfg.name.upper()
         d.append(
             draw.Text(
                 badge_text,
@@ -344,20 +347,35 @@ def draw_overview(
                 )
             )
 
-    # "THUMBS" label at the thumb row position
+    # "THUMBS" label at the thumb row position with black square background
     thumb_row_y = layout.thumb_row_y
-    thumbs_font_size = layers_heading_font_size
+    thumbs_font_size = layer_badge_font_size
+    thumbs_badge_height = thumbs_font_size * 1.8
+    thumbs_badge_width = thumbs_font_size * 5.5
+    thumbs_badge_x = text_align_x - badge_padding_x
+    thumbs_badge_y = thumb_row_y
 
+    d.append(
+        draw.Rectangle(
+            x=thumbs_badge_x,
+            y=thumbs_badge_y,
+            width=thumbs_badge_width,
+            height=thumbs_badge_height,
+            rx=badge_border_radius,
+            ry=badge_border_radius,
+            fill=palette.text_color,
+        )
+    )
     d.append(
         draw.Text(
             "THUMBS",
             font_size=thumbs_font_size,
             x=text_align_x,
-            y=thumb_row_y,
+            y=thumbs_badge_y + thumbs_badge_height / 2.0,
             text_anchor="start",
-            dominant_baseline="text-before-edge",
+            dominant_baseline="central",
             font_family=label_font_family,
-            fill=palette.text_color,
+            fill="white",
             font_weight="bold",
         )
     )
@@ -372,14 +390,13 @@ def draw_overview(
 
     # Derive layout title from the first layer's name or a generic title
     if num_layers > 0:
-        first_layer_name = config.keyboard.layers[0].name
-        layout_title = first_layer_name
-        if "layer" not in layout_title.lower() and "layout" not in layout_title.lower():
-            layout_title = f"{layout_title} Layout"
+        first_layer = config.keyboard.layers[0]
+        layout_title = first_layer.subtitle or first_layer.name
+        layout_title = f"{layout_title} Layers Layout"
     else:
         layout_title = "Keymap Layout"
 
-    title_font_size = max(10, int(canvas_height * 0.03))
+    title_font_size = max(10, int(canvas_height * 0.012))
     title_y = margin + inset
     title_x = right_col_x + (canvas_width - right_col_x) / 2.0
 
@@ -402,10 +419,8 @@ def draw_overview(
     cluster_width = layout.finger_cluster_width
     all_finger_clusters: list[list[FingerClusterComponent]] = []
 
-    # Only render layers that have config entries (palette colors, labels)
-    render_layer_count = min(len(keymap.layers), num_layers)
-
-    for layer_idx in range(render_layer_count):
+    # Render layers from highest (top row) to lowest (bottom row)
+    for row_idx, layer_idx in enumerate(row_to_layer):
         layer_data = keymap.layers[layer_idx]
         render_context = RenderContext(
             palette=config.output.style.palette,
@@ -417,7 +432,7 @@ def draw_overview(
             show_layer_indicators=config.output.style.show_layer_indicators,
         )
 
-        positions = layout.finger_cluster_positions(layer_idx)
+        positions = layout.finger_cluster_positions(row_idx)
         layer_clusters: list[FingerClusterComponent] = []
 
         # Left side: positions 0-3 (index -> pinky)
@@ -448,9 +463,11 @@ def draw_overview(
     # Connector lines from layer indicator circles to target layer rows
     # ---------------------------------------------------------------
     if config.output.style.show_layer_indicators:
-        all_cluster_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
-        indicator_positions = _collect_indicator_positions(all_finger_clusters, keymap)
-        _draw_connector_lines(d, layout, indicator_positions, config, all_cluster_bounds)
+        # Build mapping from layer_idx → row_idx for connector targeting
+        layer_to_row = {layer_idx: row_idx for row_idx, layer_idx in enumerate(row_to_layer)}
+        all_row_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
+        indicator_positions = _collect_indicator_positions(all_finger_clusters, keymap, row_to_layer)
+        _draw_connector_lines(d, layout, indicator_positions, config, all_row_bounds, layer_to_row)
 
     # ---------------------------------------------------------------
     # Thumb clusters for layer 0 only

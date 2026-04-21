@@ -68,7 +68,7 @@ class TestDrawOverview:
         result = draw_overview(config, keymap)
         svg = result.as_svg()
         for i in range(3):
-            assert f"Layer{i}" in svg
+            assert f"LAYER{i}" in svg
 
     def test_svg_contains_subtitle_when_set(self):
         layers_cfg = (

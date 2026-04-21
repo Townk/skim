@@ -122,8 +122,10 @@ class OverviewLayout:
             right_xs.append(x)
 
         # Thumb cluster X positions (same proportional logic as standard layout)
-        left_thumb_x = right_col_x + margin + inset * 2 + side_width - thumb_cluster_width
-        right_thumb_x = right_col_x + right_col_w - (margin + inset * 2) - side_width
+        # Add indicator padding to prevent layer circles from overlapping in center
+        indicator_padding = thumb_cluster_width * 0.1
+        left_thumb_x = right_col_x + margin + inset * 2 + side_width - thumb_cluster_width - indicator_padding
+        right_thumb_x = right_col_x + right_col_w - (margin + inset * 2) - side_width + indicator_padding
 
         # Store computed values
         self._left_column_width = left_col_w
