@@ -21,7 +21,7 @@ from .components import FingerClusterComponent, ThumbClusterComponent
 from .context import RenderContext
 from .geometry import AspectRatio
 from .indicators import LayerIndicator, _finger_cluster_offset, _FINGER_KEY_NAMES
-from .layout import Boundary
+from .layout import Boundary, KeymapLayoutMetrics
 from .overview_layout import OverviewLayout
 from .text import Font, Label
 
@@ -212,7 +212,6 @@ def draw_overview(
     palette = config.output.style.palette
 
     # Determine margin for background rect positioning
-    from .layout import KeymapLayoutMetrics
     metrics = KeymapLayoutMetrics.from_config(config)
     margin = metrics.margin
 
@@ -262,8 +261,6 @@ def draw_overview(
     layers_heading_y = logo_y + logo_height + inset
 
     label_font_family = (
-        Font.LABEL.get_system_font_family() if use_system_fonts else Font.LABEL.value
-        if hasattr(Font, "LABEL") else
         Font.THUMB_KEY.get_system_font_family() if use_system_fonts else Font.THUMB_KEY.value
     )
 
@@ -405,7 +402,11 @@ def draw_overview(
     cluster_width = layout.finger_cluster_width
     all_finger_clusters: list[list[FingerClusterComponent]] = []
 
-    for layer_idx, layer_data in enumerate(keymap.layers):
+    # Only render layers that have config entries (palette colors, labels)
+    render_layer_count = min(len(keymap.layers), num_layers)
+
+    for layer_idx in range(render_layer_count):
+        layer_data = keymap.layers[layer_idx]
         render_context = RenderContext(
             palette=config.output.style.palette,
             layer_index=layer_idx,
@@ -447,7 +448,7 @@ def draw_overview(
     # Connector lines from layer indicator circles to target layer rows
     # ---------------------------------------------------------------
     if config.output.style.show_layer_indicators:
-        all_cluster_bounds = [layout.layer_row_bounding_box(i) for i in range(len(keymap.layers))]
+        all_cluster_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
         indicator_positions = _collect_indicator_positions(all_finger_clusters, keymap)
         _draw_connector_lines(d, layout, indicator_positions, config, all_cluster_bounds)
 
