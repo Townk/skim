@@ -177,16 +177,20 @@ class LayerIndicator:
             case ConnectorType.DIAGONAL:
                 cos45 = math.cos(math.pi / 4)
                 sin45 = math.sin(math.pi / 4)
+                # Endpoint is 4px inside the key's edge, not from its center.
+                # For the circular center key, edge is at key_width/2 from center.
+                key_edge_r = self._key_width / 2
+                inset_r = key_edge_r - _ENDPOINT_INSET
                 if self._offset_direction == OffsetDirection.DIAGONAL_RIGHT:
                     self._line_x1 = self._cx - self._radius * cos45
                     self._line_y1 = self._cy - self._radius * sin45
-                    self._line_x2 = key_cx + _ENDPOINT_INSET * cos45
-                    self._line_y2 = key_cy + _ENDPOINT_INSET * sin45
+                    self._line_x2 = key_cx + inset_r * cos45
+                    self._line_y2 = key_cy + inset_r * sin45
                 else:
                     self._line_x1 = self._cx + self._radius * cos45
                     self._line_y1 = self._cy - self._radius * sin45
-                    self._line_x2 = key_cx - _ENDPOINT_INSET * cos45
-                    self._line_y2 = key_cy + _ENDPOINT_INSET * sin45
+                    self._line_x2 = key_cx - inset_r * cos45
+                    self._line_y2 = key_cy + inset_r * sin45
                 self._ep_x = self._line_x2
                 self._ep_y = self._line_y2
 
