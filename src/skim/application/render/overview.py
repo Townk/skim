@@ -109,7 +109,7 @@ _THUMB_ESCAPE_DIRECTIONS: dict[tuple[str, KeyboardSide], str] = {
     ("up_key", KeyboardSide.LEFT): "DOWN",
     ("knuckle_key", KeyboardSide.LEFT): "DOWN",
     ("down_key", KeyboardSide.LEFT): "DOWN",
-    ("double_down_key", KeyboardSide.LEFT): "RIGHT",
+    ("double_down_key", KeyboardSide.LEFT): "UP",
     # Right side
     ("pad_key", KeyboardSide.RIGHT): "RIGHT",
     ("nail_key", KeyboardSide.RIGHT): "UP",
