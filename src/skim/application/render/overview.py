@@ -213,6 +213,18 @@ def _collect_thumb_indicators(
     return results
 
 
+def _escape_direction(offset_dir: OffsetDirection) -> str:
+    """Determine the first-segment escape direction based on circle placement.
+
+    Circles placed horizontally or diagonally escape vertically (UP/DOWN).
+    Circles placed vertically (ABOVE) escape horizontally (RIGHT).
+    """
+    if offset_dir == OffsetDirection.ABOVE:
+        return "RIGHT"
+    # LEFT, RIGHT, DIAGONAL_LEFT, DIAGONAL_RIGHT all escape vertically
+    return "VERTICAL"
+
+
 def _draw_connector_lines(
     d: draw.Drawing,
     layout: OverviewLayout,
@@ -224,34 +236,22 @@ def _draw_connector_lines(
 ) -> None:
     """Draw dotted orthogonal connector lines from indicator circles to target rows.
 
-    Every line follows this shape:
+    Routing (up to 4 segments):
+    1. Perpendicular escape (≥1 N key) — direction depends on circle placement
+    2. Go RIGHT to a staggered routing column
+    3. Go UP/DOWN to the target row's E key center Y
+    4. Go LEFT (≥1 N key) to the aligned end X
 
-    For circles placed LEFT/RIGHT/DIAGONAL (horizontal/diagonal from key):
-        (circle)
-           │  ← perpendicular: UP or DOWN (≥ 1 N key)
-           │
-           +────────────────→ routing_x  (go RIGHT)
-                                │
-                                │  ← go UP to target row
-                                │
-        target E center ←───── +  (go LEFT ≥ 1 N key, all aligned to same end X)
-
-    For circles placed ABOVE (vertical from key):
-        (circle) ──→            (perpendicular: LEFT or RIGHT ≥ 1 N key)
-                   │
-                   +────────→ routing_x  (go RIGHT)
-                                │
-                                │  ← go UP to target row
-                                │
-        target E center ←───── +  (go LEFT ≥ 1 N key, all aligned to same end X)
+    If the escape already reaches the target Y, segments 3-4 collapse into
+    just a RIGHT segment (the routing column IS the endpoint).
 
     Rules:
-    - Lines NEVER overlap any key or layer circle — only other dotted lines.
-    - Each line's routing_x is at least N key width apart from others.
-    - All lines end at the same X position (aligned).
+    - Lines NEVER overlap any key or layer circle.
+    - Routing columns are spaced ≥ N key width apart.
+    - All final LEFT segments end at the same aligned X.
     """
     palette = config.output.style.palette
-    nk = layout.finger_cluster_width * _OUTER_KEY_WIDTH_PROPORTION  # N key width
+    nk = layout.finger_cluster_width * _OUTER_KEY_WIDTH_PROPORTION
     ew_offset = layout.ew_key_y_offset
 
     lines = [
@@ -261,18 +261,14 @@ def _draw_connector_lines(
     if not lines:
         return
 
-    # Rightmost edge of any cluster row
     max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
 
-    # All lines end (going LEFT) at this X — right edge of cluster area
+    # All final LEFT segments end at this X (right edge of cluster area)
     end_x = max_cluster_right
 
-    # Routing columns start at: cluster right + padding + 1 N key
-    # The closest routing column to the clusters is at base_routing_x.
-    # Each target layer gets its own column, spaced N key apart, extending RIGHT.
+    # Routing columns: staggered to the right, each ≥ N key apart.
+    # Base starts at cluster_right + doc_padding + 1 N key.
     target_layers_used = sorted(set(ln[2] for ln in lines))
-    # The leftward final segment must be ≥ 1 N key, so the closest
-    # routing column must be at least end_x + nk
     base_routing_x = end_x + layout.padding + nk
     routing_x_by_layer = {
         layer: base_routing_x + i * nk
@@ -290,47 +286,46 @@ def _draw_connector_lines(
         target_ew_center_y = tgt_y + ew_offset + nk / 2.0
         routing_x = routing_x_by_layer[target_layer]
 
-        # Determine if circle is placed vertically (ABOVE) or not
-        is_above = offset_dir == OffsetDirection.ABOVE
-
+        escape = _escape_direction(offset_dir)
         pts: list[tuple[float, float]] = [(cx, cy)]
 
-        if is_above:
-            # Circle is ABOVE the key → perpendicular = horizontal (go RIGHT)
-            # First segment: go RIGHT at least 1 N key
-            first_x = cx + nk
-            # Make sure we clear past all clusters
-            first_x = max(first_x, max_cluster_right + nk)
-            pts.append((first_x, cy))
+        if escape == "RIGHT":
+            # Circle is ABOVE key → escape RIGHT ≥ 1 N key, clearing clusters
+            escape_x = max(cx + nk, max_cluster_right + nk)
+            pts.append((escape_x, cy))
 
-            # Now go RIGHT to routing_x (if not already past it)
-            if first_x < routing_x:
+            # Continue RIGHT to routing column if needed
+            if escape_x < routing_x:
                 pts.append((routing_x, cy))
 
-            # Go UP (vertically) to target row E key center Y
-            route_x = max(first_x, routing_x)
-            pts.append((route_x, target_ew_center_y))
-
-            # Go LEFT to end_x (aligned endpoint)
-            pts.append((end_x, target_ew_center_y))
-
-        else:
-            # Circle is LEFT/RIGHT/DIAGONAL → perpendicular = vertical (UP or DOWN)
-            # Go in the direction of the target row (UP if target is above, DOWN if below)
-            if target_ew_center_y <= cy:
-                first_y = cy - nk  # go UP
+            # Are we already at the target Y? (within tolerance)
+            final_x = max(escape_x, routing_x)
+            if abs(cy - target_ew_center_y) > 1.0:
+                # Need to go UP/DOWN to target Y, then LEFT to end_x
+                pts.append((final_x, target_ew_center_y))
+                pts.append((end_x, target_ew_center_y))
             else:
-                first_y = cy + nk  # go DOWN
+                # Already at target Y — this RIGHT segment IS the endpoint
+                pass
 
-            pts.append((cx, first_y))
+        else:  # VERTICAL escape
+            # Circle is LEFT/RIGHT/DIAGONAL → escape UP or DOWN ≥ 1 N key
+            # Direction: toward the target row if possible
+            if target_ew_center_y < cy:
+                escape_y = cy - nk  # UP
+            else:
+                escape_y = cy + nk  # DOWN
 
-            # Now go RIGHT to routing_x
-            pts.append((routing_x, first_y))
+            pts.append((cx, escape_y))
 
-            # Go UP (vertically) to target row E key center Y
-            pts.append((routing_x, target_ew_center_y))
+            # Go RIGHT to routing column
+            pts.append((routing_x, escape_y))
 
-            # Go LEFT to end_x (aligned endpoint)
+            # Go UP/DOWN to target E key center Y
+            if abs(escape_y - target_ew_center_y) > 1.0:
+                pts.append((routing_x, target_ew_center_y))
+
+            # Go LEFT to aligned end X
             pts.append((end_x, target_ew_center_y))
 
         # Build SVG path
@@ -598,8 +593,34 @@ def draw_overview(
 
     # ---------------------------------------------------------------
     # Connector lines (finger + thumb indicators)
-    # TODO: Dotted connector line routing — disabled pending design spec
     # ---------------------------------------------------------------
+    if config.output.style.show_layer_indicators:
+        layer_to_row = {li: ri for ri, li in enumerate(row_to_layer)}
+        all_row_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
+
+        all_indicators: list[_IndicatorInfo] = []
+        all_indicators.extend(_collect_finger_indicators(
+            all_finger_clusters, keymap, row_to_layer
+        ))
+
+        thumb_bbox: tuple[float, float, float, float] | None = None
+        if left_thumb and right_thumb:
+            all_indicators.extend(_collect_thumb_indicators(
+                left_thumb, right_thumb, keymap
+            ))
+            tb_x = left_thumb.x
+            tb_y = min(left_thumb.y, right_thumb.y)
+            tb_right = right_thumb.x + right_thumb.width
+            tb_bottom = max(
+                left_thumb.y + left_thumb.height,
+                right_thumb.y + right_thumb.height,
+            )
+            thumb_bbox = (tb_x, tb_y, tb_right - tb_x, tb_bottom - tb_y)
+
+        _draw_connector_lines(
+            d, layout, all_indicators,
+            config, all_row_bounds, layer_to_row, thumb_bbox,
+        )
 
     # ---------------------------------------------------------------
     # Optional copyright
