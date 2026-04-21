@@ -598,36 +598,8 @@ def draw_overview(
 
     # ---------------------------------------------------------------
     # Connector lines (finger + thumb indicators)
+    # TODO: Dotted connector line routing — disabled pending design spec
     # ---------------------------------------------------------------
-    if config.output.style.show_layer_indicators:
-        layer_to_row = {li: ri for ri, li in enumerate(row_to_layer)}
-        all_row_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
-
-        all_indicators: list[_IndicatorInfo] = []
-        all_indicators.extend(_collect_finger_indicators(
-            all_finger_clusters, keymap, row_to_layer
-        ))
-
-        # Thumb cluster bounding box (forbidden area for connector routing)
-        thumb_bbox: tuple[float, float, float, float] | None = None
-        if left_thumb and right_thumb:
-            all_indicators.extend(_collect_thumb_indicators(
-                left_thumb, right_thumb, keymap
-            ))
-            # Bounding box spanning both thumb clusters
-            tb_x = left_thumb.x
-            tb_y = min(left_thumb.y, right_thumb.y)
-            tb_right = right_thumb.x + right_thumb.width
-            tb_bottom = max(
-                left_thumb.y + left_thumb.height,
-                right_thumb.y + right_thumb.height,
-            )
-            thumb_bbox = (tb_x, tb_y, tb_right - tb_x, tb_bottom - tb_y)
-
-        _draw_connector_lines(
-            d, layout, all_indicators,
-            config, all_row_bounds, layer_to_row, thumb_bbox,
-        )
 
     # ---------------------------------------------------------------
     # Optional copyright

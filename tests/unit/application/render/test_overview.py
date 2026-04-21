@@ -114,6 +114,7 @@ class TestDrawOverview:
 
 
 class TestOverviewConnectorLines:
+    @pytest.mark.skip(reason="Connector line routing disabled pending design spec")
     def test_svg_contains_dashed_lines_for_layer_switching_keys(self):
         """When keys have layer_switch, dotted connector lines appear."""
         layers_cfg = (

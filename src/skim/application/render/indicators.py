@@ -364,6 +364,19 @@ class LayerIndicatorOverlay:
         """Create an overlay for a thumb cluster."""
         indicators: list[LayerIndicator] = []
 
+        # Pre-compute UP and PAD circle center Ys to position the Down key
+        # circle relative to them (avoids overlap with other keys).
+        up_layout = metrics.up_key
+        up_h = up_layout.width * _THUMB_KEY_HEIGHT_RATIOS["up_key"]
+        up_circle_cy = up_layout.pos.y + up_h / 2.0
+
+        pad_layout = metrics.pad_key
+        pad_h = pad_layout.width * _THUMB_KEY_HEIGHT_RATIOS["pad_key"]
+        pad_circle_cy = pad_layout.pos.y + pad_h / 2.0
+
+        # Down circle Y = up_circle_cy + (up_circle_cy - pad_circle_cy)
+        down_target_cy = up_circle_cy + (up_circle_cy - pad_circle_cy)
+
         for key_name in _THUMB_KEY_NAMES:
             key: SvalboardTargetKey = getattr(keys, key_name)
             if key.layer_switch is None:
@@ -378,6 +391,14 @@ class LayerIndicatorOverlay:
                 ref_y = down_key_metrics.pos.y
                 ref_height = layout.width * _THUMB_KEY_HEIGHT_RATIOS.get("down_key", 1.0)
                 connector_target_y = layout.pos.y  # DD key's actual y
+            elif key_name == "down_key":
+                # Position the circle at down_target_cy instead of the
+                # key's vertical center to avoid overlapping adjacent keys.
+                # We achieve this by setting ref_y and ref_height so that
+                # ref_y + ref_height/2 == down_target_cy.
+                ref_height = layout.width * _THUMB_KEY_HEIGHT_RATIOS["down_key"]
+                ref_y = down_target_cy - ref_height / 2.0
+                connector_target_y = None
             else:
                 ref_y = layout.pos.y
                 ref_height = layout.width * _THUMB_KEY_HEIGHT_RATIOS.get(key_name, 1.0)
