@@ -82,17 +82,17 @@ keycodes:
       - keycode: LSFT(KC_TAB)
         target: MKC_BKTAB
       - keycode: CKC_BSPC
-        target: LT(1, KC_BACKSPACE)
+        target: LT(_NAV, KC_BACKSPACE)
       - keycode: USER20
-        target: LT(1, KC_BACKSPACE)
+        target: LT(_NAV, KC_BACKSPACE)
       - keycode: CKC_SPC
         target: LT(_NUM, KC_SPACE)
       - keycode: USER21
         target: LT(_NUM, KC_SPACE)
       - keycode: CKC_TAB
-        target: LT(3, KC_TAB)
+        target: LT(_SYM, KC_TAB)
       - keycode: USER22
-        target: LT(3, KC_TAB)
+        target: LT(_SYM, KC_TAB)
       - keycode: CKC_BKTAB
         target: LT(_FUN, MKC_BKTAB)
       - keycode: USER23
