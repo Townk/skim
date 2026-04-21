@@ -224,51 +224,60 @@ def _draw_connector_lines(
 ) -> None:
     """Draw dotted orthogonal connector lines from indicator circles to target rows.
 
-    Routing rules:
-    - Circles placed horizontally or diagonally (LEFT/RIGHT/DIAGONAL):
-      first segment goes UP or DOWN (vertical).
-    - Circles placed vertically (ABOVE): first segment goes horizontally.
-    - ALL lines finish going LEFT into the E key center Y of the target row.
-    - The final leftward segment is at least N key width long.
-    - Lines are spaced at least N key width apart in the routing channel.
-    - Lines must not cross the thumb cluster bounding box.
+    Every line follows this shape:
+
+    For circles placed LEFT/RIGHT/DIAGONAL (horizontal/diagonal from key):
+        (circle)
+           │  ← perpendicular: UP or DOWN (≥ 1 N key)
+           │
+           +────────────────→ routing_x  (go RIGHT)
+                                │
+                                │  ← go UP to target row
+                                │
+        target E center ←───── +  (go LEFT ≥ 1 N key, all aligned to same end X)
+
+    For circles placed ABOVE (vertical from key):
+        (circle) ──→            (perpendicular: LEFT or RIGHT ≥ 1 N key)
+                   │
+                   +────────→ routing_x  (go RIGHT)
+                                │
+                                │  ← go UP to target row
+                                │
+        target E center ←───── +  (go LEFT ≥ 1 N key, all aligned to same end X)
+
+    Rules:
+    - Lines NEVER overlap any key or layer circle — only other dotted lines.
+    - Each line's routing_x is at least N key width apart from others.
+    - All lines end at the same X position (aligned).
     """
     palette = config.output.style.palette
-    n_key_width = layout.finger_cluster_width * _OUTER_KEY_WIDTH_PROPORTION
+    nk = layout.finger_cluster_width * _OUTER_KEY_WIDTH_PROPORTION  # N key width
     ew_offset = layout.ew_key_y_offset
 
-    # Filter to valid targets
     lines = [
-        (cx, cy, tgt, d_) for cx, cy, tgt, d_ in all_indicators
+        (cx, cy, tgt, od) for cx, cy, tgt, od in all_indicators
         if tgt in layer_to_row
     ]
     if not lines:
         return
 
-    # Find cluster area extents
+    # Rightmost edge of any cluster row
     max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
 
-    # Routing channels: vertical rails to the right of all clusters.
-    # Each target layer gets its own channel, spaced N key width apart.
-    # Channels must fit within the canvas (with some margin).
+    # All lines end (going LEFT) at this X — right edge of cluster area
+    end_x = max_cluster_right
+
+    # Routing columns start at: cluster right + padding + 1 N key
+    # The closest routing column to the clusters is at base_routing_x.
+    # Each target layer gets its own column, spaced N key apart, extending RIGHT.
     target_layers_used = sorted(set(ln[2] for ln in lines))
-    base_routing_x = max_cluster_right + n_key_width
-    max_routing_x = layout.canvas_width - layout.padding * 0.3
-    available = max_routing_x - base_routing_x
-    channel_spacing = min(n_key_width, available / max(len(target_layers_used), 1))
+    # The leftward final segment must be ≥ 1 N key, so the closest
+    # routing column must be at least end_x + nk
+    base_routing_x = end_x + layout.padding + nk
     routing_x_by_layer = {
-        layer: min(base_routing_x + i * channel_spacing, max_routing_x)
+        layer: base_routing_x + i * nk
         for i, layer in enumerate(target_layers_used)
     }
-
-    # Thumb cluster forbidden area
-    if thumb_bbox:
-        tb_x, tb_y, tb_w, tb_h = thumb_bbox
-        thumb_top = tb_y
-        thumb_bottom = tb_y + tb_h
-        thumb_right = tb_x + tb_w
-    else:
-        thumb_top = thumb_bottom = thumb_right = 0.0
 
     for cx, cy, target_layer, offset_dir in lines:
         if 0 <= target_layer < len(palette.layers):
@@ -278,98 +287,55 @@ def _draw_connector_lines(
 
         target_row_idx = layer_to_row[target_layer]
         tgt_x, tgt_y, tgt_w, tgt_h = all_row_bounds[target_row_idx]
-
-        # Target endpoint: E key vertical center of the target row,
-        # at the right edge of the cluster area
-        target_ew_center_y = tgt_y + ew_offset + n_key_width / 2.0
-        # The final segment enters from routing_x going LEFT to target_right
-        target_right_x = tgt_x + tgt_w
+        target_ew_center_y = tgt_y + ew_offset + nk / 2.0
         routing_x = routing_x_by_layer[target_layer]
 
-        # Ensure the final leftward segment is at least N key width
-        entry_x = max(target_right_x, routing_x - n_key_width)
-        # But the line must come from routing_x going left, so entry_x < routing_x
-        entry_x = target_right_x
+        # Determine if circle is placed vertically (ABOVE) or not
+        is_above = offset_dir == OffsetDirection.ABOVE
 
-        # Build the path based on the circle's offset direction.
-        # Horizontal/diagonal circles → start vertical; vertical circles → start horizontal.
-        is_vertical_circle = offset_dir == OffsetDirection.ABOVE
+        pts: list[tuple[float, float]] = [(cx, cy)]
 
-        if is_vertical_circle:
-            # Circle is ABOVE key → first go horizontally to routing_x,
-            # then vertically to target, then LEFT into target.
-            #
-            #   (circle) ──────→ routing_x
-            #                      │
-            #                      ↓
-            #   target E ←─────── routing_x
+        if is_above:
+            # Circle is ABOVE the key → perpendicular = horizontal (go RIGHT)
+            # First segment: go RIGHT at least 1 N key
+            first_x = cx + nk
+            # Make sure we clear past all clusters
+            first_x = max(first_x, max_cluster_right + nk)
+            pts.append((first_x, cy))
 
-            # If path would cross thumb area, route above it
-            path_points = [(cx, cy)]
+            # Now go RIGHT to routing_x (if not already past it)
+            if first_x < routing_x:
+                pts.append((routing_x, cy))
 
-            # Go right to routing channel
-            path_points.append((routing_x, cy))
+            # Go UP (vertically) to target row E key center Y
+            route_x = max(first_x, routing_x)
+            pts.append((route_x, target_ew_center_y))
 
-            # Go vertically to target E center Y, avoiding thumb bbox
-            if thumb_bbox and cy < thumb_top and target_ew_center_y > thumb_top:
-                # Would cross thumb area — route above it
-                path_points.append((routing_x, thumb_top - n_key_width))
-                # Go further right if needed to clear thumb
-                if routing_x < thumb_right + n_key_width:
-                    clear_x = thumb_right + n_key_width
-                    path_points.append((clear_x, thumb_top - n_key_width))
-                    path_points.append((clear_x, target_ew_center_y))
-                    path_points.append((entry_x, target_ew_center_y))
-                else:
-                    path_points.append((routing_x, target_ew_center_y))
-                    path_points.append((entry_x, target_ew_center_y))
-            else:
-                path_points.append((routing_x, target_ew_center_y))
-                path_points.append((entry_x, target_ew_center_y))
+            # Go LEFT to end_x (aligned endpoint)
+            pts.append((end_x, target_ew_center_y))
 
         else:
-            # Circle is LEFT/RIGHT/DIAGONAL → first go vertically,
-            # then horizontally to routing channel, then vertically to target,
-            # then LEFT into target.
-            #
-            #   (circle)
-            #      │  (up or down)
-            #      ↓
-            #      +──────→ routing_x
-            #                 │
-            #                 ↓
-            #   target E ←── routing_x
-
-            # Determine vertical direction: go toward the routing channel area
-            # (above thumb cluster, between rows)
-            # Route to a Y that clears all clusters in between
-            if target_ew_center_y < cy:
-                # Target is above — go UP
-                intermediate_y = target_ew_center_y
+            # Circle is LEFT/RIGHT/DIAGONAL → perpendicular = vertical (UP or DOWN)
+            # Go in the direction of the target row (UP if target is above, DOWN if below)
+            if target_ew_center_y <= cy:
+                first_y = cy - nk  # go UP
             else:
-                # Target is below — go DOWN, but avoid thumb area
-                if thumb_bbox and target_ew_center_y > thumb_top:
-                    intermediate_y = min(cy, thumb_top - n_key_width)
-                else:
-                    intermediate_y = target_ew_center_y
+                first_y = cy + nk  # go DOWN
 
-            path_points = [(cx, cy)]
+            pts.append((cx, first_y))
 
-            if abs(intermediate_y - target_ew_center_y) < 1.0:
-                # Can go directly: vertical then horizontal to routing, then left
-                path_points.append((cx, target_ew_center_y))
-                path_points.append((routing_x, target_ew_center_y))
-                path_points.append((entry_x, target_ew_center_y))
-            else:
-                # Need intermediate: vertical, horizontal to routing, vertical to target, left
-                path_points.append((cx, intermediate_y))
-                path_points.append((routing_x, intermediate_y))
-                path_points.append((routing_x, target_ew_center_y))
-                path_points.append((entry_x, target_ew_center_y))
+            # Now go RIGHT to routing_x
+            pts.append((routing_x, first_y))
+
+            # Go UP (vertically) to target row E key center Y
+            pts.append((routing_x, target_ew_center_y))
+
+            # Go LEFT to end_x (aligned endpoint)
+            pts.append((end_x, target_ew_center_y))
 
         # Build SVG path
-        path_d = f"M {path_points[0][0]:.2f} {path_points[0][1]:.2f}"
-        for px, py in path_points[1:]:
+        path_d = f"M {pts[0][0]:.2f} {pts[0][1]:.2f}"
+        for px, py in pts[1:]:
             path_d += f" L {px:.2f} {py:.2f}"
 
         d.append(draw.Raw(
