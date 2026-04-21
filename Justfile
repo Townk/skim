@@ -12,7 +12,7 @@ venv:
 
 # Sync dependencies (dev + docs)
 sync: venv
-    uv sync --dev --group docs
+    uv sync --dev --group docs --extra playwright --extra cairo
 
 # Run all tests (unit + integration)
 tests: install-browsers

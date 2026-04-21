@@ -36,6 +36,10 @@ playwright = [
     "playwright>=1.57.0",
     "pillow-avif-plugin>=1.5.5",
 ]
+cairo = [
+    "cairocffi>=1.7.0",
+    "cairosvg>=2.7.0",
+]
 
 [dependency-groups]
 dev = [
