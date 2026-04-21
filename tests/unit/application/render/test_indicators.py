@@ -85,8 +85,8 @@ class TestLayerIndicator:
         svg_str = indicator.build().as_svg()
         assert 'fill="#00FF00"' in svg_str
 
-    def test_stroke_color_uses_gradient_1(self, sample_palette):
-        """Circle stroke uses gradient[1] of the target layer."""
+    def test_stroke_color_uses_gradient_4(self, sample_palette):
+        """Circle stroke uses gradient[4] of the target layer."""
         indicator = LayerIndicator(
             key_x=100,
             key_y=30,
@@ -100,7 +100,7 @@ class TestLayerIndicator:
             connector_type=ConnectorType.VERTICAL,
         )
         svg_str = indicator.build().as_svg()
-        assert 'stroke="#002200"' in svg_str
+        assert 'stroke="#005500"' in svg_str
 
     def test_above_offset_places_circle_above_key(self, sample_palette):
         """ABOVE offset places circle center above the key top edge."""

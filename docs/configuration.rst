@@ -1,7 +1,8 @@
 Configuration
 =============
 
-Skim is highly configurable, allowing you to customize everything from layout dimensions and spacing to colors and keycode display.
+Skim is highly configurable, allowing you to customize everything from layout
+dimensions and spacing to colors and keycode display.
 
 Configuration File
 ------------------

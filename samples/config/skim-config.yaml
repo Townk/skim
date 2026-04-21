@@ -26,6 +26,9 @@ keyboard:
     - id: _BASE
       name: COLEMAK
       label: "BASE"
+    - id: _GAME
+      name: Game
+      label: "GAME"
     - id: _NAV
       name: Navigation
       label: "NAV"
@@ -296,6 +299,8 @@ output:
       #       gradient list.
       layers:
         - base_color: "#347156"
+          color_index: 2
+        - base_color: "#3E605C"
           color_index: 2
         - base_color: "#89511C"
           color_index: 2

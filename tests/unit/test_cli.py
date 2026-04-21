@@ -240,3 +240,40 @@ class TestConfigureCommand:
         result = runner.invoke(main, ["configure"])
         # The command is currently a stub (pass), so it should succeed
         assert result.exit_code == 0
+
+
+class TestDoctorCommand:
+    """Tests for doctor subcommand."""
+
+    @patch("skim.cli.run_doctor_checks")
+    def test_doctor_runs_all_checks_passed(self, mock_checks):
+        """Displays success message when all checks pass."""
+        from skim.application.doctor import CheckResult
+
+        mock_checks.return_value = [
+            CheckResult("Check 1", True, "Passed"),
+            CheckResult("Check 2", True, "Passed"),
+        ]
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["doctor"])
+
+        assert result.exit_code == 0
+        assert "Everything looks good!" in result.output
+        assert "PASS" in result.output
+
+    @patch("skim.cli.run_doctor_checks")
+    def test_doctor_handles_failures(self, mock_checks):
+        """Displays failure messages."""
+        from skim.application.doctor import CheckResult
+
+        mock_checks.return_value = [
+            CheckResult("Check 1", False, "Failed", "Reason"),
+        ]
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["doctor"])
+
+        assert result.exit_code == 0
+        assert "FAIL" in result.output
+        assert "Some checks failed or warned" in result.output

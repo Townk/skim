@@ -42,6 +42,7 @@ from skim import __prog_name__, __version__
 
 # from skim.application.config_generator import ConfigGenerator
 from skim.application import generate_keymap, setup_logging
+from skim.application.doctor import run_doctor_checks
 from skim.application.exporter import get_available_export_formats
 from skim.data import InputFiles, KeymapGeneratorTargets, OutputFiles, RenderEngine
 
@@ -114,6 +115,41 @@ def main(verbosity: str, quiet: bool) -> None:
         NONE: Silence all output
     """
     setup_logging(verbosity, quiet)
+
+
+@main.command()
+def doctor() -> None:
+    """Check system environment and dependencies."""
+    click.echo(f"Running doctor checks for {__prog_name__} v{__version__}...\n")
+
+    all_passed = True
+    for result in run_doctor_checks():
+        if result.passed:
+            status = click.style("PASS", fg="green", bold=True)
+            click.echo(f"[{status}] {result.name}: {result.message}")
+        else:
+            status = click.style("FAIL", fg="red", bold=True)
+            # Some failures might be warnings (like system fonts which are optional)
+            if "System Font" in result.name:
+                status = click.style("WARN", fg="yellow", bold=True)
+
+            click.echo(f"[{status}] {result.name}: {result.message}")
+            if result.details:
+                click.echo(f"       Details: {result.details}")
+
+            # System fonts are optional, so they don't fail the whole check
+            if (
+                "System Font" not in result.name
+                and "Cairo" not in result.name
+                and "Playwright" not in result.name
+            ):
+                all_passed = False
+
+    click.echo("")
+    if all_passed:
+        click.secho("Everything looks good!", fg="green")
+    else:
+        click.secho("Some checks failed or warned. See details above.", fg="yellow")
 
 
 @main.command()

@@ -103,7 +103,7 @@ class LayerIndicator:
         if 0 <= target_layer < len(palette.layers):
             lc = palette.layers[target_layer]
             self._fill_color = lc.base_color
-            self._stroke_color = lc[1]
+            self._stroke_color = lc[4]
         else:
             self._fill_color = _FALLBACK_FILL
             self._stroke_color = _FALLBACK_STROKE
@@ -156,21 +156,21 @@ class LayerIndicator:
                 self._line_x1 = self._cx
                 self._line_y1 = self._cy + self._radius
                 self._line_x2 = self._cx
-                self._line_y2 = self._key_y
+                self._line_y2 = self._key_y + _ENDPOINT_INSET
                 self._ep_x = self._cx
                 self._ep_y = self._key_y + _ENDPOINT_INSET
             case ConnectorType.HORIZONTAL:
                 if self._offset_direction == OffsetDirection.LEFT:
                     self._line_x1 = self._cx + self._radius
                     self._line_y1 = self._cy
-                    self._line_x2 = self._key_x
+                    self._line_x2 = self._key_x + _ENDPOINT_INSET
                     self._line_y2 = self._cy
                     self._ep_x = self._key_x + _ENDPOINT_INSET
                     self._ep_y = self._cy
                 else:
                     self._line_x1 = self._cx - self._radius
                     self._line_y1 = self._cy
-                    self._line_x2 = self._key_x + self._key_width
+                    self._line_x2 = self._key_x + self._key_width - _ENDPOINT_INSET
                     self._line_y2 = self._cy
                     self._ep_x = self._key_x + self._key_width - _ENDPOINT_INSET
                     self._ep_y = self._cy
@@ -276,6 +276,16 @@ _THUMB_KEY_NAMES = [
     "down_key", "pad_key", "up_key", "nail_key", "knuckle_key", "double_down_key"
 ]
 
+# Thumb key aspect ratios expressed as height_per_width (height = width * ratio)
+_THUMB_KEY_HEIGHT_RATIOS: dict[str, float] = {
+    "down_key": 2.6,
+    "pad_key": 1 / 1.85,
+    "up_key": 1 / 2.75,
+    "nail_key": 1 / 1.95,
+    "knuckle_key": 1 / 1.87,
+    "double_down_key": 1.1,
+}
+
 
 class LayerIndicatorOverlay:
     """Orchestrates drawing layer indicators for an entire cluster."""
@@ -352,10 +362,10 @@ class LayerIndicatorOverlay:
             # DD: gap measured from Down key's top edge, not DD's own edge
             if key_name == "double_down_key":
                 ref_y = down_key_metrics.pos.y
-                ref_height = down_key_metrics.pos.y - layout.pos.y + layout.width
+                ref_height = layout.width * _THUMB_KEY_HEIGHT_RATIOS.get("down_key", 1.0)
             else:
                 ref_y = layout.pos.y
-                ref_height = layout.width
+                ref_height = layout.width * _THUMB_KEY_HEIGHT_RATIOS.get(key_name, 1.0)
 
             indicators.append(LayerIndicator(
                 key_x=layout.pos.x,
