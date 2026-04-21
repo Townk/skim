@@ -192,11 +192,16 @@ class KeymapLayout:
                 y=base_y + m.finger_key_size * vertical_offset[idx],
             )
 
-    def thumb_positions(self, finger_cluster_height: float) -> tuple[Position, Position]:
+    def thumb_positions(
+        self, finger_cluster_height: float, indicator_padding: float = 0
+    ) -> tuple[Position, Position]:
         """Calculate positions for thumb clusters.
 
         Args:
             finger_cluster_height: Height of the finger clusters (varies with double_south).
+            indicator_padding: Extra horizontal padding to shift the left cluster further
+                left and the right cluster further right. Used to prevent layer indicator
+                circles on inward-facing thumb keys from overlapping in the center.
 
         Returns:
             Tuple of (left_thumb_position, right_thumb_position).
@@ -208,8 +213,8 @@ class KeymapLayout:
         right_x = m.width - (m.margin + m.inset * 2) - m.side_width
 
         return (
-            Position(x=left_x, y=thumb_y),
-            Position(x=right_x, y=thumb_y),
+            Position(x=left_x - indicator_padding, y=thumb_y),
+            Position(x=right_x + indicator_padding, y=thumb_y),
         )
 
     def canvas_height(self, finger_cluster_height: float, thumb_cluster_height: float) -> float:

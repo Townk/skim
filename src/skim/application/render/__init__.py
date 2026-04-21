@@ -74,8 +74,15 @@ def _draw_layer(
     # all have the same height)
     cluster_height = finger_clusters[0].height
 
+    # Add padding for indicator circles on inward thumb keys
+    indicator_padding = 0.0
+    if config.output.style.show_layer_indicators:
+        indicator_padding = m.thumb_cluster_width * 0.1
+
     # Create thumb clusters
-    left_thumb_pos, right_thumb_pos = layer_layout.thumb_positions(cluster_height)
+    left_thumb_pos, right_thumb_pos = layer_layout.thumb_positions(
+        cluster_height, indicator_padding=indicator_padding
+    )
 
     left_thumb = ThumbClusterComponent(
         keymap_cluster=layer.left.thumb,
