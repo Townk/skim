@@ -20,6 +20,7 @@ from skim.domain import KeyboardSide, SvalboardTargetKey
 from .components import FingerClusterComponent, ThumbClusterComponent
 from .context import RenderContext
 from .geometry import AspectRatio
+from .indicators import LayerIndicator, _finger_cluster_offset, _FINGER_KEY_NAMES
 from .layout import Boundary
 from .overview_layout import OverviewLayout
 from .text import Font, Label
@@ -30,6 +31,149 @@ _LOGO_ASPECT_RATIO = AspectRatio.from_dimensions(width=2333.333, height=458.333,
 
 # Number of finger clusters per side
 _FINGER_CLUSTERS_PER_SIDE = 4
+
+# Routing margin: how far past the cluster right edge we go before turning
+_CONNECTOR_ROUTING_MARGIN = 12.0
+
+
+def _collect_indicator_positions(
+    all_finger_clusters: list[list[FingerClusterComponent]],
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+) -> list[tuple[int, float, float, int]]:
+    """Collect absolute positions of all layer indicator circles.
+
+    Iterates over every finger cluster across all layers and finds keys
+    with a ``layer_switch`` value. For each such key, creates a temporary
+    ``LayerIndicator`` in cluster-local coordinates and converts the circle
+    center to absolute canvas coordinates.
+
+    Args:
+        all_finger_clusters: Nested list ``[layer_idx][cluster_idx]`` of
+            ``FingerClusterComponent`` objects already placed on the canvas.
+        keymap: The full ``SvalboardKeymap`` used to retrieve per-key data.
+
+    Returns:
+        A list of ``(source_layer_idx, abs_cx, abs_cy, target_layer_idx)``
+        tuples, one entry per indicator circle.
+    """
+    results: list[tuple[int, float, float, int]] = []
+
+    for layer_idx, layer_clusters in enumerate(all_finger_clusters):
+        layer_data = keymap.layers[layer_idx]
+
+        for cluster_idx, cluster_comp in enumerate(layer_clusters):
+            # Determine which side / finger this cluster belongs to
+            is_right = cluster_idx >= _FINGER_CLUSTERS_PER_SIDE
+            finger_idx = cluster_idx - _FINGER_CLUSTERS_PER_SIDE if is_right else cluster_idx
+            side = KeyboardSide.RIGHT if is_right else KeyboardSide.LEFT
+
+            finger_cluster_data = (
+                layer_data.right.fingers[finger_idx]
+                if is_right
+                else layer_data.left.fingers[finger_idx]
+            )
+
+            metrics = cluster_comp._layout.metrics
+            palette = cluster_comp._render_context.palette
+            circle_diameter = metrics.north_key.width * 0.55
+            gap = metrics.north_key.width * 0.18
+
+            for key_name in _FINGER_KEY_NAMES:
+                if key_name == "double_south_key" and not cluster_comp._render_context.has_double_south:
+                    continue
+
+                key: SvalboardTargetKey = getattr(finger_cluster_data, key_name)
+                if key.layer_switch is None:
+                    continue
+
+                layout_boundary = getattr(metrics, key_name)
+                offset_dir, conn_type = _finger_cluster_offset(key_name, side)
+                key_gap = gap * 3 if key_name == "center_key" else gap
+
+                indicator = LayerIndicator(
+                    key_x=layout_boundary.pos.x,
+                    key_y=layout_boundary.pos.y,
+                    key_width=layout_boundary.width,
+                    key_height=layout_boundary.width,
+                    target_layer=key.layer_switch,
+                    palette=palette,
+                    circle_diameter=circle_diameter,
+                    gap=key_gap,
+                    offset_direction=offset_dir,
+                    connector_type=conn_type,
+                )
+
+                # Convert local cluster coordinates to absolute canvas coordinates
+                abs_cx = cluster_comp.x + indicator.circle_center_x
+                abs_cy = cluster_comp.y + indicator.circle_center_y
+
+                results.append((layer_idx, abs_cx, abs_cy, key.layer_switch))
+
+    return results
+
+
+def _draw_connector_lines(
+    d: draw.Drawing,
+    layout: OverviewLayout,
+    indicator_positions: list[tuple[int, float, float, int]],
+    config: SkimConfig,
+    all_cluster_bounds: list[tuple[float, float, float, float]],
+) -> None:
+    """Draw orthogonal dashed connector lines from indicators to target rows.
+
+    For each indicator position, draws an L-shaped (or Z-shaped) SVG path
+    from the circle to the bounding region of the target layer's row.  The
+    path routes horizontally first to just outside the right edge of the
+    cluster area, then vertically to the target row's centre, then
+    horizontally back to the row edge.
+
+    Args:
+        d: The ``drawsvg.Drawing`` to append elements to.
+        layout: The ``OverviewLayout`` for positional information.
+        indicator_positions: List of
+            ``(source_layer_idx, abs_cx, abs_cy, target_layer_idx)`` tuples.
+        config: The ``SkimConfig`` for palette lookups.
+        all_cluster_bounds: Bounding boxes
+            ``(x, y, width, height)`` for each layer row.
+    """
+    if not indicator_positions:
+        return
+
+    palette = config.output.style.palette
+    right_edge = layout.canvas_width
+
+    for _src_layer, abs_cx, abs_cy, target_layer in indicator_positions:
+        # Resolve stroke color from target layer palette
+        if 0 <= target_layer < len(palette.layers):
+            stroke_color = palette.layers[target_layer][4]
+        else:
+            stroke_color = "#808080"
+
+        # Target row bounding box
+        tgt_x, tgt_y, tgt_w, tgt_h = all_cluster_bounds[target_layer]
+        target_row_mid_y = tgt_y + tgt_h / 2.0
+        target_row_right_x = tgt_x + tgt_w  # right edge of target row
+
+        # Route: start at circle → go right to routing rail → go vertically
+        # to target row mid → go left to target row right edge
+        routing_x = right_edge - _CONNECTOR_ROUTING_MARGIN
+
+        path_d = (
+            f"M {abs_cx:.2f} {abs_cy:.2f} "
+            f"L {routing_x:.2f} {abs_cy:.2f} "
+            f"L {routing_x:.2f} {target_row_mid_y:.2f} "
+            f"L {target_row_right_x - _CONNECTOR_ROUTING_MARGIN:.2f} {target_row_mid_y:.2f}"
+        )
+
+        d.append(draw.Raw(
+            f'<path d="{path_d}"'
+            f' stroke="{stroke_color}"'
+            f' stroke-width="1.5"'
+            f' stroke-dasharray="6 4"'
+            f' fill="none"'
+            f' opacity="0.7"'
+            f'/>'
+        ))
 
 
 def draw_overview(
@@ -298,6 +442,14 @@ def draw_overview(
             d.append(cluster.build())
 
         all_finger_clusters.append(layer_clusters)
+
+    # ---------------------------------------------------------------
+    # Connector lines from layer indicator circles to target layer rows
+    # ---------------------------------------------------------------
+    if config.output.style.show_layer_indicators:
+        all_cluster_bounds = [layout.layer_row_bounding_box(i) for i in range(len(keymap.layers))]
+        indicator_positions = _collect_indicator_positions(all_finger_clusters, keymap)
+        _draw_connector_lines(d, layout, indicator_positions, config, all_cluster_bounds)
 
     # ---------------------------------------------------------------
     # Thumb clusters for layer 0 only

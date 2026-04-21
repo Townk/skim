@@ -111,3 +111,47 @@ class TestDrawOverview:
         result = draw_overview(config, keymap)
         svg = result.as_svg()
         assert "THUMBS" in svg
+
+
+class TestOverviewConnectorLines:
+    def test_svg_contains_dashed_lines_for_layer_switching_keys(self):
+        """When keys have layer_switch, dotted connector lines appear."""
+        layers_cfg = (
+            KeyboardLayer(label="0", name="Base"),
+            KeyboardLayer(label="1", name="Nav"),
+        )
+        layer_colors = (
+            LayerColor(base_color="#305050"),
+            LayerColor(base_color="#605050"),
+        )
+        config = SkimConfig(
+            keyboard=Keyboard(layers=layers_cfg),
+            output=Output(style=Style(
+                palette=Palette(layers=layer_colors),
+                show_layer_indicators=True,
+            )),
+        )
+
+        # Create keymap where a key switches to layer 1
+        keys_l0 = [SvalboardTargetKey(label=f"K{i}") for i in range(60)]
+        # Make a finger key switch to layer 1 (e.g. key index 2 = left index east key)
+        keys_l0[2] = SvalboardTargetKey(label="NAV", layer_switch=1)
+        layer0 = SvalboardLayout.from_sequence(keys_l0)
+
+        keys_l1 = [SvalboardTargetKey(label=f"N{i}") for i in range(60)]
+        layer1 = SvalboardLayout.from_sequence(keys_l1)
+
+        keymap = SvalboardKeymap(layers=[layer0, layer1])
+        result = draw_overview(config, keymap)
+        svg = result.as_svg()
+
+        # Should contain dashed path elements
+        assert "stroke-dasharray" in svg
+
+    def test_no_connector_lines_when_no_layer_switches(self):
+        """When no keys have layer_switch, no connector lines appear."""
+        config = _make_config(2)
+        keymap = _make_keymap(2)  # No layer_switch on any key
+        result = draw_overview(config, keymap)
+        svg = result.as_svg()
+        assert "stroke-dasharray" not in svg
