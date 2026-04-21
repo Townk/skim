@@ -87,6 +87,7 @@ class LayerIndicator:
         gap: float,
         offset_direction: OffsetDirection,
         connector_type: ConnectorType,
+        connector_target_y: float | None = None,
     ) -> None:
         self._key_x = key_x
         self._key_y = key_y
@@ -98,6 +99,7 @@ class LayerIndicator:
         self._gap = gap
         self._offset_direction = offset_direction
         self._connector_type = connector_type
+        self._connector_target_y = connector_target_y
 
         # Resolve colors
         if 0 <= target_layer < len(palette.layers):
@@ -153,12 +155,15 @@ class LayerIndicator:
 
         match self._connector_type:
             case ConnectorType.VERTICAL:
+                # connector_target_y overrides where the endpoint lands
+                # (used for DD key where circle is above Down but endpoint is in DD)
+                target_y = self._connector_target_y if self._connector_target_y is not None else self._key_y
                 self._line_x1 = self._cx
                 self._line_y1 = self._cy + self._radius
                 self._line_x2 = self._cx
-                self._line_y2 = self._key_y + _ENDPOINT_INSET
+                self._line_y2 = target_y + _ENDPOINT_INSET
                 self._ep_x = self._cx
-                self._ep_y = self._key_y + _ENDPOINT_INSET
+                self._ep_y = target_y + _ENDPOINT_INSET
             case ConnectorType.HORIZONTAL:
                 if self._offset_direction == OffsetDirection.LEFT:
                     self._line_x1 = self._cx + self._radius
@@ -326,6 +331,10 @@ class LayerIndicatorOverlay:
             layout: Boundary = getattr(metrics, key_name)
             offset_dir, conn_type = _finger_cluster_offset(key_name, side)
 
+            # Center key needs a larger gap so the diagonal circle clears
+            # adjacent keys (E/W and S)
+            key_gap = gap * 1.5 if key_name == "center_key" else gap
+
             indicators.append(LayerIndicator(
                 key_x=layout.pos.x,
                 key_y=layout.pos.y,
@@ -334,7 +343,7 @@ class LayerIndicatorOverlay:
                 target_layer=key.layer_switch,
                 palette=palette,
                 circle_diameter=circle_diameter,
-                gap=gap,
+                gap=key_gap,
                 offset_direction=offset_dir,
                 connector_type=conn_type,
             ))
@@ -363,13 +372,16 @@ class LayerIndicatorOverlay:
             layout: Boundary = getattr(metrics, key_name)
             offset_dir, conn_type = _thumb_cluster_offset(key_name, side)
 
-            # DD: gap measured from Down key's top edge, not DD's own edge
+            # DD: circle position gap is measured from Down key's top edge,
+            # but the connector endpoint goes into the DD key itself.
             if key_name == "double_down_key":
                 ref_y = down_key_metrics.pos.y
                 ref_height = layout.width * _THUMB_KEY_HEIGHT_RATIOS.get("down_key", 1.0)
+                connector_target_y = layout.pos.y  # DD key's actual y
             else:
                 ref_y = layout.pos.y
                 ref_height = layout.width * _THUMB_KEY_HEIGHT_RATIOS.get(key_name, 1.0)
+                connector_target_y = None
 
             indicators.append(LayerIndicator(
                 key_x=layout.pos.x,
@@ -382,6 +394,7 @@ class LayerIndicatorOverlay:
                 gap=gap,
                 offset_direction=offset_dir,
                 connector_type=conn_type,
+                connector_target_y=connector_target_y,
             ))
 
         return cls(indicators)
