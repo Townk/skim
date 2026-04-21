@@ -236,6 +236,46 @@ class TestClusterRenderContext:
         assert result == "#003300"
 
 
+class TestRenderContextShowLayerIndicators:
+    """Tests for show_layer_indicators in RenderContext."""
+
+    def test_default_is_false(self, sample_palette):
+        """show_layer_indicators defaults to False."""
+        ctx = RenderContext(
+            palette=sample_palette,
+            layer_index=0,
+            has_double_south=True,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+        )
+        assert ctx.show_layer_indicators is False
+
+    def test_can_be_set_to_true(self, sample_palette):
+        """show_layer_indicators can be set to True."""
+        ctx = RenderContext(
+            palette=sample_palette,
+            layer_index=0,
+            has_double_south=True,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+            show_layer_indicators=True,
+        )
+        assert ctx.show_layer_indicators is True
+
+    def test_cluster_context_propagates(self, sample_palette):
+        """ClusterRenderContext.from_render_context propagates show_layer_indicators."""
+        base = RenderContext(
+            palette=sample_palette,
+            layer_index=0,
+            has_double_south=True,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+            show_layer_indicators=True,
+        )
+        cluster_ctx = ClusterRenderContext.from_render_context(base, KeyboardSide.LEFT)
+        assert cluster_ctx.show_layer_indicators is True
+
+
 class TestFingerClusterKeyColors:
     """Tests for FingerClusterKeyColors dataclass."""
 

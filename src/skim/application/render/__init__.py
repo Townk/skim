@@ -45,6 +45,7 @@ def _draw_layer(
         use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
         hold_symbol_position=config.output.style.hold_symbol_position,
         use_system_fonts=use_system_fonts,
+        show_layer_indicators=config.output.style.show_layer_indicators,
     )
     layer_layout = KeymapLayout(config)
     m = layer_layout.metrics

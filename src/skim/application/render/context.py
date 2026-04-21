@@ -32,6 +32,7 @@ class RenderContext:
     use_layer_colors_on_keys: bool
     hold_symbol_position: SplitSidePosition
     use_system_fonts: bool = False
+    show_layer_indicators: bool = False
     layer_colors: LayerColor = field(init=False, repr=False, compare=False, hash=False)
 
     def __post_init__(self) -> None:
@@ -93,6 +94,7 @@ class ClusterRenderContext(RenderContext):
             use_layer_colors_on_keys=render_context.use_layer_colors_on_keys,
             hold_symbol_position=render_context.hold_symbol_position,
             use_system_fonts=render_context.use_system_fonts,
+            show_layer_indicators=render_context.show_layer_indicators,
             side=side,
         )
 
