@@ -62,9 +62,9 @@ def _compute_badge_dims(
             badge_texts.append(f"{layer_idx} {name}")
     badge_texts.append("THUMBS")
 
-    # Estimate text width: for bold Roboto at badge_font_size, ~0.62 * font_size per char
-    badge_font_size = badge_height * 0.55
-    char_width = badge_font_size * 0.62
+    # Estimate text width: for Roboto regular at badge_font_size, ~0.58 * font_size per char
+    badge_font_size = badge_height * 0.45
+    char_width = badge_font_size * 0.58
     max_text_width = max(len(t) * char_width for t in badge_texts) if badge_texts else 50
 
     badge_width = 15.0 + max_text_width + 30.0
@@ -203,13 +203,52 @@ def _draw_connector_lines(
     all_row_bounds: list[tuple[float, float, float, float]],
     layer_to_row: dict[int, int],
 ) -> None:
-    """Draw orthogonal dashed connector lines from indicators to target rows."""
-    palette = config.output.style.palette
-    right_edge = layout.canvas_width - layout.padding
+    """Draw orthogonal dashed connector lines from indicators to target rows.
 
-    def _route_line(abs_cx: float, abs_cy: float, target_layer: int) -> None:
-        if target_layer not in layer_to_row:
-            return
+    Each line routes:
+      (circle) ---horizontal---> +
+                                 |  vertical
+                                 +---> (target row right edge)
+
+    Lines are routed outside all cluster areas and each gets a unique
+    routing X offset so they don't overlap each other.
+    """
+    palette = config.output.style.palette
+
+    # Collect all lines: (abs_cx, abs_cy, target_layer)
+    all_lines: list[tuple[float, float, int]] = []
+    for _row, cx, cy, target in finger_indicators:
+        if target in layer_to_row:
+            all_lines.append((cx, cy, target))
+    for cx, cy, target in thumb_indicators:
+        if target in layer_to_row:
+            all_lines.append((cx, cy, target))
+
+    if not all_lines:
+        return
+
+    # Find the rightmost extent of any cluster row to route lines outside it
+    max_cluster_right = 0.0
+    for tgt_x, _tgt_y, tgt_w, _tgt_h in all_row_bounds:
+        max_cluster_right = max(max_cluster_right, tgt_x + tgt_w)
+
+    # Base routing X starts past the rightmost cluster edge
+    base_routing_x = max_cluster_right + _CONNECTOR_ROUTING_MARGIN
+    max_routing_x = layout.canvas_width - layout.padding * 0.5
+
+    # Group lines by target layer to assign unique routing X offsets
+    # so lines to different layers don't overlap
+    target_layers_used = sorted(set(line[2] for line in all_lines))
+    line_spacing = min(
+        _CONNECTOR_ROUTING_MARGIN * 0.8,
+        (max_routing_x - base_routing_x) / max(len(target_layers_used), 1),
+    )
+    routing_x_by_layer = {
+        layer: min(base_routing_x + i * line_spacing, max_routing_x)
+        for i, layer in enumerate(target_layers_used)
+    }
+
+    for abs_cx, abs_cy, target_layer in all_lines:
         if 0 <= target_layer < len(palette.layers):
             stroke_color = palette.layers[target_layer][4]
         else:
@@ -220,13 +259,14 @@ def _draw_connector_lines(
         target_mid_y = tgt_y + tgt_h / 2.0
         target_right_x = tgt_x + tgt_w
 
-        routing_x = right_edge - _CONNECTOR_ROUTING_MARGIN
+        routing_x = routing_x_by_layer[target_layer]
 
+        # Route: circle → right to routing rail → vertical → left to row edge
         path_d = (
             f"M {abs_cx:.2f} {abs_cy:.2f} "
             f"L {routing_x:.2f} {abs_cy:.2f} "
             f"L {routing_x:.2f} {target_mid_y:.2f} "
-            f"L {target_right_x - _CONNECTOR_ROUTING_MARGIN:.2f} {target_mid_y:.2f}"
+            f"L {target_right_x:.2f} {target_mid_y:.2f}"
         )
 
         d.append(draw.Raw(
@@ -238,12 +278,6 @@ def _draw_connector_lines(
             f' opacity="0.7"'
             f'/>'
         ))
-
-    for _row, cx, cy, target in finger_indicators:
-        _route_line(cx, cy, target)
-
-    for cx, cy, target in thumb_indicators:
-        _route_line(cx, cy, target)
 
 
 def draw_overview(
@@ -296,7 +330,7 @@ def draw_overview(
         stroke_width=border.width if border else None,
     ))
 
-    label_font = Font.THUMB_KEY.get_system_font_family() if use_system_fonts else Font.THUMB_KEY.value
+    label_font = Font.FINGER_KEY.get_system_font_family() if use_system_fonts else Font.FINGER_KEY.value
     title_font = Font.TITLE.get_system_font_family() if use_system_fonts else Font.TITLE.value
 
     badge_w = badge_dims.width
@@ -384,7 +418,6 @@ def draw_overview(
             dominant_baseline="central",
             font_family=label_font,
             fill="white",
-            font_weight="bold",
         ))
 
         # Optional subtitle below badge
@@ -418,7 +451,6 @@ def draw_overview(
         dominant_baseline="central",
         font_family=label_font,
         fill="white",
-        font_weight="bold",
     ))
 
     # ---------------------------------------------------------------

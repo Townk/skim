@@ -116,26 +116,6 @@ class OverviewLayout:
         # Row height = cluster height (no vertical offset — all clusters top-aligned)
         row_height = finger_cluster_height
 
-        # Row spacing
-        row_gap = inset * 3
-
-        # Header row height (logo + title)
-        header_height = max(self._badge_dims.height * 2, 50.0)
-
-        # Y positions for layer rows (after header)
-        top_y = padding + header_height + row_gap
-        y_positions: list[float] = []
-        for i in range(self._num_layers):
-            y_positions.append(top_y + i * (row_height + row_gap))
-
-        # Thumb row below last layer row
-        last_layer_y = y_positions[-1] if y_positions else top_y
-        thumb_cluster_height = thumb_cluster_width * _THUMB_CLUSTER_ASPECT
-        thumb_row_y = last_layer_y + row_height + row_gap
-
-        # Canvas height
-        canvas_height = thumb_row_y + thumb_cluster_height + padding
-
         # Finger cluster X positions (all top-aligned, no vertical offset)
         left_base_x = col2_x + side_width
         right_base_x = col2_x + col2_width - side_width
@@ -150,8 +130,33 @@ class OverviewLayout:
             x = right_base_x + (inset + finger_cluster_width) * idx
             right_xs.append(x)
 
-        # Thumb cluster X positions with indicator padding
-        indicator_padding = thumb_cluster_width * 0.1
+        # Row gap = same as the center gap between left and right finger clusters
+        center_gap = right_base_x - left_base_x
+        row_gap = center_gap
+
+        # Header row height (logo + title)
+        header_height = max(self._badge_dims.height * 2, 50.0)
+
+        # Y positions for layer rows (after header)
+        top_y = padding + header_height + row_gap
+        y_positions: list[float] = []
+        for i in range(self._num_layers):
+            y_positions.append(top_y + i * (row_height + row_gap))
+
+        # Thumb row below last layer row — account for indicator circles
+        # that may appear above the thumb cluster keys
+        last_layer_y = y_positions[-1] if y_positions else top_y
+        thumb_cluster_height = thumb_cluster_width * _THUMB_CLUSTER_ASPECT
+        thumb_indicator_clearance = thumb_cluster_width * 0.15
+        thumb_row_y = last_layer_y + row_height + row_gap + thumb_indicator_clearance
+
+        # Canvas height
+        canvas_height = thumb_row_y + thumb_cluster_height + padding
+
+        # Thumb cluster X positions with indicator padding.
+        # The inward-facing thumb keys (nail, knuckle) have circles that extend
+        # toward the center. Use a generous padding to prevent overlap.
+        indicator_padding = thumb_cluster_width * 0.18
         left_thumb_x = col2_x + inset + side_width - thumb_cluster_width - indicator_padding
         right_thumb_x = col2_x + col2_width - inset - side_width + indicator_padding
 
