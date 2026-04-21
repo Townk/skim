@@ -23,6 +23,7 @@ from .context import RenderContext
 from .geometry import AspectRatio
 from .indicators import (
     LayerIndicator,
+    OffsetDirection,
     _finger_cluster_offset,
     _FINGER_KEY_NAMES,
     _thumb_cluster_offset,
@@ -98,16 +99,17 @@ def _compute_badge_dims(
     )
 
 
-def _collect_indicator_positions(
+_IndicatorInfo = tuple[float, float, int, OffsetDirection]
+"""(abs_cx, abs_cy, target_layer_idx, offset_direction)"""
+
+
+def _collect_finger_indicators(
     clusters: list[list[FingerClusterComponent]],
     keymap: SvalboardKeymap[SvalboardTargetKey],
     row_to_layer: list[int],
-) -> list[tuple[int, float, float, int]]:
-    """Collect absolute positions of all layer indicator circles from finger clusters.
-
-    Returns list of (row_idx, abs_cx, abs_cy, target_layer_idx).
-    """
-    results: list[tuple[int, float, float, int]] = []
+) -> list[_IndicatorInfo]:
+    """Collect indicator circle positions and directions from finger clusters."""
+    results: list[_IndicatorInfo] = []
 
     for row_idx, layer_clusters in enumerate(clusters):
         layer_idx = row_to_layer[row_idx]
@@ -117,7 +119,6 @@ def _collect_indicator_positions(
             is_right = cluster_idx >= _FINGER_CLUSTERS_PER_SIDE
             finger_idx = cluster_idx - _FINGER_CLUSTERS_PER_SIDE if is_right else cluster_idx
             side = KeyboardSide.RIGHT if is_right else KeyboardSide.LEFT
-
             finger_data = (
                 layer_data.right.fingers[finger_idx] if is_right
                 else layer_data.left.fingers[finger_idx]
@@ -131,7 +132,6 @@ def _collect_indicator_positions(
             for key_name in _FINGER_KEY_NAMES:
                 if key_name == "double_south_key" and not comp._render_context.has_double_south:
                     continue
-
                 key: SvalboardTargetKey = getattr(finger_data, key_name)
                 if key.layer_switch is None:
                     continue
@@ -149,25 +149,22 @@ def _collect_indicator_positions(
                 )
 
                 results.append((
-                    row_idx,
                     comp.x + indicator.circle_center_x,
                     comp.y + indicator.circle_center_y,
                     key.layer_switch,
+                    offset_dir,
                 ))
 
     return results
 
 
-def _collect_thumb_indicator_positions(
+def _collect_thumb_indicators(
     left_thumb: ThumbClusterComponent,
     right_thumb: ThumbClusterComponent,
     keymap: SvalboardKeymap[SvalboardTargetKey],
-) -> list[tuple[float, float, int]]:
-    """Collect absolute positions of layer indicator circles from thumb clusters.
-
-    Returns list of (abs_cx, abs_cy, target_layer_idx).
-    """
-    results: list[tuple[float, float, int]] = []
+) -> list[_IndicatorInfo]:
+    """Collect indicator circle positions and directions from thumb clusters."""
+    results: list[_IndicatorInfo] = []
     layer0 = keymap.layers[0]
 
     for thumb_comp, thumb_data, side in [
@@ -210,6 +207,7 @@ def _collect_thumb_indicator_positions(
                 thumb_comp.x + indicator.circle_center_x,
                 thumb_comp.y + indicator.circle_center_y,
                 key.layer_switch,
+                offset_dir,
             ))
 
     return results
@@ -218,58 +216,61 @@ def _collect_thumb_indicator_positions(
 def _draw_connector_lines(
     d: draw.Drawing,
     layout: OverviewLayout,
-    finger_indicators: list[tuple[int, float, float, int]],
-    thumb_indicators: list[tuple[float, float, int]],
+    all_indicators: list[_IndicatorInfo],
     config: SkimConfig,
     all_row_bounds: list[tuple[float, float, float, float]],
     layer_to_row: dict[int, int],
+    thumb_bbox: tuple[float, float, float, float] | None,
 ) -> None:
-    """Draw orthogonal dashed connector lines from indicators to target rows.
+    """Draw dotted orthogonal connector lines from indicator circles to target rows.
 
-    Each line routes:
-      (circle) ---horizontal---> +
-                                 |  vertical
-                                 +---> (target row right edge)
-
-    Lines are routed outside all cluster areas and each gets a unique
-    routing X offset so they don't overlap each other.
+    Routing rules:
+    - Circles placed horizontally or diagonally (LEFT/RIGHT/DIAGONAL):
+      first segment goes UP or DOWN (vertical).
+    - Circles placed vertically (ABOVE): first segment goes horizontally.
+    - ALL lines finish going LEFT into the E key center Y of the target row.
+    - The final leftward segment is at least N key width long.
+    - Lines are spaced at least N key width apart in the routing channel.
+    - Lines must not cross the thumb cluster bounding box.
     """
     palette = config.output.style.palette
+    n_key_width = layout.finger_cluster_width * _OUTER_KEY_WIDTH_PROPORTION
+    ew_offset = layout.ew_key_y_offset
 
-    # Collect all lines: (abs_cx, abs_cy, target_layer)
-    all_lines: list[tuple[float, float, int]] = []
-    for _row, cx, cy, target in finger_indicators:
-        if target in layer_to_row:
-            all_lines.append((cx, cy, target))
-    for cx, cy, target in thumb_indicators:
-        if target in layer_to_row:
-            all_lines.append((cx, cy, target))
-
-    if not all_lines:
+    # Filter to valid targets
+    lines = [
+        (cx, cy, tgt, d_) for cx, cy, tgt, d_ in all_indicators
+        if tgt in layer_to_row
+    ]
+    if not lines:
         return
 
-    # Find the rightmost extent of any cluster row to route lines outside it
-    max_cluster_right = 0.0
-    for tgt_x, _tgt_y, tgt_w, _tgt_h in all_row_bounds:
-        max_cluster_right = max(max_cluster_right, tgt_x + tgt_w)
+    # Find cluster area extents
+    max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
 
-    # Base routing X starts past the rightmost cluster edge
-    base_routing_x = max_cluster_right + _CONNECTOR_ROUTING_MARGIN
-    max_routing_x = layout.canvas_width - layout.padding * 0.5
-
-    # Group lines by target layer to assign unique routing X offsets
-    # so lines to different layers don't overlap
-    target_layers_used = sorted(set(line[2] for line in all_lines))
-    line_spacing = min(
-        _CONNECTOR_ROUTING_MARGIN * 0.8,
-        (max_routing_x - base_routing_x) / max(len(target_layers_used), 1),
-    )
+    # Routing channels: vertical rails to the right of all clusters.
+    # Each target layer gets its own channel, spaced N key width apart.
+    # Channels must fit within the canvas (with some margin).
+    target_layers_used = sorted(set(ln[2] for ln in lines))
+    base_routing_x = max_cluster_right + n_key_width
+    max_routing_x = layout.canvas_width - layout.padding * 0.3
+    available = max_routing_x - base_routing_x
+    channel_spacing = min(n_key_width, available / max(len(target_layers_used), 1))
     routing_x_by_layer = {
-        layer: min(base_routing_x + i * line_spacing, max_routing_x)
+        layer: min(base_routing_x + i * channel_spacing, max_routing_x)
         for i, layer in enumerate(target_layers_used)
     }
 
-    for abs_cx, abs_cy, target_layer in all_lines:
+    # Thumb cluster forbidden area
+    if thumb_bbox:
+        tb_x, tb_y, tb_w, tb_h = thumb_bbox
+        thumb_top = tb_y
+        thumb_bottom = tb_y + tb_h
+        thumb_right = tb_x + tb_w
+    else:
+        thumb_top = thumb_bottom = thumb_right = 0.0
+
+    for cx, cy, target_layer, offset_dir in lines:
         if 0 <= target_layer < len(palette.layers):
             stroke_color = palette.layers[target_layer][4]
         else:
@@ -277,24 +278,106 @@ def _draw_connector_lines(
 
         target_row_idx = layer_to_row[target_layer]
         tgt_x, tgt_y, tgt_w, tgt_h = all_row_bounds[target_row_idx]
-        target_mid_y = tgt_y + tgt_h / 2.0
-        target_right_x = tgt_x + tgt_w
 
+        # Target endpoint: E key vertical center of the target row,
+        # at the right edge of the cluster area
+        target_ew_center_y = tgt_y + ew_offset + n_key_width / 2.0
+        # The final segment enters from routing_x going LEFT to target_right
+        target_right_x = tgt_x + tgt_w
         routing_x = routing_x_by_layer[target_layer]
 
-        # Route: circle → right to routing rail → vertical → left to row edge
-        path_d = (
-            f"M {abs_cx:.2f} {abs_cy:.2f} "
-            f"L {routing_x:.2f} {abs_cy:.2f} "
-            f"L {routing_x:.2f} {target_mid_y:.2f} "
-            f"L {target_right_x:.2f} {target_mid_y:.2f}"
-        )
+        # Ensure the final leftward segment is at least N key width
+        entry_x = max(target_right_x, routing_x - n_key_width)
+        # But the line must come from routing_x going left, so entry_x < routing_x
+        entry_x = target_right_x
+
+        # Build the path based on the circle's offset direction.
+        # Horizontal/diagonal circles → start vertical; vertical circles → start horizontal.
+        is_vertical_circle = offset_dir == OffsetDirection.ABOVE
+
+        if is_vertical_circle:
+            # Circle is ABOVE key → first go horizontally to routing_x,
+            # then vertically to target, then LEFT into target.
+            #
+            #   (circle) ──────→ routing_x
+            #                      │
+            #                      ↓
+            #   target E ←─────── routing_x
+
+            # If path would cross thumb area, route above it
+            path_points = [(cx, cy)]
+
+            # Go right to routing channel
+            path_points.append((routing_x, cy))
+
+            # Go vertically to target E center Y, avoiding thumb bbox
+            if thumb_bbox and cy < thumb_top and target_ew_center_y > thumb_top:
+                # Would cross thumb area — route above it
+                path_points.append((routing_x, thumb_top - n_key_width))
+                # Go further right if needed to clear thumb
+                if routing_x < thumb_right + n_key_width:
+                    clear_x = thumb_right + n_key_width
+                    path_points.append((clear_x, thumb_top - n_key_width))
+                    path_points.append((clear_x, target_ew_center_y))
+                    path_points.append((entry_x, target_ew_center_y))
+                else:
+                    path_points.append((routing_x, target_ew_center_y))
+                    path_points.append((entry_x, target_ew_center_y))
+            else:
+                path_points.append((routing_x, target_ew_center_y))
+                path_points.append((entry_x, target_ew_center_y))
+
+        else:
+            # Circle is LEFT/RIGHT/DIAGONAL → first go vertically,
+            # then horizontally to routing channel, then vertically to target,
+            # then LEFT into target.
+            #
+            #   (circle)
+            #      │  (up or down)
+            #      ↓
+            #      +──────→ routing_x
+            #                 │
+            #                 ↓
+            #   target E ←── routing_x
+
+            # Determine vertical direction: go toward the routing channel area
+            # (above thumb cluster, between rows)
+            # Route to a Y that clears all clusters in between
+            if target_ew_center_y < cy:
+                # Target is above — go UP
+                intermediate_y = target_ew_center_y
+            else:
+                # Target is below — go DOWN, but avoid thumb area
+                if thumb_bbox and target_ew_center_y > thumb_top:
+                    intermediate_y = min(cy, thumb_top - n_key_width)
+                else:
+                    intermediate_y = target_ew_center_y
+
+            path_points = [(cx, cy)]
+
+            if abs(intermediate_y - target_ew_center_y) < 1.0:
+                # Can go directly: vertical then horizontal to routing, then left
+                path_points.append((cx, target_ew_center_y))
+                path_points.append((routing_x, target_ew_center_y))
+                path_points.append((entry_x, target_ew_center_y))
+            else:
+                # Need intermediate: vertical, horizontal to routing, vertical to target, left
+                path_points.append((cx, intermediate_y))
+                path_points.append((routing_x, intermediate_y))
+                path_points.append((routing_x, target_ew_center_y))
+                path_points.append((entry_x, target_ew_center_y))
+
+        # Build SVG path
+        path_d = f"M {path_points[0][0]:.2f} {path_points[0][1]:.2f}"
+        for px, py in path_points[1:]:
+            path_d += f" L {px:.2f} {py:.2f}"
 
         d.append(draw.Raw(
             f'<path d="{path_d}"'
             f' stroke="{stroke_color}"'
-            f' stroke-width="1.5"'
-            f' stroke-dasharray="6 4"'
+            f' stroke-width="2.5"'
+            f' stroke-dasharray="1 4"'
+            f' stroke-linecap="round"'
             f' fill="none"'
             f' opacity="0.7"'
             f'/>'
@@ -554,19 +637,30 @@ def draw_overview(
         layer_to_row = {li: ri for ri, li in enumerate(row_to_layer)}
         all_row_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
 
-        finger_indicators = _collect_indicator_positions(
+        all_indicators: list[_IndicatorInfo] = []
+        all_indicators.extend(_collect_finger_indicators(
             all_finger_clusters, keymap, row_to_layer
-        )
+        ))
 
-        thumb_indicators: list[tuple[float, float, int]] = []
+        # Thumb cluster bounding box (forbidden area for connector routing)
+        thumb_bbox: tuple[float, float, float, float] | None = None
         if left_thumb and right_thumb:
-            thumb_indicators = _collect_thumb_indicator_positions(
+            all_indicators.extend(_collect_thumb_indicators(
                 left_thumb, right_thumb, keymap
+            ))
+            # Bounding box spanning both thumb clusters
+            tb_x = left_thumb.x
+            tb_y = min(left_thumb.y, right_thumb.y)
+            tb_right = right_thumb.x + right_thumb.width
+            tb_bottom = max(
+                left_thumb.y + left_thumb.height,
+                right_thumb.y + right_thumb.height,
             )
+            thumb_bbox = (tb_x, tb_y, tb_right - tb_x, tb_bottom - tb_y)
 
         _draw_connector_lines(
-            d, layout, finger_indicators, thumb_indicators,
-            config, all_row_bounds, layer_to_row,
+            d, layout, all_indicators,
+            config, all_row_bounds, layer_to_row, thumb_bbox,
         )
 
     # ---------------------------------------------------------------
