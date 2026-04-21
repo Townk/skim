@@ -71,6 +71,9 @@ class KeyboardLayer(BaseModel):
         name: Full descriptive name of the layer (e.g., "Base Layer",
             "Symbols", "Navigation"). Used as the "image title" on the
             generated images.
+        subtitle: Optional secondary label shown below the layer name
+            (e.g., "COLEMAK"). Used to display additional layer metadata
+            in the overview image. Defaults to None if not specified.
 
     Example:
         >>> layer = KeyboardLayer(label="1", name="Base Layer")
@@ -78,6 +81,8 @@ class KeyboardLayer(BaseModel):
         '1'
         >>> layer.name
         'Base Layer'
+        >>> layer.subtitle is None
+        True
     """
 
     model_config = ConfigDict(frozen=True)
@@ -85,6 +90,7 @@ class KeyboardLayer(BaseModel):
     id: str | None = None
     label: str
     name: str
+    subtitle: str | None = None
 
 
 class KeyboardFeatures(BaseModel):

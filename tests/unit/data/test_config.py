@@ -13,7 +13,7 @@ Tests cover LayerColor methods that are not exercised by other tests:
 
 import pytest
 
-from skim.data.config import Keyboard, KeyboardLayer, LayerColor, Style
+from skim.data.config import Keyboard, KeyboardLayer, LayerColor, Output, Style
 
 
 class TestLayerColorGetItem:
@@ -101,3 +101,24 @@ class TestStyleShowLayerIndicators:
         """show_layer_indicators can be explicitly set to False."""
         style = Style(show_layer_indicators=False)
         assert style.show_layer_indicators is False
+
+
+class TestKeyboardLayerSubtitle:
+    """Tests for KeyboardLayer.subtitle field."""
+
+    def test_subtitle_defaults_to_none(self):
+        """subtitle defaults to None when not specified."""
+        layer = KeyboardLayer(label="1", name="Letters")
+        assert layer.subtitle is None
+
+    def test_subtitle_can_be_set(self):
+        """subtitle can be set to a string value."""
+        layer = KeyboardLayer(label="1", name="Letters", subtitle="COLEMAK")
+        assert layer.subtitle == "COLEMAK"
+
+    def test_subtitle_included_in_model_dump(self):
+        """subtitle is included in model_dump output."""
+        layer = KeyboardLayer(label="1", name="Letters", subtitle="COLEMAK")
+        dumped = layer.model_dump()
+        assert "subtitle" in dumped
+        assert dumped["subtitle"] == "COLEMAK"
