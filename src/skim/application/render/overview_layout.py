@@ -294,6 +294,30 @@ class OverviewLayout:
             Position(x=self._right_thumb_x, y=self._thumb_row_y),
         )
 
+    def adjust_for_connectors(
+        self,
+        min_thumb_y: float,
+        max_line_y: float,
+    ) -> None:
+        """Push thumb cluster down and expand canvas to fit connector lines.
+
+        Args:
+            min_thumb_y: The minimum Y that the thumb row must be at so
+                connector lines going UP don't overlap the last finger cluster.
+            max_line_y: The maximum Y reached by any connector line going DOWN.
+        """
+        if min_thumb_y > self._thumb_row_y:
+            delta = min_thumb_y - self._thumb_row_y
+            self._thumb_row_y = min_thumb_y
+            self._left_thumb_x = self._left_thumb_x  # X unchanged
+            self._right_thumb_x = self._right_thumb_x
+            self._canvas_height += delta
+
+        # Expand canvas height for lines going below thumb clusters
+        bottom_need = max_line_y + self._padding
+        if bottom_need > self._canvas_height:
+            self._canvas_height = bottom_need
+
     def layer_row_bounding_box(self, row_idx: int) -> tuple[float, float, float, float]:
         row_y = self._layer_row_y_positions[row_idx]
         x = self._col2_x
