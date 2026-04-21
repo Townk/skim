@@ -30,6 +30,7 @@ from .components import FingerClusterComponent, ThumbClusterComponent
 from .context import RenderContext
 from .geometry import AspectRatio
 from .layout import Boundary, KeymapLayout
+from .overview import draw_overview
 from .styling import make_gradient
 from .text import Font, FontSubsetter, FontUsageAnalyzer, Label
 
@@ -212,6 +213,10 @@ def draw_keymap(
     keymap_images: dict[str, draw.Drawing] = {}
     for idx, layer in _selected_layers(keymap, targets):
         keymap_images[f"keymap-layer-{idx}"] = _draw_layer(config, layer, idx)
+
+    if targets.overview:
+        keymap_images["keymap-overview"] = draw_overview(config, keymap)
+
     return keymap_images
 
 

@@ -15,6 +15,7 @@ from skim.data.cli import KeymapGeneratorTargets
 from skim.data.config import (
     Keyboard,
     KeyboardFeatures,
+    KeyboardLayer,
     LayerColor,
     Output,
     Palette,
@@ -46,7 +47,14 @@ def sample_config():
     palette = Palette(layers=layers)
     style = Style(palette=palette)
     output = Output(style=style)
-    return SkimConfig(output=output)
+    keyboard = Keyboard(
+        layers=(
+            KeyboardLayer(label="1", name="Base Layer"),
+            KeyboardLayer(label="2", name="Symbol Layer"),
+            KeyboardLayer(label="3", name="Nav Layer"),
+        )
+    )
+    return SkimConfig(output=output, keyboard=keyboard)
 
 
 @pytest.fixture
@@ -118,6 +126,19 @@ class TestDrawKeymap:
         targets = KeymapGeneratorTargets(selected_layers=[0, 2])
         result = draw_keymap(sample_config, multi_layer_keymap, targets)
         assert len(result) == 2
+
+    def test_overview_target_produces_overview_drawing(self, sample_config, multi_layer_keymap):
+        """When targets.overview=True, result includes 'keymap-overview' key."""
+        targets = KeymapGeneratorTargets(overview=True)
+        result = draw_keymap(sample_config, multi_layer_keymap, targets)
+        assert "keymap-overview" in result
+
+    def test_all_target_includes_overview(self, sample_config, multi_layer_keymap):
+        """When targets has all_layers=True and overview=True, both layer images and overview are returned."""
+        targets = KeymapGeneratorTargets(all_layers=True, overview=True)
+        result = draw_keymap(sample_config, multi_layer_keymap, targets)
+        assert "keymap-overview" in result
+        assert "keymap-layer-0" in result
 
 
 class TestDrawKeymapWithDoubleSouth:
