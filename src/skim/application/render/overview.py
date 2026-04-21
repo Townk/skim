@@ -249,28 +249,33 @@ def _compute_connector_paths(
         for i, layer in enumerate(target_layers_used)
     }
 
-    # Y-stagger: UP and RIGHT lines share the space above the thumb area,
-    # so they must be staggered together. DOWN lines stagger below.
-    # Both groups stagger from the thumb edge outward.
-    above_indices: list[tuple[int, float]] = []  # UP + RIGHT (share above-thumb space)
+    # Y-stagger: group by escape direction, assign increasing multipliers
+    up_indices: list[tuple[int, float]] = []
     down_indices: list[tuple[int, float]] = []
+    right_indices: list[tuple[int, float]] = []
 
     for i, (cx, cy, r, tgt, key_name, side) in enumerate(lines):
         escape = _THUMB_ESCAPE_DIRECTIONS.get((key_name, side), "RIGHT")
-        if escape in ("UP", "RIGHT"):
-            above_indices.append((i, cy))
-        else:
+        if escape == "UP":
+            up_indices.append((i, cy))
+        elif escape == "DOWN":
             down_indices.append((i, cy))
+        else:
+            right_indices.append((i, cx))
 
-    # Above: highest circle (largest cy) = smallest rank (closest to thumb_top)
-    above_indices.sort(key=lambda t: t[1], reverse=True)
+    # UP: highest circle (largest cy) = smallest rank (closest to thumb_top)
+    up_indices.sort(key=lambda t: t[1], reverse=True)
     # DOWN: lowest circle (smallest cy) = smallest rank (closest to thumb_bottom)
     down_indices.sort(key=lambda t: t[1])
+    # RIGHT: leftmost = smallest escape
+    right_indices.sort(key=lambda t: t[1])
 
     escape_mult: dict[int, int] = {}
-    for rank, (idx, _) in enumerate(above_indices):
+    for rank, (idx, _) in enumerate(up_indices):
         escape_mult[idx] = rank + 1
     for rank, (idx, _) in enumerate(down_indices):
+        escape_mult[idx] = rank + 1
+    for rank, (idx, _) in enumerate(right_indices):
         escape_mult[idx] = rank + 1
 
     result: list[tuple[list[tuple[float, float]], int]] = []
@@ -302,29 +307,15 @@ def _compute_connector_paths(
                 pts.append((routing_x, target_ew_center_y))
             pts.append((end_x, target_ew_center_y))
 
-        else:  # RIGHT — also uses thumb_top stagger so it doesn't collide with UP lines
-            escape_y = thumb_top - mult * nk
+        else:  # RIGHT
             start_x = cx + radius
-            # First go RIGHT to clear the thumb cluster area
-            clear_x = max(cx + radius + nk, max_cluster_right + nk)
-            pts = [(start_x, cy)]
-            # If circle is already above thumb_top, go RIGHT directly at escape_y
-            if cy <= escape_y:
-                pts.append((clear_x, cy))
-                if clear_x < routing_x:
-                    pts.append((routing_x, cy))
-                final_x = max(clear_x, routing_x)
-            else:
-                # Go RIGHT first to clear thumb, then UP to escape_y
-                pts.append((clear_x, cy))
-                pts.append((clear_x, escape_y))
-                if clear_x < routing_x:
-                    pts.append((routing_x, escape_y))
-                final_x = max(clear_x, routing_x)
-            if abs(escape_y - target_ew_center_y) > 1.0:
+            escape_x = max(cx + radius + mult * nk, max_cluster_right + nk)
+            pts = [(start_x, cy), (escape_x, cy)]
+            if escape_x < routing_x:
+                pts.append((routing_x, cy))
+            final_x = max(escape_x, routing_x)
+            if abs(cy - target_ew_center_y) > 1.0:
                 pts.append((final_x, target_ew_center_y))
-                pts.append((end_x, target_ew_center_y))
-            else:
                 pts.append((end_x, target_ew_center_y))
 
         result.append((pts, target_layer))
