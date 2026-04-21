@@ -6,111 +6,140 @@
 """Overview layout calculations for multi-layer keyboard rendering.
 
 This module calculates positions for the overview image layout which
-arranges all keymap layers as horizontal rows stacked vertically, with
-a left column for labels and a right column for cluster content.
+arranges all keymap layers as horizontal rows in a table-like structure:
+Row 0 is the header (logo + title), subsequent rows hold layer badges
+(column 1) and finger clusters (column 2).
 """
+
+from dataclasses import dataclass
 
 from skim.data import SkimConfig
 
 from .layout import KeymapLayoutMetrics, Position
 
 # Finger cluster aspect ratio is 1:1 (square), so height == width
-_FINGER_CLUSTER_ASPECT_HEIGHT_OVER_WIDTH = 1.0
+_FINGER_CLUSTER_ASPECT = 1.0
 # Thumb cluster aspect ratio is 1.5:1 (width:height), so height = width / 1.5
-_THUMB_CLUSTER_ASPECT_HEIGHT_OVER_WIDTH = 1.0 / 1.5
+_THUMB_CLUSTER_ASPECT = 1.0 / 1.5
 
-# Left column takes ~15% of total width
-_LEFT_COLUMN_WIDTH_FRACTION = 0.15
-
-# Number of finger clusters per side
 _FINGER_CLUSTERS_PER_SIDE = 4
 
-# Vertical offset (in key-size units) applied to index and pinky clusters
-_INDEX_PINKY_VERTICAL_OFFSET = 1
+# Badge internal padding (SVG units)
+_BADGE_PADDING_LEFT = 15.0
+_BADGE_PADDING_RIGHT = 30.0
+
+
+@dataclass(frozen=True, slots=True)
+class BadgeDimensions:
+    """Pre-computed badge sizing for the overview.
+
+    Attributes:
+        width: Uniform width for all badges (including THUMBS).
+        height: Uniform height matching the E/W key size.
+        border_radius: Corner radius.
+    """
+    width: float
+    height: float
+    border_radius: float
 
 
 class OverviewLayout:
     """Calculates positions for the overview image layout.
 
-    The overview arranges all keymap layers as horizontal rows stacked
-    vertically. Each row contains 8 finger clusters (4 left + 4 right).
-    Below the last layer row, a thumb cluster row shows layer 0's thumbs.
-    A left column holds the logo, "LAYERS" heading, and per-layer labels.
+    The layout is table-like:
+    - Row 0 (header): logo in col 1, title in col 2
+    - Rows 1..N: layer badge in col 1, 8 finger clusters in col 2
+    - Last row: THUMBS badge in col 1, thumb clusters in col 2
+
+    All finger clusters in a row share the same Y (top-aligned).
 
     Args:
         config: The SkimConfig containing layout and keyboard parameters.
+        badge_dims: Pre-computed badge dimensions.
     """
 
-    def __init__(self, config: SkimConfig) -> None:
+    def __init__(self, config: SkimConfig, badge_dims: BadgeDimensions) -> None:
         self._config = config
-        self._metrics = KeymapLayoutMetrics.from_config(config)
+        self._base_metrics = KeymapLayoutMetrics.from_config(config)
         self._num_layers = len(config.keyboard.layers)
+        self._badge_dims = badge_dims
         self._compute()
 
     def _compute(self) -> None:
-        """Pre-compute all layout values."""
-        m = self._metrics
+        m = self._base_metrics
         total_width = m.width
 
-        # Left column: ~15% of total canvas width
-        left_col_w = total_width * _LEFT_COLUMN_WIDTH_FRACTION
-        right_col_x = left_col_w
-        right_col_w = total_width - left_col_w
+        # Outer padding — bigger than single-layer images
+        padding = max(m.inset * 2, 40.0)
 
-        # In the right column we must fit 8 finger clusters (4 per side) with
-        # spacing between and around them, mirroring the standard layout.
-        # The standard layout uses inset as gap between clusters and between
-        # the side block and its outer boundary.  We replicate that structure
-        # but scaled to the right-column width.
-        #
-        # Standard layout for one side:
-        #   side_width = (total_width/2) - (margin + inset * 8/2)
-        # We want the same proportional breakdown but within right_col_w.
-        # Scale factor:  right_col_w / total_width
-        scale = right_col_w / total_width
+        # Column 1 width: badge width + left padding
+        col1_width = padding + self._badge_dims.width
+
+        # Gap between col 1 and col 2 — at least as wide as the thumb cluster gap
+        # (we'll compute that from the right column sizing below)
+        col_gap = m.inset * 4  # generous gap, refined below
+
+        # Column 2 starts after col1 + gap
+        col2_x = col1_width + col_gap
+        col2_width = total_width - col2_x - padding
+
+        # Scale finger clusters to fit within col2.
+        # We need 8 clusters (4 per side) + gaps between them + center gap.
+        # Use uniform scaling from the base metrics.
+        scale = col2_width / (m.side_width * 2 + m.inset * 2)
         finger_cluster_width = m.finger_cluster_width * scale
         finger_key_size = m.finger_key_size * scale
         thumb_cluster_width = m.thumb_cluster_width * scale
         inset = m.inset * scale
-        margin = m.margin * scale
         side_width = m.side_width * scale
 
-        # Height of a finger cluster (aspect 1:1 → height == width)
-        finger_cluster_height = finger_cluster_width * _FINGER_CLUSTER_ASPECT_HEIGHT_OVER_WIDTH
+        # Refine col_gap: ensure it's at least the thumb cluster gap
+        # Thumb gap = center gap between left and right thumb clusters
+        thumb_center_gap = col2_width - 2 * (side_width - thumb_cluster_width) - 2 * thumb_cluster_width
+        col_gap = max(col_gap, thumb_center_gap, m.inset * 3)
 
-        # The tallest a row can be: index/pinky are shifted down by 1 key size,
-        # so the row height is the cluster height plus that offset.
-        row_height = finger_cluster_height + finger_key_size
+        # Recompute col2 with refined gap
+        col2_x = col1_width + col_gap
+        col2_width = total_width - col2_x - padding
 
-        # Row spacing: use inset as the gap between rows
+        # Rescale with the final col2_width
+        scale = col2_width / (m.side_width * 2 + m.inset * 2)
+        finger_cluster_width = m.finger_cluster_width * scale
+        finger_key_size = m.finger_key_size * scale
+        thumb_cluster_width = m.thumb_cluster_width * scale
+        inset = m.inset * scale
+        side_width = m.side_width * scale
+
+        # Finger cluster height (1:1 aspect)
+        finger_cluster_height = finger_cluster_width * _FINGER_CLUSTER_ASPECT
+
+        # Row height = cluster height (no vertical offset — all clusters top-aligned)
+        row_height = finger_cluster_height
+
+        # Row spacing
         row_gap = inset * 3
 
-        # Compute Y positions for each layer row, starting after a top margin
-        top_margin = margin + inset
+        # Header row height (logo + title)
+        header_height = max(self._badge_dims.height * 2, 50.0)
+
+        # Y positions for layer rows (after header)
+        top_y = padding + header_height + row_gap
         y_positions: list[float] = []
         for i in range(self._num_layers):
-            y_positions.append(top_margin + i * (row_height + row_gap))
+            y_positions.append(top_y + i * (row_height + row_gap))
 
-        # Thumb row sits below the last layer row
-        last_layer_y = y_positions[-1]
-        thumb_cluster_height = thumb_cluster_width * _THUMB_CLUSTER_ASPECT_HEIGHT_OVER_WIDTH
+        # Thumb row below last layer row
+        last_layer_y = y_positions[-1] if y_positions else top_y
+        thumb_cluster_height = thumb_cluster_width * _THUMB_CLUSTER_ASPECT
         thumb_row_y = last_layer_y + row_height + row_gap
 
-        # Total canvas height
-        canvas_height = thumb_row_y + thumb_cluster_height + margin + inset
+        # Canvas height
+        canvas_height = thumb_row_y + thumb_cluster_height + padding
 
-        # Finger cluster X positions (within the right column).
-        # Mirror the standard layout left/right pattern scaled to right_col_w.
-        # Standard left side: base_x = margin + inset + side_width, clusters go leftward.
-        # Standard right side: base_x = width - (margin+inset) - side_width, clusters go rightward.
-        # We re-derive using the scaled values anchored from right_col_x.
-        left_base_x = right_col_x + margin + inset + side_width
-        right_base_x = right_col_x + right_col_w - (margin + inset) - side_width
+        # Finger cluster X positions (all top-aligned, no vertical offset)
+        left_base_x = col2_x + side_width
+        right_base_x = col2_x + col2_width - side_width
 
-        # Vertical offsets: index (0) and pinky (3) are offset down by 1 key size
-        vertical_offset = [1, 0, 0, 1]
-
-        # Pre-compute X positions for each cluster index per side
         left_xs: list[float] = []
         for idx in range(_FINGER_CLUSTERS_PER_SIDE):
             x = left_base_x - finger_cluster_width - (inset + finger_cluster_width) * idx
@@ -121,28 +150,30 @@ class OverviewLayout:
             x = right_base_x + (inset + finger_cluster_width) * idx
             right_xs.append(x)
 
-        # Thumb cluster X positions (same proportional logic as standard layout)
-        # Add indicator padding to prevent layer circles from overlapping in center
+        # Thumb cluster X positions with indicator padding
         indicator_padding = thumb_cluster_width * 0.1
-        left_thumb_x = right_col_x + margin + inset * 2 + side_width - thumb_cluster_width - indicator_padding
-        right_thumb_x = right_col_x + right_col_w - (margin + inset * 2) - side_width + indicator_padding
+        left_thumb_x = col2_x + inset + side_width - thumb_cluster_width - indicator_padding
+        right_thumb_x = col2_x + col2_width - inset - side_width + indicator_padding
 
-        # Store computed values
-        self._left_column_width = left_col_w
-        self._right_column_x = right_col_x
+        # Store everything
+        self._padding = padding
+        self._col1_width = col1_width
+        self._col_gap = col_gap
+        self._col2_x = col2_x
+        self._col2_width = col2_width
         self._canvas_width = total_width
         self._canvas_height = canvas_height
+        self._header_height = header_height
         self._layer_row_y_positions = y_positions
-        self._layer_row_heights = [row_height] * self._num_layers
+        self._row_height = row_height
         self._thumb_row_y = thumb_row_y
         self._finger_cluster_width = finger_cluster_width
         self._finger_cluster_height = finger_cluster_height
+        self._finger_key_size = finger_key_size
         self._thumb_cluster_width = thumb_cluster_width
         self._thumb_cluster_height = thumb_cluster_height
         self._left_xs = left_xs
         self._right_xs = right_xs
-        self._vertical_offset = vertical_offset
-        self._finger_key_size = finger_key_size
         self._left_thumb_x = left_thumb_x
         self._right_thumb_x = right_thumb_x
 
@@ -151,102 +182,78 @@ class OverviewLayout:
     # ------------------------------------------------------------------
 
     @property
+    def padding(self) -> float:
+        return self._padding
+
+    @property
+    def header_height(self) -> float:
+        return self._header_height
+
+    @property
     def layer_row_y_positions(self) -> list[float]:
-        """Y positions for each layer's finger cluster row."""
         return self._layer_row_y_positions
 
     @property
     def layer_row_heights(self) -> list[float]:
-        """Heights for each layer row."""
-        return self._layer_row_heights
+        return [self._row_height] * self._num_layers
 
     @property
     def thumb_row_y(self) -> float:
-        """Y position for the thumb cluster row."""
         return self._thumb_row_y
 
     @property
     def left_column_width(self) -> float:
-        """Width allocated to the left label column."""
-        return self._left_column_width
+        return self._col1_width
 
     @property
     def right_column_x(self) -> float:
-        """X coordinate where the right (clusters) column starts."""
-        return self._right_column_x
+        return self._col2_x
 
     @property
     def canvas_width(self) -> float:
-        """Total canvas width."""
         return self._canvas_width
 
     @property
     def canvas_height(self) -> float:
-        """Total canvas height."""
         return self._canvas_height
 
     @property
     def finger_cluster_width(self) -> float:
-        """Width of each finger cluster in the overview."""
         return self._finger_cluster_width
 
     @property
+    def finger_key_size(self) -> float:
+        """Size of an individual finger key (E/W key width)."""
+        return self._finger_key_size
+
+    @property
     def thumb_cluster_width(self) -> float:
-        """Width of each thumb cluster in the overview."""
         return self._thumb_cluster_width
 
-    def finger_cluster_positions(self, layer_idx: int) -> list[Position]:
-        """Return 8 Position objects for the finger clusters in a layer row.
+    def finger_cluster_positions(self, row_idx: int) -> list[Position]:
+        """Return 8 Position objects for the finger clusters in a row.
 
-        Positions 0–3 are left-side clusters (index→pinky),
-        positions 4–7 are right-side clusters (index→pinky).
-
-        Args:
-            layer_idx: The layer index (0-based).
-
-        Returns:
-            List of 8 Position objects.
+        All clusters in a row share the same Y (top-aligned).
         """
-        row_y = self._layer_row_y_positions[layer_idx]
+        row_y = self._layer_row_y_positions[row_idx]
         positions: list[Position] = []
 
-        # Left side: index (0) → pinky (3)
         for idx in range(_FINGER_CLUSTERS_PER_SIDE):
-            y_off = self._finger_key_size * self._vertical_offset[idx]
-            positions.append(Position(x=self._left_xs[idx], y=row_y + y_off))
+            positions.append(Position(x=self._left_xs[idx], y=row_y))
 
-        # Right side: index (0) → pinky (3)
         for idx in range(_FINGER_CLUSTERS_PER_SIDE):
-            y_off = self._finger_key_size * self._vertical_offset[idx]
-            positions.append(Position(x=self._right_xs[idx], y=row_y + y_off))
+            positions.append(Position(x=self._right_xs[idx], y=row_y))
 
         return positions
 
     def thumb_cluster_positions(self) -> tuple[Position, Position]:
-        """Return (left_pos, right_pos) for the thumb cluster row.
-
-        Returns:
-            Tuple of (left_thumb_position, right_thumb_position).
-        """
         return (
             Position(x=self._left_thumb_x, y=self._thumb_row_y),
             Position(x=self._right_thumb_x, y=self._thumb_row_y),
         )
 
-    def layer_row_bounding_box(self, layer_idx: int) -> tuple[float, float, float, float]:
-        """Return (x, y, width, height) bounding box for a layer row.
-
-        Useful for connector line targeting.
-
-        Args:
-            layer_idx: The layer index (0-based).
-
-        Returns:
-            Tuple of (x, y, width, height).
-        """
-        row_y = self._layer_row_y_positions[layer_idx]
-        row_h = self._layer_row_heights[layer_idx]
-        # The row spans from right_column_x to canvas_width
-        x = self._right_column_x
-        w = self._canvas_width - self._right_column_x
-        return (x, row_y, w, row_h)
+    def layer_row_bounding_box(self, row_idx: int) -> tuple[float, float, float, float]:
+        row_y = self._layer_row_y_positions[row_idx]
+        x = self._col2_x
+        w = self._col2_width
+        return (x, row_y, w, self._row_height)
