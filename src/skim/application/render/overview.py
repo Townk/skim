@@ -547,7 +547,7 @@ def draw_overview(
     badge_x = padding
 
     # Header: logo + title
-    logo_width = badge_w * 0.85
+    logo_width = badge_w * 1.19
     logo_height = _LOGO_ASPECT_RATIO.height_from_width(logo_width)
     d.append(draw.Image(
         x=padding, y=padding,
