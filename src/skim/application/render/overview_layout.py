@@ -25,6 +25,9 @@ _THUMB_CLUSTER_ASPECT = 1.0 / 1.5
 
 _FINGER_CLUSTERS_PER_SIDE = 4
 
+# Outer key width proportion (N/S/E/W keys) — same as FingerClusterComponent
+_OUTER_KEY_PROPORTION = 0.328
+
 # Badge internal padding (SVG units)
 _BADGE_PADDING_LEFT = 15.0
 _BADGE_PADDING_RIGHT = 30.0
@@ -235,6 +238,15 @@ class OverviewLayout:
     def finger_key_size(self) -> float:
         """Size of an individual finger key (E/W key width)."""
         return self._finger_key_size
+
+    @property
+    def ew_key_y_offset(self) -> float:
+        """Y offset from the top of the cluster row to the E/W keys.
+
+        E/W keys sit below the north key: their Y = north_key_height
+        (north key is square, so height = outer_key_width_proportion * cluster_width).
+        """
+        return self._finger_cluster_width * _OUTER_KEY_PROPORTION
 
     @property
     def thumb_cluster_width(self) -> float:

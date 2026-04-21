@@ -396,7 +396,9 @@ def draw_overview(
     if row_to_layer:
         first_row_y = layout.layer_row_y_positions[0]
         first_row_h = layout.layer_row_heights[0]
-        first_badge_y = first_row_y + first_row_h / 2.0 - badge_h / 2.0
+        # Align with E/W keys: offset from row top by north key height
+        ew_offset = layout.ew_key_y_offset
+        first_badge_y = first_row_y + ew_offset
         d.append(draw.Text(
             "LAYERS",
             font_size=badge_font_size,
@@ -420,7 +422,8 @@ def draw_overview(
         )
 
         # Badge centered vertically in the row
-        badge_y = row_y + row_h / 2.0 - badge_h / 2.0
+        # Align badge with E/W keys (offset from row top by north key height)
+        badge_y = row_y + layout.ew_key_y_offset
         badge_text = f"{layer_idx} {layer_cfg.name.upper()}"
 
         d.append(draw.Rectangle(
