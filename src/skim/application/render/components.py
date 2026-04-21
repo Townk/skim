@@ -31,6 +31,7 @@ from .context import (
     FingerClusterKeyColors,
     RenderContext,
 )
+from .indicators import LayerIndicatorOverlay
 from .geometry import AspectRatio
 from .keys import (
     CenterKey,
@@ -288,6 +289,19 @@ class ThumbClusterComponent(KeyCluster[ThumbCluster[SvalboardTargetKey]]):
         for key in self._cluster:
             self.append(key)
 
+        if self._render_context.show_layer_indicators:
+            overlay = LayerIndicatorOverlay.for_thumb_cluster(
+                keys=self._keymap_cluster,
+                metrics=self._layout.metrics,
+                down_key_metrics=self._layout.metrics.down_key,
+                side=self._side,
+                palette=self._render_context.palette,
+                circle_diameter=self._layout.metrics.down_key.width / 2,
+                gap=self._layout.metrics.down_key.width * 0.18,
+            )
+            for indicator_group in overlay.build():
+                self.append(indicator_group)
+
         return self
 
     def _adjust_hold_symbol_positions(
@@ -444,6 +458,19 @@ class FingerClusterComponent(KeyCluster[FingerCluster[SvalboardTargetKey]]):
         for key in self._cluster:
             if key:
                 self.append(key)
+
+        if self._render_context.show_layer_indicators:
+            overlay = LayerIndicatorOverlay.for_finger_cluster(
+                keys=self._keymap_cluster,
+                metrics=self._layout.metrics,
+                side=self._side,
+                palette=self._render_context.palette,
+                circle_diameter=self._layout.metrics.north_key.width / 2,
+                gap=self._layout.metrics.north_key.width * 0.18,
+                has_double_south=self._render_context.has_double_south,
+            )
+            for indicator_group in overlay.build():
+                self.append(indicator_group)
 
         return self
 

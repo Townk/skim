@@ -8,6 +8,7 @@
 Tests cover finger and thumb cluster component rendering.
 """
 
+import drawsvg as draw
 import pytest
 
 from skim.application.render.components import (
@@ -218,6 +219,90 @@ class TestThumbClusterComponent:
         # Thumb cluster aspect ratio is typically 1.5:1
         ratio = component.width / component.height
         assert 1.3 < ratio < 1.7  # Allow some tolerance
+
+
+class TestFingerClusterIndicators:
+    """Tests for layer indicator integration in FingerClusterComponent."""
+
+    @pytest.fixture
+    def two_layer_palette(self):
+        """Create a palette with two layers for layer_switch=1 tests."""
+        return Palette(
+            layers=[
+                LayerColor(
+                    base_color="#FF0000",
+                    gradient=("#110000", "#220000", "#330000", "#440000", "#550000", "#660000"),
+                ),
+                LayerColor(
+                    base_color="#0000FF",
+                    gradient=("#000011", "#000022", "#000033", "#000044", "#000055", "#000066"),
+                ),
+            ],
+            neutral_color="#808080",
+            key_label_color="#FFFFFF",
+        )
+
+    def test_indicators_rendered_when_enabled(self, two_layer_palette):
+        """Indicators appear in SVG when show_layer_indicators is True."""
+        keys = FingerCluster(
+            center_key=SvalboardTargetKey(label="C", layer_switch=1),
+            north_key=SvalboardTargetKey(label="N", layer_switch=None),
+            east_key=SvalboardTargetKey(label="E", layer_switch=None),
+            south_key=SvalboardTargetKey(label="S", layer_switch=None),
+            west_key=SvalboardTargetKey(label="W", layer_switch=None),
+            double_south_key=SvalboardTargetKey(label="DS", layer_switch=None),
+        )
+        ctx = RenderContext(
+            palette=two_layer_palette,
+            layer_index=0,
+            has_double_south=True,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+            show_layer_indicators=True,
+        )
+        component = FingerClusterComponent(
+            keymap_cluster=keys,
+            side=KeyboardSide.LEFT,
+            layout=Boundary(width=165, pos=Position(x=0, y=0)),
+            render_context=ctx,
+        )
+        element = component.build()
+        d = draw.Drawing(165, 165)
+        d.append(element)
+        svg_str = d.as_svg()
+        # Should contain indicator elements (layer number "1")
+        assert ">1<" in svg_str
+
+    def test_indicators_not_rendered_when_disabled(self, two_layer_palette):
+        """No indicators in SVG when show_layer_indicators is False."""
+        keys = FingerCluster(
+            center_key=SvalboardTargetKey(label="C", layer_switch=1),
+            north_key=SvalboardTargetKey(label="N", layer_switch=None),
+            east_key=SvalboardTargetKey(label="E", layer_switch=None),
+            south_key=SvalboardTargetKey(label="S", layer_switch=None),
+            west_key=SvalboardTargetKey(label="W", layer_switch=None),
+            double_south_key=SvalboardTargetKey(label="DS", layer_switch=None),
+        )
+        ctx = RenderContext(
+            palette=two_layer_palette,
+            layer_index=0,
+            has_double_south=True,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+            show_layer_indicators=False,
+        )
+        component = FingerClusterComponent(
+            keymap_cluster=keys,
+            side=KeyboardSide.LEFT,
+            layout=Boundary(width=165, pos=Position(x=0, y=0)),
+            render_context=ctx,
+        )
+        element = component.build()
+        d = draw.Drawing(165, 165)
+        d.append(element)
+        svg_str = d.as_svg()
+        # The indicator circle uses the target layer's base_color as fill
+        assert f'fill="{two_layer_palette.layers[1].base_color}"' not in svg_str
 
 
 class TestClusterWithDoubleSouth:
