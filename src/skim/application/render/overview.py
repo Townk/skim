@@ -23,9 +23,6 @@ from .context import RenderContext
 from .geometry import AspectRatio
 from .indicators import (
     LayerIndicator,
-    OffsetDirection,
-    _finger_cluster_offset,
-    _FINGER_KEY_NAMES,
     _thumb_cluster_offset,
     _THUMB_KEY_NAMES,
     _THUMB_KEY_HEIGHT_RATIOS,
@@ -99,8 +96,28 @@ def _compute_badge_dims(
     )
 
 
-_IndicatorInfo = tuple[float, float, int, OffsetDirection]
-"""(abs_cx, abs_cy, target_layer_idx, offset_direction)"""
+_IndicatorInfo = tuple[float, float, int, str, KeyboardSide]
+"""(abs_cx, abs_cy, target_layer_idx, key_name, side)"""
+
+
+# First-segment escape direction per thumb key name and side.
+# "UP" = vertical up, "DOWN" = vertical down, "RIGHT" = horizontal right.
+_THUMB_ESCAPE_DIRECTIONS: dict[tuple[str, KeyboardSide], str] = {
+    # Left side
+    ("pad_key", KeyboardSide.LEFT): "UP",
+    ("nail_key", KeyboardSide.LEFT): "UP",
+    ("up_key", KeyboardSide.LEFT): "DOWN",
+    ("knuckle_key", KeyboardSide.LEFT): "DOWN",
+    ("down_key", KeyboardSide.LEFT): "DOWN",
+    ("double_down_key", KeyboardSide.LEFT): "RIGHT",
+    # Right side
+    ("pad_key", KeyboardSide.RIGHT): "RIGHT",
+    ("nail_key", KeyboardSide.RIGHT): "UP",
+    ("up_key", KeyboardSide.RIGHT): "RIGHT",
+    ("knuckle_key", KeyboardSide.RIGHT): "DOWN",
+    ("down_key", KeyboardSide.RIGHT): "RIGHT",
+    ("double_down_key", KeyboardSide.RIGHT): "RIGHT",
+}
 
 
 def _collect_finger_indicators(
@@ -108,54 +125,12 @@ def _collect_finger_indicators(
     keymap: SvalboardKeymap[SvalboardTargetKey],
     row_to_layer: list[int],
 ) -> list[_IndicatorInfo]:
-    """Collect indicator circle positions and directions from finger clusters."""
-    results: list[_IndicatorInfo] = []
+    """Collect indicator circle positions from finger clusters.
 
-    for row_idx, layer_clusters in enumerate(clusters):
-        layer_idx = row_to_layer[row_idx]
-        layer_data = keymap.layers[layer_idx]
-
-        for cluster_idx, comp in enumerate(layer_clusters):
-            is_right = cluster_idx >= _FINGER_CLUSTERS_PER_SIDE
-            finger_idx = cluster_idx - _FINGER_CLUSTERS_PER_SIDE if is_right else cluster_idx
-            side = KeyboardSide.RIGHT if is_right else KeyboardSide.LEFT
-            finger_data = (
-                layer_data.right.fingers[finger_idx] if is_right
-                else layer_data.left.fingers[finger_idx]
-            )
-
-            metrics = comp._layout.metrics
-            palette = comp._render_context.palette
-            circle_diameter = metrics.north_key.width * 0.55
-            gap = metrics.north_key.width * 0.18
-
-            for key_name in _FINGER_KEY_NAMES:
-                if key_name == "double_south_key" and not comp._render_context.has_double_south:
-                    continue
-                key: SvalboardTargetKey = getattr(finger_data, key_name)
-                if key.layer_switch is None:
-                    continue
-
-                layout_b = getattr(metrics, key_name)
-                offset_dir, conn_type = _finger_cluster_offset(key_name, side)
-                key_gap = gap * 3 if key_name == "center_key" else gap
-
-                indicator = LayerIndicator(
-                    key_x=layout_b.pos.x, key_y=layout_b.pos.y,
-                    key_width=layout_b.width, key_height=layout_b.width,
-                    target_layer=key.layer_switch, palette=palette,
-                    circle_diameter=circle_diameter, gap=key_gap,
-                    offset_direction=offset_dir, connector_type=conn_type,
-                )
-
-                results.append((
-                    comp.x + indicator.circle_center_x,
-                    comp.y + indicator.circle_center_y,
-                    key.layer_switch,
-                    offset_dir,
-                ))
-
-    return results
+    Currently returns an empty list — finger cluster connector routing
+    is not yet implemented (exception case requiring special handling).
+    """
+    return []
 
 
 def _collect_thumb_indicators(
@@ -207,22 +182,12 @@ def _collect_thumb_indicators(
                 thumb_comp.x + indicator.circle_center_x,
                 thumb_comp.y + indicator.circle_center_y,
                 key.layer_switch,
-                offset_dir,
+                key_name,
+                side,
             ))
 
     return results
 
-
-def _escape_direction(offset_dir: OffsetDirection) -> str:
-    """Determine the first-segment escape direction based on circle placement.
-
-    Circles placed horizontally or diagonally escape vertically (UP/DOWN).
-    Circles placed vertically (ABOVE) escape horizontally (RIGHT).
-    """
-    if offset_dir == OffsetDirection.ABOVE:
-        return "RIGHT"
-    # LEFT, RIGHT, DIAGONAL_LEFT, DIAGONAL_RIGHT all escape vertically
-    return "VERTICAL"
 
 
 def _draw_connector_lines(
@@ -255,7 +220,7 @@ def _draw_connector_lines(
     ew_offset = layout.ew_key_y_offset
 
     lines = [
-        (cx, cy, tgt, od) for cx, cy, tgt, od in all_indicators
+        (cx, cy, tgt, kn, sd) for cx, cy, tgt, kn, sd in all_indicators
         if tgt in layer_to_row
     ]
     if not lines:
@@ -274,39 +239,38 @@ def _draw_connector_lines(
         for i, layer in enumerate(target_layers_used)
     }
 
-    # Y-stagger: lines escaping in the same vertical direction from nearby
-    # positions need different escape distances so they don't overlap
-    # horizontally. Sort by start position and assign increasing escape
-    # multipliers within each direction group.
-    up_lines = sorted(
-        [(i, cx, cy) for i, (cx, cy, _, od) in enumerate(lines)
-         if _escape_direction(od) == "VERTICAL" and lines[i][2] in layer_to_row
-         and (layer_to_row[lines[i][2]], all_row_bounds) and
-         (all_row_bounds[layer_to_row[lines[i][2]]][1] + ew_offset + nk / 2.0) < cy],
-        key=lambda t: t[2],  # sort by Y descending (highest circle = smallest escape)
-        reverse=True,
-    )
-    down_lines = sorted(
-        [(i, cx, cy) for i, (cx, cy, _, od) in enumerate(lines)
-         if _escape_direction(od) == "VERTICAL" and lines[i][2] in layer_to_row
-         and (all_row_bounds[layer_to_row[lines[i][2]]][1] + ew_offset + nk / 2.0) >= cy],
-        key=lambda t: t[2],  # sort by Y ascending (lowest circle = smallest escape)
-    )
-    right_lines = [
-        (i, cx, cy) for i, (cx, cy, _, od) in enumerate(lines)
-        if _escape_direction(od) == "RIGHT"
-    ]
+    # Y-stagger: lines escaping in the same direction need different escape
+    # distances so they don't overlap. Group by direction, sort by position,
+    # and assign increasing multipliers.
+    up_indices = []
+    down_indices = []
+    right_indices = []
 
-    # Assign escape multipliers (1-based: 1*nk, 2*nk, 3*nk...)
+    for i, (cx, cy, tgt, key_name, side) in enumerate(lines):
+        escape = _THUMB_ESCAPE_DIRECTIONS.get((key_name, side), "RIGHT")
+        if escape == "UP":
+            up_indices.append((i, cy))
+        elif escape == "DOWN":
+            down_indices.append((i, cy))
+        else:
+            right_indices.append((i, cx))
+
+    # Sort: for UP, highest circle (largest cy) gets smallest escape (rank 1)
+    up_indices.sort(key=lambda t: t[1], reverse=True)
+    # For DOWN, lowest circle (smallest cy) gets smallest escape (rank 1)
+    down_indices.sort(key=lambda t: t[1])
+    # For RIGHT, leftmost circle gets smallest escape
+    right_indices.sort(key=lambda t: t[1])
+
     escape_mult: dict[int, int] = {}
-    for rank, (idx, _, _) in enumerate(up_lines):
+    for rank, (idx, _) in enumerate(up_indices):
         escape_mult[idx] = rank + 1
-    for rank, (idx, _, _) in enumerate(down_lines):
+    for rank, (idx, _) in enumerate(down_indices):
         escape_mult[idx] = rank + 1
-    for rank, (idx, _, _) in enumerate(right_lines):
+    for rank, (idx, _) in enumerate(right_indices):
         escape_mult[idx] = rank + 1
 
-    for line_idx, (cx, cy, target_layer, offset_dir) in enumerate(lines):
+    for line_idx, (cx, cy, target_layer, key_name, side) in enumerate(lines):
         if 0 <= target_layer < len(palette.layers):
             stroke_color = palette.layers[target_layer][4]
         else:
@@ -318,35 +282,34 @@ def _draw_connector_lines(
         routing_x = routing_x_by_layer[target_layer]
         mult = escape_mult.get(line_idx, 1)
 
-        escape = _escape_direction(offset_dir)
+        escape = _THUMB_ESCAPE_DIRECTIONS.get((key_name, side), "RIGHT")
         pts: list[tuple[float, float]] = [(cx, cy)]
 
-        if escape == "RIGHT":
-            # Circle is ABOVE key → escape RIGHT, clearing clusters
+        if escape == "UP":
+            escape_y = cy - mult * nk
+            pts.append((cx, escape_y))
+            pts.append((routing_x, escape_y))
+            if abs(escape_y - target_ew_center_y) > 1.0:
+                pts.append((routing_x, target_ew_center_y))
+            pts.append((end_x, target_ew_center_y))
+
+        elif escape == "DOWN":
+            escape_y = cy + mult * nk
+            pts.append((cx, escape_y))
+            pts.append((routing_x, escape_y))
+            if abs(escape_y - target_ew_center_y) > 1.0:
+                pts.append((routing_x, target_ew_center_y))
+            pts.append((end_x, target_ew_center_y))
+
+        else:  # RIGHT
             escape_x = max(cx + mult * nk, max_cluster_right + nk)
             pts.append((escape_x, cy))
-
             if escape_x < routing_x:
                 pts.append((routing_x, cy))
-
             final_x = max(escape_x, routing_x)
             if abs(cy - target_ew_center_y) > 1.0:
                 pts.append((final_x, target_ew_center_y))
                 pts.append((end_x, target_ew_center_y))
-
-        else:  # VERTICAL escape
-            if target_ew_center_y < cy:
-                escape_y = cy - mult * nk  # UP, staggered
-            else:
-                escape_y = cy + mult * nk  # DOWN, staggered
-
-            pts.append((cx, escape_y))
-            pts.append((routing_x, escape_y))
-
-            if abs(escape_y - target_ew_center_y) > 1.0:
-                pts.append((routing_x, target_ew_center_y))
-
-            pts.append((end_x, target_ew_center_y))
 
         # Build SVG path
         path_d = f"M {pts[0][0]:.2f} {pts[0][1]:.2f}"
