@@ -30,7 +30,12 @@ from .indicators import (
     _THUMB_KEY_HEIGHT_RATIOS,
 )
 from .layout import Boundary, KeymapLayoutMetrics
-from .overview_layout import BadgeDimensions, OverviewLayout
+from .overview_layout import (
+    BadgeDimensions,
+    OverviewLayout,
+    _BADGE_PADDING_LEFT,
+    _BADGE_PADDING_RIGHT,
+)
 from .text import Font
 
 _LOGO_ASPECT_RATIO = AspectRatio.from_dimensions(width=2333.333, height=458.333, precision=2)
@@ -39,6 +44,9 @@ _CONNECTOR_ROUTING_MARGIN = 12.0
 
 # Finger cluster key proportions (same as FingerClusterComponent)
 _OUTER_KEY_WIDTH_PROPORTION = 0.328
+
+# Badge font size as a ratio of badge height
+_BADGE_FONT_SIZE_RATIO = 0.45
 
 
 def _compute_badge_dims(
@@ -62,12 +70,25 @@ def _compute_badge_dims(
             badge_texts.append(f"{layer_idx} {name}")
     badge_texts.append("THUMBS")
 
-    # Estimate text width: for Roboto regular at badge_font_size, ~0.58 * font_size per char
-    badge_font_size = badge_height * 0.45
-    char_width = badge_font_size * 0.58
-    max_text_width = max(len(t) * char_width for t in badge_texts) if badge_texts else 50
+    # Measure text width using PIL font for accuracy.
+    # PIL font sizes map to SVG units approximately 1:1 when the SVG uses
+    # the same coordinate scale, but we need to measure at the actual size
+    # that will be used in the SVG. Use a high-res measurement then scale.
+    badge_font_size = badge_height * _BADGE_FONT_SIZE_RATIO
+    try:
+        from .text import Font as SkimFont
+        # Measure at a large reference size then scale proportionally
+        ref_size = 100
+        pil_font = SkimFont.FINGER_KEY.load(ref_size)
+        max_text_width_at_ref = max(
+            pil_font.getlength(t) for t in badge_texts
+        ) if badge_texts else 50
+        max_text_width = max_text_width_at_ref * (badge_font_size / ref_size)
+    except Exception:
+        char_width = badge_font_size * 0.65
+        max_text_width = max(len(t) * char_width for t in badge_texts) if badge_texts else 50
 
-    badge_width = 15.0 + max_text_width + 30.0
+    badge_width = _BADGE_PADDING_LEFT + max_text_width + _BADGE_PADDING_RIGHT
     border_radius = badge_height * 0.2
 
     return BadgeDimensions(
@@ -291,18 +312,15 @@ def draw_overview(
     palette = config.output.style.palette
     base_metrics = KeymapLayoutMetrics.from_config(config)
 
-    # Pre-compute badge dimensions based on key sizes.
-    # We need a preliminary cluster width to size the badge height.
-    # Use a rough estimate: scale base cluster width to ~80% of total width.
-    prelim_scale = 0.75
-    prelim_cluster_w = base_metrics.finger_cluster_width * prelim_scale
-    badge_dims = _compute_badge_dims(config, render_layer_count, prelim_cluster_w)
-
-    layout = OverviewLayout(config, badge_dims)
-
-    # Recompute badge dims with the actual cluster width from the layout
-    badge_dims = _compute_badge_dims(config, render_layer_count, layout.finger_cluster_width)
-    # Rebuild layout with correct badge dims (badge width may have changed)
+    # Compute badge dimensions and layout.
+    # Use a preliminary layout to get the cluster width, compute badge dims
+    # from that, then rebuild the final layout. The badge font size is
+    # determined by the badge height (which comes from the cluster key size),
+    # so we fix the cluster width from the first pass and don't re-derive
+    # the font size to avoid circular dependency.
+    prelim_badge = BadgeDimensions(width=200, height=40, border_radius=8)
+    prelim_layout = OverviewLayout(config, prelim_badge)
+    badge_dims = _compute_badge_dims(config, render_layer_count, prelim_layout.finger_cluster_width)
     layout = OverviewLayout(config, badge_dims)
 
     canvas_w = layout.canvas_width
@@ -336,7 +354,7 @@ def draw_overview(
     badge_w = badge_dims.width
     badge_h = badge_dims.height
     badge_r = badge_dims.border_radius
-    badge_font_size = badge_h * 0.55
+    badge_font_size = badge_h * _BADGE_FONT_SIZE_RATIO
     badge_x = padding
 
     # ---------------------------------------------------------------
@@ -369,24 +387,26 @@ def draw_overview(
         fill=palette.text_color,
     ))
 
-    # "LAYERS" heading below logo
-    layers_heading_y = padding + logo_height + badge_h * 0.3
-    d.append(draw.Text(
-        "LAYERS",
-        font_size=badge_font_size * 0.7,
-        x=padding,
-        y=layers_heading_y,
-        text_anchor="start",
-        dominant_baseline="text-before-edge",
-        font_family=label_font,
-        fill=palette.text_color,
-        font_weight="bold",
-    ))
-
     # ---------------------------------------------------------------
     # Layer rows: reversed order (highest layer at top)
     # ---------------------------------------------------------------
     row_to_layer = list(reversed(range(render_layer_count)))
+
+    # "LAYERS" heading — positioned just above the first badge, like a subtitle, in gray
+    if row_to_layer:
+        first_row_y = layout.layer_row_y_positions[0]
+        first_row_h = layout.layer_row_heights[0]
+        first_badge_y = first_row_y + first_row_h / 2.0 - badge_h / 2.0
+        d.append(draw.Text(
+            "LAYERS",
+            font_size=badge_font_size,
+            x=badge_x + _BADGE_PADDING_LEFT,
+            y=first_badge_y - badge_font_size * 0.2,
+            text_anchor="start",
+            dominant_baseline="text-after-edge",
+            font_family=label_font,
+            fill=palette.neutral_color,
+        ))
 
     for row_idx, layer_idx in enumerate(row_to_layer):
         row_y = layout.layer_row_y_positions[row_idx]
@@ -420,18 +440,17 @@ def draw_overview(
             fill="white",
         ))
 
-        # Optional subtitle below badge
+        # Optional subtitle below badge — same font size, layer color
         if layer_cfg.subtitle:
-            subtitle_size = badge_font_size * 0.75
             d.append(draw.Text(
                 layer_cfg.subtitle,
-                font_size=subtitle_size,
-                x=badge_x + 15.0,
-                y=badge_y + badge_h + subtitle_size * 0.3,
+                font_size=badge_font_size,
+                x=badge_x + _BADGE_PADDING_LEFT,
+                y=badge_y + badge_h + badge_font_size * 0.2,
                 text_anchor="start",
                 dominant_baseline="text-before-edge",
                 font_family=label_font,
-                fill=palette.text_color,
+                fill=layer_color,
             ))
 
     # THUMBS badge — same dimensions as layer badges

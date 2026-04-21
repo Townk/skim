@@ -17,8 +17,9 @@ from skim.data import SkimConfig
 
 from .layout import KeymapLayoutMetrics, Position
 
-# Finger cluster aspect ratio is 1:1 (square), so height == width
+# Finger cluster aspect ratio is 1:1 (square), or 3:4 with double_south
 _FINGER_CLUSTER_ASPECT = 1.0
+_FINGER_CLUSTER_ASPECT_DOUBLE_SOUTH = 4.0 / 3.0
 # Thumb cluster aspect ratio is 1.5:1 (width:height), so height = width / 1.5
 _THUMB_CLUSTER_ASPECT = 1.0 / 1.5
 
@@ -63,6 +64,7 @@ class OverviewLayout:
         self._base_metrics = KeymapLayoutMetrics.from_config(config)
         self._num_layers = len(config.keyboard.layers)
         self._badge_dims = badge_dims
+        self._has_double_south = config.keyboard.features.double_south
         self._compute()
 
     def _compute(self) -> None:
@@ -110,8 +112,11 @@ class OverviewLayout:
         inset = m.inset * scale
         side_width = m.side_width * scale
 
-        # Finger cluster height (1:1 aspect)
-        finger_cluster_height = finger_cluster_width * _FINGER_CLUSTER_ASPECT
+        # Finger cluster height: 1:1 normally, 3:4 with double_south
+        if self._has_double_south:
+            finger_cluster_height = finger_cluster_width * _FINGER_CLUSTER_ASPECT_DOUBLE_SOUTH
+        else:
+            finger_cluster_height = finger_cluster_width * _FINGER_CLUSTER_ASPECT
 
         # Row height = cluster height (no vertical offset — all clusters top-aligned)
         row_height = finger_cluster_height
