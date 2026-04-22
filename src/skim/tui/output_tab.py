@@ -292,19 +292,18 @@ class LayerColorListPane(ListDetailPane):
     def on_key(self, event) -> None:
         """Override to let Select handle Enter/Space/Escape normally."""
         if self._editing:
-            if self._is_inside_select():
-                if event.key in ("enter", "space", "escape", "up", "down"):
-                    # Invoke the Select's action directly since on_key stops
-                    # the event before Textual's binding system can process it
-                    select = self.query_one("#lc-gradient-type", SkimSelect)
-                    if not self._select_active:
-                        self._select_active = True
-                        select.action_show_overlay()
-                    event.prevent_default()
-                    event.stop()
-                    return
             if self._select_active:
-                # Overlay is open — don't commit, let it close naturally
+                # Overlay is open — don't intercept anything, let it handle
+                # navigation (up/down), selection (enter), and dismiss (escape)
+                return
+            if self._is_inside_select() and event.key in ("enter", "space"):
+                # Open the overlay directly since on_key stops the event
+                # before Textual's binding system can process it
+                self._select_active = True
+                select = self.query_one("#lc-gradient-type", SkimSelect)
+                select.action_show_overlay()
+                event.prevent_default()
+                event.stop()
                 return
         super().on_key(event)
 
