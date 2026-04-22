@@ -75,7 +75,7 @@ class KeyboardTab(Widget):
     }
     KeyboardTab #layer-detail {
         padding: 0 1;
-        height: auto;
+        height: 100%;
         overflow-x: hidden;
         border: solid $accent 30%;
     }
