@@ -268,6 +268,21 @@ class LayerColorListPane(ListDetailPane):
             ids.add(f"lc-step-{i}")
         return ids
 
+    def _focus_first_field(self) -> None:
+        """Focus the gradient type Select as the first field."""
+        try:
+            self.query_one("#lc-gradient-type", SkimSelect).focus()
+        except Exception:
+            super()._focus_first_field()
+
+    def on_key(self, event) -> None:
+        """Override to let Select handle Enter normally."""
+        if self._editing and event.key == "enter":
+            focused = self.app.focused
+            if isinstance(focused, SkimSelect):
+                return  # let the Select handle Enter (open dropdown)
+        super().on_key(event)
+
     def _set_fields_enabled(self, enabled: bool) -> None:
         """Override to also enable/disable the gradient type Select."""
         super()._set_fields_enabled(enabled)
