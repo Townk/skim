@@ -23,7 +23,7 @@ from skim.application.render.overview import draw_overview
 
 def _make_config(num_layers: int = 3, width: float = 1600) -> SkimConfig:
     layers_cfg = tuple(
-        KeyboardLayer(label=str(i), name=f"Layer{i}")
+        KeyboardLayer(index=i, label=str(i), name=f"Layer{i}")
         for i in range(num_layers)
     )
     layer_colors = tuple(
@@ -39,12 +39,12 @@ def _make_config(num_layers: int = 3, width: float = 1600) -> SkimConfig:
 
 
 def _make_keymap(num_layers: int = 3) -> SvalboardKeymap[SvalboardTargetKey]:
-    layers = []
+    layers = {}
     for layer_idx in range(num_layers):
         layer = SvalboardLayout.from_sequence(
             [SvalboardTargetKey(label=f"L{layer_idx}K{i}") for i in range(60)]
         )
-        layers.append(layer)
+        layers[layer_idx] = layer
     return SvalboardKeymap(layers=layers)
 
 
@@ -72,8 +72,8 @@ class TestDrawOverview:
 
     def test_svg_contains_subtitle_when_set(self):
         layers_cfg = (
-            KeyboardLayer(label="0", name="Letters", subtitle="COLEMAK"),
-            KeyboardLayer(label="1", name="Numbers"),
+            KeyboardLayer(index=0, label="0", name="Letters", subtitle="COLEMAK"),
+            KeyboardLayer(index=1, label="1", name="Numbers"),
         )
         layer_colors = (
             LayerColor(base_color="#305050"),
@@ -87,6 +87,23 @@ class TestDrawOverview:
         result = draw_overview(config, keymap)
         svg = result.as_svg()
         assert "COLEMAK" in svg
+
+    def test_svg_contains_custom_keymap_title_when_set(self):
+        config = _make_config()
+        config = config.model_copy(
+            update={"output": config.output.model_copy(update={"keymap_title": "My Custom Layout"})}
+        )
+        keymap = _make_keymap()
+        result = draw_overview(config, keymap)
+        svg = result.as_svg()
+        assert "My Custom Layout" in svg
+
+    def test_svg_uses_default_title_when_keymap_title_not_set(self):
+        config = _make_config()
+        keymap = _make_keymap()
+        result = draw_overview(config, keymap)
+        svg = result.as_svg()
+        assert "Layers Layout" in svg
 
     def test_svg_contains_copyright_when_set(self):
         config = _make_config()
@@ -118,8 +135,8 @@ class TestOverviewConnectorLines:
     def test_svg_contains_dashed_lines_for_layer_switching_keys(self):
         """When keys have layer_switch, dotted connector lines appear."""
         layers_cfg = (
-            KeyboardLayer(label="0", name="Base"),
-            KeyboardLayer(label="1", name="Nav"),
+            KeyboardLayer(index=0, label="0", name="Base"),
+            KeyboardLayer(index=1, label="1", name="Nav"),
         )
         layer_colors = (
             LayerColor(base_color="#305050"),
@@ -142,7 +159,7 @@ class TestOverviewConnectorLines:
         keys_l1 = [SvalboardTargetKey(label=f"N{i}") for i in range(60)]
         layer1 = SvalboardLayout.from_sequence(keys_l1)
 
-        keymap = SvalboardKeymap(layers=[layer0, layer1])
+        keymap = SvalboardKeymap(layers={0: layer0, 1: layer1})
         result = draw_overview(config, keymap)
         svg = result.as_svg()
 

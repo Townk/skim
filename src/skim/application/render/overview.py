@@ -12,6 +12,8 @@ Generates a table-like overview SVG showing all keymap layers:
 - Dotted connector lines from layer indicator circles to target layer rows
 """
 
+from collections.abc import Callable
+
 import drawsvg as draw
 
 from skim.assets import ASSETS
@@ -49,7 +51,7 @@ _BADGE_FONT_SIZE_RATIO = 0.45
 
 def _compute_badge_dims(
     config: SkimConfig,
-    render_layer_count: int,
+    render_layers: list[tuple[int, int]],
     finger_cluster_width: float,
 ) -> BadgeDimensions:
     """Compute uniform badge dimensions.
@@ -62,10 +64,9 @@ def _compute_badge_dims(
 
     # Build all badge texts to find the widest
     badge_texts: list[str] = []
-    for layer_idx in range(render_layer_count):
-        if layer_idx < len(config.keyboard.layers):
-            name = config.keyboard.layers[layer_idx].name.upper()
-            badge_texts.append(f"{layer_idx} {name}")
+    for pos, qmk_idx in render_layers:
+        name = config.keyboard.layers[pos].name.upper()
+        badge_texts.append(f"{qmk_idx} {name}")
     badge_texts.append("THUMBS")
 
     # Measure text width using PIL font for accuracy.
@@ -123,7 +124,7 @@ _THUMB_ESCAPE_DIRECTIONS: dict[tuple[str, KeyboardSide], str] = {
 def _collect_finger_indicators(
     clusters: list[list[FingerClusterComponent]],
     keymap: SvalboardKeymap[SvalboardTargetKey],
-    row_to_layer: list[int],
+    row_to_layer: list[tuple[int, int]],
 ) -> list[_IndicatorInfo]:
     """Collect indicator circle positions from finger clusters.
 
@@ -137,10 +138,14 @@ def _collect_thumb_indicators(
     left_thumb: ThumbClusterComponent,
     right_thumb: ThumbClusterComponent,
     keymap: SvalboardKeymap[SvalboardTargetKey],
+    config: SkimConfig,
 ) -> list[_IndicatorInfo]:
     """Collect indicator circle positions and directions from thumb clusters."""
     results: list[_IndicatorInfo] = []
-    layer0 = keymap.layers[0]
+    first_qmk_idx = config.keyboard.layers[0].index if config.keyboard.layers else 0
+    if first_qmk_idx not in keymap.layers:
+        return results
+    layer0 = keymap.layers[first_qmk_idx]
 
     for thumb_comp, thumb_data, side in [
         (left_thumb, layer0.left.thumb, KeyboardSide.LEFT),
@@ -360,11 +365,13 @@ def _draw_connector_paths(
     d: draw.Drawing,
     paths: list[tuple[list[tuple[float, float]], int]],
     palette: "Palette",
+    qmk_index_to_position: "Callable[[int], int | None]",
 ) -> None:
     """Draw pre-computed connector line paths as dotted SVG paths."""
     for pts, target_layer in paths:
-        if 0 <= target_layer < len(palette.layers):
-            stroke_color = palette.layers[target_layer][4]
+        pos = qmk_index_to_position(target_layer)
+        if pos is not None and 0 <= pos < len(palette.layers):
+            stroke_color = palette.layers[pos][4]
         else:
             stroke_color = "#808080"
 
@@ -393,7 +400,10 @@ def _build_thumb_clusters(
     """Build thumb cluster components at the layout's current thumb position."""
     if not keymap.layers:
         return None, None
-    layer0 = keymap.layers[0]
+    first_qmk_idx = config.keyboard.layers[0].index if config.keyboard.layers else 0
+    if first_qmk_idx not in keymap.layers:
+        return None, None
+    layer0 = keymap.layers[first_qmk_idx]
     palette = config.output.style.palette
     thumb_ctx = RenderContext(
         palette=palette, layer_index=0,
@@ -402,6 +412,7 @@ def _build_thumb_clusters(
         hold_symbol_position=config.output.style.hold_symbol_position,
         use_system_fonts=use_system_fonts,
         show_layer_indicators=config.output.style.show_layer_indicators,
+        qmk_index_to_position=config.keyboard.qmk_index_to_position,
     )
     thumb_w = layout.thumb_cluster_width
     left_pos, right_pos = layout.thumb_cluster_positions()
@@ -422,7 +433,12 @@ def draw_overview(
 ) -> draw.Drawing:
     """Generate the full overview SVG image for a multi-layer keymap."""
     num_layers = len(config.keyboard.layers)
-    render_layer_count = min(len(keymap.layers), num_layers)
+    render_layers: list[tuple[int, int]] = []  # (config_position, qmk_index)
+    for pos, layer_cfg in enumerate(config.keyboard.layers):
+        if layer_cfg.index in keymap.layers:
+            render_layers.append((pos, layer_cfg.index))
+    render_layer_count = len(render_layers)
+
     use_system_fonts = config.output.style.use_system_fonts
     palette = config.output.style.palette
     base_metrics = KeymapLayoutMetrics.from_config(config)
@@ -430,14 +446,14 @@ def draw_overview(
     # --- Phase 1: Compute layout dimensions ---
     prelim_badge = BadgeDimensions(width=200, height=40, border_radius=8)
     prelim_layout = OverviewLayout(config, prelim_badge)
-    badge_dims = _compute_badge_dims(config, render_layer_count, prelim_layout.finger_cluster_width)
+    badge_dims = _compute_badge_dims(config, render_layers, prelim_layout.finger_cluster_width)
     routing_column_count = render_layer_count  # worst case
     layout = OverviewLayout(config, badge_dims, routing_column_count)
 
     nk = layout.finger_cluster_width * _OUTER_KEY_WIDTH_PROPORTION
     ew_offset = layout.ew_key_y_offset
-    row_to_layer = list(reversed(range(render_layer_count)))
-    layer_to_row = {li: ri for ri, li in enumerate(row_to_layer)}
+    row_to_layer = list(reversed(render_layers))  # list of (pos, qmk_idx) tuples
+    layer_to_row = {qmk_idx: ri for ri, (_pos, qmk_idx) in enumerate(row_to_layer)}
 
     # --- Phase 2: Build thumb clusters at preliminary position, collect indicators,
     #     compute connector paths to find clearance needed ---
@@ -449,7 +465,7 @@ def draw_overview(
         if left_thumb_prelim and right_thumb_prelim:
             all_row_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
             max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
-            indicators = _collect_thumb_indicators(left_thumb_prelim, right_thumb_prelim, keymap)
+            indicators = _collect_thumb_indicators(left_thumb_prelim, right_thumb_prelim, keymap, config)
 
             def _thumb_bb(lt: ThumbClusterComponent, rt: ThumbClusterComponent):
                 bx = lt.x
@@ -495,7 +511,7 @@ def draw_overview(
             if left_thumb_final and right_thumb_final:
                 all_row_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
                 max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
-                indicators = _collect_thumb_indicators(left_thumb_final, right_thumb_final, keymap)
+                indicators = _collect_thumb_indicators(left_thumb_final, right_thumb_final, keymap, config)
                 tb = _thumb_bb(left_thumb_final, right_thumb_final)
                 connector_paths = _compute_connector_paths(
                     indicators, all_row_bounds, layer_to_row,
@@ -555,7 +571,9 @@ def draw_overview(
         path=ASSETS.logo_svalboard, embed=True,
     ))
 
-    if num_layers > 0:
+    if config.output.keymap_title:
+        title_text = config.output.keymap_title
+    elif num_layers > 0:
         first_layer = config.keyboard.layers[0]
         title_text = f"{(first_layer.subtitle or first_layer.name)} Layers Layout"
     else:
@@ -579,12 +597,12 @@ def draw_overview(
         ))
 
     # Layer badges
-    for row_idx, layer_idx in enumerate(row_to_layer):
+    for row_idx, (pos, qmk_idx) in enumerate(row_to_layer):
         row_y = layout.layer_row_y_positions[row_idx]
-        layer_cfg = config.keyboard.layers[layer_idx]
+        layer_cfg = config.keyboard.layers[pos]
         layer_color = (
-            palette.layers[layer_idx].base_color
-            if layer_idx < len(palette.layers) else palette.neutral_color
+            palette.layers[pos].base_color
+            if pos < len(palette.layers) else palette.neutral_color
         )
         badge_y = row_y + ew_offset
         d.append(draw.Rectangle(
@@ -592,7 +610,7 @@ def draw_overview(
             rx=badge_r, ry=badge_r, fill=layer_color,
         ))
         d.append(draw.Text(
-            f"{layer_idx} {layer_cfg.name.upper()}", font_size=badge_font_size,
+            f"{qmk_idx} {layer_cfg.name.upper()}", font_size=badge_font_size,
             x=badge_x + _BADGE_PADDING_LEFT, y=badge_y + badge_h / 2.0,
             text_anchor="start", dominant_baseline="central",
             font_family=label_font, fill="white",
@@ -620,15 +638,16 @@ def draw_overview(
 
     # Finger clusters
     cluster_width = layout.finger_cluster_width
-    for row_idx, layer_idx in enumerate(row_to_layer):
-        layer_data = keymap.layers[layer_idx]
+    for row_idx, (pos, qmk_idx) in enumerate(row_to_layer):
+        layer_data = keymap.layers[qmk_idx]
         ctx = RenderContext(
-            palette=palette, layer_index=layer_idx,
+            palette=palette, layer_index=pos,
             has_double_south=config.keyboard.features.double_south,
             use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
             hold_symbol_position=config.output.style.hold_symbol_position,
             use_system_fonts=use_system_fonts,
             show_layer_indicators=config.output.style.show_layer_indicators,
+            qmk_index_to_position=config.keyboard.qmk_index_to_position,
         )
         positions = layout.finger_cluster_positions(row_idx)
         for i in range(_FINGER_CLUSTERS_PER_SIDE):
@@ -654,7 +673,7 @@ def draw_overview(
 
     # Connector lines
     if connector_paths:
-        _draw_connector_paths(d, connector_paths, palette)
+        _draw_connector_paths(d, connector_paths, palette, config.keyboard.qmk_index_to_position)
 
     # Copyright
     if config.output.copyright:
