@@ -267,3 +267,56 @@ class TestQmkColorParsing:
         result = generator.generate_from_keybard(minimal_keybard)
         parsed = yaml.safe_load(result)
         assert parsed["output"]["style"]["palette"]["overrides"] == {}
+
+
+from pathlib import Path
+
+
+class TestWithSampleKeybard:
+    """Integration tests using the real keybard sample file."""
+
+    @pytest.fixture()
+    def sample_keybard(self) -> str:
+        sample_path = Path(__file__).parent.parent.parent.parent / "samples" / "keymaps" / "keybard-sample.kbi"
+        if not sample_path.exists():
+            pytest.skip("Sample keybard file not found")
+        return sample_path.read_text()
+
+    def test_sample_produces_valid_config(self, sample_keybard):
+        """Real sample file produces a valid SkimConfig."""
+        from skim.data.config import SkimConfig
+
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(sample_keybard)
+        parsed = yaml.safe_load(result)
+        config = SkimConfig.model_validate(parsed)
+        assert len(config.keyboard.layers) == 16
+
+    def test_sample_extracts_known_layer_names(self, sample_keybard):
+        """Known layer names from sample file are extracted."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(sample_keybard)
+        parsed = yaml.safe_load(result)
+        layer_names = [l["name"] for l in parsed["keyboard"]["layers"]]
+        assert "Base" in layer_names
+        assert "Sym" in layer_names
+        assert "Nav" in layer_names
+
+    def test_sample_extracts_custom_keycodes(self, sample_keybard):
+        """Custom keycodes from sample are present in overrides."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(sample_keybard)
+        parsed = yaml.safe_load(result)
+        keycode_names = [o["keycode"] for o in parsed["keycodes"]["overrides"]]
+        assert "SV_LEFT_DPI_INC" in keycode_names
+
+    def test_sample_with_color_adjustments(self, sample_keybard):
+        """Color adjustments apply without errors on real data."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(
+            sample_keybard, adjust_lightness=0.31, adjust_saturation=0.50
+        )
+        parsed = yaml.safe_load(result)
+        from skim.data.config import SkimConfig
+        config = SkimConfig.model_validate(parsed)
+        assert len(config.output.style.palette.layers) == 16
