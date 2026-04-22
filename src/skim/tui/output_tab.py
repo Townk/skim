@@ -73,6 +73,18 @@ class OutputTab(Widget):
     OutputTab #layer-colors-container {
         height: auto;
     }
+    OutputTab .color-swatch {
+        width: 4;
+        height: 3;
+        margin: 0 1 0 0;
+        content-align: center middle;
+    }
+    OutputTab .lc-swatch {
+        width: 4;
+        height: 1;
+        dock: right;
+        margin: 0 0 0 1;
+    }
     """
 
     def __init__(self, config_data: dict[str, Any], **kwargs: Any) -> None:
@@ -171,41 +183,18 @@ class OutputTab(Widget):
             # --- Palette section ---
             with Vertical(classes="section"):
                 yield Static("Palette", classes="section-title")
-                with Horizontal(classes="field-row"):
-                    yield Label("Neutral color:", classes="field-label")
-                    yield Input(
-                        value=palette.get("neutral_color", "") or "",
-                        id="palette-neutral-color",
-                        placeholder="#6F768B",
-                    )
-                with Horizontal(classes="field-row"):
-                    yield Label("Text color:", classes="field-label")
-                    yield Input(
-                        value=palette.get("text_color", "") or "",
-                        id="palette-text-color",
-                        placeholder="black",
-                    )
-                with Horizontal(classes="field-row"):
-                    yield Label("Key label color:", classes="field-label")
-                    yield Input(
-                        value=palette.get("key_label_color", "") or "",
-                        id="palette-key-label-color",
-                        placeholder="white",
-                    )
-                with Horizontal(classes="field-row"):
-                    yield Label("Background color:", classes="field-label")
-                    yield Input(
-                        value=palette.get("background_color", "") or "",
-                        id="palette-background-color",
-                        placeholder="white",
-                    )
-                with Horizontal(classes="field-row"):
-                    yield Label("Border color:", classes="field-label")
-                    yield Input(
-                        value=palette.get("border_color", "") or "",
-                        id="palette-border-color",
-                        placeholder="black",
-                    )
+                for color_label, field_id, config_key, placeholder in [
+                    ("Neutral color:", "palette-neutral-color", "neutral_color", "#6F768B"),
+                    ("Text color:", "palette-text-color", "text_color", "black"),
+                    ("Key label color:", "palette-key-label-color", "key_label_color", "white"),
+                    ("Background color:", "palette-background-color", "background_color", "white"),
+                    ("Border color:", "palette-border-color", "border_color", "black"),
+                ]:
+                    color_val = palette.get(config_key, "") or ""
+                    with Horizontal(classes="field-row"):
+                        yield Label(color_label, classes="field-label")
+                        yield Static(" ", classes="color-swatch", id=f"swatch-{field_id}")
+                        yield Input(value=color_val, id=field_id, placeholder=placeholder)
 
             # --- Layer colors section ---
             with Vertical(classes="section"):
@@ -220,6 +209,7 @@ class OutputTab(Widget):
                     with VerticalScroll(id="layer-color-detail", can_focus=False):
                         with Horizontal(classes="field-row"):
                             yield Label("Base color:", classes="field-label")
+                            yield Static(" ", classes="color-swatch", id="swatch-lc-base-color")
                             yield Input(
                                 value="", id="lc-base-color",
                                 placeholder="#RRGGBB", disabled=True,
@@ -249,6 +239,22 @@ class OutputTab(Widget):
             self._selected_layer_color = 0
             self._refresh_lc_fields()
         self._update_lc_list_state()
+        self._update_all_palette_swatches()
+
+    def _update_swatch(self, swatch_id: str, color: str) -> None:
+        """Update a color swatch's background color."""
+        try:
+            swatch = self.query_one(f"#{swatch_id}", Static)
+            swatch.styles.background = color if color else "transparent"
+        except Exception:
+            pass
+
+    def _update_all_palette_swatches(self) -> None:
+        """Update all palette color swatches from current config values."""
+        palette = self.config_data.get("output", {}).get("style", {}).get("palette", {})
+        for field_id, config_key in _PALETTE_FIELD_MAP.items():
+            color = palette.get(config_key, "")
+            self._update_swatch(f"swatch-{field_id}", color)
 
     def _layer_colors(self) -> list[dict[str, Any]]:
         return self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
@@ -257,12 +263,19 @@ class OutputTab(Widget):
     def _lc_text(index: int, lc: dict[str, Any]) -> str:
         return f"Layer {index}: {lc.get('base_color', '')}"
 
+    def _make_lc_list_item(self, index: int, lc: dict[str, Any]) -> ListItem:
+        """Create a ListItem with text and a color swatch for a layer color."""
+        color = lc.get("base_color", "")
+        swatch = Static(" ", classes="lc-swatch")
+        swatch.styles.background = color if color else "transparent"
+        return ListItem(Static(self._lc_text(index, lc)), swatch)
+
     def _rebuild_layer_colors_list(self) -> None:
         layer_colors = self._layer_colors()
         list_view = self.query_one("#layer-colors-list", ListView)
         list_view.clear()
         for i, lc in enumerate(layer_colors):
-            list_view.append(ListItem(Static(self._lc_text(i, lc))))
+            list_view.append(self._make_lc_list_item(i, lc))
 
     def _update_lc_list_item(self) -> None:
         layer_colors = self._layer_colors()
@@ -289,8 +302,10 @@ class OutputTab(Widget):
         if self._selected_layer_color >= len(layer_colors):
             return
         lc = layer_colors[self._selected_layer_color]
-        self.query_one("#lc-base-color", Input).value = lc.get("base_color", "") or ""
+        color = lc.get("base_color", "") or ""
+        self.query_one("#lc-base-color", Input).value = color
         self.query_one("#lc-color-index", Input).value = str(lc.get("color_index", 0))
+        self._update_swatch("swatch-lc-base-color", color)
 
     def _clear_lc_fields(self) -> None:
         self.query_one("#lc-base-color", Input).value = ""
@@ -325,7 +340,7 @@ class OutputTab(Widget):
             new_lc = {"base_color": "#6F768B", "color_index": 2, "gradient": None}
             layer_colors.append(new_lc)
             lv = self.query_one("#layer-colors-list", ListView)
-            lv.append(ListItem(Static(self._lc_text(len(layer_colors) - 1, new_lc))))
+            lv.append(self._make_lc_list_item(len(layer_colors) - 1, new_lc))
             self._selected_layer_color = len(layer_colors) - 1
             self._refresh_lc_fields()
             lv.index = self._selected_layer_color
@@ -404,6 +419,7 @@ class OutputTab(Widget):
         elif input_id in _PALETTE_FIELD_MAP:
             config_key = _PALETTE_FIELD_MAP[input_id]
             self.config_data["output"]["style"]["palette"][config_key] = value
+            self._update_swatch(f"swatch-{input_id}", value)
 
         elif input_id == "border-width":
             border = self.config_data["output"]["style"].get("border")
@@ -426,6 +442,13 @@ class OutputTab(Widget):
             if self._selected_layer_color < len(layer_colors):
                 layer_colors[self._selected_layer_color]["base_color"] = value
                 self._update_lc_list_item()
+                self._update_swatch("swatch-lc-base-color", value)
+                # Also update the swatch in the list item
+                list_view = self.query_one("#layer-colors-list", ListView)
+                if self._selected_layer_color < len(list_view.children):
+                    item = list_view.children[self._selected_layer_color]
+                    for s in item.query(".lc-swatch"):
+                        s.styles.background = value if value else "transparent"
 
         elif input_id == "lc-color-index":
             layer_colors = self._layer_colors()
