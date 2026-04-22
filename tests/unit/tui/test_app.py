@@ -44,8 +44,8 @@ class TestSkimConfigApp:
 
     @pytest.mark.asyncio()
     async def test_quit_with_no_changes_exits(self, default_config_data):
-        """Pressing q with no changes exits immediately."""
+        """Pressing ctrl+q with no changes exits immediately."""
         app = SkimConfigApp(config_data=default_config_data)
         async with app.run_test() as pilot:
-            await pilot.press("q")
+            await pilot.press("ctrl+q")
             assert app.return_code is not None or not app.is_running

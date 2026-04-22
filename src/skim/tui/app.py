@@ -78,7 +78,8 @@ class SkimConfigApp(App):
         border-bottom: solid $accent;
     }
     Switch {
-        height: 1;
+        height: auto;
+        min-height: 1;
     }
     Select {
         height: 1;
@@ -102,10 +103,8 @@ class SkimConfigApp(App):
     """
 
     BINDINGS = [
-        Binding(key="q", action="request_quit", description="Quit"),
+        Binding(key="ctrl+q", action="request_quit", description="Quit"),
         Binding(key="ctrl+s", action="save", description="Save"),
-        Binding(key="up", action="focus_previous", description="Previous", show=False),
-        Binding(key="down", action="focus_next", description="Next", show=False),
     ]
 
     def __init__(
