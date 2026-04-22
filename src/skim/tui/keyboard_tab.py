@@ -57,14 +57,13 @@ class KeyboardTab(Widget):
         width: 1fr;
         max-width: 33%;
         min-width: 25;
-        height: auto;
+        height: 100%;
     }
     KeyboardTab #layer-list {
         height: 1fr;
         border: solid $accent 50%;
     }
     KeyboardTab .list-buttons {
-        dock: bottom;
         height: auto;
         width: 100%;
     }
