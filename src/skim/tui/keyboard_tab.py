@@ -127,7 +127,6 @@ class KeyboardTab(Widget):
                         yield Button("- Delete (d)", id="remove-layer", variant="error")
 
                 with Vertical(id="layer-detail"):
-                    yield Static("Press Enter on a layer to edit", id="layer-detail-hint")
                     with Horizontal(classes="field-row"):
                         yield Label("Index:", classes="field-label")
                         yield Input(value="", id="layer-index", placeholder="e.g. 0", disabled=True)
