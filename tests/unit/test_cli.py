@@ -311,6 +311,34 @@ class TestConfigureCommand:
         result = runner.invoke(main, ["configure", "-k", str(kbi)])
         assert result.exit_code == 1
 
+    @patch("skim.cli.setup_logging")
+    def test_non_tty_outputs_yaml(self, mock_setup):
+        """Non-TTY stdout outputs YAML directly (pipe-safe)."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure"])
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(result.output)
+        assert "keyboard" in parsed
+
+    @patch("skim.cli.setup_logging")
+    def test_keybard_flag_skips_tui(self, mock_setup, tmp_path):
+        """The -k flag always uses CLI path, never TUI."""
+        import json
+
+        kbi = tmp_path / "test.kbi"
+        kbi.write_text(json.dumps({
+            "layers": 1,
+            "keymap": [["KC_A"] * 60],
+            "layer_colors": [{"hue": 85, "sat": 255, "val": 255}],
+            "cosmetic": {"layer": {"0": "Base"}},
+            "custom_keycodes": [],
+        }))
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-k", str(kbi)])
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(result.output)
+        assert parsed["keyboard"]["layers"][0]["name"] == "Base"
+
 
 class TestDoctorCommand:
     """Tests for doctor subcommand."""

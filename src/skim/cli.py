@@ -297,7 +297,9 @@ def configure(
     keycodes) from the Keybard file to create a skim configuration.
     Optionally imports QMK named colors from a color.h file.
 
-    Without -k, outputs the default configuration template.
+    Without -k and with a TTY, launches an interactive configuration editor.
+
+    Without -k and without a TTY, outputs the default configuration template.
 
     Color adjustments (--adjust-lightness, --adjust-saturation) are applied
     to all extracted colors to ensure readable contrast in generated images.
@@ -308,33 +310,77 @@ def configure(
         generator = ConfigGenerator()
 
         if keybard_keymap:
+            # CLI path: generate from keybard file
             raw_content = keybard_keymap.read_text()
             qmk_content = qmk_color_header.read_text() if qmk_color_header else None
             content = generator.generate_from_keybard(
                 raw_content, qmk_content, adjust_lightness, adjust_saturation
             )
-        else:
-            content = generator.generate_default()
 
+            if output:
+                _write_config(output, content, force)
+            else:
+                click.echo(content)
+            return
+
+        # No -k flag: try TUI or fall back to default output
+        if sys.stdout.isatty():
+            try:
+                from skim.tui import launch_tui
+
+                # Load existing config if output path exists
+                config_data = _load_initial_config(output)
+                launch_tui(config_data=config_data, output_path=output, force=force)
+                return
+            except ImportError:
+                click.echo(
+                    "Error: The TUI requires the 'textual' package. Install it with:\n"
+                    "    pip install qmk-skim[tui]",
+                    err=True,
+                )
+                sys.exit(1)
+
+        # Non-TTY: output default YAML
+        content = generator.generate_default()
         if output:
-            if output.is_dir():
-                output = output / "skim-config.yaml"
-
-            if output.exists() and not force:
-                try:
-                    click.confirm(
-                        f"File {output} already exists. Do you want to overwrite?",
-                        abort=True,
-                    )
-                except click.Abort:
-                    click.echo("Aborted.", err=True)
-                    sys.exit(1)
-
-            output.write_text(content)
-            click.echo(f"Configuration written to {output}")
+            _write_config(output, content, force)
         else:
             click.echo(content)
 
     except (ValueError, OSError) as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
+
+
+def _load_initial_config(output_path: Path | None) -> dict:
+    """Load config from output path if it exists, otherwise return defaults."""
+    import yaml
+
+    from skim.data.config import SkimConfig
+
+    if output_path and output_path.is_file():
+        data = yaml.safe_load(output_path.read_text())
+        if data:
+            config = SkimConfig.model_validate(data)
+            return config.model_dump(mode="json")
+
+    return SkimConfig().model_dump(mode="json")
+
+
+def _write_config(output: Path, content: str, force: bool) -> None:
+    """Write config content to file with overwrite protection."""
+    if output.is_dir():
+        output = output / "skim-config.yaml"
+
+    if output.exists() and not force:
+        try:
+            click.confirm(
+                f"File {output} already exists. Do you want to overwrite?",
+                abort=True,
+            )
+        except click.Abort:
+            click.echo("Aborted.", err=True)
+            sys.exit(1)
+
+    output.write_text(content)
+    click.echo(f"Configuration written to {output}")
