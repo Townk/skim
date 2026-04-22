@@ -116,9 +116,11 @@ class LayerColorListPane(ListDetailPane):
         height: 3;
         width: auto;
         layout: horizontal;
+        padding: 0 2;
     }
     LayerColorListPane .gradient-dark {
         background: #1b1b1b;
+        margin: 0 0 0 1;
     }
     LayerColorListPane .gradient-light {
         background: #ffffff;
