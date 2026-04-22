@@ -49,9 +49,9 @@ def sample_config():
     output = Output(style=style)
     keyboard = Keyboard(
         layers=(
-            KeyboardLayer(label="1", name="Base Layer"),
-            KeyboardLayer(label="2", name="Symbol Layer"),
-            KeyboardLayer(label="3", name="Nav Layer"),
+            KeyboardLayer(index=0, label="1", name="Base Layer"),
+            KeyboardLayer(index=1, label="2", name="Symbol Layer"),
+            KeyboardLayer(index=2, label="3", name="Nav Layer"),
         )
     )
     return SkimConfig(output=output, keyboard=keyboard)
@@ -61,18 +61,18 @@ def sample_config():
 def single_layer_keymap():
     """Create a keymap with one layer."""
     layer = SvalboardLayout.from_sequence([SvalboardTargetKey(label=f"K{i}") for i in range(60)])
-    return SvalboardKeymap(layers=[layer])
+    return SvalboardKeymap(layers={0: layer})
 
 
 @pytest.fixture
 def multi_layer_keymap():
     """Create a keymap with multiple layers."""
-    layers = []
+    layers = {}
     for layer_idx in range(3):
         layer = SvalboardLayout.from_sequence(
             [SvalboardTargetKey(label=f"L{layer_idx}K{i}") for i in range(60)]
         )
-        layers.append(layer)
+        layers[layer_idx] = layer
     return SvalboardKeymap(layers=layers)
 
 
@@ -147,7 +147,9 @@ class TestDrawKeymapWithDoubleSouth:
     @pytest.fixture
     def config_with_double_south(self, sample_config):
         """Config with double_south enabled."""
-        keyboard = Keyboard(features=KeyboardFeatures(double_south=True))
+        keyboard = sample_config.keyboard.model_copy(
+            update={"features": KeyboardFeatures(double_south=True)}
+        )
         return sample_config.model_copy(update={"keyboard": keyboard})
 
     def test_renders_with_double_south(self, config_with_double_south, single_layer_keymap):
@@ -291,7 +293,7 @@ class TestDrawKeymapWithSpecialKeys:
         keys[10] = SvalboardTargetKey(label="L0", layer_switch=0)
 
         layer = SvalboardLayout.from_sequence(keys)
-        keymap = SvalboardKeymap(layers=[layer])
+        keymap = SvalboardKeymap(layers={0: layer})
 
         targets = KeymapGeneratorTargets(all_layers=True)
         result = draw_keymap(sample_config, keymap, targets)
@@ -304,7 +306,7 @@ class TestDrawKeymapWithSpecialKeys:
         keys[0] = SvalboardTargetKey(label="A│L1")
 
         layer = SvalboardLayout.from_sequence(keys)
-        keymap = SvalboardKeymap(layers=[layer])
+        keymap = SvalboardKeymap(layers={0: layer})
 
         targets = KeymapGeneratorTargets(all_layers=True)
         result = draw_keymap(sample_config, keymap, targets)

@@ -36,12 +36,16 @@ from .text import Font, FontSubsetter, FontUsageAnalyzer, Label
 
 
 def _draw_layer(
-    config: SkimConfig, layer: SvalboardLayout[SvalboardTargetKey], layer_idx: int
+    config: SkimConfig,
+    layer: SvalboardLayout[SvalboardTargetKey],
+    config_position: int,
+    qmk_index: int,
 ) -> draw.Drawing:
     use_system_fonts = config.output.style.use_system_fonts
     render_context = RenderContext(
         palette=config.output.style.palette,
-        layer_index=layer_idx,
+        layer_index=config_position,
+        qmk_index_to_position=config.keyboard.qmk_index_to_position,
         has_double_south=config.keyboard.features.double_south,
         use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
         hold_symbol_position=config.output.style.hold_symbol_position,
@@ -106,9 +110,9 @@ def _draw_layer(
 
     # Layer title
     layer_title = (
-        f"Layer {layer_idx}"
-        if layer_idx >= len(config.keyboard.layers)
-        else config.keyboard.layers[layer_idx].name
+        f"Layer {qmk_index}"
+        if config_position >= len(config.keyboard.layers)
+        else config.keyboard.layers[config_position].name
     )
     if "layer" not in layer_title.lower():
         layer_title += " Layer"
@@ -196,13 +200,21 @@ def _draw_layer(
     return d
 
 
-def _selected_layers(keymap: SvalboardKeymap[SvalboardTargetKey], targets: KeymapGeneratorTargets):
+def _selected_layers(
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+    targets: KeymapGeneratorTargets,
+    config: SkimConfig,
+):
     if targets.selected_layers:
-        for idx in targets.selected_layers:
-            yield idx, keymap.layers[idx]
+        for qmk_idx in targets.selected_layers:
+            pos = config.keyboard.qmk_index_to_position(qmk_idx)
+            if pos is not None and qmk_idx in keymap.layers:
+                yield qmk_idx, pos, keymap.layers[qmk_idx]
     elif targets.all_layers:
-        for idx, layer in enumerate(keymap.layers):
-            yield idx, layer
+        for pos, layer_cfg in enumerate(config.keyboard.layers):
+            qmk_idx = layer_cfg.index
+            if qmk_idx in keymap.layers:
+                yield qmk_idx, pos, keymap.layers[qmk_idx]
 
 
 def draw_keymap(
@@ -211,8 +223,8 @@ def draw_keymap(
     targets: KeymapGeneratorTargets,
 ) -> dict[str, draw.Drawing]:
     keymap_images: dict[str, draw.Drawing] = {}
-    for idx, layer in _selected_layers(keymap, targets):
-        keymap_images[f"keymap-layer-{idx}"] = _draw_layer(config, layer, idx)
+    for qmk_idx, pos, layer in _selected_layers(keymap, targets, config):
+        keymap_images[f"keymap-layer-{qmk_idx}"] = _draw_layer(config, layer, pos, qmk_idx)
 
     if targets.overview:
         keymap_images["keymap-overview"] = draw_overview(config, keymap)
