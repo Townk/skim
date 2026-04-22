@@ -277,11 +277,22 @@ class LayerColorListPane(ListDetailPane):
         except Exception:
             super()._focus_first_field()
 
+    def _is_inside_select(self) -> bool:
+        """Check if the currently focused widget is inside a SkimSelect."""
+        focused = self.app.focused
+        if focused is None:
+            return False
+        node = focused
+        while node is not None:
+            if isinstance(node, SkimSelect):
+                return True
+            node = node.parent
+        return False
+
     def on_key(self, event) -> None:
         """Override to let Select handle Enter/Space/Escape normally."""
         if self._editing:
-            focused = self.app.focused
-            if isinstance(focused, SkimSelect) and event.key in ("enter", "space"):
+            if self._is_inside_select() and event.key in ("enter", "space"):
                 self._select_active = True
                 return  # let the Select open its dropdown
             if self._select_active and event.key in ("enter", "escape"):
@@ -296,10 +307,8 @@ class LayerColorListPane(ListDetailPane):
 
     def on_descendant_focus(self, event) -> None:
         """Clear Select active flag when focus returns to a pane widget."""
-        if self._select_active:
-            focused = self.app.focused
-            if isinstance(focused, SkimSelect):
-                self._select_active = False
+        if self._select_active and self._is_inside_select():
+            self._select_active = False
 
     def on_select_changed(self, event: SkimSelect.Changed) -> None:
         self._select_active = False
