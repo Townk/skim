@@ -52,6 +52,7 @@ class OutputTab(Widget):
         height: auto;
     }
     OutputTab #layer-colors-list {
+        min-height: 12;
         max-height: 12;
         height: auto;
         border: solid $accent 50%;
