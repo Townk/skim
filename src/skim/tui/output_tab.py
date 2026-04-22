@@ -110,7 +110,18 @@ class LayerColorListPane(ListDetailPane):
     LayerColorListPane .gradient-swatch {
         width: 4;
         height: 1;
-        margin: 1 0 0 0;
+    }
+    LayerColorListPane .gradient-preview {
+        height: 1;
+        width: 1fr;
+        layout: horizontal;
+        padding: 0 1;
+    }
+    LayerColorListPane .gradient-dark {
+        background: #1b1b1b;
+    }
+    LayerColorListPane .gradient-light {
+        background: #ffffff;
     }
     """
 
@@ -192,12 +203,20 @@ class LayerColorListPane(ListDetailPane):
         yield ColorAutoComplete(lc_color_input, candidates=_color_candidates)
         with Horizontal(classes="field-row"):
             yield Label("Layer gradient:", classes="field-label")
-            for i in range(6):
-                yield Static(
-                    "\ue0b6\u2588\ue0b4",
-                    classes="gradient-swatch",
-                    id=f"gradient-swatch-{i}",
-                )
+            with Horizontal(classes="gradient-preview gradient-dark"):
+                for i in range(6):
+                    yield Static(
+                        "\ue0b6\u2588\ue0b4",
+                        classes="gradient-swatch",
+                        id=f"gradient-dark-{i}",
+                    )
+            with Horizontal(classes="gradient-preview gradient-light"):
+                for i in range(6):
+                    yield Static(
+                        "\ue0b6\u2588\ue0b4",
+                        classes="gradient-swatch",
+                        id=f"gradient-light-{i}",
+                    )
 
     def detail_field_ids(self) -> set[str]:
         return {"lc-base-color", "lc-color-index"}
@@ -213,7 +232,8 @@ class LayerColorListPane(ListDetailPane):
         self.query_one("#lc-base-color", Input).value = ""
         self.query_one("#lc-color-index", Input).value = ""
         for i in range(6):
-            self._update_swatch(f"gradient-swatch-{i}", "")
+            self._update_swatch(f"gradient-dark-{i}", "")
+            self._update_swatch(f"gradient-light-{i}", "")
 
     def create_entry(self, index: int) -> dict:
         return {"base_color": default_layer_color(index), "color_index": 2, "gradient": None}
@@ -226,14 +246,16 @@ class LayerColorListPane(ListDetailPane):
             pass
 
     def _update_gradient_preview(self, base_color: str, color_index: int) -> None:
-        """Update the 6 gradient swatch colors from base color and index."""
+        """Update gradient swatch colors on both dark and light backgrounds."""
         try:
             gradient = make_gradient(base_color, color_index)
             for i, color in enumerate(gradient):
-                self._update_swatch(f"gradient-swatch-{i}", color)
+                self._update_swatch(f"gradient-dark-{i}", color)
+                self._update_swatch(f"gradient-light-{i}", color)
         except Exception:
             for i in range(6):
-                self._update_swatch(f"gradient-swatch-{i}", "")
+                self._update_swatch(f"gradient-dark-{i}", "")
+                self._update_swatch(f"gradient-light-{i}", "")
 
     def _current_gradient_params(self) -> tuple[str, int]:
         """Get current base color and color index from the fields."""
