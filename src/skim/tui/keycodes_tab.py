@@ -53,6 +53,10 @@ class KeycodesTab(Widget):
         self._selected_pre_process: int = 0
         self._selected_override: int = 0
 
+    @staticmethod
+    def _entry_text(entry: dict[str, str]) -> str:
+        return f"{entry.get('keycode', '')} -> {entry.get('target', '')}"
+
     def compose(self) -> ComposeResult:
         # Pre-process section
         with Vertical(id="pre-process-section", classes="keycodes-section"):
@@ -91,15 +95,12 @@ class KeycodesTab(Widget):
                         yield Input(value="", id="override-target", placeholder="e.g. ESC")
 
     def on_mount(self) -> None:
-        """Populate lists after mount."""
         self._rebuild_pre_process_list()
         self._rebuild_overrides_list()
-        pre_process = self.config_data.get("keycodes", {}).get("pre_process", [])
-        if pre_process:
+        if self.config_data.get("keycodes", {}).get("pre_process", []):
             self._selected_pre_process = 0
             self._refresh_pre_process_fields()
-        overrides = self.config_data.get("keycodes", {}).get("overrides", [])
-        if overrides:
+        if self.config_data.get("keycodes", {}).get("overrides", []):
             self._selected_override = 0
             self._refresh_override_fields()
 
@@ -107,19 +108,24 @@ class KeycodesTab(Widget):
         entries = self.config_data.get("keycodes", {}).get("pre_process", [])
         list_view = self.query_one("#pre-process-list", ListView)
         list_view.clear()
-        for i, entry in enumerate(entries):
-            kc = entry.get("keycode", "")
-            tgt = entry.get("target", "")
-            list_view.append(ListItem(Static(f"{kc} -> {tgt}"), id=f"pre-process-item-{i}"))
+        for entry in entries:
+            list_view.append(ListItem(Static(self._entry_text(entry))))
 
     def _rebuild_overrides_list(self) -> None:
         entries = self.config_data.get("keycodes", {}).get("overrides", [])
         list_view = self.query_one("#overrides-list", ListView)
         list_view.clear()
-        for i, entry in enumerate(entries):
-            kc = entry.get("keycode", "")
-            tgt = entry.get("target", "")
-            list_view.append(ListItem(Static(f"{kc} -> {tgt}"), id=f"override-item-{i}"))
+        for entry in entries:
+            list_view.append(ListItem(Static(self._entry_text(entry))))
+
+    def _update_list_item(self, list_id: str, index: int, entries: list[dict[str, str]]) -> None:
+        """Update the text of a single list item."""
+        if index >= len(entries):
+            return
+        list_view = self.query_one(f"#{list_id}", ListView)
+        if index < len(list_view.children):
+            item = list_view.children[index]
+            item.query_one(Static).update(self._entry_text(entries[index]))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
@@ -127,10 +133,11 @@ class KeycodesTab(Widget):
         if button_id == "add-pre-process":
             entries = self.config_data.setdefault("keycodes", {}).setdefault("pre_process", [])
             entries.append({"keycode": "", "target": ""})
-            self._rebuild_pre_process_list()
+            lv = self.query_one("#pre-process-list", ListView)
+            lv.append(ListItem(Static(self._entry_text(entries[-1]))))
             self._selected_pre_process = len(entries) - 1
             self._refresh_pre_process_fields()
-            self.query_one("#pre-process-list", ListView).index = self._selected_pre_process
+            lv.index = self._selected_pre_process
 
         elif button_id == "remove-pre-process":
             entries = self.config_data.get("keycodes", {}).get("pre_process", [])
@@ -149,10 +156,11 @@ class KeycodesTab(Widget):
         elif button_id == "add-override":
             entries = self.config_data.setdefault("keycodes", {}).setdefault("overrides", [])
             entries.append({"keycode": "", "target": ""})
-            self._rebuild_overrides_list()
+            lv = self.query_one("#overrides-list", ListView)
+            lv.append(ListItem(Static(self._entry_text(entries[-1]))))
             self._selected_override = len(entries) - 1
             self._refresh_override_fields()
-            self.query_one("#overrides-list", ListView).index = self._selected_override
+            lv.index = self._selected_override
 
         elif button_id == "remove-override":
             entries = self.config_data.get("keycodes", {}).get("overrides", [])
@@ -173,25 +181,16 @@ class KeycodesTab(Widget):
         self.query_one(f"#{prefix}-target", Input).value = ""
 
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
-        if event.item is None:
-            return
-        item_id = event.item.id or ""
-
-        if event.list_view.id == "pre-process-list" and item_id.startswith("pre-process-item-"):
-            try:
-                index = int(item_id[len("pre-process-item-"):])
-            except ValueError:
-                return
-            self._selected_pre_process = index
-            self._refresh_pre_process_fields()
-
-        elif event.list_view.id == "overrides-list" and item_id.startswith("override-item-"):
-            try:
-                index = int(item_id[len("override-item-"):])
-            except ValueError:
-                return
-            self._selected_override = index
-            self._refresh_override_fields()
+        if event.list_view.id == "pre-process-list":
+            index = event.list_view.index
+            if index is not None:
+                self._selected_pre_process = index
+                self._refresh_pre_process_fields()
+        elif event.list_view.id == "overrides-list":
+            index = event.list_view.index
+            if index is not None:
+                self._selected_override = index
+                self._refresh_override_fields()
 
     def _refresh_pre_process_fields(self) -> None:
         entries = self.config_data.get("keycodes", {}).get("pre_process", [])
@@ -217,9 +216,11 @@ class KeycodesTab(Widget):
             entries = self.config_data.get("keycodes", {}).get("pre_process", [])
             if self._selected_pre_process < len(entries):
                 entries[self._selected_pre_process][field] = event.value
+                self._update_list_item("pre-process-list", self._selected_pre_process, entries)
 
         elif input_id.startswith("override-"):
             field = input_id[len("override-"):]
             entries = self.config_data.get("keycodes", {}).get("overrides", [])
             if self._selected_override < len(entries):
                 entries[self._selected_override][field] = event.value
+                self._update_list_item("overrides-list", self._selected_override, entries)

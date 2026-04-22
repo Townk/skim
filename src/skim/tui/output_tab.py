@@ -232,24 +232,29 @@ class OutputTab(Widget):
             self._selected_layer_color = 0
             self._refresh_layer_color_fields()
 
+    @staticmethod
+    def _lc_text(index: int, lc: dict[str, Any]) -> str:
+        return f"Layer {index}: {lc.get('base_color', '')}"
+
     def _rebuild_layer_colors_list(self) -> None:
         layer_colors = self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
         list_view = self.query_one("#layer-colors-list", ListView)
         list_view.clear()
         for i, lc in enumerate(layer_colors):
-            color = lc.get("base_color", "")
-            list_view.append(ListItem(Static(f"Layer {i}: {color}"), id=f"lc-item-{i}"))
+            list_view.append(ListItem(Static(self._lc_text(i, lc))))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
 
         if button_id == "add-layer-color":
             layer_colors = self.config_data["output"]["style"]["palette"].setdefault("layers", [])
-            layer_colors.append({"base_color": "#6F768B", "color_index": 2, "gradient": None})
-            self._rebuild_layer_colors_list()
+            new_lc = {"base_color": "#6F768B", "color_index": 2, "gradient": None}
+            layer_colors.append(new_lc)
+            lv = self.query_one("#layer-colors-list", ListView)
+            lv.append(ListItem(Static(self._lc_text(len(layer_colors) - 1, new_lc))))
             self._selected_layer_color = len(layer_colors) - 1
             self._refresh_layer_color_fields()
-            self.query_one("#layer-colors-list", ListView).index = self._selected_layer_color
+            lv.index = self._selected_layer_color
 
         elif button_id == "remove-layer-color":
             layer_colors = self.config_data["output"]["style"]["palette"].get("layers", [])
@@ -313,6 +318,13 @@ class OutputTab(Widget):
             layer_colors = self.config_data["output"]["style"]["palette"].get("layers", [])
             if self._selected_layer_color < len(layer_colors):
                 layer_colors[self._selected_layer_color]["base_color"] = value
+                # Update list item text
+                list_view = self.query_one("#layer-colors-list", ListView)
+                if self._selected_layer_color < len(list_view.children):
+                    item = list_view.children[self._selected_layer_color]
+                    item.query_one(Static).update(
+                        self._lc_text(self._selected_layer_color, layer_colors[self._selected_layer_color])
+                    )
 
         elif input_id == "lc-color-index":
             layer_colors = self.config_data["output"]["style"]["palette"].get("layers", [])
@@ -358,14 +370,8 @@ class OutputTab(Widget):
         """Handle layer color selection in the list."""
         if event.list_view.id != "layer-colors-list":
             return
-        if event.item is None:
-            return
-        item_id = event.item.id or ""
-        if item_id.startswith("lc-item-"):
-            try:
-                index = int(item_id[len("lc-item-"):])
-            except ValueError:
-                return
+        index = event.list_view.index
+        if index is not None:
             self._selected_layer_color = index
             self._refresh_layer_color_fields()
 

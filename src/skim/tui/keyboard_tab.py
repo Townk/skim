@@ -106,15 +106,30 @@ class KeyboardTab(Widget):
             self._selected_layer = 0
             self._refresh_detail_fields()
 
+    def _layer_text(self, index: int, layer: dict[str, Any]) -> str:
+        """Format a layer's display text for the list."""
+        label = layer.get("label", str(index))
+        name = layer.get("name", "")
+        return f"{index}: {label} - {name}"
+
     def _rebuild_list(self) -> None:
         """Rebuild the ListView from config data."""
         layers = self.config_data.get("keyboard", {}).get("layers", [])
         list_view = self.query_one("#layer-list", ListView)
         list_view.clear()
         for i, layer in enumerate(layers):
-            label = layer.get("label", str(i))
-            name = layer.get("name", "")
-            list_view.append(ListItem(Static(f"{i}: {label} - {name}"), id=f"layer-item-{i}"))
+            list_view.append(ListItem(Static(self._layer_text(i, layer))))
+
+    def _update_selected_list_item(self) -> None:
+        """Update just the text of the currently selected list item."""
+        layers = self.config_data.get("keyboard", {}).get("layers", [])
+        if self._selected_layer >= len(layers):
+            return
+        list_view = self.query_one("#layer-list", ListView)
+        if self._selected_layer < len(list_view.children):
+            item = list_view.children[self._selected_layer]
+            static = item.query_one(Static)
+            static.update(self._layer_text(self._selected_layer, layers[self._selected_layer]))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle Add/Remove button presses."""
@@ -122,11 +137,10 @@ class KeyboardTab(Widget):
             layers = self.config_data.setdefault("keyboard", {}).setdefault("layers", [])
             idx = len(layers)
             layers.append({"label": f"L{idx}", "name": f"Layer {idx}", "id": None, "subtitle": None})
-            self._rebuild_list()
+            list_view = self.query_one("#layer-list", ListView)
+            list_view.append(ListItem(Static(self._layer_text(idx, layers[idx]))))
             self._selected_layer = idx
             self._refresh_detail_fields()
-            # Focus the list on the new item
-            list_view = self.query_one("#layer-list", ListView)
             list_view.index = idx
 
         elif event.button.id == "remove-layer":
@@ -154,14 +168,8 @@ class KeyboardTab(Widget):
         """Handle layer selection in the list."""
         if event.list_view.id != "layer-list":
             return
-        if event.item is None:
-            return
-        item_id = event.item.id or ""
-        if item_id.startswith("layer-item-"):
-            try:
-                index = int(item_id[len("layer-item-"):])
-            except ValueError:
-                return
+        index = event.list_view.index
+        if index is not None:
             self._selected_layer = index
             self._refresh_detail_fields()
 
@@ -196,3 +204,4 @@ class KeyboardTab(Widget):
         if config_key in ("id", "subtitle") and value == "":
             value = None
         layers[self._selected_layer][config_key] = value
+        self._update_selected_list_item()
