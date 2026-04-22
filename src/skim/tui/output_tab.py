@@ -90,10 +90,6 @@ class LayerColorListPane(ListDetailPane):
     LayerColorListPane {
         height: auto;
     }
-    LayerColorListPane .ldp-list-col {
-        width: 35%;
-        min-width: 25;
-    }
     LayerColorListPane .lc-swatch {
         width: 4;
         height: 1;

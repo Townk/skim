@@ -35,10 +35,13 @@ class ListDetailPane(Widget):
     ListDetailPane {
         height: auto;
     }
+    ListDetailPane .ldp-container {
+        height: auto;
+    }
     ListDetailPane .ldp-list-col {
         width: 35%;
         min-width: 25;
-        height: auto;
+        height: 100%;
     }
     ListDetailPane .ldp-list {
         height: 1fr;
@@ -87,7 +90,7 @@ class ListDetailPane(Widget):
         self._snapshot: dict | None = None
 
     def compose(self) -> ComposeResult:
-        with Horizontal():
+        with Horizontal(classes="ldp-container"):
             with Vertical(classes="ldp-list-col"):
                 yield SkimListView(id=f"{self.pane_id}-list", classes="ldp-list")
                 with Horizontal(classes="ldp-buttons"):

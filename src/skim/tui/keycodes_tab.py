@@ -200,10 +200,12 @@ class KeycodesTab(Widget):
     KeycodesTab .keycodes-section ListDetailPane {
         height: 1fr;
     }
+    KeycodesTab .keycodes-section ListDetailPane .ldp-container {
+        height: 100%;
+    }
     KeycodesTab .keycodes-section ListDetailPane .ldp-list-col {
         width: 50%;
         min-width: 25;
-        height: 100%;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-list {
         height: 1fr;

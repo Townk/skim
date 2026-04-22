@@ -33,10 +33,6 @@ class LayerListPane(ListDetailPane):
     LayerListPane {
         height: auto;
     }
-    LayerListPane .ldp-list-col {
-        width: 35%;
-        min-width: 25;
-    }
     """
 
     def __init__(self, config_data: dict[str, Any], **kwargs: Any) -> None:
