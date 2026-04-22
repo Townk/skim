@@ -1,12 +1,8 @@
-# Copyright (c) 2024 Thiago Alves
-#
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
-
 """Unit tests for skim.tui.keycodes_tab module."""
 
 import pytest
 from textual.app import App, ComposeResult
+from textual.widgets import Button, Input, ListView
 
 from skim.data.config import SkimConfig
 from skim.tui.keycodes_tab import KeycodesTab
@@ -38,11 +34,16 @@ class TestKeycodesTab:
         ]
         return config
 
+    @pytest.fixture()
+    def empty_config(self) -> dict:
+        return SkimConfig().model_dump(mode="json")
+
     @pytest.mark.asyncio()
     async def test_shows_pre_process_section(self, config_with_keycodes):
         """Has a pre-process list."""
         app = KeycodesTabTestApp(config_data=config_with_keycodes)
-        async with app.run_test() as pilot:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
             pre_list = app.query_one("#pre-process-list")
             assert pre_list is not None
 
@@ -50,7 +51,8 @@ class TestKeycodesTab:
     async def test_shows_overrides_section(self, config_with_keycodes):
         """Has an overrides list."""
         app = KeycodesTabTestApp(config_data=config_with_keycodes)
-        async with app.run_test() as pilot:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
             overrides_list = app.query_one("#overrides-list")
             assert overrides_list is not None
 
@@ -58,9 +60,8 @@ class TestKeycodesTab:
     async def test_pre_process_shows_entries(self, config_with_keycodes):
         """Pre-process list shows the configured entries."""
         app = KeycodesTabTestApp(config_data=config_with_keycodes)
-        async with app.run_test() as pilot:
-            from textual.widgets import ListView
-
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
             pre_list = app.query_one("#pre-process-list", ListView)
             assert len(pre_list.children) == 1
 
@@ -68,20 +69,70 @@ class TestKeycodesTab:
     async def test_overrides_shows_entries(self, config_with_keycodes):
         """Overrides list shows the configured entries."""
         app = KeycodesTabTestApp(config_data=config_with_keycodes)
-        async with app.run_test() as pilot:
-            from textual.widgets import ListView
-
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
             overrides_list = app.query_one("#overrides-list", ListView)
             assert len(overrides_list.children) == 2
 
     @pytest.mark.asyncio()
-    async def test_editing_override_updates_config(self, config_with_keycodes):
-        """Changing an override field updates the config data."""
+    async def test_fields_disabled_by_default(self, config_with_keycodes):
+        """Detail fields are disabled until Enter is pressed."""
         app = KeycodesTabTestApp(config_data=config_with_keycodes)
-        async with app.run_test() as pilot:
-            from textual.widgets import Input
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            for fid in ["override-keycode", "override-target", "pre-process-keycode", "pre-process-target"]:
+                assert app.query_one(f"#{fid}", Input).disabled is True
 
+    @pytest.mark.asyncio()
+    async def test_enter_edit_mode_enables_fields(self, config_with_keycodes):
+        """Entering edit mode enables fields for that section."""
+        app = KeycodesTabTestApp(config_data=config_with_keycodes)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            tab = app.query_one(KeycodesTab)
+            tab._enter_edit_mode("override")
+            await pilot.pause()
+            assert app.query_one("#override-keycode", Input).disabled is False
+            assert app.query_one("#override-target", Input).disabled is False
+            # Other section still disabled
+            assert app.query_one("#pre-process-keycode", Input).disabled is True
+
+    @pytest.mark.asyncio()
+    async def test_editing_override_updates_config(self, config_with_keycodes):
+        """Changing an override field in edit mode updates the config data."""
+        app = KeycodesTabTestApp(config_data=config_with_keycodes)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            tab = app.query_one(KeycodesTab)
+            tab._enter_edit_mode("override")
+            await pilot.pause()
             target_input = app.query_one("#override-target", Input)
             target_input.value = "ESCAPE"
             await pilot.pause()
             assert app.config_data["keycodes"]["overrides"][0]["target"] == "ESCAPE"
+
+    @pytest.mark.asyncio()
+    async def test_exit_edit_mode_rollback(self, config_with_keycodes):
+        """Exiting edit mode with commit=False rolls back changes."""
+        app = KeycodesTabTestApp(config_data=config_with_keycodes)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            tab = app.query_one(KeycodesTab)
+            tab._enter_edit_mode("override")
+            await pilot.pause()
+            app.query_one("#override-target", Input).value = "CHANGED"
+            await pilot.pause()
+            tab._exit_edit_mode(commit=False)
+            await pilot.pause()
+            assert app.config_data["keycodes"]["overrides"][0]["target"] == "%%nf-md-keyboard_tab_reverse;"
+
+    @pytest.mark.asyncio()
+    async def test_empty_list_unfocusable(self, empty_config):
+        """Empty lists are not focusable, Remove buttons are disabled."""
+        app = KeycodesTabTestApp(config_data=empty_config)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            assert app.query_one("#pre-process-list", ListView).can_focus is False
+            assert app.query_one("#overrides-list", ListView).can_focus is False
+            assert app.query_one("#remove-pre-process", Button).disabled is True
+            assert app.query_one("#remove-override", Button).disabled is True
