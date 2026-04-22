@@ -49,9 +49,11 @@ class OutputTab(Widget):
     OutputTab .lc-list-col {
         width: 35;
         min-width: 25;
+        height: auto;
     }
     OutputTab #layer-colors-list {
         max-height: 12;
+        height: auto;
         border: solid $accent 50%;
     }
     OutputTab .list-buttons {
@@ -64,6 +66,7 @@ class OutputTab(Widget):
     OutputTab #layer-color-detail {
         padding: 0 1;
         height: auto;
+        max-height: 12;
         overflow-x: hidden;
     }
     OutputTab #layer-colors-container {
