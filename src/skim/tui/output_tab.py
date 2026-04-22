@@ -128,6 +128,18 @@ class LayerColorListPane(ListDetailPane):
         background: #ffffff;
         margin: 0 0 0 1;
     }
+    LayerColorListPane .lc-manual-step {
+        display: none;
+    }
+    LayerColorListPane.manual-mode .lc-manual-step {
+        display: block;
+    }
+    LayerColorListPane.manual-mode #lc-dynamic-color {
+        display: none;
+    }
+    LayerColorListPane.manual-mode #lc-dynamic-preview {
+        display: none;
+    }
     """
 
     def __init__(self, config_data: dict[str, Any], **kwargs: Any) -> None:
@@ -190,14 +202,24 @@ class LayerColorListPane(ListDetailPane):
 
     def compose_detail_fields(self) -> ComposeResult:
         with Horizontal(classes="field-row"):
-            yield Label("Gradient step:", classes="field-label")
+            yield Label("Gradient type:", classes="field-label")
+            yield Static(" ", classes="swatch-spacer")
+            yield SkimSelect(
+                options=[("Dynamic", "dynamic"), ("Manual", "manual")],
+                value="dynamic",
+                id="lc-gradient-type",
+                disabled=True,
+            )
+        with Horizontal(classes="field-row"):
+            yield Label("Main gradient step index:", classes="field-label")
             yield Static(" ", classes="swatch-spacer")
             yield SkimInput(
                 value="", id="lc-color-index",
                 placeholder="2", disabled=True,
             )
-        with Horizontal(classes="field-row"):
-            yield Label("Main step color:", classes="field-label")
+        # --- Dynamic mode fields ---
+        with Horizontal(classes="field-row", id="lc-dynamic-color"):
+            yield Label("Main gradient step color:", classes="field-label")
             yield Static("\ue0b6\u2588\u2588\ue0b4", classes="color-swatch", id="swatch-lc-base-color")
             lc_color_input = SkimInput(
                 value="", id="lc-base-color",
@@ -206,7 +228,7 @@ class LayerColorListPane(ListDetailPane):
             )
             yield lc_color_input
         yield ColorAutoComplete(lc_color_input, candidates=_color_candidates)
-        with Horizontal(classes="field-row"):
+        with Horizontal(classes="field-row", id="lc-dynamic-preview"):
             yield Label("Layer gradient:", classes="field-label")
             yield Static(" ", classes="swatch-spacer")
             with Horizontal(classes="gradient-preview gradient-dark"):
@@ -223,21 +245,84 @@ class LayerColorListPane(ListDetailPane):
                         classes="gradient-swatch",
                         id=f"gradient-light-{i}",
                     )
+        # --- Manual mode fields (hidden by default) ---
+        for i in range(6):
+            with Horizontal(classes="field-row lc-manual-step", id=f"lc-manual-step-{i}"):
+                yield Label(f"Step {i}:", classes="field-label")
+                yield Static(
+                    "\ue0b6\u2588\u2588\ue0b4",
+                    classes="color-swatch",
+                    id=f"swatch-lc-step-{i}",
+                )
+                step_input = SkimInput(
+                    value="", id=f"lc-step-{i}",
+                    placeholder="#RRGGBB", disabled=True,
+                    suggester=_COLOR_SUGGESTER,
+                )
+                yield step_input
+            yield ColorAutoComplete(step_input, candidates=_color_candidates)
 
     def detail_field_ids(self) -> set[str]:
-        return {"lc-base-color", "lc-color-index"}
+        ids = {"lc-base-color", "lc-color-index", "lc-gradient-type"}
+        for i in range(6):
+            ids.add(f"lc-step-{i}")
+        return ids
+
+    def _set_fields_enabled(self, enabled: bool) -> None:
+        """Override to also enable/disable the gradient type Select."""
+        super()._set_fields_enabled(enabled)
+        try:
+            self.query_one("#lc-gradient-type", SkimSelect).disabled = not enabled
+        except Exception:
+            pass
+
+    def _check_focus_commit(self) -> None:
+        """Override to also keep editing when Select is focused."""
+        if not self._editing:
+            return
+        focused = self.app.focused
+        all_ids = self.detail_field_ids()
+        if focused is not None and hasattr(focused, "id") and focused.id in all_ids:
+            return
+        self._exit_edit_mode(commit=True)
+
+    def _is_manual_mode(self, entry: dict) -> bool:
+        return entry.get("gradient") is not None
+
+    def _set_mode(self, manual: bool) -> None:
+        if manual:
+            self.add_class("manual-mode")
+        else:
+            self.remove_class("manual-mode")
 
     def refresh_fields(self, entry: dict) -> None:
         color = entry.get("base_color", "") or ""
-        self.query_one("#lc-base-color", Input).value = color
-        self.query_one("#lc-color-index", Input).value = str(entry.get("color_index", 0))
-        self._update_swatch("swatch-lc-base-color", color)
-        self._update_gradient_preview(color, entry.get("color_index", 2))
+        color_index = entry.get("color_index", 2)
+        manual = self._is_manual_mode(entry)
+
+        self._set_mode(manual)
+        self.query_one("#lc-gradient-type", SkimSelect).value = "manual" if manual else "dynamic"
+        self.query_one("#lc-color-index", Input).value = str(color_index)
+
+        if manual:
+            gradient = entry.get("gradient", ()) or ()
+            for i in range(6):
+                step_color = gradient[i] if i < len(gradient) else ""
+                self.query_one(f"#lc-step-{i}", Input).value = step_color
+                self._update_swatch(f"swatch-lc-step-{i}", step_color)
+        else:
+            self.query_one("#lc-base-color", Input).value = color
+            self._update_swatch("swatch-lc-base-color", color)
+            self._update_gradient_preview(color, color_index)
 
     def clear_fields(self) -> None:
+        self._set_mode(False)
+        self.query_one("#lc-gradient-type", SkimSelect).value = "dynamic"
         self.query_one("#lc-base-color", Input).value = ""
         self.query_one("#lc-color-index", Input).value = ""
         for i in range(6):
+            self.query_one(f"#lc-step-{i}", Input).value = ""
+            self._update_swatch(f"swatch-lc-step-{i}", "")
             for prefix, label_color in (("gradient-dark", "white"), ("gradient-light", "black")):
                 try:
                     swatch = self.query_one(f"#{prefix}-{i}", Static)
@@ -290,6 +375,48 @@ class LayerColorListPane(ListDetailPane):
             color_index = 2
         return base_color, color_index
 
+    def _on_gradient_type_changed(self, value: str) -> None:
+        """Handle switching between Dynamic and Manual gradient modes."""
+        entries = self.get_entries()
+        if self._selected >= len(entries):
+            return
+        entry = entries[self._selected]
+        manual = value == "manual"
+
+        if manual and entry.get("gradient") is None:
+            # Switching to manual: pre-populate with auto-generated gradient
+            base_color = entry.get("base_color", "")
+            color_index = entry.get("color_index", 2)
+            try:
+                gradient = list(make_gradient(base_color, color_index))
+            except Exception:
+                gradient = [""] * 6
+            entry["gradient"] = gradient
+        elif not manual and entry.get("gradient") is not None:
+            # Switching to dynamic: set base_color from the step at color_index
+            gradient = entry.get("gradient", [])
+            color_index = entry.get("color_index", 2)
+            if gradient and 0 <= color_index < len(gradient):
+                entry["base_color"] = gradient[color_index]
+            entry["gradient"] = None
+
+        self._set_mode(manual)
+        self.refresh_fields(entry)
+        self.update_selected_list_item()
+
+    def on_select_changed(self, event: SkimSelect.Changed) -> None:
+        if event.select.id == "lc-gradient-type" and event.value is not SkimSelect.BLANK:
+            self._on_gradient_type_changed(str(event.value))
+
+    def _update_list_swatch(self, color: str) -> None:
+        """Update the color swatch in the currently selected list item."""
+        from skim.tui.widgets import SkimListView
+        list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
+        if self._selected < len(list_view.children):
+            item = list_view.children[self._selected]
+            for s in item.query(".lc-swatch"):
+                self._safe_set_color(s, color)
+
     def on_input_changed(self, event: Input.Changed) -> None:
         input_id = event.input.id or ""
         if input_id == "lc-base-color":
@@ -298,14 +425,7 @@ class LayerColorListPane(ListDetailPane):
                 layer_colors[self._selected]["base_color"] = event.value
                 self.update_selected_list_item()
                 self._update_swatch("swatch-lc-base-color", event.value)
-                # Also update the swatch in the list item
-                from skim.tui.widgets import SkimListView
-                list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
-                if self._selected < len(list_view.children):
-                    item = list_view.children[self._selected]
-                    for s in item.query(".lc-swatch"):
-                        self._safe_set_color(s, event.value)
-                # Update gradient preview
+                self._update_list_swatch(event.value)
                 base_color, color_index = self._current_gradient_params()
                 self._update_gradient_preview(base_color, color_index)
         elif input_id == "lc-color-index":
@@ -315,9 +435,28 @@ class LayerColorListPane(ListDetailPane):
                     layer_colors[self._selected]["color_index"] = int(event.value)
                 except ValueError:
                     pass
-                # Update gradient preview
                 base_color, color_index = self._current_gradient_params()
                 self._update_gradient_preview(base_color, color_index)
+        elif input_id.startswith("lc-step-"):
+            # Manual gradient step color changed
+            step = int(input_id[len("lc-step-"):])
+            layer_colors = self.get_entries()
+            if self._selected < len(layer_colors):
+                entry = layer_colors[self._selected]
+                gradient = entry.get("gradient")
+                if gradient is not None:
+                    if isinstance(gradient, tuple):
+                        gradient = list(gradient)
+                        entry["gradient"] = gradient
+                    if step < len(gradient):
+                        gradient[step] = event.value
+                    self._update_swatch(f"swatch-lc-step-{step}", event.value)
+                    # Update base_color if this is the main step
+                    color_index = entry.get("color_index", 2)
+                    if step == color_index:
+                        entry["base_color"] = event.value
+                        self.update_selected_list_item()
+                        self._update_list_swatch(event.value)
 
 
 class OutputTab(Widget):
