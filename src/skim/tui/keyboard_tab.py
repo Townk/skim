@@ -58,7 +58,7 @@ class KeyboardTab(Widget):
     KeyboardTab .list-buttons {
         dock: bottom;
         height: auto;
-        width: 41;
+        width: 100%;
     }
     KeyboardTab .list-buttons Button {
         width: 50%;
