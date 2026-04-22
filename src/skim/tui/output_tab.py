@@ -11,6 +11,7 @@ import webcolors
 from textual.app import ComposeResult
 from textual.content import Content
 from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.events import DescendantBlur
 from textual.suggester import SuggestFromList
 from textual.widget import Widget
 from textual.widgets import Input, Label, ListItem, Static
@@ -145,6 +146,7 @@ class LayerColorListPane(ListDetailPane):
     def __init__(self, config_data: dict[str, Any], **kwargs: Any) -> None:
         super().__init__(pane_id="layer-colors", **kwargs)
         self.config_data = config_data
+        self._select_active: bool = False
 
     def get_entries(self) -> list[dict]:
         return self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
@@ -276,12 +278,33 @@ class LayerColorListPane(ListDetailPane):
             super()._focus_first_field()
 
     def on_key(self, event) -> None:
-        """Override to let Select handle Enter/Space normally."""
-        if self._editing and event.key in ("enter", "space"):
+        """Override to let Select handle Enter/Space/Escape normally."""
+        if self._editing:
+            focused = self.app.focused
+            if isinstance(focused, SkimSelect) and event.key in ("enter", "space"):
+                self._select_active = True
+                return  # let the Select open its dropdown
+            if self._select_active and event.key in ("enter", "escape"):
+                return  # let the Select overlay handle it
+        super().on_key(event)
+
+    def on_descendant_blur(self, event: DescendantBlur) -> None:
+        """Suppress focus-out commit while Select overlay is open."""
+        if self._select_active:
+            return
+        super().on_descendant_blur(event)
+
+    def on_descendant_focus(self, event) -> None:
+        """Clear Select active flag when focus returns to a pane widget."""
+        if self._select_active:
             focused = self.app.focused
             if isinstance(focused, SkimSelect):
-                return  # let the Select handle it (open dropdown)
-        super().on_key(event)
+                self._select_active = False
+
+    def on_select_changed(self, event: SkimSelect.Changed) -> None:
+        self._select_active = False
+        if event.select.id == "lc-gradient-type" and event.value is not SkimSelect.BLANK:
+            self._on_gradient_type_changed(str(event.value))
 
     def _set_fields_enabled(self, enabled: bool) -> None:
         """Override to also enable/disable the gradient type Select."""
@@ -295,6 +318,8 @@ class LayerColorListPane(ListDetailPane):
         """Override to keep editing when Select or its overlay is focused."""
         if not self._editing:
             return
+        if self._select_active:
+            return  # overlay is open, don't commit
         focused = self.app.focused
         if focused is not None:
             # Check if focused widget is inside this pane's detail area
