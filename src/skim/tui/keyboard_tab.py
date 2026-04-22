@@ -47,8 +47,8 @@ class KeyboardTab(Widget):
         height: 1fr;
     }
     KeyboardTab .list-col {
-        width: 30;
-        min-width: 20;
+        width: 35;
+        min-width: 25;
         height: 100%;
     }
     KeyboardTab #layer-list {
@@ -58,7 +58,7 @@ class KeyboardTab(Widget):
     KeyboardTab .list-buttons {
         dock: bottom;
         height: auto;
-        width: 100%;
+        width: 41;
     }
     KeyboardTab .list-buttons Button {
         width: 1fr;
