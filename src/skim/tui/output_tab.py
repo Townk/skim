@@ -276,11 +276,11 @@ class LayerColorListPane(ListDetailPane):
             super()._focus_first_field()
 
     def on_key(self, event) -> None:
-        """Override to let Select handle Enter normally."""
-        if self._editing and event.key == "enter":
+        """Override to let Select handle Enter/Space normally."""
+        if self._editing and event.key in ("enter", "space"):
             focused = self.app.focused
             if isinstance(focused, SkimSelect):
-                return  # let the Select handle Enter (open dropdown)
+                return  # let the Select handle it (open dropdown)
         super().on_key(event)
 
     def _set_fields_enabled(self, enabled: bool) -> None:
@@ -292,13 +292,22 @@ class LayerColorListPane(ListDetailPane):
             pass
 
     def _check_focus_commit(self) -> None:
-        """Override to also keep editing when Select is focused."""
+        """Override to keep editing when Select or its overlay is focused."""
         if not self._editing:
             return
         focused = self.app.focused
-        all_ids = self.detail_field_ids()
-        if focused is not None and hasattr(focused, "id") and focused.id in all_ids:
-            return
+        if focused is not None:
+            # Check if focused widget is inside this pane's detail area
+            all_ids = self.detail_field_ids()
+            if hasattr(focused, "id") and focused.id in all_ids:
+                return
+            # Check if focused widget is a descendant of this pane
+            # (e.g. Select overlay/OptionList)
+            node = focused
+            while node is not None:
+                if node is self:
+                    return
+                node = node.parent
         self._exit_edit_mode(commit=True)
 
     def _is_manual_mode(self, entry: dict) -> bool:
