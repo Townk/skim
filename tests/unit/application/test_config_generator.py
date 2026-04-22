@@ -199,3 +199,71 @@ class TestGenerateFromKeybard:
         result = generator.generate_from_keybard(keybard)
         parsed = yaml.safe_load(result)
         assert parsed["keycodes"]["overrides"] == []
+
+
+class TestQmkColorParsing:
+    """Tests for QMK color.h header parsing via generate_from_keybard."""
+
+    @pytest.fixture()
+    def minimal_keybard(self) -> str:
+        return json.dumps({
+            "layers": 1,
+            "keymap": [["KC_A"] * 60],
+            "layer_colors": [{"hue": 0, "sat": 0, "val": 128}],
+            "cosmetic": {"layer": {"0": "Base"}},
+            "custom_keycodes": [],
+        })
+
+    def test_hsv_define_parsed(self, minimal_keybard):
+        """HSV_* defines are converted to palette overrides."""
+        header = "#define HSV_MYBLUE 170, 255, 255"
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard, qmk_header_content=header)
+        parsed = yaml.safe_load(result)
+        overrides = parsed["output"]["style"]["palette"]["overrides"]
+        assert "myblue" in overrides
+        assert overrides["myblue"].startswith("#")
+
+    def test_rgb_define_parsed(self, minimal_keybard):
+        """RGB_* defines are converted to palette overrides."""
+        header = "#define RGB_MYRED 255, 0, 0"
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard, qmk_header_content=header)
+        parsed = yaml.safe_load(result)
+        overrides = parsed["output"]["style"]["palette"]["overrides"]
+        assert "myred" in overrides
+        assert overrides["myred"] == "#FF0000"
+
+    def test_non_define_lines_ignored(self, minimal_keybard):
+        """Non-#define lines are silently skipped."""
+        header = "// comment\n#include <stdint.h>\n#define HSV_FOO 0, 255, 128"
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard, qmk_header_content=header)
+        parsed = yaml.safe_load(result)
+        overrides = parsed["output"]["style"]["palette"]["overrides"]
+        assert len(overrides) == 1
+        assert "foo" in overrides
+
+    def test_color_adjustment_applied_to_qmk_colors(self, minimal_keybard):
+        """Color adjustments are applied to QMK-parsed colors."""
+        header = "#define HSV_BRIGHT 0, 255, 255"
+        generator = ConfigGenerator()
+        unadjusted = yaml.safe_load(
+            generator.generate_from_keybard(minimal_keybard, qmk_header_content=header)
+        )
+        adjusted = yaml.safe_load(
+            generator.generate_from_keybard(
+                minimal_keybard,
+                qmk_header_content=header,
+                adjust_lightness=0.2,
+            )
+        )
+        assert unadjusted["output"]["style"]["palette"]["overrides"]["bright"] != \
+               adjusted["output"]["style"]["palette"]["overrides"]["bright"]
+
+    def test_no_qmk_header_produces_empty_overrides(self, minimal_keybard):
+        """Without qmk_header_content, palette overrides is empty."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard)
+        parsed = yaml.safe_load(result)
+        assert parsed["output"]["style"]["palette"]["overrides"] == {}
