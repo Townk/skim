@@ -16,13 +16,15 @@ from skim.data.config import SkimConfig
 def launch_tui(
     config_data: dict[str, Any],
     output_path: Path | None = None,
+    config_path: Path | None = None,
     force: bool = False,
 ) -> None:
     """Launch the interactive configuration editor.
 
     Args:
         config_data: Config dict (from SkimConfig.model_dump(mode="json")).
-        output_path: File path to save config to. None means prompt on save.
+        output_path: File path to save config to (from -o flag).
+        config_path: File path the config was loaded from (from -c flag).
         force: Skip overwrite confirmation.
     """
     from skim.tui.app import SkimConfigApp
@@ -30,6 +32,7 @@ def launch_tui(
     app = SkimConfigApp(
         config_data=config_data,
         output_path=output_path,
+        config_path=config_path,
         force=force,
     )
     app.run()

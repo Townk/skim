@@ -253,6 +253,18 @@ def generate(
 
 @main.command()
 @click.option(
+    "--interactive",
+    "-i",
+    is_flag=True,
+    help="Launch interactive configuration editor (TUI).",
+)
+@click.option(
+    "--config",
+    "-c",
+    type=click.Path(exists=True, path_type=Path),
+    help="Load an existing configuration file.",
+)
+@click.option(
     "--keybard-keymap",
     "-k",
     type=click.Path(exists=True, path_type=Path),
@@ -283,7 +295,11 @@ def generate(
     type=float,
     help="Adjust saturation (0.0-1.0).",
 )
+@click.pass_context
 def configure(
+    ctx: click.Context,
+    interactive: bool,
+    config: Path | None,
     keybard_keymap: Path | None,
     output: Path | None,
     force: bool,
@@ -291,20 +307,25 @@ def configure(
     adjust_lightness: float | None,
     adjust_saturation: float | None,
 ) -> None:
-    """Generate or output configuration file.
+    """Generate or edit a configuration file.
 
-    When -k is provided, extracts metadata (layer colors, names, custom
-    keycodes) from the Keybard file to create a skim configuration.
-    Optionally imports QMK named colors from a color.h file.
+    With no flags, shows this help message.
 
-    Without -k and with a TTY, launches an interactive configuration editor.
+    Use -i/--interactive to launch the TUI configuration editor.
+    Optionally pass -c/--config to load an existing config file into the editor.
 
-    Without -k and without a TTY, outputs the default configuration template.
+    Use -k to extract metadata (layer colors, names, custom keycodes) from a
+    Keybard file. Optionally imports QMK named colors from a color.h file.
 
     Color adjustments (--adjust-lightness, --adjust-saturation) are applied
     to all extracted colors to ensure readable contrast in generated images.
     """
     from skim.application.config_generator import ConfigGenerator
+
+    # No flags at all: show help
+    if not interactive and not keybard_keymap:
+        click.echo(ctx.get_help())
+        return
 
     try:
         generator = ConfigGenerator()
@@ -323,14 +344,18 @@ def configure(
                 click.echo(content)
             return
 
-        # No -k flag: try TUI or fall back to default output
-        if sys.stdout.isatty():
+        # Interactive mode
+        if interactive:
             try:
                 from skim.tui import launch_tui
 
-                # Load existing config if output path exists
-                config_data = _load_initial_config(output)
-                launch_tui(config_data=config_data, output_path=output, force=force)
+                config_data = _load_initial_config(config)
+                launch_tui(
+                    config_data=config_data,
+                    output_path=output,
+                    config_path=config,
+                    force=force,
+                )
                 return
             except ImportError:
                 click.echo(
@@ -340,26 +365,19 @@ def configure(
                 )
                 sys.exit(1)
 
-        # Non-TTY: output default YAML
-        content = generator.generate_default()
-        if output:
-            _write_config(output, content, force)
-        else:
-            click.echo(content)
-
     except (ValueError, OSError) as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 
 
-def _load_initial_config(output_path: Path | None) -> dict:
-    """Load config from output path if it exists, otherwise return defaults."""
+def _load_initial_config(config_path: Path | None) -> dict:
+    """Load config from file if provided, otherwise return defaults."""
     import yaml
 
     from skim.data.config import SkimConfig
 
-    if output_path and output_path.is_file():
-        data = yaml.safe_load(output_path.read_text())
+    if config_path and config_path.is_file():
+        data = yaml.safe_load(config_path.read_text())
         if data:
             config = SkimConfig.model_validate(data)
             return config.model_dump(mode="json")

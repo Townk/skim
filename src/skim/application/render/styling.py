@@ -157,6 +157,40 @@ def adjust_hls(
     return rgb_to_hex(*colorsys.hls_to_rgb(hue, lum, sat))
 
 
+def default_layer_color(
+    layer_index: int,
+    target_lightness: float | None = 0.31,
+    target_saturation: float | None = 0.50,
+) -> str:
+    """Generate a default color for a layer using QMK's hue distribution.
+
+    QMK distributes layer hues evenly across the color wheel using the
+    formula ``hue = layer_index * (256 / 16)`` on a 0-255 scale (16 layers
+    maximum). The saturation and value are both set to maximum (255).
+
+    The resulting color is then adjusted using the same lightness and
+    saturation parameters used by the config generator.
+
+    Args:
+        layer_index: Zero-based layer index.
+        target_lightness: Desired lightness value (0.0-1.0). Default: 0.31
+        target_saturation: Maximum saturation value (0.0-1.0). Default: 0.50
+
+    Returns:
+        Adjusted hex color string with '#' prefix.
+
+    Examples:
+        >>> default_layer_color(0)  # hue=0 (red)
+        '#772828'
+        >>> default_layer_color(4)  # hue=64 (green-ish)
+        '#4F7728'
+    """
+    hue = (layer_index * 16) / 255.0  # QMK: layer * (256/16) on 0-255 scale
+    r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+    base_color = hex_str(r, g, b)
+    return adjust_color(base_color, target_lightness, target_saturation)
+
+
 def adjust_color(
     hex_color: str,
     target_lightness: float | None = 0.31,
