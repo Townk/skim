@@ -12,6 +12,7 @@ import webcolors
 from textual.app import ComposeResult
 from textual.content import Content
 from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.events import DescendantBlur
 from textual.suggester import SuggestFromList
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, ListItem, ListView, Select, Static, Switch
@@ -122,6 +123,10 @@ class OutputTab(Widget):
         height: auto;
         max-height: 12;
         overflow-x: hidden;
+        border: solid $accent 30%;
+    }
+    OutputTab #layer-color-detail:focus-within {
+        border: solid $accent;
     }
     OutputTab #layer-colors-container {
         height: auto;
@@ -560,6 +565,21 @@ class OutputTab(Widget):
                 event.prevent_default()
                 event.stop()
                 self.query_one("#remove-layer-color", Button).press()
+
+    _LC_FIELD_IDS = {"lc-base-color", "lc-color-index"}
+
+    def on_descendant_blur(self, event: DescendantBlur) -> None:
+        """Commit edit when focus leaves the editing pane."""
+        if not self._editing_lc:
+            return
+        self.set_timer(0.05, self._check_focus_commit)
+
+    def _check_focus_commit(self) -> None:
+        if not self._editing_lc:
+            return
+        focused = self.app.focused
+        if focused is None or not isinstance(focused, Input) or focused.id not in self._LC_FIELD_IDS:
+            self._exit_lc_edit_mode(commit=True)
 
     def on_input_changed(self, event: Input.Changed) -> None:
         """Route input changes to the correct config path."""

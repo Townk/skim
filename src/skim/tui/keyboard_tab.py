@@ -10,6 +10,7 @@ from typing import Any
 
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.events import DescendantBlur
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, ListItem, ListView, Static, Switch
 
@@ -51,6 +52,7 @@ class KeyboardTab(Widget):
     }
     KeyboardTab #layers-section {
         height: 1fr;
+        min-height: 14;
     }
     KeyboardTab .list-col {
         width: 1fr;
@@ -74,6 +76,10 @@ class KeyboardTab(Widget):
         padding: 0 1;
         height: auto;
         overflow-x: hidden;
+        border: solid $accent 30%;
+    }
+    KeyboardTab #layer-detail:focus-within {
+        border: solid $accent;
     }
     """
 
@@ -127,14 +133,14 @@ class KeyboardTab(Widget):
                     yield Label("Index:", classes="field-label")
                     yield Input(value="", id="layer-index", placeholder="e.g. 0", disabled=True)
                 with Horizontal(classes="field-row"):
+                    yield Label("ID:", classes="field-label")
+                    yield Input(value="", id="layer-id", placeholder="e.g. _BASE (optional)", disabled=True)
+                with Horizontal(classes="field-row"):
                     yield Label("Label:", classes="field-label")
                     yield Input(value="", id="layer-label", placeholder="e.g. BASE", disabled=True)
                 with Horizontal(classes="field-row"):
                     yield Label("Name:", classes="field-label")
                     yield Input(value="", id="layer-name", placeholder="e.g. Letters", disabled=True)
-                with Horizontal(classes="field-row"):
-                    yield Label("ID:", classes="field-label")
-                    yield Input(value="", id="layer-id", placeholder="e.g. _BASE (optional)", disabled=True)
                 with Horizontal(classes="field-row"):
                     yield Label("Subtitle:", classes="field-label")
                     yield Input(
@@ -223,7 +229,7 @@ class KeyboardTab(Widget):
         self._editing = True
         self._snapshot = copy.deepcopy(layers[self._selected_layer])
         self._set_fields_enabled(True)
-        self.query_one("#layer-label", Input).focus()
+        self.query_one("#layer-index", Input).focus()
 
     def _exit_edit_mode(self, commit: bool) -> None:
         """Exit edit mode: commit or rollback, disable fields, focus list."""
@@ -389,6 +395,19 @@ class KeyboardTab(Widget):
                 event.prevent_default()
                 event.stop()
                 self.query_one("#remove-layer", Button).press()
+
+    def on_descendant_blur(self, event: DescendantBlur) -> None:
+        """Commit edit when focus leaves the editing pane."""
+        if not self._editing:
+            return
+        self.set_timer(0.05, self._check_focus_commit)
+
+    def _check_focus_commit(self) -> None:
+        if not self._editing:
+            return
+        focused = self.app.focused
+        if focused is None or not isinstance(focused, Input) or focused.id not in _FIELD_MAP:
+            self._exit_edit_mode(commit=True)
 
     def _refresh_detail_fields(self) -> None:
         layers = self.config_data.get("keyboard", {}).get("layers", [])

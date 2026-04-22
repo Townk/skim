@@ -6,12 +6,19 @@
 """Keycodes tab widget for the skim TUI configuration editor."""
 
 import copy
+import re
 from typing import Any
 
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.events import DescendantBlur
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, ListItem, ListView, Static
+
+from skim.application.loaders.keycode_mappings_loader import load_keycode_mappings
+from skim.application.loaders.nerdfont_glyphs_loader import load_nerdfont_glyphs
+from skim.data.config import SkimConfig
+from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
 
 
 class KeycodesTab(Widget):
@@ -33,7 +40,7 @@ class KeycodesTab(Widget):
         height: 50%;
     }
     KeycodesTab .list-col {
-        width: 35;
+        width: 50%;
         min-width: 25;
         height: 100%;
     }
@@ -53,6 +60,10 @@ class KeycodesTab(Widget):
         padding: 0 1;
         height: auto;
         overflow-x: hidden;
+        border: solid $accent 30%;
+    }
+    KeycodesTab .keycode-detail:focus-within {
+        border: solid $accent;
     }
     """
 
@@ -63,34 +74,69 @@ class KeycodesTab(Widget):
         self._selected_override: int = 0
         self._editing_section: str | None = None  # "pre-process" or "override"
         self._snapshot: dict[str, str] | None = None
+        self._refreshing: bool = False
 
     @staticmethod
-    def _entry_text(entry: dict[str, str]) -> str:
-        return f"{entry.get('keycode', '')} -> {entry.get('target', '')}"
+    def _entry_text(entry: dict[str, str], keycode_width: int = 0) -> str:
+        kc = entry.get("keycode", "")
+        return f"{kc:<{keycode_width}}  ->  {entry.get('target', '')}"
+
+    def _override_entry_text(self, entry: dict[str, str], keycode_width: int = 0) -> str:
+        kc = entry.get("keycode", "")
+        preview = self._resolve_override_preview(kc)
+        return f"{kc:<{keycode_width}}  ->  {preview}"
+
+    def _keycode_width(self, section: str) -> int:
+        """Max keycode length across all entries in a section."""
+        entries = self._entries_for(section)
+        return max((len(e.get("keycode", "")) for e in entries), default=0)
+
+    def _resolve_override_preview(self, keycode: str) -> str:
+        """Resolve a keycode to its display label using current config."""
+        if not keycode:
+            return ""
+        try:
+            config = SkimConfig.model_validate(self.config_data)
+            mappings = load_keycode_mappings(config.keycodes)
+            adapter = KeycodeLabelAdapter(config.keyboard, mappings)
+            result = adapter.transform(keycode)
+            label = result.label
+            # Resolve %%nf-xxx; tokens to actual Unicode glyphs
+            glyphs = load_nerdfont_glyphs()
+
+            def _replace_nf(match: re.Match) -> str:
+                name = match.group(1)
+                key = name if name.startswith("nf-") else f"nf-{name}"
+                return glyphs.get(key, match.group(0))
+
+            label = re.sub(r"%%([^;]+);", _replace_nf, label)
+            return label
+        except Exception:
+            return keycode
 
     def compose(self) -> ComposeResult:
         # Pre-process section
         with Vertical(id="pre-process-section", classes="keycodes-section"):
-            yield Static("Pre-process", classes="section-title")
+            yield Static("Pre-process", classes="section-title section-title-first")
             with Horizontal():
                 with Vertical(classes="list-col"):
                     yield ListView(id="pre-process-list", classes="keycode-list")
                     with Horizontal(classes="list-buttons"):
-                        yield Button("+ Add", id="add-pre-process", variant="success")
-                        yield Button("- Remove", id="remove-pre-process", variant="error")
+                        yield Button("+ Add (a)", id="add-pre-process", variant="success")
+                        yield Button("- Delete (d)", id="remove-pre-process", variant="error")
 
                 with VerticalScroll(id="pre-process-detail", classes="keycode-detail", can_focus=False):
                     with Horizontal(classes="field-row"):
                         yield Label("Keycode:", classes="field-label")
                         yield Input(
                             value="", id="pre-process-keycode",
-                            placeholder="e.g. LSFT(KC_TAB)", disabled=True,
+                            placeholder="e.g. MKC_BKTAB", disabled=True,
                         )
                     with Horizontal(classes="field-row"):
                         yield Label("Target:", classes="field-label")
                         yield Input(
                             value="", id="pre-process-target",
-                            placeholder="e.g. MKC_BKTAB", disabled=True,
+                            placeholder="e.g. LSFT(KC_TAB)", disabled=True,
                         )
 
         # Overrides section
@@ -100,8 +146,8 @@ class KeycodesTab(Widget):
                 with Vertical(classes="list-col"):
                     yield ListView(id="overrides-list", classes="keycode-list")
                     with Horizontal(classes="list-buttons"):
-                        yield Button("+ Add", id="add-override", variant="success")
-                        yield Button("- Remove", id="remove-override", variant="error")
+                        yield Button("+ Add (a)", id="add-override", variant="success")
+                        yield Button("- Delete (d)", id="remove-override", variant="error")
 
                 with VerticalScroll(id="override-detail", classes="keycode-detail", can_focus=False):
                     with Horizontal(classes="field-row"):
@@ -115,6 +161,13 @@ class KeycodesTab(Widget):
                         yield Input(
                             value="", id="override-target",
                             placeholder="e.g. ESC", disabled=True,
+                        )
+                    with Horizontal(classes="field-row"):
+                        yield Label("Preview:", classes="field-label")
+                        yield Input(
+                            value="", id="override-preview",
+                            placeholder="resolved label",
+                            disabled=True,
                         )
 
     def on_mount(self) -> None:
@@ -145,12 +198,18 @@ class KeycodesTab(Widget):
     def _list_id(self, section: str) -> str:
         return "pre-process-list" if section == "pre-process" else "overrides-list"
 
+    def _entry_text_for(self, section: str, entry: dict[str, str], keycode_width: int = 0) -> str:
+        if section == "override":
+            return self._override_entry_text(entry, keycode_width)
+        return self._entry_text(entry, keycode_width)
+
     def _rebuild_list(self, section: str) -> None:
         entries = self._entries_for(section)
+        kw = self._keycode_width(section)
         list_view = self.query_one(f"#{self._list_id(section)}", ListView)
         list_view.clear()
         for entry in entries:
-            list_view.append(ListItem(Static(self._entry_text(entry))))
+            list_view.append(ListItem(Static(self._entry_text_for(section, entry, kw))))
 
     def _rebuild_pre_process_list(self) -> None:
         self._rebuild_list("pre-process")
@@ -158,15 +217,20 @@ class KeycodesTab(Widget):
     def _rebuild_overrides_list(self) -> None:
         self._rebuild_list("override")
 
-    def _update_list_item(self, section: str) -> None:
+    def _realign_all_items(self, section: str) -> None:
+        """Update all list item texts in-place to align columns."""
         entries = self._entries_for(section)
-        index = self._selected_for(section)
-        if index >= len(entries):
-            return
+        kw = self._keycode_width(section)
         list_view = self.query_one(f"#{self._list_id(section)}", ListView)
-        if index < len(list_view.children):
-            item = list_view.children[index]
-            item.query_one(Static).update(self._entry_text(entries[index]))
+        for i, entry in enumerate(entries):
+            if i < len(list_view.children):
+                list_view.children[i].query_one(Static).update(
+                    self._entry_text_for(section, entry, kw)
+                )
+
+    def _update_list_item(self, section: str) -> None:
+        """Update the current item and realign all items in-place."""
+        self._realign_all_items(section)
 
     def _update_list_states(self) -> None:
         """Update list focusability and Remove button state for both sections."""
@@ -186,12 +250,24 @@ class KeycodesTab(Widget):
         if index >= len(entries):
             return
         entry = entries[index]
+        self._refreshing = True
         self.query_one(f"#{section}-keycode", Input).value = entry.get("keycode", "") or ""
         self.query_one(f"#{section}-target", Input).value = entry.get("target", "") or ""
+        if section == "override":
+            self._update_override_preview()
+        self._refreshing = False
 
     def _clear_fields(self, section: str) -> None:
+        self._refreshing = True
         self.query_one(f"#{section}-keycode", Input).value = ""
         self.query_one(f"#{section}-target", Input).value = ""
+        if section == "override":
+            self.query_one("#override-preview", Input).value = ""
+        self._refreshing = False
+
+    def _update_override_preview(self) -> None:
+        keycode = self.query_one("#override-keycode", Input).value
+        self.query_one("#override-preview", Input).value = self._resolve_override_preview(keycode)
 
     def _enter_edit_mode(self, section: str) -> None:
         entries = self._entries_for(section)
@@ -226,7 +302,8 @@ class KeycodesTab(Widget):
             entries = self.config_data.setdefault("keycodes", {}).setdefault("pre_process", [])
             entries.append({"keycode": "", "target": ""})
             lv = self.query_one("#pre-process-list", ListView)
-            lv.append(ListItem(Static(self._entry_text(entries[-1]))))
+            kw = self._keycode_width("pre-process")
+            lv.append(ListItem(Static(self._entry_text(entries[-1], kw))))
             self._selected_pre_process = len(entries) - 1
             self._refresh_fields("pre-process")
             lv.index = self._selected_pre_process
@@ -242,17 +319,21 @@ class KeycodesTab(Widget):
             if entries:
                 self._selected_pre_process = min(self._selected_pre_process, len(entries) - 1)
                 self._refresh_fields("pre-process")
-                self.query_one("#pre-process-list", ListView).index = self._selected_pre_process
+                lv = self.query_one("#pre-process-list", ListView)
+                self.call_after_refresh(setattr, lv, "index", self._selected_pre_process)
             else:
                 self._selected_pre_process = 0
                 self._clear_fields("pre-process")
             self._update_list_states()
+            if not entries:
+                self.query_one("#add-pre-process", Button).focus()
 
         elif button_id == "add-override":
             entries = self.config_data.setdefault("keycodes", {}).setdefault("overrides", [])
             entries.append({"keycode": "", "target": ""})
             lv = self.query_one("#overrides-list", ListView)
-            lv.append(ListItem(Static(self._entry_text(entries[-1]))))
+            kw = self._keycode_width("override")
+            lv.append(ListItem(Static(self._override_entry_text(entries[-1], kw))))
             self._selected_override = len(entries) - 1
             self._refresh_fields("override")
             lv.index = self._selected_override
@@ -268,11 +349,14 @@ class KeycodesTab(Widget):
             if entries:
                 self._selected_override = min(self._selected_override, len(entries) - 1)
                 self._refresh_fields("override")
-                self.query_one("#overrides-list", ListView).index = self._selected_override
+                lv = self.query_one("#overrides-list", ListView)
+                self.call_after_refresh(setattr, lv, "index", self._selected_override)
             else:
                 self._selected_override = 0
                 self._clear_fields("override")
             self._update_list_states()
+            if not entries:
+                self.query_one("#add-override", Button).focus()
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         """Enter pressed on a list item — enter edit mode."""
@@ -302,19 +386,56 @@ class KeycodesTab(Widget):
                 self._refresh_fields("override")
 
     def on_key(self, event) -> None:
-        """Handle Enter/Escape in edit mode."""
+        """Handle Enter/Escape in edit mode, a/d shortcuts on lists."""
+        if self._editing_section is not None:
+            if event.key == "enter":
+                event.prevent_default()
+                event.stop()
+                self._exit_edit_mode(commit=True)
+            elif event.key == "escape":
+                event.prevent_default()
+                event.stop()
+                self._exit_edit_mode(commit=False)
+            return
+
+        focused = self.app.focused
+        if isinstance(focused, ListView):
+            if focused.id == "pre-process-list":
+                add_id, remove_id = "add-pre-process", "remove-pre-process"
+            elif focused.id == "overrides-list":
+                add_id, remove_id = "add-override", "remove-override"
+            else:
+                return
+            if event.key == "a":
+                event.prevent_default()
+                event.stop()
+                self.query_one(f"#{add_id}", Button).press()
+            elif event.key == "d":
+                event.prevent_default()
+                event.stop()
+                self.query_one(f"#{remove_id}", Button).press()
+
+    _EDITING_FIELD_IDS = {
+        "pre-process-keycode", "pre-process-target",
+        "override-keycode", "override-target", "override-preview",
+    }
+
+    def on_descendant_blur(self, event: DescendantBlur) -> None:
+        """Commit edit when focus leaves the editing pane."""
         if self._editing_section is None:
             return
-        if event.key == "enter":
-            event.prevent_default()
-            event.stop()
+        self.set_timer(0.05, self._check_focus_commit)
+
+    def _check_focus_commit(self) -> None:
+        if self._editing_section is None:
+            return
+        focused = self.app.focused
+        if focused is None or not isinstance(focused, Input) or focused.id not in self._EDITING_FIELD_IDS:
             self._exit_edit_mode(commit=True)
-        elif event.key == "escape":
-            event.prevent_default()
-            event.stop()
-            self._exit_edit_mode(commit=False)
 
     def on_input_changed(self, event: Input.Changed) -> None:
+        if self._refreshing:
+            return
         input_id = event.input.id or ""
 
         if input_id.startswith("pre-process-"):
@@ -324,9 +445,10 @@ class KeycodesTab(Widget):
                 entries[self._selected_pre_process][field] = event.value
                 self._update_list_item("pre-process")
 
-        elif input_id.startswith("override-"):
+        elif input_id.startswith("override-") and input_id != "override-preview":
             field = input_id[len("override-"):]
             entries = self._entries_for("override")
             if self._selected_override < len(entries):
                 entries[self._selected_override][field] = event.value
                 self._update_list_item("override")
+                self._update_override_preview()
