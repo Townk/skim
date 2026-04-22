@@ -109,19 +109,20 @@ class LayerColorListPane(ListDetailPane):
     }
     LayerColorListPane .gradient-swatch {
         width: 4;
-        height: 1;
+        height: 3;
+        content-align: center middle;
     }
     LayerColorListPane .gradient-preview {
-        height: 1;
-        width: 1fr;
+        height: 3;
+        width: auto;
         layout: horizontal;
-        padding: 0 1;
     }
     LayerColorListPane .gradient-dark {
         background: #1b1b1b;
     }
     LayerColorListPane .gradient-light {
         background: #ffffff;
+        margin: 0 0 0 1;
     }
     """
 
@@ -203,6 +204,7 @@ class LayerColorListPane(ListDetailPane):
         yield ColorAutoComplete(lc_color_input, candidates=_color_candidates)
         with Horizontal(classes="field-row"):
             yield Label("Layer gradient:", classes="field-label")
+            yield Static(" ", classes="swatch-spacer")
             with Horizontal(classes="gradient-preview gradient-dark"):
                 for i in range(6):
                     yield Static(
