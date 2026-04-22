@@ -83,7 +83,7 @@ class LayerListPane(ListDetailPane):
             yield Label("Name:", classes="field-label")
             yield SkimInput(value="", id="layer-name", placeholder="e.g. Letters", disabled=True)
         with Horizontal(classes="field-row"):
-            yield Label("Subtitle:", classes="field-label")
+            yield Label("Variant:", classes="field-label")
             yield SkimInput(
                 value="", id="layer-variant", placeholder="e.g. COLEMAK (optional)", disabled=True
             )
