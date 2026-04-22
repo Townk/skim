@@ -47,3 +47,155 @@ class TestGenerateDefault:
         parsed = yaml.safe_load(result)
         config = SkimConfig.model_validate(parsed)
         assert config.output.layout.width == 800
+
+
+import colorsys
+import json
+
+import pytest
+
+
+class TestGenerateFromKeybard:
+    """Tests for ConfigGenerator.generate_from_keybard()."""
+
+    @pytest.fixture()
+    def minimal_keybard(self) -> str:
+        """Minimal .kbi JSON with 2 layers, 1 custom keycode."""
+        return json.dumps({
+            "layers": 2,
+            "keymap": [["KC_A"] * 60, ["KC_B"] * 60],
+            "layer_colors": [
+                {"hue": 85, "sat": 255, "val": 255},
+                {"hue": 0, "sat": 255, "val": 255},
+            ],
+            "cosmetic": {
+                "layer": {"0": "Base", "1": "Symbols"}
+            },
+            "custom_keycodes": [
+                {"name": "MY_KEY", "shortName": "My\nKey", "title": "A custom key"}
+            ],
+        })
+
+    def test_returns_valid_yaml(self, minimal_keybard):
+        """Output is parseable YAML."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard)
+        parsed = yaml.safe_load(result)
+        assert isinstance(parsed, dict)
+
+    def test_extracts_layer_names(self, minimal_keybard):
+        """Layers from cosmetic metadata become keyboard.layers entries."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard)
+        parsed = yaml.safe_load(result)
+        layers = parsed["keyboard"]["layers"]
+        assert len(layers) == 2
+        assert layers[0]["name"] == "Base"
+        assert layers[0]["label"] == "BASE"
+        assert layers[1]["name"] == "Symbols"
+        assert layers[1]["label"] == "SYMB"
+
+    def test_extracts_layer_colors(self, minimal_keybard):
+        """Layer colors are converted from HSV to hex."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard)
+        parsed = yaml.safe_load(result)
+        palette_layers = parsed["output"]["style"]["palette"]["layers"]
+        assert len(palette_layers) == 2
+        for layer in palette_layers:
+            assert layer["base_color"].startswith("#")
+
+    def test_layer_color_hsv_conversion(self, minimal_keybard):
+        """HSV {hue:85, sat:255, val:255} converts to correct hex."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard)
+        parsed = yaml.safe_load(result)
+        r, g, b = colorsys.hsv_to_rgb(85 / 255, 1.0, 1.0)
+        expected = f"#{int(round(r*255)):02X}{int(round(g*255)):02X}{int(round(b*255)):02X}"
+        assert parsed["output"]["style"]["palette"]["layers"][0]["base_color"] == expected
+
+    def test_extracts_custom_keycodes(self, minimal_keybard):
+        """Custom keycodes become keycodes.overrides entries."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard)
+        parsed = yaml.safe_load(result)
+        overrides = parsed["keycodes"]["overrides"]
+        names = [o["keycode"] for o in overrides]
+        assert "MY_KEY" in names
+
+    def test_custom_keycode_newlines_replaced_with_space(self, minimal_keybard):
+        """Newlines in shortName are replaced with spaces."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard)
+        parsed = yaml.safe_load(result)
+        overrides = {o["keycode"]: o["target"] for o in parsed["keycodes"]["overrides"]}
+        assert overrides["MY_KEY"] == "My Key"
+
+    def test_user_alias_for_custom_keycode(self, minimal_keybard):
+        """USER00 alias points to custom keycode via @@ reference."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard)
+        parsed = yaml.safe_load(result)
+        overrides = {o["keycode"]: o["target"] for o in parsed["keycodes"]["overrides"]}
+        assert overrides["USER00"] == "@@MY_KEY;"
+
+    def test_layers_without_cosmetic_names_get_defaults(self):
+        """Layers missing from cosmetic.layer get 'Layer N' names."""
+        keybard = json.dumps({
+            "layers": 2,
+            "keymap": [["KC_A"] * 60, ["KC_B"] * 60],
+            "layer_colors": [
+                {"hue": 0, "sat": 0, "val": 128},
+                {"hue": 0, "sat": 0, "val": 128},
+            ],
+            "cosmetic": {"layer": {}},
+            "custom_keycodes": [],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(keybard)
+        parsed = yaml.safe_load(result)
+        layers = parsed["keyboard"]["layers"]
+        assert layers[0]["name"] == "Layer 0"
+        assert layers[0]["label"] == "L0"
+        assert layers[1]["name"] == "Layer 1"
+
+    def test_color_adjustment_lightness(self, minimal_keybard):
+        """adjust_lightness parameter modifies extracted colors."""
+        generator = ConfigGenerator()
+        unadjusted = yaml.safe_load(generator.generate_from_keybard(minimal_keybard))
+        adjusted = yaml.safe_load(
+            generator.generate_from_keybard(minimal_keybard, adjust_lightness=0.31)
+        )
+        c1 = unadjusted["output"]["style"]["palette"]["layers"][0]["base_color"]
+        c2 = adjusted["output"]["style"]["palette"]["layers"][0]["base_color"]
+        assert c1 != c2
+
+    def test_roundtrips_through_skim_config(self, minimal_keybard):
+        """Generated config validates as a SkimConfig."""
+        from skim.data.config import SkimConfig
+
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(minimal_keybard)
+        parsed = yaml.safe_load(result)
+        config = SkimConfig.model_validate(parsed)
+        assert len(config.keyboard.layers) == 2
+
+    def test_invalid_json_raises_value_error(self):
+        """Non-JSON input raises ValueError."""
+        generator = ConfigGenerator()
+        with pytest.raises(ValueError, match="Invalid JSON"):
+            generator.generate_from_keybard("not json {{{")
+
+    def test_empty_custom_keycodes(self):
+        """No custom keycodes produces empty overrides."""
+        keybard = json.dumps({
+            "layers": 1,
+            "keymap": [["KC_A"] * 60],
+            "layer_colors": [{"hue": 0, "sat": 0, "val": 128}],
+            "cosmetic": {"layer": {"0": "Base"}},
+            "custom_keycodes": [],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(keybard)
+        parsed = yaml.safe_load(result)
+        assert parsed["keycodes"]["overrides"] == []
