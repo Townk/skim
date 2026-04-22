@@ -61,6 +61,7 @@ class KeyboardTab(Widget):
         height: 100%;
     }
     KeyboardTab #layer-list {
+        min-height: 15;
         max-height: 100%;
         border: solid $accent 50%;
     }
@@ -96,56 +97,57 @@ class KeyboardTab(Widget):
         keymap_title = self.config_data.get("output", {}).get("keymap_title") or ""
         copyright_text = self.config_data.get("output", {}).get("copyright") or ""
 
-        with Vertical(id="info-section"):
-            yield Static("Information", classes="section-title section-title-first")
-            with Horizontal(classes="field-row"):
-                yield Label("Keymap Title:", classes="field-label")
-                yield Input(
-                    value=keymap_title,
-                    id="keymap-title-text",
-                    placeholder="e.g. My Keymap (leave empty for auto)",
-                )
-            with Horizontal(classes="field-row"):
-                yield Label("Copyright:", classes="field-label")
-                yield Input(
-                    value=copyright_text,
-                    id="copyright-text",
-                    placeholder="e.g. (c) 2024 Your Name (leave empty for none)",
-                )
-
-        with Vertical(id="features-section"):
-            yield Static("Features", classes="section-title")
-            with Horizontal(id="features-row"):
-                yield Label("Double South: ", classes="field-label")
-                yield Switch(value=double_south, id="double-south")
-
-        yield Static("Layers", classes="section-title")
-        with Horizontal(id="layers-section"):
-            with Vertical(classes="list-col"):
-                yield ListView(id="layer-list")
-                with Horizontal(classes="list-buttons"):
-                    yield Button("+ Add (a)", id="add-layer", variant="success")
-                    yield Button("- Delete (d)", id="remove-layer", variant="error")
-
-            with VerticalScroll(id="layer-detail", can_focus=False):
-                yield Static("Press Enter on a layer to edit", id="layer-detail-hint")
+        with VerticalScroll(can_focus=False):
+            with Vertical(id="info-section"):
+                yield Static("Information", classes="section-title section-title-first")
                 with Horizontal(classes="field-row"):
-                    yield Label("Index:", classes="field-label")
-                    yield Input(value="", id="layer-index", placeholder="e.g. 0", disabled=True)
-                with Horizontal(classes="field-row"):
-                    yield Label("ID:", classes="field-label")
-                    yield Input(value="", id="layer-id", placeholder="e.g. _BASE (optional)", disabled=True)
-                with Horizontal(classes="field-row"):
-                    yield Label("Label:", classes="field-label")
-                    yield Input(value="", id="layer-label", placeholder="e.g. BASE", disabled=True)
-                with Horizontal(classes="field-row"):
-                    yield Label("Name:", classes="field-label")
-                    yield Input(value="", id="layer-name", placeholder="e.g. Letters", disabled=True)
-                with Horizontal(classes="field-row"):
-                    yield Label("Subtitle:", classes="field-label")
+                    yield Label("Keymap Title:", classes="field-label")
                     yield Input(
-                        value="", id="layer-subtitle", placeholder="e.g. COLEMAK (optional)", disabled=True
+                        value=keymap_title,
+                        id="keymap-title-text",
+                        placeholder="e.g. My Keymap (leave empty for auto)",
                     )
+                with Horizontal(classes="field-row"):
+                    yield Label("Copyright:", classes="field-label")
+                    yield Input(
+                        value=copyright_text,
+                        id="copyright-text",
+                        placeholder="e.g. (c) 2024 Your Name (leave empty for none)",
+                    )
+
+            with Vertical(id="features-section"):
+                yield Static("Features", classes="section-title")
+                with Horizontal(id="features-row"):
+                    yield Label("Double South: ", classes="field-label")
+                    yield Switch(value=double_south, id="double-south")
+
+            yield Static("Layers", classes="section-title")
+            with Horizontal(id="layers-section"):
+                with Vertical(classes="list-col"):
+                    yield ListView(id="layer-list")
+                    with Horizontal(classes="list-buttons"):
+                        yield Button("+ Add (a)", id="add-layer", variant="success")
+                        yield Button("- Delete (d)", id="remove-layer", variant="error")
+
+                with VerticalScroll(id="layer-detail", can_focus=False):
+                    yield Static("Press Enter on a layer to edit", id="layer-detail-hint")
+                    with Horizontal(classes="field-row"):
+                        yield Label("Index:", classes="field-label")
+                        yield Input(value="", id="layer-index", placeholder="e.g. 0", disabled=True)
+                    with Horizontal(classes="field-row"):
+                        yield Label("ID:", classes="field-label")
+                        yield Input(value="", id="layer-id", placeholder="e.g. _BASE (optional)", disabled=True)
+                    with Horizontal(classes="field-row"):
+                        yield Label("Label:", classes="field-label")
+                        yield Input(value="", id="layer-label", placeholder="e.g. BASE", disabled=True)
+                    with Horizontal(classes="field-row"):
+                        yield Label("Name:", classes="field-label")
+                        yield Input(value="", id="layer-name", placeholder="e.g. Letters", disabled=True)
+                    with Horizontal(classes="field-row"):
+                        yield Label("Subtitle:", classes="field-label")
+                        yield Input(
+                            value="", id="layer-subtitle", placeholder="e.g. COLEMAK (optional)", disabled=True
+                        )
 
     def on_mount(self) -> None:
         """Populate the list after mount."""
