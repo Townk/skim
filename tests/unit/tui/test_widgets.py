@@ -23,6 +23,7 @@ class TestWidgetSubclasses:
         assert "enter,space" in keys
 
     def test_skim_select_has_bindings(self):
-        """SkimSelect has enter/down/space/up binding."""
+        """SkimSelect has enter/space and escape bindings."""
         keys = {b.key for b in SkimSelect.BINDINGS}
-        assert "enter,down,space,up" in keys
+        assert "enter,space" in keys
+        assert "escape" in keys

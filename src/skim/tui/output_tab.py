@@ -290,47 +290,27 @@ class LayerColorListPane(ListDetailPane):
         return False
 
     def on_key(self, event) -> None:
-        """Override to let Select handle Enter/Space/Escape normally.
+        """Override to let Select handle keys normally.
 
-        Textual processes on_key during event bubbling BEFORE bindings run.
-        The base ListDetailPane.on_key stops events, so bindings on the
-        Select and its overlay never fire. We invoke actions directly.
+        Textual's on_key fires during event bubbling BEFORE the App-level
+        binding system runs. We must stop the event (to prevent other
+        handlers from interfering) and manually trigger binding checks.
         """
-        if self._editing:
-            if self._select_active:
-                # Overlay is open — invoke OptionList actions directly
-                from textual.widgets import OptionList
-                focused = self.app.focused
-                if isinstance(focused, OptionList):
-                    if event.key in ("enter", "space"):
-                        focused.action_select()
-                        event.prevent_default()
-                        event.stop()
-                        return
-                    if event.key == "escape":
-                        select = self.query_one("#lc-gradient-type", SkimSelect)
-                        select.query_one("SelectOverlay").action_dismiss()
-                        # Keep _select_active=True; on_descendant_focus clears
-                        # it when focus returns to the Select
-                        event.prevent_default()
-                        event.stop()
-                        return
-                    if event.key in ("up", "down"):
-                        action = "cursor_up" if event.key == "up" else "cursor_down"
-                        getattr(focused, f"action_{action}")()
-                        event.prevent_default()
-                        event.stop()
-                        return
-                return
-            if self._is_inside_select() and event.key in ("enter", "space"):
-                # Open the overlay directly since on_key stops the event
-                # before Textual's binding system can process it
-                self._select_active = True
-                select = self.query_one("#lc-gradient-type", SkimSelect)
-                select.action_show_overlay()
-                event.prevent_default()
+        if self._editing and (self._select_active or self._is_inside_select()):
+            if event.key in ("enter", "space", "up", "down"):
+                if not self._select_active:
+                    self._select_active = True
                 event.stop()
+                event.prevent_default()
+                self.call_later(self.app._check_bindings, event.key)
                 return
+            if event.key == "escape":
+                if self._select_active:
+                    event.stop()
+                    event.prevent_default()
+                    self._dismiss_select_overlay()
+                    return
+                # Escape on closed Select — fall through to base (cancel edit)
         super().on_key(event)
 
     def on_descendant_blur(self, event: DescendantBlur) -> None:
@@ -339,15 +319,28 @@ class LayerColorListPane(ListDetailPane):
             return
         super().on_descendant_blur(event)
 
-    def on_descendant_focus(self, event) -> None:
-        """Clear Select active flag when focus returns to a pane widget."""
-        if self._select_active and self._is_inside_select():
-            self._select_active = False
+    def _dismiss_select_overlay(self) -> None:
+        """Dismiss the overlay and clear _select_active after focus settles."""
+        try:
+            select = self.query_one("#lc-gradient-type", SkimSelect)
+            select.query_one("SelectOverlay").action_dismiss()
+        except Exception:
+            pass
+        self.set_timer(0.1, self._clear_select_active)
+
+    def _clear_select_active(self) -> None:
+        self._select_active = False
 
     def on_select_changed(self, event: SkimSelect.Changed) -> None:
         self._select_active = False
         if event.select.id == "lc-gradient-type" and event.value is not SkimSelect.BLANK:
             self._on_gradient_type_changed(str(event.value))
+
+    def _exit_edit_mode(self, commit: bool) -> None:
+        """Override to block exit while Select overlay is active."""
+        if self._select_active:
+            return
+        super()._exit_edit_mode(commit)
 
     def _set_fields_enabled(self, enabled: bool) -> None:
         """Override to also enable/disable the gradient type Select."""
