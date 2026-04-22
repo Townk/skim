@@ -51,18 +51,16 @@ class KeyboardTab(Widget):
         height: auto;
     }
     KeyboardTab #layers-section {
-        height: 1fr;
-        min-height: 14;
+        height: auto;
     }
     KeyboardTab .list-col {
         width: 1fr;
         max-width: 33%;
         min-width: 25;
-        height: 100%;
+        height: auto;
     }
     KeyboardTab #layer-list {
-        min-height: 15;
-        max-height: 100%;
+        height: 1fr;
         border: solid $accent 50%;
     }
     KeyboardTab .list-buttons {
@@ -75,7 +73,7 @@ class KeyboardTab(Widget):
     }
     KeyboardTab #layer-detail {
         padding: 0 1;
-        height: 100%;
+        height: auto;
         overflow-x: hidden;
         border: solid $accent 30%;
     }
@@ -129,7 +127,7 @@ class KeyboardTab(Widget):
                         yield Button("+ Add (a)", id="add-layer", variant="success")
                         yield Button("- Delete (d)", id="remove-layer", variant="error")
 
-                with VerticalScroll(id="layer-detail", can_focus=False):
+                with Vertical(id="layer-detail"):
                     yield Static("Press Enter on a layer to edit", id="layer-detail-hint")
                     with Horizontal(classes="field-row"):
                         yield Label("Index:", classes="field-label")
