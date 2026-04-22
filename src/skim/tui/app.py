@@ -12,7 +12,7 @@ from typing import Any
 import yaml
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Grid
+from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
@@ -26,19 +26,25 @@ from textual.widgets import (
 from skim.data.config import SkimConfig
 
 
-class QuitConfirmScreen(ModalScreen[bool]):
-    """Modal dialog for confirming quit with unsaved changes."""
+class QuitConfirmScreen(ModalScreen[str]):
+    """Modal dialog for save-on-quit with unsaved changes.
+
+    Returns "save" to save and quit, "discard" to quit without saving,
+    or None if dismissed.
+    """
 
     def compose(self) -> ComposeResult:
-        yield Grid(
-            Label("You have unsaved changes. Quit anyway?", id="question"),
-            Button("Yes, quit", variant="error", id="yes"),
-            Button("No, go back", variant="primary", id="no"),
-            id="quit-dialog",
-        )
+        with Vertical(id="quit-dialog"):
+            yield Label(
+                "You have unsaved changes.\nDo you want to save before quitting?",
+                id="question",
+            )
+            with Horizontal(id="quit-buttons"):
+                yield Button("Save & Quit", variant="success", id="save")
+                yield Button("Discard", variant="error", id="discard")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        self.dismiss(event.button.id == "yes")
+        self.dismiss(event.button.id)
 
 
 class SkimConfigApp(App):
@@ -50,21 +56,25 @@ class SkimConfigApp(App):
         align: center middle;
     }
     #quit-dialog {
-        grid-size: 2;
-        grid-gutter: 1 2;
-        grid-rows: auto auto;
         padding: 1 2;
-        width: 60;
+        width: 55;
         height: auto;
         border: thick $background 80%;
         background: $surface;
     }
     #question {
-        column-span: 2;
-        content-align: center middle;
+        text-align: center;
         width: 100%;
         height: auto;
         margin-bottom: 1;
+    }
+    #quit-buttons {
+        width: 100%;
+        height: auto;
+        align-horizontal: center;
+    }
+    #quit-buttons Button {
+        margin: 0 1;
     }
     /* Global compact styling */
     Input {
@@ -145,8 +155,11 @@ class SkimConfigApp(App):
         else:
             self.exit()
 
-    def _handle_quit_confirm(self, confirmed: bool | None) -> None:
-        if confirmed:
+    def _handle_quit_confirm(self, result: str | None) -> None:
+        if result == "save":
+            self.action_save()
+            self.exit()
+        elif result == "discard":
             self.exit()
 
     def action_save(self) -> None:
