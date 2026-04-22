@@ -15,9 +15,14 @@ class SkimInput(Input):
     """Input with footer bindings for field navigation."""
 
     BINDINGS = [
+        Binding("enter", "submit", "Commit changes", key_display="\u23ce", show=True),
+        Binding("escape", "cancel_edit", "Cancel changes", key_display="\U000f12b7", show=True),
         Binding("tab", "focus_next", "Next field", key_display="\u21e5", show=True),
         Binding("shift+tab", "focus_previous", "Previous field", key_display="\u21e4", show=True),
     ]
+
+    def action_cancel_edit(self) -> None:
+        """No-op — handled by ListDetailPane.on_key via event bubbling."""
 
 
 class SkimListView(ListView):
