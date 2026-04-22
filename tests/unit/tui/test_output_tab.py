@@ -25,6 +25,23 @@ class TestOutputTab:
     @pytest.fixture()
     def config_with_output(self) -> dict:
         config = SkimConfig().model_dump(mode="json")
+        config["keyboard"]["layers"] = [
+            {"name": "Base", "index": 0},
+            {"name": "Nav", "index": 1},
+        ]
+        config["output"]["style"]["palette"]["layers"] = [
+            {"base_color": "#347156", "color_index": 2, "gradient": None},
+            {"base_color": "#89511C", "color_index": 2, "gradient": None},
+        ]
+        return config
+
+    @pytest.fixture()
+    def config_with_nonsequential_qmk_indices(self) -> dict:
+        config = SkimConfig().model_dump(mode="json")
+        config["keyboard"]["layers"] = [
+            {"name": "Base", "index": 0},
+            {"name": "Sym", "index": 15},
+        ]
         config["output"]["style"]["palette"]["layers"] = [
             {"base_color": "#347156", "color_index": 2, "gradient": None},
             {"base_color": "#89511C", "color_index": 2, "gradient": None},
@@ -144,3 +161,30 @@ class TestOutputTab:
             # The first focusable widget should be layout-width, not VerticalScroll
             width_input = app.query_one("#layout-width", Input)
             assert width_input.focusable is True
+
+    def test_layer_qmk_index_uses_config_index(self, config_with_nonsequential_qmk_indices):
+        """_layer_qmk_index returns the QMK index from config, not the position."""
+        tab = OutputTab(config_data=config_with_nonsequential_qmk_indices)
+        assert tab._layer_qmk_index(0) == 0
+        assert tab._layer_qmk_index(1) == 15
+
+    def test_layer_qmk_index_falls_back_to_position(self, empty_config):
+        """_layer_qmk_index falls back to position index when layer not in config."""
+        tab = OutputTab(config_data=empty_config)
+        assert tab._layer_qmk_index(0) == 0
+        assert tab._layer_qmk_index(3) == 3
+
+    def test_lc_text_uses_qmk_index(self, config_with_nonsequential_qmk_indices):
+        """_lc_text uses QMK index (15) not position index (1) for second layer."""
+        tab = OutputTab(config_data=config_with_nonsequential_qmk_indices)
+        lc = {"base_color": "#89511C"}
+        text = tab._lc_text(1, lc, 10, 10)
+        assert "(15)" in text
+        assert "(1)" not in text
+
+    def test_lc_column_widths_uses_qmk_index(self, config_with_nonsequential_qmk_indices):
+        """_lc_column_widths accounts for the width of QMK index strings."""
+        tab = OutputTab(config_data=config_with_nonsequential_qmk_indices)
+        col0_w, _ = tab._lc_column_widths()
+        # "Sym (15)" is 8 chars, "Base (0)" is 8 chars — col0_w should be at least 8
+        assert col0_w >= len("Sym (15)")

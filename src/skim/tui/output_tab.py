@@ -10,12 +10,61 @@ from typing import Any
 
 import webcolors
 from textual.app import ComposeResult
+from textual.content import Content
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.suggester import SuggestFromList
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, ListItem, ListView, Select, Static, Switch
+from textual_autocomplete import AutoComplete, DropdownItem, TargetState
 
-_COLOR_SUGGESTER = SuggestFromList(sorted(webcolors.names()), case_sensitive=False)
+from skim.application.render.styling import default_layer_color
+from skim.tui.app import LayerAdded, LayerRemoved
+
+_COLOR_NAMES = sorted(webcolors.names())
+
+
+_MAX_COLOR_NAME_LEN = max(len(n) for n in _COLOR_NAMES)
+_COLOR_SUGGESTER = SuggestFromList(_COLOR_NAMES, case_sensitive=False)
+
+
+def _color_candidates(state: TargetState) -> list[DropdownItem]:
+    """Return color candidates with a right-aligned colored swatch."""
+    items = []
+    for name in _COLOR_NAMES:
+        hex_color = webcolors.name_to_hex(name)
+        label = Content.assemble(
+            name,
+            " " * (_MAX_COLOR_NAME_LEN - len(name) + 1),
+            Content.styled("\uebb4", hex_color),
+        )
+        items.append(DropdownItem(main=label))
+    return items
+
+
+class ColorAutoComplete(AutoComplete):
+    """AutoComplete that re-posts Input.Changed after dropdown selection.
+
+    The base AutoComplete suppresses Input.Changed during completion
+    via ``self.prevent(Input.Changed)``. This subclass re-fires the
+    event so that parent widgets (e.g. swatch updates) react to the
+    new value.
+    """
+
+    def should_show_dropdown(self, search_string: str) -> bool:
+        option_list = self.option_list
+        if option_list.option_count <= 1:
+            return False
+        return super().should_show_dropdown(search_string)
+
+    def apply_completion(self, value: str, state: TargetState) -> None:
+        # value is the full plain text (name + padding + swatch);
+        # extract just the color name (first word)
+        color_name = value.split()[0] if value.strip() else value
+        super().apply_completion(color_name, state)
+
+    def post_completion(self) -> None:
+        super().post_completion()
+        self.target.post_message(Input.Changed(self.target, self.target.value))
 
 
 _HOLD_SYMBOL_OPTIONS = [
@@ -115,7 +164,7 @@ class OutputTab(Widget):
         with VerticalScroll(can_focus=False):
             # --- Layout section ---
             with Vertical(classes="section"):
-                yield Static("Layout", classes="section-title")
+                yield Static("Layout", classes="section-title section-title-first")
                 with Horizontal(classes="field-row"):
                     yield Label("Width:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
@@ -211,10 +260,13 @@ class OutputTab(Widget):
                     with Horizontal(classes="field-row"):
                         yield Label(color_label, classes="field-label")
                         yield Static(" ", classes="color-swatch", id=f"swatch-{field_id}")
-                        yield Input(
+                        color_input = Input(
                             value=color_val, id=field_id,
-                            placeholder=placeholder, suggester=_COLOR_SUGGESTER,
+                            placeholder=placeholder,
+                            suggester=_COLOR_SUGGESTER,
                         )
+                        yield color_input
+                    yield ColorAutoComplete(color_input, candidates=_color_candidates)
 
             # --- Layer colors section ---
             with Vertical(classes="section"):
@@ -223,18 +275,20 @@ class OutputTab(Widget):
                     with Vertical(classes="lc-list-col"):
                         yield ListView(id="layer-colors-list")
                         with Horizontal(classes="list-buttons"):
-                            yield Button("+ Add", id="add-layer-color", variant="success")
-                            yield Button("- Remove", id="remove-layer-color", variant="error")
+                            yield Button("+ Add (a)", id="add-layer-color", variant="success")
+                            yield Button("- Delete (d)", id="remove-layer-color", variant="error")
 
                     with VerticalScroll(id="layer-color-detail", can_focus=False):
                         with Horizontal(classes="field-row"):
                             yield Label("Base color:", classes="field-label")
                             yield Static(" ", classes="color-swatch", id="swatch-lc-base-color")
-                            yield Input(
+                            lc_color_input = Input(
                                 value="", id="lc-base-color",
                                 placeholder="#RRGGBB", disabled=True,
                                 suggester=_COLOR_SUGGESTER,
                             )
+                            yield lc_color_input
+                        yield ColorAutoComplete(lc_color_input, candidates=_color_candidates)
                         with Horizontal(classes="field-row"):
                             yield Label("Color index:", classes="field-label")
                             yield Static(" ", classes="swatch-spacer")
@@ -269,6 +323,14 @@ class OutputTab(Widget):
         except Exception:
             pass
 
+    @staticmethod
+    def _safe_set_color(widget: Static, color: str) -> None:
+        """Set foreground color, silently ignoring invalid values."""
+        try:
+            widget.styles.color = color if color else "white"
+        except Exception:
+            pass
+
     def _update_all_palette_swatches(self) -> None:
         """Update all palette color swatches from current config values."""
         palette = self.config_data.get("output", {}).get("style", {}).get("palette", {})
@@ -279,33 +341,74 @@ class OutputTab(Widget):
     def _layer_colors(self) -> list[dict[str, Any]]:
         return self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
 
-    @staticmethod
-    def _lc_text(index: int, lc: dict[str, Any]) -> str:
-        return f"Layer {index}: {lc.get('base_color', '')}"
+    def _layer_name(self, index: int) -> str:
+        layers = self.config_data.get("keyboard", {}).get("layers", [])
+        if index < len(layers):
+            return layers[index].get("name", "")
+        return ""
 
-    def _make_lc_list_item(self, index: int, lc: dict[str, Any]) -> ListItem:
+    def _layer_qmk_index(self, index: int) -> int:
+        layers = self.config_data.get("keyboard", {}).get("layers", [])
+        if index < len(layers):
+            return layers[index].get("index", index)
+        return index
+
+    def _lc_column_widths(self) -> tuple[int, int]:
+        layer_colors = self._layer_colors()
+        col0_w = 0
+        col1_w = 0
+        for i, lc in enumerate(layer_colors):
+            name = self._layer_name(i)
+            qmk_idx = self._layer_qmk_index(i)
+            col0 = f"{name} ({qmk_idx})" if name else f"({qmk_idx})"
+            col0_w = max(col0_w, len(col0))
+            col1_w = max(col1_w, len(lc.get("base_color", "")))
+        return col0_w, col1_w
+
+    def _lc_text(self, index: int, lc: dict[str, Any], col0_w: int, col1_w: int) -> str:
+        name = self._layer_name(index)
+        qmk_idx = self._layer_qmk_index(index)
+        col0 = f"{name} ({qmk_idx})" if name else f"({qmk_idx})"
+        color = lc.get("base_color", "")
+        return f"{col0:<{col0_w}}  {color:<{col1_w}}"
+
+    def _make_lc_list_item(self, index: int, lc: dict[str, Any], col0_w: int, col1_w: int) -> ListItem:
         """Create a ListItem with text and a color swatch for a layer color."""
         color = lc.get("base_color", "")
-        swatch = Static(" ", classes="lc-swatch")
-        self._safe_set_background(swatch, color)
-        return ListItem(Static(self._lc_text(index, lc)), swatch)
+        swatch = Static("\uebb4", classes="lc-swatch")
+        self._safe_set_color(swatch, color)
+        return ListItem(Static(self._lc_text(index, lc, col0_w, col1_w)), swatch)
 
     def _rebuild_layer_colors_list(self) -> None:
         layer_colors = self._layer_colors()
+        col0_w, col1_w = self._lc_column_widths()
         list_view = self.query_one("#layer-colors-list", ListView)
         list_view.clear()
         for i, lc in enumerate(layer_colors):
-            list_view.append(self._make_lc_list_item(i, lc))
+            list_view.append(self._make_lc_list_item(i, lc, col0_w, col1_w))
+
+    def _update_all_lc_list_items(self) -> None:
+        """Update the text of all layer color list items in place (no clear/re-append)."""
+        layer_colors = self._layer_colors()
+        col0_w, col1_w = self._lc_column_widths()
+        list_view = self.query_one("#layer-colors-list", ListView)
+        for i, item in enumerate(list_view.children):
+            if i < len(layer_colors):
+                lc = layer_colors[i]
+                item.query_one(Static).update(self._lc_text(i, lc, col0_w, col1_w))
+                for s in item.query(".lc-swatch"):
+                    self._safe_set_color(s, lc.get("base_color", ""))
 
     def _update_lc_list_item(self) -> None:
         layer_colors = self._layer_colors()
         if self._selected_layer_color >= len(layer_colors):
             return
+        col0_w, col1_w = self._lc_column_widths()
         list_view = self.query_one("#layer-colors-list", ListView)
         if self._selected_layer_color < len(list_view.children):
             item = list_view.children[self._selected_layer_color]
             item.query_one(Static).update(
-                self._lc_text(self._selected_layer_color, layer_colors[self._selected_layer_color])
+                self._lc_text(self._selected_layer_color, layer_colors[self._selected_layer_color], col0_w, col1_w)
             )
 
     def _update_lc_list_state(self) -> None:
@@ -346,41 +449,75 @@ class OutputTab(Widget):
             if self._selected_layer_color < len(layer_colors):
                 layer_colors[self._selected_layer_color] = self._lc_snapshot
                 self._refresh_lc_fields()
-                self._update_lc_list_item()
         self._editing_lc = False
         self._lc_snapshot = None
         self._set_lc_fields_enabled(False)
-        self.query_one("#layer-colors-list", ListView).focus()
+        self._update_all_lc_list_items()
+        lv = self.query_one("#layer-colors-list", ListView)
+        lv.index = self._selected_layer_color
+        lv.focus()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
 
         if button_id == "add-layer-color":
             layer_colors = self.config_data["output"]["style"]["palette"].setdefault("layers", [])
-            new_lc = {"base_color": "#6F768B", "color_index": 2, "gradient": None}
+            new_index = len(layer_colors)
+            new_lc = {"base_color": default_layer_color(new_index), "color_index": 2, "gradient": None}
             layer_colors.append(new_lc)
+            self._rebuild_layer_colors_list()
             lv = self.query_one("#layer-colors-list", ListView)
-            lv.append(self._make_lc_list_item(len(layer_colors) - 1, new_lc))
             self._selected_layer_color = len(layer_colors) - 1
             self._refresh_lc_fields()
             lv.index = self._selected_layer_color
             self._update_lc_list_state()
+            self.post_message(LayerAdded(new_index, "style"))
             self._enter_lc_edit_mode()
 
         elif button_id == "remove-layer-color":
             layer_colors = self._layer_colors()
             if not layer_colors or self._selected_layer_color >= len(layer_colors):
                 return
-            layer_colors.pop(self._selected_layer_color)
+            removed_index = self._selected_layer_color
+            layer_colors.pop(removed_index)
             self._rebuild_layer_colors_list()
             if layer_colors:
                 self._selected_layer_color = min(self._selected_layer_color, len(layer_colors) - 1)
                 self._refresh_lc_fields()
-                self.query_one("#layer-colors-list", ListView).index = self._selected_layer_color
+                lv = self.query_one("#layer-colors-list", ListView)
+                self.call_after_refresh(setattr, lv, "index", self._selected_layer_color)
             else:
                 self._selected_layer_color = 0
                 self._clear_lc_fields()
             self._update_lc_list_state()
+            self.post_message(LayerRemoved(removed_index, "style"))
+            if not layer_colors:
+                self.query_one("#add-layer-color", Button).focus()
+
+    def sync_layer_added(self, index: int) -> None:
+        """Called when a layer is added in the Keyboard tab — add matching layer color."""
+        layer_colors = self.config_data["output"]["style"]["palette"].setdefault("layers", [])
+        new_lc = {"base_color": default_layer_color(index), "color_index": 2, "gradient": None}
+        layer_colors.insert(index, new_lc)
+        self._rebuild_layer_colors_list()
+        self._selected_layer_color = index
+        self._refresh_lc_fields()
+        self._update_lc_list_state()
+
+    def sync_layer_removed(self, index: int) -> None:
+        """Called when a layer is removed in the Keyboard tab — remove matching layer color."""
+        layer_colors = self._layer_colors()
+        if index >= len(layer_colors):
+            return
+        layer_colors.pop(index)
+        self._rebuild_layer_colors_list()
+        if layer_colors:
+            self._selected_layer_color = min(self._selected_layer_color, len(layer_colors) - 1)
+            self._refresh_lc_fields()
+        else:
+            self._selected_layer_color = 0
+            self._clear_lc_fields()
+        self._update_lc_list_state()
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         """Enter pressed on a layer color — enter edit mode."""
@@ -401,17 +538,28 @@ class OutputTab(Widget):
             self._refresh_lc_fields()
 
     def on_key(self, event) -> None:
-        """Handle Enter/Escape in layer color edit mode."""
-        if not self._editing_lc:
+        """Handle Enter/Escape in edit mode, a/d shortcuts on list."""
+        if self._editing_lc:
+            if event.key == "enter":
+                event.prevent_default()
+                event.stop()
+                self._exit_lc_edit_mode(commit=True)
+            elif event.key == "escape":
+                event.prevent_default()
+                event.stop()
+                self._exit_lc_edit_mode(commit=False)
             return
-        if event.key == "enter":
-            event.prevent_default()
-            event.stop()
-            self._exit_lc_edit_mode(commit=True)
-        elif event.key == "escape":
-            event.prevent_default()
-            event.stop()
-            self._exit_lc_edit_mode(commit=False)
+
+        focused = self.app.focused
+        if isinstance(focused, ListView) and focused.id == "layer-colors-list":
+            if event.key == "a":
+                event.prevent_default()
+                event.stop()
+                self.query_one("#add-layer-color", Button).press()
+            elif event.key == "d":
+                event.prevent_default()
+                event.stop()
+                self.query_one("#remove-layer-color", Button).press()
 
     def on_input_changed(self, event: Input.Changed) -> None:
         """Route input changes to the correct config path."""
@@ -468,7 +616,7 @@ class OutputTab(Widget):
                 if self._selected_layer_color < len(list_view.children):
                     item = list_view.children[self._selected_layer_color]
                     for s in item.query(".lc-swatch"):
-                        self._safe_set_background(s, value)
+                        self._safe_set_color(s, value)
 
         elif input_id == "lc-color-index":
             layer_colors = self._layer_colors()
