@@ -142,8 +142,29 @@ def check_system_fonts() -> Generator[CheckResult, None, None]:
         )
 
 
+def check_textual_available() -> bool:
+    """Check if textual TUI library is available."""
+    try:
+        import textual  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
+
+
 def run_doctor_checks() -> Generator[CheckResult, None, None]:
     """Run all doctor checks."""
     yield check_installation_integrity()
     yield from check_render_engines()
     yield from check_system_fonts()
+
+    # Optional TUI dependency
+    textual_available = check_textual_available()
+    yield CheckResult(
+        name="Textual (TUI)",
+        passed=textual_available,
+        message="Available" if textual_available else "Not available",
+        details="Required for interactive configuration editor (skim configure)."
+        if not textual_available
+        else None,
+    )

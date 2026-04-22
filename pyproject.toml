@@ -40,6 +40,9 @@ cairo = [
     "cairocffi>=1.7.0",
     "cairosvg>=2.7.0",
 ]
+tui = [
+    "textual>=1.0.0",
+]
 
 [dependency-groups]
 dev = [

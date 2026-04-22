@@ -12,6 +12,7 @@ from skim.application.doctor import (
     check_installation_integrity,
     check_render_engines,
     check_system_fonts,
+    check_textual_available,
     run_doctor_checks,
 )
 
@@ -95,14 +96,43 @@ class TestDoctorChecks:
     @patch("skim.application.doctor.check_installation_integrity")
     @patch("skim.application.doctor.check_render_engines")
     @patch("skim.application.doctor.check_system_fonts")
-    def test_run_doctor_checks(self, mock_fonts, mock_engines, mock_integrity):
+    @patch("skim.application.doctor.check_textual_available", return_value=True)
+    def test_run_doctor_checks(self, mock_textual, mock_fonts, mock_engines, mock_integrity):
         """Aggregates all checks."""
         mock_integrity.return_value = CheckResult("Integrity", True, "OK")
         mock_engines.return_value = [CheckResult("Engine", True, "OK")]
         mock_fonts.return_value = [CheckResult("Font", True, "OK")]
 
         results = list(run_doctor_checks())
-        assert len(results) == 3
+        assert len(results) == 4
         assert results[0].name == "Integrity"
         assert results[1].name == "Engine"
         assert results[2].name == "Font"
+        assert results[3].name == "Textual (TUI)"
+
+
+class TestTextualCheck:
+    """Tests for textual availability check."""
+
+    @patch("skim.application.doctor.check_textual_available", return_value=True)
+    def test_check_textual_available(self, mock_check):
+        """Textual check is included in doctor results."""
+        results = list(run_doctor_checks())
+        names = [r.name for r in results]
+        assert "Textual (TUI)" in names
+
+    @patch("skim.application.doctor.check_textual_available", return_value=True)
+    def test_textual_available_passes(self, mock_check):
+        """Reports pass when textual is installed."""
+        results = list(run_doctor_checks())
+        textual_result = next(r for r in results if "Textual" in r.name)
+        assert textual_result.passed
+        assert textual_result.message == "Available"
+
+    @patch("skim.application.doctor.check_textual_available", return_value=False)
+    def test_textual_unavailable_warns(self, mock_check):
+        """Reports not available when textual is missing."""
+        results = list(run_doctor_checks())
+        textual_result = next(r for r in results if "Textual" in r.name)
+        assert not textual_result.passed
+        assert textual_result.message == "Not available"

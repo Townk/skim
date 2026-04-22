@@ -129,18 +129,19 @@ def doctor() -> None:
         else:
             status = click.style("FAIL", fg="red", bold=True)
             # Some failures might be warnings (like system fonts which are optional)
-            if "System Font" in result.name:
+            if "System Font" in result.name or "Cairo" in result.name or "Playwright" in result.name or "Textual" in result.name:
                 status = click.style("WARN", fg="yellow", bold=True)
 
             click.echo(f"[{status}] {result.name}: {result.message}")
             if result.details:
                 click.echo(f"       Details: {result.details}")
 
-            # System fonts are optional, so they don't fail the whole check
+            # System fonts, optional render engines, and optional TUI dep don't fail the whole check
             if (
                 "System Font" not in result.name
                 and "Cairo" not in result.name
                 and "Playwright" not in result.name
+                and "Textual" not in result.name
             ):
                 all_passed = False
 
