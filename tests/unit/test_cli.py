@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import click
 import pytest
+import yaml
 from click.testing import CliRunner
 
 from skim.cli import AliasedGroup, main
@@ -234,12 +235,81 @@ class TestConfigureCommand:
     """Tests for configure subcommand."""
 
     @patch("skim.cli.setup_logging")
-    def test_configure_runs_without_error(self, mock_setup):
-        """Configure command runs without error."""
+    def test_default_config_to_stdout(self, mock_setup):
+        """Running configure with no args outputs default YAML to stdout."""
         runner = CliRunner()
         result = runner.invoke(main, ["configure"])
-        # The command is currently a stub (pass), so it should succeed
         assert result.exit_code == 0
+        parsed = yaml.safe_load(result.output)
+        assert "keyboard" in parsed
+        assert "output" in parsed
+
+    @patch("skim.cli.setup_logging")
+    def test_default_config_to_file(self, mock_setup, tmp_path):
+        """Running configure with -o writes YAML to file."""
+        output = tmp_path / "config.yaml"
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-o", str(output)])
+        assert result.exit_code == 0
+        assert output.exists()
+        parsed = yaml.safe_load(output.read_text())
+        assert "keyboard" in parsed
+
+    @patch("skim.cli.setup_logging")
+    def test_output_to_directory_appends_filename(self, mock_setup, tmp_path):
+        """When -o is a directory, appends skim-config.yaml."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-o", str(tmp_path)])
+        assert result.exit_code == 0
+        assert (tmp_path / "skim-config.yaml").exists()
+
+    @patch("skim.cli.setup_logging")
+    def test_overwrite_requires_force(self, mock_setup, tmp_path):
+        """Existing file without --force prompts for confirmation."""
+        output = tmp_path / "config.yaml"
+        output.write_text("existing content")
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-o", str(output)], input="n\n")
+        assert result.exit_code != 0 or "existing content" == output.read_text()
+
+    @patch("skim.cli.setup_logging")
+    def test_force_overwrites_existing(self, mock_setup, tmp_path):
+        """--force overwrites without prompting."""
+        output = tmp_path / "config.yaml"
+        output.write_text("old")
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-f", "-o", str(output)])
+        assert result.exit_code == 0
+        assert output.read_text() != "old"
+
+    @patch("skim.cli.setup_logging")
+    def test_keybard_input_generates_config(self, mock_setup, tmp_path):
+        """Running with -k generates config from keybard file."""
+        import json
+
+        kbi = tmp_path / "test.kbi"
+        kbi.write_text(json.dumps({
+            "layers": 1,
+            "keymap": [["KC_A"] * 60],
+            "layer_colors": [{"hue": 85, "sat": 255, "val": 255}],
+            "cosmetic": {"layer": {"0": "Base"}},
+            "custom_keycodes": [],
+        }))
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-k", str(kbi)])
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(result.output)
+        assert len(parsed["keyboard"]["layers"]) == 1
+        assert parsed["keyboard"]["layers"][0]["name"] == "Base"
+
+    @patch("skim.cli.setup_logging")
+    def test_invalid_keybard_file_shows_error(self, mock_setup, tmp_path):
+        """Invalid .kbi content shows error message."""
+        kbi = tmp_path / "bad.kbi"
+        kbi.write_text("not json")
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-k", str(kbi)])
+        assert result.exit_code == 1
 
 
 class TestDoctorCommand:

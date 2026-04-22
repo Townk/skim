@@ -40,7 +40,6 @@ import click
 
 from skim import __prog_name__, __version__
 
-# from skim.application.config_generator import ConfigGenerator
 from skim.application import generate_keymap, setup_logging
 from skim.application.doctor import run_doctor_checks
 from skim.application.exporter import get_available_export_formats
@@ -302,44 +301,39 @@ def configure(
     Color adjustments (--adjust-lightness, --adjust-saturation) are applied
     to all extracted colors to ensure readable contrast in generated images.
     """
-    pass
-    # try:
-    #     content = ""
-    #     if keybard_keymap:
-    #         raw_content = keybard_keymap.read_text()
-    #
-    #         qmk_content = None
-    #         if qmk_color_header:
-    #             qmk_content = qmk_color_header.read_text()
-    #
-    #         generator = ConfigGenerator()
-    #         content = generator.generate(
-    #             raw_content, qmk_content, adjust_lightness, adjust_saturation
-    #         )
-    #     else:
-    #         asset_path = (
-    #             Path(__file__).parent.parent / "assets" / "data" / "default-config.yaml"
-    #         )
-    #         content = asset_path.read_text()
-    #
-    #     if output:
-    #         if output.is_dir():
-    #             output = output / "skim-config.yaml"
-    #
-    #         if output.exists() and not force:
-    #             try:
-    #                 click.confirm(
-    #                     f"File {output} already exists. Do you want to overwrite?",
-    #                     abort=True,
-    #                 )
-    #             except click.Abort:
-    #                 click.echo("Aborted.", err=True)
-    #                 sys.exit(1)
-    #         output.write_text(content)
-    #         click.echo(f"Configuration written to {output}")
-    #     else:
-    #         click.echo(content)
-    #
-    # except Exception as e:
-    #     click.echo(f"Error: {e}", err=True)
-    #     sys.exit(1)
+    from skim.application.config_generator import ConfigGenerator
+
+    try:
+        generator = ConfigGenerator()
+
+        if keybard_keymap:
+            raw_content = keybard_keymap.read_text()
+            qmk_content = qmk_color_header.read_text() if qmk_color_header else None
+            content = generator.generate_from_keybard(
+                raw_content, qmk_content, adjust_lightness, adjust_saturation
+            )
+        else:
+            content = generator.generate_default()
+
+        if output:
+            if output.is_dir():
+                output = output / "skim-config.yaml"
+
+            if output.exists() and not force:
+                try:
+                    click.confirm(
+                        f"File {output} already exists. Do you want to overwrite?",
+                        abort=True,
+                    )
+                except click.Abort:
+                    click.echo("Aborted.", err=True)
+                    sys.exit(1)
+
+            output.write_text(content)
+            click.echo(f"Configuration written to {output}")
+        else:
+            click.echo(content)
+
+    except (ValueError, OSError) as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
