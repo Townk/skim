@@ -60,8 +60,8 @@ class TestKeyboardLayerIndex:
         """layer_index returns index for layers with explicit ids."""
         keyboard = Keyboard(
             layers=[
-                KeyboardLayer(id="base", label="1", name="Base"),
-                KeyboardLayer(id="nav", label="N", name="Navigation"),
+                KeyboardLayer(index=0, id="base", label="1", name="Base"),
+                KeyboardLayer(index=1, id="nav", label="N", name="Navigation"),
             ]
         )
         assert keyboard.layer_index("base") == 0
@@ -71,8 +71,8 @@ class TestKeyboardLayerIndex:
         """layer_index uses string index for layers without explicit ids."""
         keyboard = Keyboard(
             layers=[
-                KeyboardLayer(label="1", name="Base"),
-                KeyboardLayer(label="2", name="Symbols"),
+                KeyboardLayer(index=0, label="1", name="Base"),
+                KeyboardLayer(index=1, label="2", name="Symbols"),
             ]
         )
         assert keyboard.layer_index("0") == 0
@@ -80,13 +80,76 @@ class TestKeyboardLayerIndex:
 
     def test_layer_index_unknown_key_returns_none(self):
         """layer_index returns None for unknown keys."""
-        keyboard = Keyboard(layers=[KeyboardLayer(id="base", label="1", name="Base")])
+        keyboard = Keyboard(
+            layers=[KeyboardLayer(index=0, id="base", label="1", name="Base")]
+        )
         assert keyboard.layer_index("unknown") is None
 
     def test_layer_index_with_none_returns_none(self):
         """layer_index returns None when key is None."""
-        keyboard = Keyboard(layers=[KeyboardLayer(label="1", name="Base")])
+        keyboard = Keyboard(layers=[KeyboardLayer(index=0, label="1", name="Base")])
         assert keyboard.layer_index(None) is None
+
+
+class TestQmkIndexToPosition:
+    """Tests for Keyboard.qmk_index_to_position method."""
+
+    def test_qmk_index_to_position_sequential(self):
+        """qmk_index_to_position returns position for sequential indices."""
+        keyboard = Keyboard(
+            layers=[
+                KeyboardLayer(index=0, label="1", name="Base"),
+                KeyboardLayer(index=1, label="2", name="Symbols"),
+                KeyboardLayer(index=2, label="3", name="Nav"),
+            ]
+        )
+        assert keyboard.qmk_index_to_position(0) == 0
+        assert keyboard.qmk_index_to_position(1) == 1
+        assert keyboard.qmk_index_to_position(2) == 2
+
+    def test_qmk_index_to_position_non_sequential(self):
+        """qmk_index_to_position returns position for non-sequential indices."""
+        keyboard = Keyboard(
+            layers=[
+                KeyboardLayer(index=0, label="1", name="Base"),
+                KeyboardLayer(index=1, label="2", name="Symbols"),
+                KeyboardLayer(index=15, label="M", name="Mouse"),
+            ]
+        )
+        assert keyboard.qmk_index_to_position(0) == 0
+        assert keyboard.qmk_index_to_position(1) == 1
+        assert keyboard.qmk_index_to_position(15) == 2
+        assert keyboard.qmk_index_to_position(5) is None
+
+
+class TestLayerQmkIndex:
+    """Tests for Keyboard.layer_qmk_index method."""
+
+    def test_layer_qmk_index(self):
+        """layer_qmk_index returns the QMK index for a given position."""
+        keyboard = Keyboard(
+            layers=[
+                KeyboardLayer(index=0, label="1", name="Base"),
+                KeyboardLayer(index=1, label="2", name="Symbols"),
+                KeyboardLayer(index=2, label="3", name="Nav"),
+            ]
+        )
+        assert keyboard.layer_qmk_index(0) == 0
+        assert keyboard.layer_qmk_index(1) == 1
+        assert keyboard.layer_qmk_index(2) == 2
+
+    def test_layer_index_with_non_sequential_indices(self):
+        """layer_qmk_index returns correct QMK index for non-sequential layers."""
+        keyboard = Keyboard(
+            layers=[
+                KeyboardLayer(index=0, label="1", name="Base"),
+                KeyboardLayer(index=1, label="2", name="Symbols"),
+                KeyboardLayer(index=15, label="M", name="Mouse"),
+            ]
+        )
+        assert keyboard.layer_qmk_index(0) == 0
+        assert keyboard.layer_qmk_index(1) == 1
+        assert keyboard.layer_qmk_index(2) == 15
 
 
 class TestStyleShowLayerIndicators:
@@ -108,20 +171,32 @@ class TestKeyboardLayerSubtitle:
 
     def test_subtitle_defaults_to_none(self):
         """subtitle defaults to None when not specified."""
-        layer = KeyboardLayer(label="1", name="Letters")
+        layer = KeyboardLayer(index=0, label="1", name="Letters")
         assert layer.subtitle is None
 
     def test_subtitle_can_be_set(self):
         """subtitle can be set to a string value."""
-        layer = KeyboardLayer(label="1", name="Letters", subtitle="COLEMAK")
+        layer = KeyboardLayer(index=0, label="1", name="Letters", subtitle="COLEMAK")
         assert layer.subtitle == "COLEMAK"
 
     def test_subtitle_included_in_model_dump(self):
         """subtitle is included in model_dump output."""
-        layer = KeyboardLayer(label="1", name="Letters", subtitle="COLEMAK")
+        layer = KeyboardLayer(index=0, label="1", name="Letters", subtitle="COLEMAK")
         dumped = layer.model_dump()
         assert "subtitle" in dumped
         assert dumped["subtitle"] == "COLEMAK"
+
+
+class TestOutputKeymapTitle:
+    """Tests for Output.keymap_title field."""
+
+    def test_keymap_title_defaults_to_none(self):
+        output = Output()
+        assert output.keymap_title is None
+
+    def test_keymap_title_can_be_set(self):
+        output = Output(keymap_title="My Custom Keymap")
+        assert output.keymap_title == "My Custom Keymap"
 
 
 class TestOutputCopyright:

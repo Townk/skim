@@ -87,6 +87,7 @@ class KeyboardLayer(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    index: int
     id: str | None = None
     label: str
     name: str
@@ -151,6 +152,7 @@ class Keyboard(BaseModel):
     features: KeyboardFeatures = Field(default_factory=KeyboardFeatures)
     layers: Annotated[tuple[KeyboardLayer, ...], BeforeValidator(_coerce_to_tuple)] = ()
     _layer_id_map: dict[str, int] = PrivateAttr(default_factory=dict)
+    _qmk_index_map: dict[int, int] = PrivateAttr(default_factory=dict)
 
     def model_post_init(self, context: object) -> None:
         """Initialize the layer ID lookup map after model construction.
@@ -184,6 +186,7 @@ class Keyboard(BaseModel):
                 self._layer_id_map[layer.id] = idx
             else:
                 self._layer_id_map[str(idx)] = idx
+            self._qmk_index_map[layer.index] = idx
 
     def layer_index(self, key: str | None) -> int | None:
         """Look up a layer's numeric index by its identifier.
@@ -220,6 +223,58 @@ class Keyboard(BaseModel):
         if key is None:
             return None
         return self._layer_id_map.get(key)
+
+    def qmk_index_to_position(self, qmk_idx: int) -> int | None:
+        """Look up a layer's position by its QMK firmware index.
+
+        Returns the zero-based position of the layer in the layers tuple
+        that has the given QMK firmware index. This is useful when layer
+        indices in the firmware are non-sequential (e.g., 0, 1, 2, 15).
+
+        Args:
+            qmk_idx: The QMK firmware layer index to look up.
+
+        Returns:
+            The position of the matching layer in the layers tuple, or
+            ``None`` if no layer has the given QMK index.
+
+        Example:
+            >>> keyboard = Keyboard(
+            ...     layers=[
+            ...         KeyboardLayer(index=0, label="1", name="Base"),
+            ...         KeyboardLayer(index=15, label="M", name="Mouse"),
+            ...     ]
+            ... )
+            >>> keyboard.qmk_index_to_position(15)
+            1
+            >>> keyboard.qmk_index_to_position(5) is None
+            True
+        """
+        return self._qmk_index_map.get(qmk_idx)
+
+    def layer_qmk_index(self, position: int) -> int:
+        """Get the QMK firmware index for a layer at a given position.
+
+        Returns the QMK firmware layer index for the layer at the given
+        position in the layers tuple.
+
+        Args:
+            position: The zero-based position of the layer in the layers tuple.
+
+        Returns:
+            The QMK firmware layer index.
+
+        Example:
+            >>> keyboard = Keyboard(
+            ...     layers=[
+            ...         KeyboardLayer(index=0, label="1", name="Base"),
+            ...         KeyboardLayer(index=15, label="M", name="Mouse"),
+            ...     ]
+            ... )
+            >>> keyboard.layer_qmk_index(1)
+            15
+        """
+        return self.layers[position].index
 
 
 class Keycode(BaseModel):
@@ -608,6 +663,8 @@ class Output(BaseModel):
             Defaults to a Layout instance with default values.
         style: Visual styling configuration. Defaults to a Style
             instance with default values.
+        keymap_title: Optional title for the overview keymap image.
+            When set, overrides the auto-generated title. Defaults to None.
         copyright: Optional copyright notice displayed in the overview
             image. Defaults to None.
 
@@ -624,6 +681,7 @@ class Output(BaseModel):
 
     layout: Layout = Field(default_factory=Layout)
     style: Style = Field(default_factory=Style)
+    keymap_title: str | None = None
     copyright: str | None = None
 
 
