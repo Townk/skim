@@ -118,6 +118,7 @@ class KeyboardTab(Widget):
         if self.config_data.get("keyboard", {}).get("layers", []):
             self._selected_layer = 0
             self._refresh_detail_fields()
+        self._update_list_state()
 
     def _layer_text(self, index: int, layer: dict[str, Any]) -> str:
         label = layer.get("label", str(index))
@@ -140,6 +141,13 @@ class KeyboardTab(Widget):
             item = list_view.children[self._selected_layer]
             static = item.query_one(Static)
             static.update(self._layer_text(self._selected_layer, layers[self._selected_layer]))
+
+    def _update_list_state(self) -> None:
+        """Update list focusability and Remove button state based on layer count."""
+        layers = self.config_data.get("keyboard", {}).get("layers", [])
+        has_layers = len(layers) > 0
+        self.query_one("#layer-list", ListView).can_focus = has_layers
+        self.query_one("#remove-layer", Button).disabled = not has_layers
 
     def _set_fields_enabled(self, enabled: bool) -> None:
         """Enable or disable all detail Input fields."""
@@ -180,6 +188,7 @@ class KeyboardTab(Widget):
             self._selected_layer = idx
             self._refresh_detail_fields()
             list_view.index = idx
+            self._update_list_state()
             # Immediately enter edit mode for the new layer
             self._enter_edit_mode()
 
@@ -197,6 +206,7 @@ class KeyboardTab(Widget):
             else:
                 self._selected_layer = 0
                 self._clear_detail_fields()
+            self._update_list_state()
 
     def on_switch_changed(self, event: Switch.Changed) -> None:
         if event.switch.id == "double-south":
