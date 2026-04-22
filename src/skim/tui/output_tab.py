@@ -310,7 +310,8 @@ class LayerColorListPane(ListDetailPane):
                     if event.key == "escape":
                         select = self.query_one("#lc-gradient-type", SkimSelect)
                         select.query_one("SelectOverlay").action_dismiss()
-                        self._select_active = False
+                        # Keep _select_active=True; on_descendant_focus clears
+                        # it when focus returns to the Select
                         event.prevent_default()
                         event.stop()
                         return
