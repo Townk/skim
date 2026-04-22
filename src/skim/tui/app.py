@@ -92,7 +92,8 @@ class SkimConfigApp(App):
             with TabPane("Keyboard", id="keyboard-tab"):
                 yield KeyboardTab(config_data=self.config_data)
             with TabPane("Keycodes", id="keycodes-tab"):
-                yield Static("Keycodes tab placeholder")
+                from skim.tui.keycodes_tab import KeycodesTab
+                yield KeycodesTab(config_data=self.config_data)
             with TabPane("Output", id="output-tab"):
                 yield Static("Output tab placeholder")
         yield Footer()
