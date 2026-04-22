@@ -5,6 +5,7 @@
 
 """Keyboard tab widget for the skim TUI configuration editor."""
 
+import copy
 from typing import Any
 
 from textual.app import ComposeResult
@@ -26,6 +27,9 @@ class KeyboardTab(Widget):
 
     Shows a Features section (with double_south toggle) and a Layers section
     with a list/detail split for editing individual layer metadata.
+
+    Detail fields are read-only until the user presses Enter on a list item.
+    Enter in a field commits changes, Escape rolls them back.
     """
 
     DEFAULT_CSS = """
@@ -53,6 +57,11 @@ class KeyboardTab(Widget):
     }
     KeyboardTab .list-buttons {
         dock: bottom;
+        height: auto;
+        width: 100%;
+    }
+    KeyboardTab .list-buttons Button {
+        width: 1fr;
     }
     KeyboardTab #layer-detail {
         padding: 0 1;
@@ -65,6 +74,8 @@ class KeyboardTab(Widget):
         super().__init__(**kwargs)
         self.config_data = config_data
         self._selected_layer: int = 0
+        self._editing: bool = False
+        self._snapshot: dict[str, Any] | None = None
 
     def compose(self) -> ComposeResult:
         features = self.config_data.get("keyboard", {}).get("features", {})
@@ -84,20 +95,22 @@ class KeyboardTab(Widget):
                     yield Button("+ Add", id="add-layer", variant="success")
                     yield Button("- Remove", id="remove-layer", variant="error")
 
-            with VerticalScroll(id="layer-detail"):
-                yield Static("Select a layer to edit", id="layer-detail-hint")
+            with VerticalScroll(id="layer-detail", can_focus=False):
+                yield Static("Press Enter on a layer to edit", id="layer-detail-hint")
                 with Horizontal(classes="field-row"):
                     yield Label("Label:", classes="field-label")
-                    yield Input(value="", id="layer-label", placeholder="e.g. BASE")
+                    yield Input(value="", id="layer-label", placeholder="e.g. BASE", disabled=True)
                 with Horizontal(classes="field-row"):
                     yield Label("Name:", classes="field-label")
-                    yield Input(value="", id="layer-name", placeholder="e.g. Letters")
+                    yield Input(value="", id="layer-name", placeholder="e.g. Letters", disabled=True)
                 with Horizontal(classes="field-row"):
                     yield Label("ID:", classes="field-label")
-                    yield Input(value="", id="layer-id", placeholder="e.g. _BASE (optional)")
+                    yield Input(value="", id="layer-id", placeholder="e.g. _BASE (optional)", disabled=True)
                 with Horizontal(classes="field-row"):
                     yield Label("Subtitle:", classes="field-label")
-                    yield Input(value="", id="layer-subtitle", placeholder="e.g. COLEMAK (optional)")
+                    yield Input(
+                        value="", id="layer-subtitle", placeholder="e.g. COLEMAK (optional)", disabled=True
+                    )
 
     def on_mount(self) -> None:
         """Populate the list after mount."""
@@ -107,13 +120,11 @@ class KeyboardTab(Widget):
             self._refresh_detail_fields()
 
     def _layer_text(self, index: int, layer: dict[str, Any]) -> str:
-        """Format a layer's display text for the list."""
         label = layer.get("label", str(index))
         name = layer.get("name", "")
         return f"{index}: {label} - {name}"
 
     def _rebuild_list(self) -> None:
-        """Rebuild the ListView from config data."""
         layers = self.config_data.get("keyboard", {}).get("layers", [])
         list_view = self.query_one("#layer-list", ListView)
         list_view.clear()
@@ -121,7 +132,6 @@ class KeyboardTab(Widget):
             list_view.append(ListItem(Static(self._layer_text(i, layer))))
 
     def _update_selected_list_item(self) -> None:
-        """Update just the text of the currently selected list item."""
         layers = self.config_data.get("keyboard", {}).get("layers", [])
         if self._selected_layer >= len(layers):
             return
@@ -131,17 +141,47 @@ class KeyboardTab(Widget):
             static = item.query_one(Static)
             static.update(self._layer_text(self._selected_layer, layers[self._selected_layer]))
 
+    def _set_fields_enabled(self, enabled: bool) -> None:
+        """Enable or disable all detail Input fields."""
+        for field_id in _FIELD_MAP:
+            self.query_one(f"#{field_id}", Input).disabled = not enabled
+
+    def _enter_edit_mode(self) -> None:
+        """Enter edit mode: snapshot data, enable fields, focus first field."""
+        layers = self.config_data.get("keyboard", {}).get("layers", [])
+        if self._selected_layer >= len(layers):
+            return
+        self._editing = True
+        self._snapshot = copy.deepcopy(layers[self._selected_layer])
+        self._set_fields_enabled(True)
+        self.query_one("#layer-label", Input).focus()
+
+    def _exit_edit_mode(self, commit: bool) -> None:
+        """Exit edit mode: commit or rollback, disable fields, focus list."""
+        if not commit and self._snapshot is not None:
+            layers = self.config_data.get("keyboard", {}).get("layers", [])
+            if self._selected_layer < len(layers):
+                layers[self._selected_layer] = self._snapshot
+                self._refresh_detail_fields()
+                self._update_selected_list_item()
+        self._editing = False
+        self._snapshot = None
+        self._set_fields_enabled(False)
+        self.query_one("#layer-list", ListView).focus()
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle Add/Remove button presses."""
         if event.button.id == "add-layer":
             layers = self.config_data.setdefault("keyboard", {}).setdefault("layers", [])
             idx = len(layers)
-            layers.append({"label": f"L{idx}", "name": f"Layer {idx}", "id": None, "subtitle": None})
+            new_layer = {"label": f"L{idx}", "name": f"Layer {idx}", "id": None, "subtitle": None}
+            layers.append(new_layer)
             list_view = self.query_one("#layer-list", ListView)
-            list_view.append(ListItem(Static(self._layer_text(idx, layers[idx]))))
+            list_view.append(ListItem(Static(self._layer_text(idx, new_layer))))
             self._selected_layer = idx
             self._refresh_detail_fields()
             list_view.index = idx
+            # Immediately enter edit mode for the new layer
+            self._enter_edit_mode()
 
         elif event.button.id == "remove-layer":
             layers = self.config_data.get("keyboard", {}).get("layers", [])
@@ -159,13 +199,21 @@ class KeyboardTab(Widget):
                 self._clear_detail_fields()
 
     def on_switch_changed(self, event: Switch.Changed) -> None:
-        """Handle Switch.Changed events."""
         if event.switch.id == "double-south":
             self.config_data.setdefault("keyboard", {}).setdefault("features", {})
             self.config_data["keyboard"]["features"]["double_south"] = event.value
 
+    def on_list_view_selected(self, event: ListView.Selected) -> None:
+        """Enter pressed on a list item — enter edit mode."""
+        if event.list_view.id != "layer-list":
+            return
+        index = event.list_view.index
+        if index is not None:
+            self._selected_layer = index
+            self._refresh_detail_fields()
+            self._enter_edit_mode()
+
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
-        """Handle layer selection in the list."""
         if event.list_view.id != "layer-list":
             return
         index = event.list_view.index
@@ -173,8 +221,20 @@ class KeyboardTab(Widget):
             self._selected_layer = index
             self._refresh_detail_fields()
 
+    def on_key(self, event) -> None:
+        """Handle Enter/Escape in edit mode."""
+        if not self._editing:
+            return
+        if event.key == "enter":
+            event.prevent_default()
+            event.stop()
+            self._exit_edit_mode(commit=True)
+        elif event.key == "escape":
+            event.prevent_default()
+            event.stop()
+            self._exit_edit_mode(commit=False)
+
     def _refresh_detail_fields(self) -> None:
-        """Update Input fields to reflect the currently selected layer."""
         layers = self.config_data.get("keyboard", {}).get("layers", [])
         if self._selected_layer >= len(layers):
             return
@@ -185,14 +245,12 @@ class KeyboardTab(Widget):
         self.query_one("#layer-subtitle", Input).value = layer.get("subtitle", "") or ""
 
     def _clear_detail_fields(self) -> None:
-        """Clear all detail Input fields."""
         self.query_one("#layer-label", Input).value = ""
         self.query_one("#layer-name", Input).value = ""
         self.query_one("#layer-id", Input).value = ""
         self.query_one("#layer-subtitle", Input).value = ""
 
     def on_input_changed(self, event: Input.Changed) -> None:
-        """Handle Input.Changed events for layer fields."""
         input_id = event.input.id
         if input_id not in _FIELD_MAP:
             return
