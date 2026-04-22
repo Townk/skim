@@ -16,6 +16,8 @@ from textual.widget import Widget
 from textual.widgets import Input, Label, ListItem, Static
 from textual_autocomplete import AutoComplete, DropdownItem, TargetState
 
+from rich.text import Text
+
 from skim.application.render.styling import default_layer_color, make_gradient
 from skim.tui.app import LayerAdded, LayerRemoved
 from skim.tui.list_detail_pane import ListDetailPane
@@ -235,13 +237,11 @@ class LayerColorListPane(ListDetailPane):
     def clear_fields(self) -> None:
         self.query_one("#lc-base-color", Input).value = ""
         self.query_one("#lc-color-index", Input).value = ""
-        content = f"   \n\ue0b6\u2588\ue0b4\n   "
         for i in range(6):
-            for prefix in ("gradient-dark", "gradient-light"):
+            for prefix, label_color in (("gradient-dark", "white"), ("gradient-light", "black")):
                 try:
                     swatch = self.query_one(f"#{prefix}-{i}", Static)
-                    swatch.update(content)
-                    swatch.styles.color = "white"
+                    swatch.update(self._make_swatch_text(i, "", -1, label_color))
                 except Exception:
                     pass
 
@@ -255,30 +255,31 @@ class LayerColorListPane(ListDetailPane):
         except Exception:
             pass
 
+    @staticmethod
+    def _make_swatch_text(i: int, color: str, color_index: int, label_color: str) -> Text:
+        """Build a 3-line Rich Text for a gradient swatch."""
+        arrow = " \u25bc " if i == color_index else "   "
+        t = Text()
+        t.append(arrow, style=label_color)
+        t.append("\n")
+        t.append("\ue0b6\u2588\ue0b4", style=color if color else label_color)
+        t.append("\n")
+        t.append(f" {i} ", style=label_color)
+        return t
+
     def _update_gradient_preview(self, base_color: str, color_index: int) -> None:
         """Update gradient swatch colors on both dark and light backgrounds."""
         try:
             gradient = make_gradient(base_color, color_index)
-            for i, color in enumerate(gradient):
-                arrow = " \u25bc " if i == color_index else "   "
-                content = f"{arrow}\n\ue0b6\u2588\ue0b4\n {i} "
-                for prefix in ("gradient-dark", "gradient-light"):
-                    try:
-                        swatch = self.query_one(f"#{prefix}-{i}", Static)
-                        swatch.update(content)
-                        swatch.styles.color = color if color else "white"
-                    except Exception:
-                        pass
         except Exception:
-            for i in range(6):
-                content = f"   \n\ue0b6\u2588\ue0b4\n {i} "
-                for prefix in ("gradient-dark", "gradient-light"):
-                    try:
-                        swatch = self.query_one(f"#{prefix}-{i}", Static)
-                        swatch.update(content)
-                        swatch.styles.color = "white"
-                    except Exception:
-                        pass
+            gradient = ("",) * 6
+        for i, color in enumerate(gradient):
+            for prefix, label_color in (("gradient-dark", "white"), ("gradient-light", "black")):
+                try:
+                    swatch = self.query_one(f"#{prefix}-{i}", Static)
+                    swatch.update(self._make_swatch_text(i, color, color_index, label_color))
+                except Exception:
+                    pass
 
     def _current_gradient_params(self) -> tuple[str, int]:
         """Get current base color and color index from the fields."""
