@@ -8,10 +8,14 @@
 import copy
 from typing import Any
 
+import webcolors
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.suggester import SuggestFromList
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, ListItem, ListView, Select, Static, Switch
+
+_COLOR_SUGGESTER = SuggestFromList(sorted(webcolors.names()), case_sensitive=False)
 
 
 _HOLD_SYMBOL_OPTIONS = [
@@ -207,7 +211,10 @@ class OutputTab(Widget):
                     with Horizontal(classes="field-row"):
                         yield Label(color_label, classes="field-label")
                         yield Static(" ", classes="color-swatch", id=f"swatch-{field_id}")
-                        yield Input(value=color_val, id=field_id, placeholder=placeholder)
+                        yield Input(
+                            value=color_val, id=field_id,
+                            placeholder=placeholder, suggester=_COLOR_SUGGESTER,
+                        )
 
             # --- Layer colors section ---
             with Vertical(classes="section"):
@@ -226,6 +233,7 @@ class OutputTab(Widget):
                             yield Input(
                                 value="", id="lc-base-color",
                                 placeholder="#RRGGBB", disabled=True,
+                                suggester=_COLOR_SUGGESTER,
                             )
                         with Horizontal(classes="field-row"):
                             yield Label("Color index:", classes="field-label")
