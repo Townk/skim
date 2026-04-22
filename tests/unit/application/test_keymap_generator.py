@@ -93,10 +93,11 @@ class TestGetInputKeymap:
         mock_keymap = MagicMock(spec=SvalboardKeymap)
         mock_load.return_value = mock_keymap
         inputs = InputFiles(keymap=Path("keymap.kbi"))
+        config = SkimConfig()
 
-        result = _get_input_keymap(inputs)
+        result = _get_input_keymap(inputs, config)
 
-        mock_load.assert_called_once_with(Path("keymap.kbi"))
+        mock_load.assert_called_once_with(Path("keymap.kbi"), layer_indices=None)
         assert result is mock_keymap
 
     @patch("skim.application.keymap_generator.load_keymap")
@@ -105,10 +106,11 @@ class TestGetInputKeymap:
         mock_keymap = MagicMock(spec=SvalboardKeymap)
         mock_load.return_value = mock_keymap
         inputs = InputFiles(keymap=Path("keymap.kbi"), force_stdin_keymap=True)
+        config = SkimConfig()
 
-        result = _get_input_keymap(inputs)
+        result = _get_input_keymap(inputs, config)
 
-        mock_load.assert_called_once_with(None)
+        mock_load.assert_called_once_with(None, layer_indices=None)
         assert result is mock_keymap
 
 
@@ -182,7 +184,7 @@ class TestGenerateKeymap:
         generate_keymap(inputs, outputs, targets)
 
         mock_get_config.assert_called_once()
-        mock_get_input_keymap.assert_called_once_with(inputs)
+        mock_get_input_keymap.assert_called_once_with(inputs, mock_config)
         mock_resolve_keymap.assert_called_once_with(mock_config, mock_input_keymap)
         mock_draw_keymap.assert_called_once_with(mock_config, mock_resolved_keymap, targets)
         mock_save_drawings.assert_called_once_with(outputs, mock_drawings, None)

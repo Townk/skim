@@ -19,7 +19,7 @@ from skim.application.render.overview_layout import BadgeDimensions, OverviewLay
 
 def _make_config(num_layers: int, width: float = 1600) -> SkimConfig:
     layers_cfg = tuple(
-        KeyboardLayer(label=str(i), name=f"Layer {i}")
+        KeyboardLayer(index=i, label=str(i), name=f"Layer {i}")
         for i in range(num_layers)
     )
     layer_colors = tuple(

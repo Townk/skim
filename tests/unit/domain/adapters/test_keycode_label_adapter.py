@@ -17,7 +17,7 @@ from skim.domain.domain_types import SEPARATOR_CHAR
 def make_keyboard_with_layers(count: int) -> Keyboard:
     """Create a keyboard with the specified number of layers (no explicit ids)."""
     return Keyboard(
-        layers=[KeyboardLayer(label=str(i + 1), name=f"Layer {i}") for i in range(count)]
+        layers=[KeyboardLayer(index=i, label=str(i + 1), name=f"Layer {i}") for i in range(count)]
     )
 
 
@@ -80,8 +80,8 @@ class TestKeycodeLabelAdapterInit:
         loader = make_mappings()
         keyboard = Keyboard(
             layers=[
-                KeyboardLayer(id="base", label="1", name="Base"),
-                KeyboardLayer(id="nav", label="N", name="Navigation"),
+                KeyboardLayer(index=0, id="base", label="1", name="Base"),
+                KeyboardLayer(index=1, id="nav", label="N", name="Navigation"),
             ]
         )
         adapter = make_adapter(loader, keyboard)
@@ -181,9 +181,9 @@ class TestKeycodeLabelAdapterLayerArgument:
         loader = make_mappings(macro_functions={"MO": "L#0;"})
         keyboard = Keyboard(
             layers=[
-                KeyboardLayer(id="base", label="1", name="Base"),
-                KeyboardLayer(id="nav", label="N", name="Navigation"),
-                KeyboardLayer(id="sym", label="S", name="Symbols"),
+                KeyboardLayer(index=0, id="base", label="1", name="Base"),
+                KeyboardLayer(index=1, id="nav", label="N", name="Navigation"),
+                KeyboardLayer(index=2, id="sym", label="S", name="Symbols"),
             ]
         )
         adapter = make_adapter(loader, keyboard)
@@ -193,7 +193,7 @@ class TestKeycodeLabelAdapterLayerArgument:
     def test_layer_argument_unknown_name_returns_none(self):
         """Unknown layer names return None."""
         loader = make_mappings(macro_functions={"MO": "L#0;"})
-        keyboard = Keyboard(layers=[KeyboardLayer(id="base", label="1", name="Base")])
+        keyboard = Keyboard(layers=[KeyboardLayer(index=0, id="base", label="1", name="Base")])
         adapter = make_adapter(loader, keyboard)
         result = adapter.transform("MO(unknown)")
         assert result.layer_switch is None
