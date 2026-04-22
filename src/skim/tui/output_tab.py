@@ -303,6 +303,10 @@ class LayerColorListPane(ListDetailPane):
                 event.stop()
                 event.prevent_default()
                 self.call_later(self.app._check_bindings, event.key)
+                # Clear flag after selection in case value didn't change
+                # (on_select_changed only fires when value actually changes)
+                if self._select_active and event.key in ("enter", "space"):
+                    self.set_timer(0.15, self._clear_select_active)
                 return
             if event.key == "escape":
                 if self._select_active:

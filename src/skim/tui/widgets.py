@@ -67,6 +67,8 @@ class SkimSelect(Select):
     BINDINGS = [
         Binding("enter,space", "show_overlay", "Show menu", key_display="\u23ce/\u2423", show=True),
         Binding("escape", "cancel_edit", "Cancel changes", key_display="\U000f12b7", show=True),
+        Binding("tab", "focus_next", "Next field", key_display="\u21e5", show=True),
+        Binding("shift+tab", "focus_previous", "Previous field", key_display="\u21e4", show=True),
     ]
 
     def action_cancel_edit(self) -> None:
