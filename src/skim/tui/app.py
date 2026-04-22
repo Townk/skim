@@ -86,9 +86,11 @@ class SkimConfigApp(App):
         self.force = force
 
     def compose(self) -> ComposeResult:
+        from skim.tui.keyboard_tab import KeyboardTab
+
         with TabbedContent(initial="keyboard-tab"):
             with TabPane("Keyboard", id="keyboard-tab"):
-                yield Static("Keyboard tab placeholder")
+                yield KeyboardTab(config_data=self.config_data)
             with TabPane("Keycodes", id="keycodes-tab"):
                 yield Static("Keycodes tab placeholder")
             with TabPane("Output", id="output-tab"):
