@@ -66,11 +66,46 @@ class SkimConfigApp(App):
         height: auto;
         margin-bottom: 1;
     }
+    /* Global compact styling */
+    Input {
+        height: 1;
+        border: none;
+        border-bottom: solid $accent 50%;
+        padding: 0;
+        width: 1fr;
+    }
+    Input:focus {
+        border-bottom: solid $accent;
+    }
+    Switch {
+        height: 1;
+    }
+    Select {
+        height: 1;
+        width: 1fr;
+        max-width: 30;
+    }
+    .field-row {
+        height: auto;
+        margin: 0;
+        padding: 0;
+    }
+    .field-label {
+        width: 22;
+        height: 1;
+    }
+    .section-title {
+        text-style: bold;
+        color: $accent;
+        margin: 1 0 0 0;
+    }
     """
 
     BINDINGS = [
         Binding(key="q", action="request_quit", description="Quit"),
         Binding(key="ctrl+s", action="save", description="Save"),
+        Binding(key="up", action="focus_previous", description="Previous", show=False),
+        Binding(key="down", action="focus_next", description="Next", show=False),
     ]
 
     def __init__(

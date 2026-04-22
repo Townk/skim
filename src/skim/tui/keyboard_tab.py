@@ -31,34 +31,27 @@ class KeyboardTab(Widget):
     DEFAULT_CSS = """
     KeyboardTab {
         height: 1fr;
+        padding: 0 1;
     }
     KeyboardTab #features-section {
         height: auto;
-        padding: 1 2;
     }
     KeyboardTab #features-row {
         height: auto;
     }
     KeyboardTab #layers-section {
         height: 1fr;
-        padding: 1 2;
     }
     KeyboardTab #layer-list {
         width: 30;
         min-width: 20;
-        border: solid $accent;
+        max-height: 100%;
+        border: solid $accent 50%;
     }
     KeyboardTab #layer-detail {
-        padding: 0 2;
+        padding: 0 1;
         height: auto;
-    }
-    KeyboardTab .field-row {
-        height: auto;
-        margin-bottom: 1;
-    }
-    KeyboardTab .field-label {
-        width: 12;
-        padding-top: 1;
+        overflow-x: hidden;
     }
     """
 

@@ -37,29 +37,22 @@ class OutputTab(Widget):
     DEFAULT_CSS = """
     OutputTab {
         height: 1fr;
+        padding: 0 1;
     }
     OutputTab .section {
         height: auto;
-        padding: 1 2;
-        border-bottom: solid $accent 30%;
-    }
-    OutputTab .field-row {
-        height: auto;
-        margin-bottom: 1;
-    }
-    OutputTab .field-label {
-        width: 20;
-        padding-top: 1;
+        border-bottom: solid $accent 20%;
     }
     OutputTab #layer-colors-list {
         width: 35;
         min-width: 20;
-        border: solid $accent;
-        height: 10;
+        max-height: 12;
+        border: solid $accent 50%;
     }
     OutputTab #layer-color-detail {
-        padding: 0 2;
+        padding: 0 1;
         height: auto;
+        overflow-x: hidden;
     }
     OutputTab #layer-colors-container {
         height: auto;

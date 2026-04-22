@@ -23,27 +23,21 @@ class KeycodesTab(Widget):
     DEFAULT_CSS = """
     KeycodesTab {
         height: 1fr;
+        padding: 0 1;
     }
     KeycodesTab .keycodes-section {
         height: 1fr;
-        padding: 1 2;
     }
     KeycodesTab .keycode-list {
         width: 35;
         min-width: 20;
-        border: solid $accent;
+        max-height: 100%;
+        border: solid $accent 50%;
     }
     KeycodesTab .keycode-detail {
-        padding: 0 2;
+        padding: 0 1;
         height: auto;
-    }
-    KeycodesTab .field-row {
-        height: auto;
-        margin-bottom: 1;
-    }
-    KeycodesTab .field-label {
-        width: 12;
-        padding-top: 1;
+        overflow-x: hidden;
     }
     """
 
