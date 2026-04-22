@@ -10,7 +10,7 @@ from typing import Any
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widget import Widget
-from textual.widgets import Input, Label, ListItem, ListView, Static, Switch
+from textual.widgets import Button, Input, Label, ListItem, ListView, Static, Switch
 
 
 _FIELD_MAP = {
@@ -42,11 +42,23 @@ class KeyboardTab(Widget):
     KeyboardTab #layers-section {
         height: 1fr;
     }
-    KeyboardTab #layer-list {
+    KeyboardTab .list-col {
         width: 30;
         min-width: 20;
+        height: 100%;
+    }
+    KeyboardTab #layer-list {
         max-height: 100%;
         border: solid $accent 50%;
+    }
+    KeyboardTab .list-buttons {
+        height: auto;
+        dock: bottom;
+    }
+    KeyboardTab .list-buttons Button {
+        min-width: 10;
+        height: 1;
+        margin: 0 1 0 0;
     }
     KeyboardTab #layer-detail {
         padding: 0 1;
@@ -64,60 +76,79 @@ class KeyboardTab(Widget):
         features = self.config_data.get("keyboard", {}).get("features", {})
         double_south = features.get("double_south", False)
 
-        layers = self.config_data.get("keyboard", {}).get("layers", [])
-
         with Vertical(id="features-section"):
             yield Static("Features", classes="section-title")
             with Horizontal(id="features-row"):
                 yield Label("Double South: ", classes="field-label")
                 yield Switch(value=double_south, id="double-south")
 
-        if not layers:
-            yield Static(
-                "No layers defined. Use 'skim configure -k file.kbi' to extract layers "
-                "from a Keybard file, or provide a config with -o.",
-                id="no-layers-hint",
-            )
-        else:
-            with Horizontal(id="layers-section"):
-                list_items = []
-                for i, layer in enumerate(layers):
-                    label = layer.get("label", str(i))
-                    name = layer.get("name", "")
-                    list_items.append(ListItem(Static(f"{i}: {label} - {name}"), id=f"layer-item-{i}"))
-                yield ListView(*list_items, id="layer-list")
+        yield Static("Layers", classes="section-title")
+        with Horizontal(id="layers-section"):
+            with Vertical(classes="list-col"):
+                yield ListView(id="layer-list")
+                with Horizontal(classes="list-buttons"):
+                    yield Button("+ Add", id="add-layer", variant="success")
+                    yield Button("- Remove", id="remove-layer", variant="error")
 
-                with VerticalScroll(id="layer-detail"):
-                    yield Static("Layer Detail", classes="section-title")
-                    first_layer = layers[0]
-                    with Horizontal(classes="field-row"):
-                        yield Label("Label:", classes="field-label")
-                        yield Input(
-                            value=first_layer.get("label", "") or "",
-                            id="layer-label",
-                            placeholder="e.g. BASE",
-                        )
-                    with Horizontal(classes="field-row"):
-                        yield Label("Name:", classes="field-label")
-                        yield Input(
-                            value=first_layer.get("name", "") or "",
-                            id="layer-name",
-                            placeholder="e.g. Letters",
-                        )
-                    with Horizontal(classes="field-row"):
-                        yield Label("ID:", classes="field-label")
-                        yield Input(
-                            value=first_layer.get("id", "") or "",
-                            id="layer-id",
-                            placeholder="e.g. _BASE (optional)",
-                        )
-                    with Horizontal(classes="field-row"):
-                        yield Label("Subtitle:", classes="field-label")
-                        yield Input(
-                            value=first_layer.get("subtitle", "") or "",
-                            id="layer-subtitle",
-                            placeholder="e.g. COLEMAK (optional)",
-                        )
+            with VerticalScroll(id="layer-detail"):
+                yield Static("Select a layer to edit", id="layer-detail-hint")
+                with Horizontal(classes="field-row"):
+                    yield Label("Label:", classes="field-label")
+                    yield Input(value="", id="layer-label", placeholder="e.g. BASE")
+                with Horizontal(classes="field-row"):
+                    yield Label("Name:", classes="field-label")
+                    yield Input(value="", id="layer-name", placeholder="e.g. Letters")
+                with Horizontal(classes="field-row"):
+                    yield Label("ID:", classes="field-label")
+                    yield Input(value="", id="layer-id", placeholder="e.g. _BASE (optional)")
+                with Horizontal(classes="field-row"):
+                    yield Label("Subtitle:", classes="field-label")
+                    yield Input(value="", id="layer-subtitle", placeholder="e.g. COLEMAK (optional)")
+
+    def on_mount(self) -> None:
+        """Populate the list after mount."""
+        self._rebuild_list()
+        if self.config_data.get("keyboard", {}).get("layers", []):
+            self._selected_layer = 0
+            self._refresh_detail_fields()
+
+    def _rebuild_list(self) -> None:
+        """Rebuild the ListView from config data."""
+        layers = self.config_data.get("keyboard", {}).get("layers", [])
+        list_view = self.query_one("#layer-list", ListView)
+        list_view.clear()
+        for i, layer in enumerate(layers):
+            label = layer.get("label", str(i))
+            name = layer.get("name", "")
+            list_view.append(ListItem(Static(f"{i}: {label} - {name}"), id=f"layer-item-{i}"))
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle Add/Remove button presses."""
+        if event.button.id == "add-layer":
+            layers = self.config_data.setdefault("keyboard", {}).setdefault("layers", [])
+            idx = len(layers)
+            layers.append({"label": f"L{idx}", "name": f"Layer {idx}", "id": None, "subtitle": None})
+            self._rebuild_list()
+            self._selected_layer = idx
+            self._refresh_detail_fields()
+            # Focus the list on the new item
+            list_view = self.query_one("#layer-list", ListView)
+            list_view.index = idx
+
+        elif event.button.id == "remove-layer":
+            layers = self.config_data.get("keyboard", {}).get("layers", [])
+            if not layers or self._selected_layer >= len(layers):
+                return
+            layers.pop(self._selected_layer)
+            self._rebuild_list()
+            if layers:
+                self._selected_layer = min(self._selected_layer, len(layers) - 1)
+                self._refresh_detail_fields()
+                list_view = self.query_one("#layer-list", ListView)
+                list_view.index = self._selected_layer
+            else:
+                self._selected_layer = 0
+                self._clear_detail_fields()
 
     def on_switch_changed(self, event: Switch.Changed) -> None:
         """Handle Switch.Changed events."""
@@ -151,6 +182,13 @@ class KeyboardTab(Widget):
         self.query_one("#layer-id", Input).value = layer.get("id", "") or ""
         self.query_one("#layer-subtitle", Input).value = layer.get("subtitle", "") or ""
 
+    def _clear_detail_fields(self) -> None:
+        """Clear all detail Input fields."""
+        self.query_one("#layer-label", Input).value = ""
+        self.query_one("#layer-name", Input).value = ""
+        self.query_one("#layer-id", Input).value = ""
+        self.query_one("#layer-subtitle", Input).value = ""
+
     def on_input_changed(self, event: Input.Changed) -> None:
         """Handle Input.Changed events for layer fields."""
         input_id = event.input.id
@@ -160,7 +198,6 @@ class KeyboardTab(Widget):
         layers = self.config_data.get("keyboard", {}).get("layers", [])
         if self._selected_layer >= len(layers):
             return
-        # Empty string maps to None for optional fields (id, subtitle)
         value: str | None = event.value
         if config_key in ("id", "subtitle") and value == "":
             value = None

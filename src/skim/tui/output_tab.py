@@ -10,7 +10,7 @@ from typing import Any
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widget import Widget
-from textual.widgets import Input, Label, ListItem, ListView, Select, Static, Switch
+from textual.widgets import Button, Input, Label, ListItem, ListView, Select, Static, Switch
 
 
 _HOLD_SYMBOL_OPTIONS = [
@@ -43,11 +43,21 @@ class OutputTab(Widget):
         height: auto;
         border-bottom: solid $accent 20%;
     }
-    OutputTab #layer-colors-list {
+    OutputTab .lc-list-col {
         width: 35;
         min-width: 20;
+    }
+    OutputTab #layer-colors-list {
         max-height: 12;
         border: solid $accent 50%;
+    }
+    OutputTab .list-buttons {
+        height: auto;
+    }
+    OutputTab .list-buttons Button {
+        min-width: 10;
+        height: 1;
+        margin: 0 1 0 0;
     }
     OutputTab #layer-color-detail {
         padding: 0 1;
@@ -194,31 +204,19 @@ class OutputTab(Widget):
             with Vertical(classes="section"):
                 yield Static("Layer Colors", classes="section-title")
                 with Horizontal(id="layer-colors-container"):
-                    lc_items = []
-                    for i, lc in enumerate(layer_colors):
-                        color = lc.get("base_color", "")
-                        lc_items.append(
-                            ListItem(Static(f"Layer {i}: {color}"), id=f"lc-item-{i}")
-                        )
-                    yield ListView(*lc_items, id="layer-colors-list")
+                    with Vertical(classes="lc-list-col"):
+                        yield ListView(id="layer-colors-list")
+                        with Horizontal(classes="list-buttons"):
+                            yield Button("+ Add", id="add-layer-color", variant="success")
+                            yield Button("- Remove", id="remove-layer-color", variant="error")
 
-                    first_lc = layer_colors[0] if layer_colors else {}
                     with VerticalScroll(id="layer-color-detail"):
-                        yield Static("Layer Color Detail", classes="section-title")
                         with Horizontal(classes="field-row"):
                             yield Label("Base color:", classes="field-label")
-                            yield Input(
-                                value=first_lc.get("base_color", "") or "",
-                                id="lc-base-color",
-                                placeholder="#RRGGBB",
-                            )
+                            yield Input(value="", id="lc-base-color", placeholder="#RRGGBB")
                         with Horizontal(classes="field-row"):
                             yield Label("Color index:", classes="field-label")
-                            yield Input(
-                                value=str(first_lc.get("color_index", 0)) if first_lc else "0",
-                                id="lc-color-index",
-                                placeholder="0",
-                            )
+                            yield Input(value="", id="lc-color-index", placeholder="2")
 
             # --- Copyright section ---
             with Vertical(classes="section"):
@@ -230,6 +228,48 @@ class OutputTab(Widget):
                         id="copyright-text",
                         placeholder="e.g. © 2024 Your Name (leave empty for none)",
                     )
+
+    def on_mount(self) -> None:
+        """Populate layer colors list after mount."""
+        self._rebuild_layer_colors_list()
+        layer_colors = self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
+        if layer_colors:
+            self._selected_layer_color = 0
+            self._refresh_layer_color_fields()
+
+    def _rebuild_layer_colors_list(self) -> None:
+        layer_colors = self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
+        list_view = self.query_one("#layer-colors-list", ListView)
+        list_view.clear()
+        for i, lc in enumerate(layer_colors):
+            color = lc.get("base_color", "")
+            list_view.append(ListItem(Static(f"Layer {i}: {color}"), id=f"lc-item-{i}"))
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        button_id = event.button.id
+
+        if button_id == "add-layer-color":
+            layer_colors = self.config_data["output"]["style"]["palette"].setdefault("layers", [])
+            layer_colors.append({"base_color": "#6F768B", "color_index": 2, "gradient": None})
+            self._rebuild_layer_colors_list()
+            self._selected_layer_color = len(layer_colors) - 1
+            self._refresh_layer_color_fields()
+            self.query_one("#layer-colors-list", ListView).index = self._selected_layer_color
+
+        elif button_id == "remove-layer-color":
+            layer_colors = self.config_data["output"]["style"]["palette"].get("layers", [])
+            if not layer_colors or self._selected_layer_color >= len(layer_colors):
+                return
+            layer_colors.pop(self._selected_layer_color)
+            self._rebuild_layer_colors_list()
+            if layer_colors:
+                self._selected_layer_color = min(self._selected_layer_color, len(layer_colors) - 1)
+                self._refresh_layer_color_fields()
+                self.query_one("#layer-colors-list", ListView).index = self._selected_layer_color
+            else:
+                self._selected_layer_color = 0
+                self.query_one("#lc-base-color", Input).value = ""
+                self.query_one("#lc-color-index", Input).value = ""
 
     def on_input_changed(self, event: Input.Changed) -> None:
         """Route input changes to the correct config path."""

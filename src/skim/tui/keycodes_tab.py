@@ -10,7 +10,7 @@ from typing import Any
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widget import Widget
-from textual.widgets import Input, Label, ListItem, ListView, Static
+from textual.widgets import Button, Input, Label, ListItem, ListView, Static
 
 
 class KeycodesTab(Widget):
@@ -28,11 +28,23 @@ class KeycodesTab(Widget):
     KeycodesTab .keycodes-section {
         height: 1fr;
     }
-    KeycodesTab .keycode-list {
+    KeycodesTab .list-col {
         width: 35;
         min-width: 20;
+        height: 100%;
+    }
+    KeycodesTab .keycode-list {
         max-height: 100%;
         border: solid $accent 50%;
+    }
+    KeycodesTab .list-buttons {
+        height: auto;
+        dock: bottom;
+    }
+    KeycodesTab .list-buttons Button {
+        min-width: 10;
+        height: 1;
+        margin: 0 1 0 0;
     }
     KeycodesTab .keycode-detail {
         padding: 0 1;
@@ -48,71 +60,125 @@ class KeycodesTab(Widget):
         self._selected_override: int = 0
 
     def compose(self) -> ComposeResult:
-        pre_process = self.config_data.get("keycodes", {}).get("pre_process", [])
-        overrides = self.config_data.get("keycodes", {}).get("overrides", [])
-
+        # Pre-process section
         with Vertical(id="pre-process-section", classes="keycodes-section"):
             yield Static("Pre-process", classes="section-title")
             with Horizontal():
-                pp_items = []
-                for i, entry in enumerate(pre_process):
-                    keycode = entry.get("keycode", "")
-                    target = entry.get("target", "")
-                    pp_items.append(
-                        ListItem(Static(f"{keycode} -> {target}"), id=f"pre-process-item-{i}")
-                    )
-                yield ListView(*pp_items, id="pre-process-list", classes="keycode-list")
+                with Vertical(classes="list-col"):
+                    yield ListView(id="pre-process-list", classes="keycode-list")
+                    with Horizontal(classes="list-buttons"):
+                        yield Button("+ Add", id="add-pre-process", variant="success")
+                        yield Button("- Remove", id="remove-pre-process", variant="error")
 
-                first_pp = pre_process[0] if pre_process else {}
                 with VerticalScroll(id="pre-process-detail", classes="keycode-detail"):
-                    yield Static("Pre-process Detail", classes="section-title")
                     with Horizontal(classes="field-row"):
                         yield Label("Keycode:", classes="field-label")
-                        yield Input(
-                            value=first_pp.get("keycode", "") or "",
-                            id="pre-process-keycode",
-                            placeholder="e.g. LSFT(KC_TAB)",
-                        )
+                        yield Input(value="", id="pre-process-keycode", placeholder="e.g. LSFT(KC_TAB)")
                     with Horizontal(classes="field-row"):
                         yield Label("Target:", classes="field-label")
-                        yield Input(
-                            value=first_pp.get("target", "") or "",
-                            id="pre-process-target",
-                            placeholder="e.g. MKC_BKTAB",
-                        )
+                        yield Input(value="", id="pre-process-target", placeholder="e.g. MKC_BKTAB")
 
+        # Overrides section
         with Vertical(id="overrides-section", classes="keycodes-section"):
             yield Static("Overrides", classes="section-title")
             with Horizontal():
-                ov_items = []
-                for i, entry in enumerate(overrides):
-                    keycode = entry.get("keycode", "")
-                    target = entry.get("target", "")
-                    ov_items.append(
-                        ListItem(Static(f"{keycode} -> {target}"), id=f"override-item-{i}")
-                    )
-                yield ListView(*ov_items, id="overrides-list", classes="keycode-list")
+                with Vertical(classes="list-col"):
+                    yield ListView(id="overrides-list", classes="keycode-list")
+                    with Horizontal(classes="list-buttons"):
+                        yield Button("+ Add", id="add-override", variant="success")
+                        yield Button("- Remove", id="remove-override", variant="error")
 
-                first_ov = overrides[0] if overrides else {}
                 with VerticalScroll(id="override-detail", classes="keycode-detail"):
-                    yield Static("Override Detail", classes="section-title")
                     with Horizontal(classes="field-row"):
                         yield Label("Keycode:", classes="field-label")
-                        yield Input(
-                            value=first_ov.get("keycode", "") or "",
-                            id="override-keycode",
-                            placeholder="e.g. KC_ESC",
-                        )
+                        yield Input(value="", id="override-keycode", placeholder="e.g. KC_ESC")
                     with Horizontal(classes="field-row"):
                         yield Label("Target:", classes="field-label")
-                        yield Input(
-                            value=first_ov.get("target", "") or "",
-                            id="override-target",
-                            placeholder="e.g. ESC",
-                        )
+                        yield Input(value="", id="override-target", placeholder="e.g. ESC")
+
+    def on_mount(self) -> None:
+        """Populate lists after mount."""
+        self._rebuild_pre_process_list()
+        self._rebuild_overrides_list()
+        pre_process = self.config_data.get("keycodes", {}).get("pre_process", [])
+        if pre_process:
+            self._selected_pre_process = 0
+            self._refresh_pre_process_fields()
+        overrides = self.config_data.get("keycodes", {}).get("overrides", [])
+        if overrides:
+            self._selected_override = 0
+            self._refresh_override_fields()
+
+    def _rebuild_pre_process_list(self) -> None:
+        entries = self.config_data.get("keycodes", {}).get("pre_process", [])
+        list_view = self.query_one("#pre-process-list", ListView)
+        list_view.clear()
+        for i, entry in enumerate(entries):
+            kc = entry.get("keycode", "")
+            tgt = entry.get("target", "")
+            list_view.append(ListItem(Static(f"{kc} -> {tgt}"), id=f"pre-process-item-{i}"))
+
+    def _rebuild_overrides_list(self) -> None:
+        entries = self.config_data.get("keycodes", {}).get("overrides", [])
+        list_view = self.query_one("#overrides-list", ListView)
+        list_view.clear()
+        for i, entry in enumerate(entries):
+            kc = entry.get("keycode", "")
+            tgt = entry.get("target", "")
+            list_view.append(ListItem(Static(f"{kc} -> {tgt}"), id=f"override-item-{i}"))
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        button_id = event.button.id
+
+        if button_id == "add-pre-process":
+            entries = self.config_data.setdefault("keycodes", {}).setdefault("pre_process", [])
+            entries.append({"keycode": "", "target": ""})
+            self._rebuild_pre_process_list()
+            self._selected_pre_process = len(entries) - 1
+            self._refresh_pre_process_fields()
+            self.query_one("#pre-process-list", ListView).index = self._selected_pre_process
+
+        elif button_id == "remove-pre-process":
+            entries = self.config_data.get("keycodes", {}).get("pre_process", [])
+            if not entries or self._selected_pre_process >= len(entries):
+                return
+            entries.pop(self._selected_pre_process)
+            self._rebuild_pre_process_list()
+            if entries:
+                self._selected_pre_process = min(self._selected_pre_process, len(entries) - 1)
+                self._refresh_pre_process_fields()
+                self.query_one("#pre-process-list", ListView).index = self._selected_pre_process
+            else:
+                self._selected_pre_process = 0
+                self._clear_fields("pre-process")
+
+        elif button_id == "add-override":
+            entries = self.config_data.setdefault("keycodes", {}).setdefault("overrides", [])
+            entries.append({"keycode": "", "target": ""})
+            self._rebuild_overrides_list()
+            self._selected_override = len(entries) - 1
+            self._refresh_override_fields()
+            self.query_one("#overrides-list", ListView).index = self._selected_override
+
+        elif button_id == "remove-override":
+            entries = self.config_data.get("keycodes", {}).get("overrides", [])
+            if not entries or self._selected_override >= len(entries):
+                return
+            entries.pop(self._selected_override)
+            self._rebuild_overrides_list()
+            if entries:
+                self._selected_override = min(self._selected_override, len(entries) - 1)
+                self._refresh_override_fields()
+                self.query_one("#overrides-list", ListView).index = self._selected_override
+            else:
+                self._selected_override = 0
+                self._clear_fields("override")
+
+    def _clear_fields(self, prefix: str) -> None:
+        self.query_one(f"#{prefix}-keycode", Input).value = ""
+        self.query_one(f"#{prefix}-target", Input).value = ""
 
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
-        """Handle entry selection in the lists."""
         if event.item is None:
             return
         item_id = event.item.id or ""
@@ -134,7 +200,6 @@ class KeycodesTab(Widget):
             self._refresh_override_fields()
 
     def _refresh_pre_process_fields(self) -> None:
-        """Update pre-process Input fields to reflect the current selection."""
         entries = self.config_data.get("keycodes", {}).get("pre_process", [])
         if self._selected_pre_process >= len(entries):
             return
@@ -143,7 +208,6 @@ class KeycodesTab(Widget):
         self.query_one("#pre-process-target", Input).value = entry.get("target", "") or ""
 
     def _refresh_override_fields(self) -> None:
-        """Update override Input fields to reflect the current selection."""
         entries = self.config_data.get("keycodes", {}).get("overrides", [])
         if self._selected_override >= len(entries):
             return
@@ -152,7 +216,6 @@ class KeycodesTab(Widget):
         self.query_one("#override-target", Input).value = entry.get("target", "") or ""
 
     def on_input_changed(self, event: Input.Changed) -> None:
-        """Handle Input.Changed events for keycode fields."""
         input_id = event.input.id or ""
 
         if input_id.startswith("pre-process-"):
