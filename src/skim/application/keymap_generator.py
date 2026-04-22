@@ -76,17 +76,22 @@ def _get_config(config_path: Path | None, use_system_fonts: bool = False) -> Ski
     return config.model_copy(update={"output": new_output})
 
 
-def _get_input_keymap(inputs: InputFiles) -> SvalboardKeymap[str]:
+def _get_input_keymap(inputs: InputFiles, config: SkimConfig) -> SvalboardKeymap[str]:
     """Load the raw keymap from the specified input source.
 
     Args:
         inputs: Input file configuration specifying the keymap source
             (file path or stdin).
+        config: The skim configuration containing layer index mappings.
 
     Returns:
         A SvalboardKeymap containing raw keycode strings for all layers.
     """
-    return load_keymap(None if inputs.force_stdin_keymap else inputs.keymap)
+    layer_indices = [layer.index for layer in config.keyboard.layers] or None
+    return load_keymap(
+        None if inputs.force_stdin_keymap else inputs.keymap,
+        layer_indices=layer_indices,
+    )
 
 
 def _resolve_keymap(
@@ -145,7 +150,7 @@ def generate_keymap(
         outputs.output_dir.mkdir()
 
     config: SkimConfig = _get_config(inputs.config, outputs.use_system_fonts)
-    input_keymap = _get_input_keymap(inputs)
+    input_keymap = _get_input_keymap(inputs, config)
     keymap = _resolve_keymap(config, input_keymap)
     drawings = draw_keymap(config, keymap, targets)
     save_drawings(outputs, drawings, outputs.render_engine)

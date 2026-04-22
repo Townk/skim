@@ -240,14 +240,15 @@ class TestLoadKeymap:
     """Tests for load_keymap main function."""
 
     def test_load_from_file(self, tmp_path):
-        """Loads keymap from file."""
+        """Loads keymap from file with dict-based layers."""
         keymap_data = {"keymap": [["KC_A"] * 60]}
         path = tmp_path / "test.kbi"
         path.write_text(json.dumps(keymap_data))
 
         keymap = load_keymap(path)
         assert keymap is not None
-        assert len(keymap.layers) == 1
+        assert isinstance(keymap.layers, dict)
+        assert set(keymap.layers.keys()) == {0}
 
     def test_load_from_stdin_when_none(self):
         """Loads from stdin when path is None."""
@@ -257,7 +258,8 @@ class TestLoadKeymap:
             mock_stdin.read.return_value = json.dumps(keymap_data)
             keymap = load_keymap(None)
             assert keymap is not None
-            assert len(keymap.layers) == 1
+            assert isinstance(keymap.layers, dict)
+            assert set(keymap.layers.keys()) == {0}
 
     def test_path_not_file_raises(self, tmp_path):
         """Non-file path raises ValueError."""
@@ -267,13 +269,24 @@ class TestLoadKeymap:
             load_keymap(path)
 
     def test_multiple_layers(self, tmp_path):
-        """Loads keymap with multiple layers."""
+        """Loads keymap with multiple layers using sequential indices."""
         keymap_data = {"keymap": [["KC_A"] * 60, ["KC_B"] * 60, ["KC_C"] * 60]}
         path = tmp_path / "test.kbi"
         path.write_text(json.dumps(keymap_data))
 
         keymap = load_keymap(path)
-        assert len(keymap.layers) == 3
+        assert isinstance(keymap.layers, dict)
+        assert set(keymap.layers.keys()) == {0, 1, 2}
+
+    def test_multiple_layers_with_custom_indices(self, tmp_path):
+        """Loads keymap with custom layer indices."""
+        keymap_data = {"keymap": [["KC_A"] * 60, ["KC_B"] * 60, ["KC_C"] * 60]}
+        path = tmp_path / "test.kbi"
+        path.write_text(json.dumps(keymap_data))
+
+        keymap = load_keymap(path, layer_indices=[0, 5, 10])
+        assert isinstance(keymap.layers, dict)
+        assert set(keymap.layers.keys()) == {0, 5, 10}
 
     def test_svalboard_layout_created_correctly(self, tmp_path):
         """SvalboardKeymap contains SvalboardLayout objects with correct hierarchy."""
@@ -283,6 +296,8 @@ class TestLoadKeymap:
         path.write_text(json.dumps(keymap_data))
 
         keymap = load_keymap(path)
+        assert isinstance(keymap.layers, dict)
+        assert set(keymap.layers.keys()) == {0}
         # Access via hierarchy - c2json format is already in QMK order:
         # right.index.center_key is at index 0, left.thumb.down_key at index 54
         assert keymap.layers[0].right.index.center_key == "KC_0"

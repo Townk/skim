@@ -218,7 +218,10 @@ def load_keymap_from_stdin() -> list[list[str]]:
     return load_keymap_json(keymap_content)
 
 
-def load_keymap(file_path: Path | None) -> SvalboardKeymap[str]:
+def load_keymap(
+    file_path: Path | None,
+    layer_indices: list[int] | None = None,
+) -> SvalboardKeymap[str]:
     """Load a complete keymap from file or stdin.
 
     Main entry point for loading keymaps. Loads from the specified file
@@ -226,6 +229,9 @@ def load_keymap(file_path: Path | None) -> SvalboardKeymap[str]:
 
     Args:
         file_path: Path to the keymap file, or None to read from stdin.
+        layer_indices: Optional list of QMK layer indices to map each
+            positional layer to. If None, sequential indices (0, 1, 2, ...)
+            are used.
 
     Returns:
         A SvalboardKeymap containing raw keycode strings for all layers.
@@ -240,6 +246,10 @@ def load_keymap(file_path: Path | None) -> SvalboardKeymap[str]:
         keymap_json = load_keymap_file(file_path)
 
     if keymap_json is not None:
-        return SvalboardKeymap([SvalboardLayout[str].from_sequence(layer) for layer in keymap_json])
+        indices = layer_indices or list(range(len(keymap_json)))
+        return SvalboardKeymap({
+            idx: SvalboardLayout[str].from_sequence(layer)
+            for idx, layer in zip(indices, keymap_json)
+        })
 
     raise ValueError("The provided keymap file path does not exist")
