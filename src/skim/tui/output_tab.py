@@ -75,8 +75,8 @@ class OutputTab(Widget):
     }
     OutputTab .color-swatch {
         width: 4;
-        height: 3;
-        margin: 0 1 0 0;
+        height: 1;
+        margin: 1 1 0 0;
         content-align: center middle;
     }
     OutputTab .lc-swatch {
@@ -242,10 +242,18 @@ class OutputTab(Widget):
         self._update_all_palette_swatches()
 
     def _update_swatch(self, swatch_id: str, color: str) -> None:
-        """Update a color swatch's background color."""
+        """Update a color swatch's background color, ignoring invalid values."""
         try:
             swatch = self.query_one(f"#{swatch_id}", Static)
             swatch.styles.background = color if color else "transparent"
+        except Exception:
+            pass
+
+    @staticmethod
+    def _safe_set_background(widget: Static, color: str) -> None:
+        """Set background color, silently ignoring invalid values."""
+        try:
+            widget.styles.background = color if color else "transparent"
         except Exception:
             pass
 
@@ -267,7 +275,7 @@ class OutputTab(Widget):
         """Create a ListItem with text and a color swatch for a layer color."""
         color = lc.get("base_color", "")
         swatch = Static(" ", classes="lc-swatch")
-        swatch.styles.background = color if color else "transparent"
+        self._safe_set_background(swatch, color)
         return ListItem(Static(self._lc_text(index, lc)), swatch)
 
     def _rebuild_layer_colors_list(self) -> None:
@@ -448,7 +456,7 @@ class OutputTab(Widget):
                 if self._selected_layer_color < len(list_view.children):
                     item = list_view.children[self._selected_layer_color]
                     for s in item.query(".lc-swatch"):
-                        s.styles.background = value if value else "transparent"
+                        self._safe_set_background(s, value)
 
         elif input_id == "lc-color-index":
             layer_colors = self._layer_colors()
