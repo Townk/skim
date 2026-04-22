@@ -80,12 +80,20 @@ class KeyboardTab(Widget):
     def compose(self) -> ComposeResult:
         features = self.config_data.get("keyboard", {}).get("features", {})
         double_south = features.get("double_south", False)
+        copyright_text = self.config_data.get("output", {}).get("copyright") or ""
 
         with Vertical(id="features-section"):
             yield Static("Features", classes="section-title")
             with Horizontal(id="features-row"):
                 yield Label("Double South: ", classes="field-label")
                 yield Switch(value=double_south, id="double-south")
+            with Horizontal(classes="field-row"):
+                yield Label("Copyright:", classes="field-label")
+                yield Input(
+                    value=copyright_text,
+                    id="copyright-text",
+                    placeholder="e.g. (c) 2024 Your Name (leave empty for none)",
+                )
 
         yield Static("Layers", classes="section-title")
         with Horizontal(id="layers-section"):
@@ -262,6 +270,9 @@ class KeyboardTab(Widget):
 
     def on_input_changed(self, event: Input.Changed) -> None:
         input_id = event.input.id
+        if input_id == "copyright-text":
+            self.config_data["output"]["copyright"] = event.value if event.value else None
+            return
         if input_id not in _FIELD_MAP:
             return
         config_key = _FIELD_MAP[input_id]

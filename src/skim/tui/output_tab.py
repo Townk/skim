@@ -79,6 +79,11 @@ class OutputTab(Widget):
         margin: 1 1 0 0;
         content-align: center middle;
     }
+    OutputTab .swatch-spacer {
+        width: 4;
+        height: 1;
+        margin: 1 1 0 0;
+    }
     OutputTab .lc-swatch {
         width: 4;
         height: 1;
@@ -101,8 +106,6 @@ class OutputTab(Widget):
         style = output.get("style", {})
         palette = style.get("palette", {})
         border = style.get("border")  # may be None or dict
-        copyright_text = output.get("copyright") or ""
-
         hold_position = style.get("hold_symbol_position", "outward")
 
         with VerticalScroll(can_focus=False):
@@ -111,6 +114,7 @@ class OutputTab(Widget):
                 yield Static("Layout", classes="section-title")
                 with Horizontal(classes="field-row"):
                     yield Label("Width:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
                     yield Input(
                         value=str(layout.get("width", 800.0)),
                         id="layout-width",
@@ -118,6 +122,7 @@ class OutputTab(Widget):
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Margin:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
                     yield Input(
                         value=str(spacing.get("margin", 0.0)),
                         id="layout-margin",
@@ -125,6 +130,7 @@ class OutputTab(Widget):
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Inset:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
                     yield Input(
                         value=str(spacing.get("inset", 20.0)),
                         id="layout-inset",
@@ -136,12 +142,14 @@ class OutputTab(Widget):
                 yield Static("Style", classes="section-title")
                 with Horizontal(classes="field-row"):
                     yield Label("Use layer colors on keys:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
                     yield Switch(
                         value=style.get("use_layer_colors_on_keys", True),
                         id="use-layer-colors",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Hold symbol position:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
                     yield Select(
                         options=_HOLD_SYMBOL_OPTIONS,
                         value=hold_position,
@@ -149,24 +157,28 @@ class OutputTab(Widget):
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Show layer indicators:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
                     yield Switch(
                         value=style.get("show_layer_indicators", True),
                         id="show-layer-indicators",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Use system fonts:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
                     yield Switch(
                         value=style.get("use_system_fonts", False),
                         id="use-system-fonts",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Border enabled:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
                     yield Switch(
                         value=border is not None,
                         id="border-enabled",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Border width:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
                     yield Input(
                         value=str(border.get("width", 2.0)) if border else "2.0",
                         id="border-width",
@@ -174,6 +186,7 @@ class OutputTab(Widget):
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Border radius:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
                     yield Input(
                         value=str(border.get("radius", 10.0)) if border else "10.0",
                         id="border-radius",
@@ -221,16 +234,6 @@ class OutputTab(Widget):
                                 placeholder="2", disabled=True,
                             )
 
-            # --- Copyright section ---
-            with Vertical(classes="section"):
-                yield Static("Copyright", classes="section-title")
-                with Horizontal(classes="field-row"):
-                    yield Label("Copyright text:", classes="field-label")
-                    yield Input(
-                        value=copyright_text,
-                        id="copyright-text",
-                        placeholder="e.g. (c) 2024 Your Name (leave empty for none)",
-                    )
 
     def on_mount(self) -> None:
         self._rebuild_layer_colors_list()
@@ -465,9 +468,6 @@ class OutputTab(Widget):
                     layer_colors[self._selected_layer_color]["color_index"] = int(value)
                 except ValueError:
                     pass
-
-        elif input_id == "copyright-text":
-            self.config_data["output"]["copyright"] = value if value else None
 
     def on_switch_changed(self, event: Switch.Changed) -> None:
         switch_id = event.switch.id or ""
