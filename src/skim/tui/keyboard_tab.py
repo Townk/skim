@@ -61,7 +61,7 @@ class KeyboardTab(Widget):
         width: 41;
     }
     KeyboardTab .list-buttons Button {
-        width: 1fr;
+        width: 50%;
     }
     KeyboardTab #layer-detail {
         padding: 0 1;
