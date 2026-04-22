@@ -26,8 +26,8 @@ class TestKeyboardTab:
     def config_with_layers(self) -> dict:
         config = SkimConfig().model_dump(mode="json")
         config["keyboard"]["layers"] = [
-            {"label": "BASE", "name": "Letters", "id": "_BASE", "subtitle": "COLEMAK"},
-            {"label": "NAV", "name": "Navigation", "id": "_NAV", "subtitle": None},
+            {"index": 0, "label": "BASE", "name": "Letters", "id": "_BASE", "subtitle": "COLEMAK"},
+            {"index": 1, "label": "NAV", "name": "Navigation", "id": "_NAV", "subtitle": None},
         ]
         return config
 
@@ -55,7 +55,7 @@ class TestKeyboardTab:
         app = KeyboardTabTestApp(config_data=config_with_layers)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            for field_id in ["layer-label", "layer-name", "layer-id", "layer-subtitle"]:
+            for field_id in ["layer-index", "layer-label", "layer-name", "layer-id", "layer-subtitle"]:
                 inp = app.query_one(f"#{field_id}", Input)
                 assert inp.disabled is True
 
@@ -120,3 +120,50 @@ class TestKeyboardTab:
             switch.toggle()
             await pilot.pause()
             assert app.config_data["keyboard"]["features"]["double_south"] is True
+
+    @pytest.mark.asyncio()
+    async def test_index_field_displayed(self, config_with_layers):
+        """Index field is displayed and shows the layer index."""
+        app = KeyboardTabTestApp(config_data=config_with_layers)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            index_input = app.query_one("#layer-index", Input)
+            assert index_input is not None
+            assert index_input.value == "0"
+
+    @pytest.mark.asyncio()
+    async def test_add_layer_assigns_next_available_index(self, config_with_layers):
+        """Adding a layer assigns the next available index."""
+        app = KeyboardTabTestApp(config_data=config_with_layers)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            tab = app.query_one(KeyboardTab)
+            # Press escape first to exit any edit mode triggered by add
+            add_btn = app.query_one("#add-layer")
+            add_btn.press()
+            await pilot.pause()
+            # Exit edit mode without committing
+            tab._exit_edit_mode(commit=False)
+            await pilot.pause()
+            layers = app.config_data["keyboard"]["layers"]
+            assert len(layers) == 3
+            new_layer = layers[-1]
+            assert new_layer["index"] == 2
+
+    @pytest.mark.asyncio()
+    async def test_add_layer_skips_used_indices(self, config_with_layers):
+        """Adding a layer skips indices already in use."""
+        # Manually set indices to 0, 2 so next available should be 1
+        config_with_layers["keyboard"]["layers"][1]["index"] = 2
+        app = KeyboardTabTestApp(config_data=config_with_layers)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            tab = app.query_one(KeyboardTab)
+            add_btn = app.query_one("#add-layer")
+            add_btn.press()
+            await pilot.pause()
+            tab._exit_edit_mode(commit=False)
+            await pilot.pause()
+            layers = app.config_data["keyboard"]["layers"]
+            new_layer = layers[-1]
+            assert new_layer["index"] == 1
