@@ -90,8 +90,10 @@ class TestGenerateFromKeybard:
         parsed = yaml.safe_load(result)
         layers = parsed["keyboard"]["layers"]
         assert len(layers) == 2
+        assert layers[0]["index"] == 0
         assert layers[0]["name"] == "Base"
         assert layers[0]["label"] == "BASE"
+        assert layers[1]["index"] == 1
         assert layers[1]["name"] == "Symbols"
         assert layers[1]["label"] == "SYMB"
 
@@ -155,8 +157,10 @@ class TestGenerateFromKeybard:
         result = generator.generate_from_keybard(keybard)
         parsed = yaml.safe_load(result)
         layers = parsed["keyboard"]["layers"]
+        assert layers[0]["index"] == 0
         assert layers[0]["name"] == "Layer 0"
         assert layers[0]["label"] == "L0"
+        assert layers[1]["index"] == 1
         assert layers[1]["name"] == "Layer 1"
 
     def test_color_adjustment_lightness(self, minimal_keybard):
