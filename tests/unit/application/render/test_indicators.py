@@ -191,6 +191,64 @@ class TestLayerIndicator:
         svg_str = indicator.build().as_svg()
         assert "<circle" in svg_str
 
+    def test_qmk_index_to_position_maps_layer(self, sample_palette):
+        """qmk_index_to_position remaps target_layer to palette position."""
+        # QMK index 5 maps to palette position 2 (blue layer)
+        indicator = LayerIndicator(
+            key_x=100,
+            key_y=30,
+            key_width=55,
+            key_height=55,
+            target_layer=5,
+            palette=sample_palette,
+            circle_diameter=27.5,
+            gap=10,
+            offset_direction=OffsetDirection.ABOVE,
+            connector_type=ConnectorType.VERTICAL,
+            qmk_index_to_position=lambda idx: {5: 2}.get(idx),
+        )
+        svg_str = indicator.build().as_svg()
+        # Should use layer 2's base color (blue)
+        assert 'fill="#0000FF"' in svg_str
+        # Should use layer 2's gradient[4] for stroke
+        assert 'stroke="#000055"' in svg_str
+
+    def test_qmk_index_to_position_returns_none_falls_back(self, sample_palette):
+        """When qmk_index_to_position returns None, fallback colors are used."""
+        indicator = LayerIndicator(
+            key_x=100,
+            key_y=30,
+            key_width=55,
+            key_height=55,
+            target_layer=5,
+            palette=sample_palette,
+            circle_diameter=27.5,
+            gap=10,
+            offset_direction=OffsetDirection.ABOVE,
+            connector_type=ConnectorType.VERTICAL,
+            qmk_index_to_position=lambda idx: None,
+        )
+        svg_str = indicator.build().as_svg()
+        assert 'fill="#808080"' in svg_str
+
+    def test_default_qmk_index_to_position_is_identity(self, sample_palette):
+        """Default qmk_index_to_position acts as identity (backward compat)."""
+        indicator = LayerIndicator(
+            key_x=100,
+            key_y=30,
+            key_width=55,
+            key_height=55,
+            target_layer=1,
+            palette=sample_palette,
+            circle_diameter=27.5,
+            gap=10,
+            offset_direction=OffsetDirection.ABOVE,
+            connector_type=ConnectorType.VERTICAL,
+        )
+        svg_str = indicator.build().as_svg()
+        # Default identity: target_layer=1 maps to palette position 1 (green)
+        assert 'fill="#00FF00"' in svg_str
+
 
 def _make_finger_cluster_keys(layer_switches):
     """Helper: create FingerCluster with given layer_switch values."""

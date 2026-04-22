@@ -298,6 +298,7 @@ class ThumbClusterComponent(KeyCluster[ThumbCluster[SvalboardTargetKey]]):
                 palette=self._render_context.palette,
                 circle_diameter=self._layout.metrics.down_key.width * 0.4,
                 gap=self._layout.metrics.down_key.width * 0.18,
+                qmk_index_to_position=self._render_context.qmk_index_to_position,
             )
             for indicator_group in overlay.build():
                 self.append(indicator_group)
@@ -468,6 +469,7 @@ class FingerClusterComponent(KeyCluster[FingerCluster[SvalboardTargetKey]]):
                 circle_diameter=self._layout.metrics.north_key.width * 0.55,
                 gap=self._layout.metrics.north_key.width * 0.18,
                 has_double_south=self._render_context.has_double_south,
+                qmk_index_to_position=self._render_context.qmk_index_to_position,
             )
             for indicator_group in overlay.build():
                 self.append(indicator_group)

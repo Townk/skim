@@ -11,6 +11,7 @@ connector line linking the circle to its key.
 """
 
 import math
+from collections.abc import Callable
 from enum import Enum
 
 import drawsvg as draw
@@ -88,6 +89,7 @@ class LayerIndicator:
         offset_direction: OffsetDirection,
         connector_type: ConnectorType,
         connector_target_y: float | None = None,
+        qmk_index_to_position: Callable[[int], int | None] = lambda idx: idx,
     ) -> None:
         self._key_x = key_x
         self._key_y = key_y
@@ -101,9 +103,10 @@ class LayerIndicator:
         self._connector_type = connector_type
         self._connector_target_y = connector_target_y
 
-        # Resolve colors
-        if 0 <= target_layer < len(palette.layers):
-            lc = palette.layers[target_layer]
+        # Resolve colors using position mapping
+        position = qmk_index_to_position(target_layer)
+        if position is not None and 0 <= position < len(palette.layers):
+            lc = palette.layers[position]
             self._fill_color = lc.base_color
             self._stroke_color = lc[4]
         else:
@@ -316,6 +319,7 @@ class LayerIndicatorOverlay:
         circle_diameter: float,
         gap: float,
         has_double_south: bool,
+        qmk_index_to_position: Callable[[int], int | None] = lambda idx: idx,
     ) -> "LayerIndicatorOverlay":
         """Create an overlay for a finger cluster."""
         indicators: list[LayerIndicator] = []
@@ -346,6 +350,7 @@ class LayerIndicatorOverlay:
                 gap=key_gap,
                 offset_direction=offset_dir,
                 connector_type=conn_type,
+                qmk_index_to_position=qmk_index_to_position,
             ))
 
         return cls(indicators)
@@ -360,6 +365,7 @@ class LayerIndicatorOverlay:
         palette: Palette,
         circle_diameter: float,
         gap: float,
+        qmk_index_to_position: Callable[[int], int | None] = lambda idx: idx,
     ) -> "LayerIndicatorOverlay":
         """Create an overlay for a thumb cluster."""
         indicators: list[LayerIndicator] = []
@@ -416,6 +422,7 @@ class LayerIndicatorOverlay:
                 offset_direction=offset_dir,
                 connector_type=conn_type,
                 connector_target_y=connector_target_y,
+                qmk_index_to_position=qmk_index_to_position,
             ))
 
         return cls(indicators)
