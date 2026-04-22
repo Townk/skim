@@ -290,11 +290,36 @@ class LayerColorListPane(ListDetailPane):
         return False
 
     def on_key(self, event) -> None:
-        """Override to let Select handle Enter/Space/Escape normally."""
+        """Override to let Select handle Enter/Space/Escape normally.
+
+        Textual processes on_key during event bubbling BEFORE bindings run.
+        The base ListDetailPane.on_key stops events, so bindings on the
+        Select and its overlay never fire. We invoke actions directly.
+        """
         if self._editing:
             if self._select_active:
-                # Overlay is open — don't intercept anything, let it handle
-                # navigation (up/down), selection (enter), and dismiss (escape)
+                # Overlay is open — invoke OptionList actions directly
+                from textual.widgets import OptionList
+                focused = self.app.focused
+                if isinstance(focused, OptionList):
+                    if event.key in ("enter", "space"):
+                        focused.action_select()
+                        event.prevent_default()
+                        event.stop()
+                        return
+                    if event.key == "escape":
+                        select = self.query_one("#lc-gradient-type", SkimSelect)
+                        select.query_one("SelectOverlay").action_dismiss()
+                        self._select_active = False
+                        event.prevent_default()
+                        event.stop()
+                        return
+                    if event.key in ("up", "down"):
+                        action = "cursor_up" if event.key == "up" else "cursor_down"
+                        getattr(focused, f"action_{action}")()
+                        event.prevent_default()
+                        event.stop()
+                        return
                 return
             if self._is_inside_select() and event.key in ("enter", "space"):
                 # Open the overlay directly since on_key stops the event
