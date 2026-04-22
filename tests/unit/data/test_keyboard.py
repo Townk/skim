@@ -1799,11 +1799,11 @@ class TestSvalboardKeymapInitialization:
     """Tests for SvalboardKeymap initialization."""
 
     def test_init_with_layers(self):
-        """SvalboardKeymap can be initialized with a list of layers."""
+        """SvalboardKeymap can be initialized with a dict of layers."""
         layer0 = SvalboardLayout.from_sequence(["L0"] * 60)
         layer1 = SvalboardLayout.from_sequence(["L1"] * 60)
 
-        keymap = SvalboardKeymap(layers=[layer0, layer1])
+        keymap = SvalboardKeymap(layers={0: layer0, 1: layer1})
 
         assert len(keymap.layers) == 2
         assert keymap.layers[0][0] == "L0"
@@ -1812,13 +1812,13 @@ class TestSvalboardKeymapInitialization:
     def test_init_single_layer(self):
         """SvalboardKeymap can have a single layer."""
         layer = SvalboardLayout.from_sequence(["KEY"] * 60)
-        keymap = SvalboardKeymap(layers=[layer])
+        keymap = SvalboardKeymap(layers={0: layer})
 
         assert len(keymap.layers) == 1
 
     def test_init_many_layers(self):
         """SvalboardKeymap supports many layers."""
-        layers = [SvalboardLayout.from_sequence([f"L{i}"] * 60) for i in range(10)]
+        layers = {i: SvalboardLayout.from_sequence([f"L{i}"] * 60) for i in range(10)}
         keymap = SvalboardKeymap(layers=layers)
 
         assert len(keymap.layers) == 10
@@ -1827,20 +1827,20 @@ class TestSvalboardKeymapInitialization:
     def test_is_frozen(self):
         """SvalboardKeymap is immutable."""
         layer = SvalboardLayout.from_sequence(["KEY"] * 60)
-        keymap = SvalboardKeymap(layers=[layer])
+        keymap = SvalboardKeymap(layers={0: layer})
 
         with pytest.raises(FrozenInstanceError):
-            keymap.layers = []
+            keymap.layers = {}
 
-    def test_layers_list_is_mutable(self):
-        """The layers list itself can be modified (dataclass doesn't deep-freeze)."""
+    def test_layers_dict_is_mutable(self):
+        """The layers dict itself can be modified (dataclass doesn't deep-freeze)."""
         layer0 = SvalboardLayout.from_sequence(["L0"] * 60)
         layer1 = SvalboardLayout.from_sequence(["L1"] * 60)
-        keymap = SvalboardKeymap(layers=[layer0])
+        keymap = SvalboardKeymap(layers={0: layer0})
 
-        # The list reference is frozen, but list contents can change
+        # The dict reference is frozen, but dict contents can change
         # This is expected Python behavior for frozen dataclasses with mutable fields
-        keymap.layers.append(layer1)
+        keymap.layers[1] = layer1
         assert len(keymap.layers) == 2
 
 
@@ -1849,7 +1849,7 @@ class TestSvalboardKeymapAccess:
 
     def test_access_layer_by_index(self):
         """Layers can be accessed by index."""
-        layers = [SvalboardLayout.from_sequence([f"L{i}_KEY"] * 60) for i in range(3)]
+        layers = {i: SvalboardLayout.from_sequence([f"L{i}_KEY"] * 60) for i in range(3)}
         keymap = SvalboardKeymap(layers=layers)
 
         assert keymap.layers[0][0] == "L0_KEY"
@@ -1859,22 +1859,22 @@ class TestSvalboardKeymapAccess:
     def test_access_key_in_layer(self):
         """Individual keys can be accessed via layer index."""
         layer = SvalboardLayout.from_sequence([f"K{i}" for i in range(60)])
-        keymap = SvalboardKeymap(layers=[layer])
+        keymap = SvalboardKeymap(layers={0: layer})
 
         assert keymap.layers[0][0] == "K0"
         assert keymap.layers[0][59] == "K59"
 
     def test_iterate_over_layers(self):
-        """Layers can be iterated."""
-        layers = [SvalboardLayout.from_sequence([f"L{i}"] * 60) for i in range(3)]
+        """Layers can be iterated via values()."""
+        layers = {i: SvalboardLayout.from_sequence([f"L{i}"] * 60) for i in range(3)}
         keymap = SvalboardKeymap(layers=layers)
 
-        layer_values = [layer[0] for layer in keymap.layers]
+        layer_values = [layer[0] for layer in keymap.layers.values()]
         assert layer_values == ["L0", "L1", "L2"]
 
-    def test_empty_layers_list(self):
-        """SvalboardKeymap can have empty layers list."""
-        keymap = SvalboardKeymap(layers=[])
+    def test_empty_layers_dict(self):
+        """SvalboardKeymap can have empty layers dict."""
+        keymap = SvalboardKeymap(layers={})
         assert len(keymap.layers) == 0
 
 
@@ -1891,7 +1891,7 @@ class TestSvalboardKeymapWithZippedLayers:
         labels_l1 = SvalboardLayout.from_sequence(["1"] * 60)
         layer1 = SvalboardLayout.from_zipped(code=codes_l1, label=labels_l1)
 
-        keymap = SvalboardKeymap(layers=[layer0, layer1])
+        keymap = SvalboardKeymap(layers={0: layer0, 1: layer1})
 
         assert keymap.layers[0][0].code == "KC_A"
         assert keymap.layers[0][0].label == "A"

@@ -1099,8 +1099,9 @@ class SvalboardKeymap(Generic[T]):
     or any other per-key data.
 
     Attributes:
-        layers: A list of SvalboardLayout objects, one per layer. Layer 0 is
-            typically the base/default layer.
+        layers: A dict mapping layer indices to SvalboardLayout objects.
+            Keys are QMK layer indices (which may be non-sequential, e.g.
+            0, 1, 2, 15). Layer 0 is typically the base/default layer.
 
     Example:
         Creating a keymap with multiple layers::
@@ -1112,7 +1113,7 @@ class SvalboardKeymap(Generic[T]):
             symbol_layer = SvalboardLayout.from_sequence(["KC_1"] * 60)
             nav_layer = SvalboardLayout.from_sequence(["KC_LEFT"] * 60)
 
-            keymap = SvalboardKeymap(layers=[base_layer, symbol_layer, nav_layer])
+            keymap = SvalboardKeymap(layers={0: base_layer, 1: symbol_layer, 2: nav_layer})
 
         Accessing layers::
 
@@ -1121,7 +1122,7 @@ class SvalboardKeymap(Generic[T]):
             len(keymap.layers)  # Number of layers
     """
 
-    layers: list[SvalboardLayout[T]]
+    layers: dict[int, SvalboardLayout[T]]
 
 
 @overload

@@ -34,7 +34,7 @@ def make_layout(prefix: str) -> SvalboardLayout[str]:
 
 
 def make_keymap(num_layers: int = 1) -> SvalboardKeymap[str]:
-    return SvalboardKeymap([make_layout(f"L{i}") for i in range(num_layers)])
+    return SvalboardKeymap({i: make_layout(f"L{i}") for i in range(num_layers)})
 
 
 class MockLabelAdapter:
