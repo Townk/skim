@@ -172,6 +172,34 @@ class TestRenderContextKeyFillColor:
         result = ctx.key_fill_color(key, default="#AABBCC")
         assert result == "#AABBCC"
 
+    def test_returns_layer_color_using_qmk_position_mapping(self, sample_palette):
+        """layer_switch QMK index is mapped to palette position via qmk_index_to_position."""
+        ctx = RenderContext(
+            palette=sample_palette,
+            layer_index=0,
+            has_double_south=False,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+            qmk_index_to_position=lambda idx: {0: 0, 15: 1, 3: 2}.get(idx),
+        )
+        key = SvalboardTargetKey(label="L15", layer_switch=15)
+        result = ctx.key_fill_color(key, default="#AABBCC")
+        assert result == "#003300"
+
+    def test_returns_default_for_unmapped_layer_switch(self, sample_palette):
+        """Returns default when layer_switch QMK index has no position mapping."""
+        ctx = RenderContext(
+            palette=sample_palette,
+            layer_index=0,
+            has_double_south=False,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+            qmk_index_to_position=lambda idx: None,
+        )
+        key = SvalboardTargetKey(label="L99", layer_switch=99)
+        result = ctx.key_fill_color(key, default="#AABBCC")
+        assert result == "#AABBCC"
+
 
 class TestClusterRenderContext:
     """Tests for ClusterRenderContext."""

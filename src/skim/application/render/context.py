@@ -10,6 +10,7 @@ shared across components, reducing parameter passing and centralizing
 configuration for keyboard cluster rendering.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from typing_extensions import Self
@@ -33,6 +34,9 @@ class RenderContext:
     hold_symbol_position: SplitSidePosition
     use_system_fonts: bool = False
     show_layer_indicators: bool = False
+    qmk_index_to_position: Callable[[int], int | None] = field(
+        default=lambda idx: idx, repr=False, compare=False, hash=False
+    )
     layer_colors: LayerColor = field(init=False, repr=False, compare=False, hash=False)
 
     def __post_init__(self) -> None:
@@ -58,8 +62,9 @@ class RenderContext:
         if key.layer_switch is None:
             return default
 
-        if 0 <= key.layer_switch < len(self.palette.layers):
-            lc = self.palette.layers[key.layer_switch]
+        position = self.qmk_index_to_position(key.layer_switch)
+        if position is not None and 0 <= position < len(self.palette.layers):
+            lc = self.palette.layers[position]
             return lc[lc.color_index - (1 if use_accent else 0)]
 
         return default
@@ -95,6 +100,7 @@ class ClusterRenderContext(RenderContext):
             hold_symbol_position=render_context.hold_symbol_position,
             use_system_fonts=render_context.use_system_fonts,
             show_layer_indicators=render_context.show_layer_indicators,
+            qmk_index_to_position=render_context.qmk_index_to_position,
             side=side,
         )
 
