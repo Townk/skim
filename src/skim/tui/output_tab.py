@@ -170,7 +170,7 @@ class LayerColorListPane(ListDetailPane):
     def compose_detail_fields(self) -> ComposeResult:
         with Horizontal(classes="field-row"):
             yield Label("Base color:", classes="field-label")
-            yield Static(" ", classes="color-swatch", id="swatch-lc-base-color")
+            yield Static("\ue0b6\u2588\u2588\ue0b4", classes="color-swatch", id="swatch-lc-base-color")
             lc_color_input = SkimInput(
                 value="", id="lc-base-color",
                 placeholder="#RRGGBB", disabled=True,
@@ -205,7 +205,7 @@ class LayerColorListPane(ListDetailPane):
     def _update_swatch(self, swatch_id: str, color: str) -> None:
         try:
             swatch = self.query_one(f"#{swatch_id}", Static)
-            swatch.styles.background = color if color else "transparent"
+            swatch.styles.color = color if color else "white"
         except Exception:
             pass
 
@@ -249,7 +249,7 @@ class OutputTab(Widget):
         border-bottom: solid $accent 20%;
     }
     OutputTab .color-swatch {
-        width: 4;
+        width: 5;
         height: 1;
         margin: 1 1 0 0;
         content-align: center middle;
@@ -372,7 +372,7 @@ class OutputTab(Widget):
                     color_val = palette.get(config_key, "") or ""
                     with Horizontal(classes="field-row"):
                         yield Label(color_label, classes="field-label")
-                        yield Static(" ", classes="color-swatch", id=f"swatch-{field_id}")
+                        yield Static("\ue0b6\u2588\u2588\ue0b4", classes="color-swatch", id=f"swatch-{field_id}")
                         color_input = SkimInput(
                             value=color_val, id=field_id,
                             placeholder=placeholder,
@@ -399,7 +399,7 @@ class OutputTab(Widget):
     def _update_swatch(self, swatch_id: str, color: str) -> None:
         try:
             swatch = self.query_one(f"#{swatch_id}", Static)
-            swatch.styles.background = color if color else "transparent"
+            swatch.styles.color = color if color else "white"
         except Exception:
             pass
 
