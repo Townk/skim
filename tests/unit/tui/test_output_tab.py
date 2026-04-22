@@ -2,10 +2,11 @@
 
 import pytest
 from textual.app import App, ComposeResult
-from textual.widgets import Button, Input, ListView, Select, Switch
+from textual.widgets import Button, Input, Select, Switch
 
 from skim.data.config import SkimConfig
-from skim.tui.output_tab import OutputTab
+from skim.tui.output_tab import LayerColorListPane, OutputTab
+from skim.tui.widgets import SkimListView
 
 
 class OutputTabTestApp(App):
@@ -105,7 +106,7 @@ class TestOutputTab:
         app = OutputTabTestApp(config_data=config_with_output)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            color_list = app.query_one("#layer-colors-list", ListView)
+            color_list = app.query_one("#layer-colors-list", SkimListView)
             assert len(color_list.children) == 2
 
     @pytest.mark.asyncio()
@@ -149,8 +150,8 @@ class TestOutputTab:
         app = OutputTabTestApp(config_data=empty_config)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            assert app.query_one("#layer-colors-list", ListView).can_focus is False
-            assert app.query_one("#remove-layer-color", Button).disabled is True
+            assert app.query_one("#layer-colors-list", SkimListView).can_focus is False
+            assert app.query_one("#layer-colors-remove", Button).disabled is True
 
     @pytest.mark.asyncio()
     async def test_tab_from_tabbar_reaches_first_input(self, config_with_output):

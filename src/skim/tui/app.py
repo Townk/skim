@@ -27,6 +27,8 @@ from textual.widgets import (
     Tabs,
 )
 
+from skim.tui.widgets import SkimListView
+
 from skim.data.config import SkimConfig
 
 
@@ -484,6 +486,6 @@ class SkimConfigApp(App):
 
     def on_descendant_focus(self, event: events.DescendantFocus) -> None:
         widget = event.widget
-        if isinstance(widget, ListView) and widget.index is None and len(widget.children) > 0:
+        if isinstance(widget, (ListView, SkimListView)) and widget.index is None and len(widget.children) > 0:
             widget.index = 0
 

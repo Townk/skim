@@ -2,10 +2,11 @@
 
 import pytest
 from textual.app import App, ComposeResult
-from textual.widgets import Input, ListView, Switch
+from textual.widgets import Input, Switch
 
 from skim.data.config import SkimConfig
-from skim.tui.keyboard_tab import KeyboardTab
+from skim.tui.keyboard_tab import KeyboardTab, LayerListPane
+from skim.tui.widgets import SkimListView
 
 
 class KeyboardTabTestApp(App):
@@ -46,7 +47,7 @@ class TestKeyboardTab:
         app = KeyboardTabTestApp(config_data=config_with_layers)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            list_view = app.query_one("#layer-list", ListView)
+            list_view = app.query_one("#layer-list", SkimListView)
             assert len(list_view.children) == 2
 
     @pytest.mark.asyncio()
@@ -65,8 +66,8 @@ class TestKeyboardTab:
         app = KeyboardTabTestApp(config_data=config_with_layers)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            tab = app.query_one(KeyboardTab)
-            tab._enter_edit_mode()
+            pane = app.query_one(LayerListPane)
+            pane._enter_edit_mode()
             await pilot.pause()
             inp = app.query_one("#layer-label", Input)
             assert inp.disabled is False
@@ -78,7 +79,7 @@ class TestKeyboardTab:
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
             # Enter edit mode
-            list_view = app.query_one("#layer-list", ListView)
+            list_view = app.query_one("#layer-list", SkimListView)
             list_view.focus()
             await pilot.pause()
             await pilot.press("enter")
@@ -95,8 +96,8 @@ class TestKeyboardTab:
         app = KeyboardTabTestApp(config_data=config_with_layers)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            tab = app.query_one(KeyboardTab)
-            tab._enter_edit_mode()
+            pane = app.query_one(LayerListPane)
+            pane._enter_edit_mode()
             await pilot.pause()
             # Change the name
             name_input = app.query_one("#layer-name", Input)
@@ -104,7 +105,7 @@ class TestKeyboardTab:
             await pilot.pause()
             assert app.config_data["keyboard"]["layers"][0]["name"] == "Changed"
             # Rollback
-            tab._exit_edit_mode(commit=False)
+            pane._exit_edit_mode(commit=False)
             await pilot.pause()
             assert app.config_data["keyboard"]["layers"][0]["name"] == "Letters"
             # Fields should be disabled again
@@ -137,13 +138,13 @@ class TestKeyboardTab:
         app = KeyboardTabTestApp(config_data=config_with_layers)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            tab = app.query_one(KeyboardTab)
+            pane = app.query_one(LayerListPane)
             # Press escape first to exit any edit mode triggered by add
-            add_btn = app.query_one("#add-layer")
+            add_btn = app.query_one("#layer-add")
             add_btn.press()
             await pilot.pause()
             # Exit edit mode without committing
-            tab._exit_edit_mode(commit=False)
+            pane._exit_edit_mode(commit=False)
             await pilot.pause()
             layers = app.config_data["keyboard"]["layers"]
             assert len(layers) == 3
@@ -158,11 +159,11 @@ class TestKeyboardTab:
         app = KeyboardTabTestApp(config_data=config_with_layers)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            tab = app.query_one(KeyboardTab)
-            add_btn = app.query_one("#add-layer")
+            pane = app.query_one(LayerListPane)
+            add_btn = app.query_one("#layer-add")
             add_btn.press()
             await pilot.pause()
-            tab._exit_edit_mode(commit=False)
+            pane._exit_edit_mode(commit=False)
             await pilot.pause()
             layers = app.config_data["keyboard"]["layers"]
             new_layer = layers[-1]

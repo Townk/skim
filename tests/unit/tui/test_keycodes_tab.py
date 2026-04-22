@@ -2,10 +2,11 @@
 
 import pytest
 from textual.app import App, ComposeResult
-from textual.widgets import Button, Input, ListView
+from textual.widgets import Button, Input
 
 from skim.data.config import SkimConfig
-from skim.tui.keycodes_tab import KeycodesTab
+from skim.tui.keycodes_tab import KeycodesTab, OverrideListPane, PreProcessListPane
+from skim.tui.widgets import SkimListView
 
 
 class KeycodesTabTestApp(App):
@@ -53,7 +54,7 @@ class TestKeycodesTab:
         app = KeycodesTabTestApp(config_data=config_with_keycodes)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            overrides_list = app.query_one("#overrides-list")
+            overrides_list = app.query_one("#override-list")
             assert overrides_list is not None
 
     @pytest.mark.asyncio()
@@ -62,7 +63,7 @@ class TestKeycodesTab:
         app = KeycodesTabTestApp(config_data=config_with_keycodes)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            pre_list = app.query_one("#pre-process-list", ListView)
+            pre_list = app.query_one("#pre-process-list", SkimListView)
             assert len(pre_list.children) == 1
 
     @pytest.mark.asyncio()
@@ -71,7 +72,7 @@ class TestKeycodesTab:
         app = KeycodesTabTestApp(config_data=config_with_keycodes)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            overrides_list = app.query_one("#overrides-list", ListView)
+            overrides_list = app.query_one("#override-list", SkimListView)
             assert len(overrides_list.children) == 2
 
     @pytest.mark.asyncio()
@@ -132,7 +133,7 @@ class TestKeycodesTab:
         app = KeycodesTabTestApp(config_data=empty_config)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            assert app.query_one("#pre-process-list", ListView).can_focus is False
-            assert app.query_one("#overrides-list", ListView).can_focus is False
-            assert app.query_one("#remove-pre-process", Button).disabled is True
-            assert app.query_one("#remove-override", Button).disabled is True
+            assert app.query_one("#pre-process-list", SkimListView).can_focus is False
+            assert app.query_one("#override-list", SkimListView).can_focus is False
+            assert app.query_one("#pre-process-remove", Button).disabled is True
+            assert app.query_one("#override-remove", Button).disabled is True
