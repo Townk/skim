@@ -229,6 +229,7 @@ class OutputTab(Widget):
                             )
                         with Horizontal(classes="field-row"):
                             yield Label("Color index:", classes="field-label")
+                            yield Static(" ", classes="swatch-spacer")
                             yield Input(
                                 value="", id="lc-color-index",
                                 placeholder="2", disabled=True,
