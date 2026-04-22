@@ -109,6 +109,10 @@ Error: The TUI requires the 'textual' package. Install it with:
     pip install qmk-skim[tui]
 ```
 
+### Doctor Check
+
+The `skim doctor` command gains a check for textual availability, following the same pattern as the existing Playwright and Cairo checks. It reports PASS/WARN with installation instructions. Since textual is optional (only needed for the TUI), a missing textual should be a WARN, not a FAIL — same treatment as Cairo and Playwright.
+
 ## Architecture
 
 ### File Structure
