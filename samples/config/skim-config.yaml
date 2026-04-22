@@ -1,233 +1,130 @@
-# This configuration helps skim to know how you define the layout for your
-# keymap.
 keyboard:
   features:
-    #   A flag indicating if your Svalboard has two south keys or not.
     double_south: true
-
-  # The base configuration for layers on the "to be generated" keymap. This
-  # field must have the same number of items as your keymap has layers. If
-  # their sizes differ, skim will try to "guess" values for the unmatched
-  # layers, but the output result most likely won't be satisfactory.
-  #
-  # Attributes
-  # ----------
-  #   id (string): A string that might be used in the keymap instead of a layer
-  #       number when activating a layer. This is usually needed only for QMK
-  #       Userspace keymaps that have a `#define` to represent layer numbers.
-  #
-  #   name (string): A long string name that skim will use as the layer "title"
-  #       when generating the keymap images.
-  #
-  #   label (string): The string to use instead of the layer number when
-  #       defining a key label for a layer activation key. If this attribute is
-  #       not present, the 1-indexed layer number should be used.
   layers:
-    - id: _BASE
-      name: COLEMAK
-      label: "BASE"
-    - id: _GAME
-      name: Game
-      label: "GAME"
-    - id: _NAV
-      name: Navigation
-      label: "NAV"
-    - id: _NUM
-      name: Numbers
-      label: "NUM"
-    - id: _SYM
-      name: Symbols
-      label: "SYM"
-    - id: _FUN
-      name: Function Keys
-      label: "FN"
-    - id: _MED
-      name: Multimedia
-      label: "MED"
-    - id: _SYS
-      name: System
-      label: "SYS"
-    - id: _MBO
-      name: Mouse
-      label: "MBO"
-
-# User-defined keycode labels.
-#
-# skim has some decent defaults for Keycodes but we understand that each
-# keymap is unique, and the choice made to display a key with a specific symbol
-# might not be what the user wants.
-#
-# This configuration is what you'll use to tweak your final keymap image to
-# your heart's content.
+  - id: _BASE
+    index: 0
+    label: BASE
+    name: Letters
+    subtitle: COLEMAK
+  - id: _GAME
+    index: 1
+    label: GAME
+    name: Gaming
+    subtitle: null
+  - id: _NAV
+    index: 2
+    label: NAV
+    name: Navigation
+    subtitle: null
+  - id: _NUM
+    index: 3
+    label: NUM
+    name: Numbers
+    subtitle: null
+  - id: _SYM
+    index: 4
+    label: SYM
+    name: Symbols
+    subtitle: null
+  - id: _FUN
+    index: 5
+    label: FN
+    name: Function Keys
+    subtitle: null
+  - id: _MED
+    index: 6
+    label: MED
+    name: Multimedia
+    subtitle: null
+  - id: _SYS
+    index: 7
+    label: SYS
+    name: System
+    subtitle: null
+  - id: _MBO
+    index: 15
+    label: MBO
+    name: Mouse
+    subtitle: null
 keycodes:
-  # List of keycodes to be pre-processed before the normal label resolution.
-  # This is used to replace an entire keycode string with something else.
-  #
-  # During the pre-process phase, there will be no key label resolution. The
-  # string that you define in the `target` will be what the normal process will
-  # use to generate the label. This means you should not use special values
-  # (see the comments on the `overrides` attribute) on the `target` of a
-  # pre-processing.
-  #
-  # The main reason you want to have a pre-processing keycode is to make skim
-  # "see" a particular keycode as if it is something else.
-  #
-  # Attributes
-  # ----------
-  #   keycode (string): The QMK keycode as it appears in your keymap.
-  #
-  #   target (string): The QMK keycode replacement to be used whenever skim
-  #       finds the keycode defined in the `keycode` attribute.
   pre_process:
-      - keycode: LSFT(KC_TAB)
-        target: MKC_BKTAB
-      - keycode: CKC_BSPC
-        target: LT(_NAV, KC_BACKSPACE)
-      - keycode: USER20
-        target: LT(_NAV, KC_BACKSPACE)
-      - keycode: CKC_SPC
-        target: LT(_NUM, KC_SPACE)
-      - keycode: USER21
-        target: LT(_NUM, KC_SPACE)
-      - keycode: CKC_TAB
-        target: LT(_SYM, KC_TAB)
-      - keycode: USER22
-        target: LT(_SYM, KC_TAB)
-      - keycode: CKC_BKTAB
-        target: LT(_FUN, MKC_BKTAB)
-      - keycode: USER23
-        target: LT(_FUN, MKC_BKTAB)
-      - keycode: MB_ESC
-        target: MT(MOD_LALT, KC_ESC)
-      - keycode: USER29
-        target: MT(MOD_LALT, KC_ESC)
-
-  # Extra keycode keys or overrides for existing ones used to convert a QMK
-  # keycode into a string label used in the final keymap image. This is the
-  # standard way to make a key "look" different than what it originally does.
-  #
-  # Attributes
-  # ----------
-  #   keycode (string): The QMK keycode as it appears in your keymap.
-  #
-  #   target (string): Any string or one of the special values to define the
-  #       label.
-  #
-  #       Special values
-  #       --------------
-  #           @@KEYCODE; - Reference to another keycode (will be resolved
-  #               recursively).
-  #
-  #           %%icon; - NerdFont icon reference (use the icon "Class" name
-  #               from the NerdFont website).
-  #
-  #       You can use one or more special values in the same label.
-  #
-  #       IMPORTANT
-  #       ---------
-  #           Do not forget the `;` character at the end of the special
-  #           value.
+  - keycode: LSFT(KC_TAB)
+    target: MKC_BKTAB
+  - keycode: CKC_BSPC
+    target: LT(_NAV, KC_BACKSPACE)
+  - keycode: USER20
+    target: LT(_NAV, KC_BACKSPACE)
+  - keycode: CKC_SPC
+    target: LT(_NUM, KC_SPACE)
+  - keycode: USER21
+    target: LT(_NUM, KC_SPACE)
+  - keycode: CKC_TAB
+    target: LT(_SYM, KC_TAB)
+  - keycode: USER22
+    target: LT(_SYM, KC_TAB)
+  - keycode: CKC_BKTAB
+    target: LT(_FUN, MKC_BKTAB)
+  - keycode: USER23
+    target: LT(_FUN, MKC_BKTAB)
+  - keycode: MB_ESC
+    target: MT(MOD_LALT, KC_ESC)
+  - keycode: USER29
+    target: MT(MOD_LALT, KC_ESC)
   overrides:
-      # Custom macro
-      - keycode: MKC_BKTAB
-        target: "%%nf-md-keyboard_tab_reverse;"
-
-      # Custom tap-dance keys (CKC_*)
-      - keycode: CKC_SMSFT
-        target: "%%nf-md-brain; @@KC_LEFT_SHIFT;"
-
-        # Custom tap-dance keys (CKC_*)
-      - keycode: MKC_APPWIN
-        target: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_DOWN;"
-      - keycode: MKC_DKTN
-        target: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_RIGHT;"
-      - keycode: MKC_DKTP
-        target: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_LEFT;"
-      - keycode: MKC_SHDKT
-        target: "%%nf-md-monitor;"
-      - keycode: MKC_SHNOT
-        target: "%%nf-md-bell;"
-      - keycode: MKC_SPFND
-        target: "%%nf-md-magnify; %%nf-md-file_search;"
-      - keycode: ML_ALT
-        target: "@@KC_LEFT_ALT; OPT"
-      - keycode: ML_CMD
-        target: "@@KC_LEFT_GUI; CMD"
-
-        # Mouse button keys (MB_*)
-      - keycode: MB_SFT
-        target: "@@KC_BTN1;"
-      - keycode: MB_ALT
-        target: "@@KC_BTN2;"
-      - keycode: MB_GUI
-        target: "@@KC_BTN3;"
-      - keycode: MB_CTL
-        target: "@@KC_BTN4;"
-
-        # Keyboard Alias
-      - keycode: USER24
-        target: "@@CKC_SMSFT;"
-      - keycode: USER25
-        target: "@@MB_SFT;"
-      - keycode: USER26
-        target: "@@MB_ALT;"
-      - keycode: USER27
-        target: "@@MB_GUI;"
-      - keycode: USER28
-        target: "@@MB_CTL;"
-
-      - keycode: KC_ESC
-        target: "⎋ ESC"
-
-
-# This section defines the overall look and feel of the generated image.
+  - keycode: MKC_BKTAB
+    target: '%%nf-md-keyboard_tab_reverse;'
+  - keycode: CKC_SMSFT
+    target: '%%nf-md-brain; @@KC_LEFT_SHIFT;'
+  - keycode: MKC_APPWIN
+    target: '@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_DOWN;'
+  - keycode: MKC_DKTN
+    target: '@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_RIGHT;'
+  - keycode: MKC_DKTP
+    target: '@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_LEFT;'
+  - keycode: MKC_SHDKT
+    target: '%%nf-md-monitor;'
+  - keycode: MKC_SHNOT
+    target: '%%nf-md-bell;'
+  - keycode: MKC_SPFND
+    target: '%%nf-md-magnify; %%nf-md-file_search;'
+  - keycode: ML_ALT
+    target: '@@KC_LEFT_ALT; OPT'
+  - keycode: ML_CMD
+    target: '@@KC_LEFT_GUI; CMD'
+  - keycode: MB_SFT
+    target: '@@KC_BTN1;'
+  - keycode: MB_ALT
+    target: '@@KC_BTN2;'
+  - keycode: MB_GUI
+    target: '@@KC_BTN3;'
+  - keycode: MB_CTL
+    target: '@@KC_BTN4;'
+  - keycode: USER24
+    target: '@@CKC_SMSFT;'
+  - keycode: USER25
+    target: '@@MB_SFT;'
+  - keycode: USER26
+    target: '@@MB_ALT;'
+  - keycode: USER27
+    target: '@@MB_GUI;'
+  - keycode: USER28
+    target: '@@MB_CTL;'
+  - keycode: KC_ESC
+    target: "\u238B\_ESC"
 output:
-  # Configuration related to measurements of the final image.
   layout:
-    # This is how wide the image will be. We do not offer a `height` option
-    # because all keymap images follow a strict aspect ratio for each element,
-    # so, how "tall" the image will be is always defined by the elements used
-    # to generate it.
-    width: 1600
-
-    # Spaces between the image edge and the keymap.
+    width: 1600.0
     spacing:
-      # The space on the outer side of the image (outside the border if you
-      # defined one). When generating an image that supports transparency, the
-      # space outside the border will always be defined as transparent.
-      margin: 0
-
-      # The space between the border and the keymap image. This will increase
-      # the non-transparent area of the final image.
-      inset: 20
-
+      margin: 0.0
+      inset: 20.0
   style:
     use_layer_colors_on_keys: false
     hold_symbol_position: outward
-
-    # Defines a border style for the image. If this entry is not defined, the
-    # skim output assumes you do not want a border on the generated image.
     border:
-      # How thick the frame border should be
-      width: 2
-
-      # If this attribute is defined with a value greater than `0`, the border
-      # will be a rounded border with the round radius set to this value. Do
-      # not define a unit in this attribute, the tool uses a pixel-independent
-      # unit for all its drawing, so it is already implying it.
-      radius: 10
-
-    # Color palette to be used on the generated image.
+      width: 2.0
+      radius: 10.0
     palette:
-      # Override a named color that can be used in this configuration to
-      # reference a color value. Each entry should be a string for the color name
-      # and a hex color that will be used whenever the color name is found where
-      # a color is expected. Color names are case insensitive, but usually
-      # represented in lower-case.
-      #
-      # skim understands the standard W3C color names, and you can override any
-      # of them here, but this entry also allows you to define custom names to
-      # match your brand.
       overrides:
         azure: '#276e76'
         black: '#4f4f4f'
@@ -248,71 +145,40 @@ output:
         turquoise: '#3e605c'
         white: '#4f4f4f'
         yellow: '#767627'
-
-      # This is a neutral color that is used on some of the thumb keys for
-      # aesthetics purpose.
       neutral_color: '#70768B'
-
-      # The main text color used in the output images. Depending on which keymap
-      # image you generate, skim might use a different text color to match it
-      # with other elements in the image. For instance, it will use the layer
-      # color to write the layer name in an inverted color box on the overview
-      # keymap.
-      text_color: "#1b1b1b"
-
-      # The color to use to display the key labels in the final image. The
-      # gradient created for each layer always assumes the label of the key will be
-      # light color, so, to make your keymap more aesthetically pleasing, use a
-      # light color here.
-      key_label_color: "#FFF"
-
-      # The color to use for the background image. If you want a transparent
-      # background, set this entry explicitly to `null`.
-      background_color: "#FFF"
-
-      # The color to use for the frame border on the final image. If either this
-      # attribute or the `output.layout.border` are `null`, no border will be
-      # rendered in the final image.
-      border_color: "#1b1b1b"
-
-      # Define the colors to use in each layer of your keymap.
-      #
-      # This list must match the size of the `keyboard.layers` configuration.
-      #
-      # Attributes
-      # ----------
-      #   base_color (color string): The main color of the layer. This color is
-      #       used to generate a color progression to represent a key cluster in
-      #       the final keymap image when the `gradient` attribute is not
-      #       supplied.
-      #
-      #   color_index (int): The index position on the color progression gradient
-      #       that the `base_color` should be placed.
-      #
-      #   gradient {optional} (list[string]): A list of 6 colors that will
-      #       replace the generated color progression for this layer. If the
-      #       provided list does not have 6 elements, skim will try its best to
-      #       fill the gaps or remove the right colors from it respecting the
-      #       `color_index` and the `base_color`. When this list does not contain
-      #       the `base_color`, skim will **replace** the color at position
-      #       `color_index` with the declared `base_color` before normalizing the
-      #       gradient list.
+      text_color: '#1b1b1b'
+      key_label_color: '#FFF'
+      background_color: '#FFF'
+      border_color: '#1b1b1b'
       layers:
-        - base_color: "#347156"
-          color_index: 2
-        - base_color: "#3E605C"
-          color_index: 2
-        - base_color: "#89511C"
-          color_index: 2
-        - base_color: "#41687E"
-          color_index: 2
-        - base_color: "#8C3B2C"
-          color_index: 2
-        - base_color: "#5F4B7E"
-          color_index: 2
-        - base_color: "#7E6E1E"
-          color_index: 2
-        - base_color: "#9C2927"
-          color_index: 2
-        - base_color: "#8C3396"
-          color_index: 2
+      - base_color: '#347156'
+        color_index: 2
+        gradient: null
+      - base_color: '#3E605C'
+        color_index: 2
+        gradient: null
+      - base_color: '#89511C'
+        color_index: 2
+        gradient: null
+      - base_color: '#41687E'
+        color_index: 2
+        gradient: null
+      - base_color: '#8C3B2C'
+        color_index: 2
+        gradient: null
+      - base_color: '#5F4B7E'
+        color_index: 2
+        gradient: null
+      - base_color: '#7E6E1E'
+        color_index: 2
+        gradient: null
+      - base_color: '#9C2927'
+        color_index: 2
+        gradient: null
+      - base_color: '#8C3396'
+        color_index: 2
+        gradient: null
+    use_system_fonts: false
+    show_layer_indicators: true
+  keymap_title: null
+  copyright: (c) Thiago Alves
