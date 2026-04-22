@@ -68,21 +68,15 @@ class SkimConfigApp(App):
     }
     /* Global compact styling */
     Input {
-        height: 1;
-        border: none;
-        border-bottom: solid $accent 50%;
-        padding: 0;
+        height: 3;
         width: 1fr;
-    }
-    Input:focus {
-        border-bottom: solid $accent;
+        margin: 0;
     }
     Switch {
         height: auto;
         min-height: 1;
     }
     Select {
-        height: 1;
         width: 1fr;
         max-width: 30;
     }
@@ -93,12 +87,20 @@ class SkimConfigApp(App):
     }
     .field-label {
         width: 22;
-        height: 1;
+        height: 3;
+        padding: 1 0 0 0;
     }
     .section-title {
         text-style: bold;
         color: $accent;
         margin: 1 0 0 0;
+    }
+    .list-buttons {
+        height: auto;
+    }
+    .list-buttons Button {
+        min-width: 12;
+        margin: 0 1 0 0;
     }
     """
 

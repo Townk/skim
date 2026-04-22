@@ -38,13 +38,7 @@ class KeycodesTab(Widget):
         border: solid $accent 50%;
     }
     KeycodesTab .list-buttons {
-        height: auto;
         dock: bottom;
-    }
-    KeycodesTab .list-buttons Button {
-        min-width: 10;
-        height: 1;
-        margin: 0 1 0 0;
     }
     KeycodesTab .keycode-detail {
         padding: 0 1;

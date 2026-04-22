@@ -52,13 +52,7 @@ class KeyboardTab(Widget):
         border: solid $accent 50%;
     }
     KeyboardTab .list-buttons {
-        height: auto;
         dock: bottom;
-    }
-    KeyboardTab .list-buttons Button {
-        min-width: 10;
-        height: 1;
-        margin: 0 1 0 0;
     }
     KeyboardTab #layer-detail {
         padding: 0 1;

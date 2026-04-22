@@ -52,12 +52,7 @@ class OutputTab(Widget):
         border: solid $accent 50%;
     }
     OutputTab .list-buttons {
-        height: auto;
-    }
-    OutputTab .list-buttons Button {
-        min-width: 10;
-        height: 1;
-        margin: 0 1 0 0;
+        dock: bottom;
     }
     OutputTab #layer-color-detail {
         padding: 0 1;
