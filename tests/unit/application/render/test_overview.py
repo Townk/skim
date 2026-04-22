@@ -70,9 +70,9 @@ class TestDrawOverview:
         for i in range(3):
             assert f"LAYER{i}" in svg
 
-    def test_svg_contains_subtitle_when_set(self):
+    def test_svg_contains_variant_when_set(self):
         layers_cfg = (
-            KeyboardLayer(index=0, label="0", name="Letters", subtitle="COLEMAK"),
+            KeyboardLayer(index=0, label="0", name="Letters", variant="COLEMAK"),
             KeyboardLayer(index=1, label="1", name="Numbers"),
         )
         layer_colors = (

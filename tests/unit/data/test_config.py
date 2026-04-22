@@ -167,24 +167,24 @@ class TestStyleShowLayerIndicators:
 
 
 class TestKeyboardLayerSubtitle:
-    """Tests for KeyboardLayer.subtitle field."""
+    """Tests for KeyboardLayer.variant field."""
 
-    def test_subtitle_defaults_to_none(self):
-        """subtitle defaults to None when not specified."""
+    def test_variant_defaults_to_none(self):
+        """variant defaults to None when not specified."""
         layer = KeyboardLayer(index=0, label="1", name="Letters")
-        assert layer.subtitle is None
+        assert layer.variant is None
 
-    def test_subtitle_can_be_set(self):
-        """subtitle can be set to a string value."""
-        layer = KeyboardLayer(index=0, label="1", name="Letters", subtitle="COLEMAK")
-        assert layer.subtitle == "COLEMAK"
+    def test_variant_can_be_set(self):
+        """variant can be set to a string value."""
+        layer = KeyboardLayer(index=0, label="1", name="Letters", variant="COLEMAK")
+        assert layer.variant == "COLEMAK"
 
-    def test_subtitle_included_in_model_dump(self):
-        """subtitle is included in model_dump output."""
-        layer = KeyboardLayer(index=0, label="1", name="Letters", subtitle="COLEMAK")
+    def test_variant_included_in_model_dump(self):
+        """variant is included in model_dump output."""
+        layer = KeyboardLayer(index=0, label="1", name="Letters", variant="COLEMAK")
         dumped = layer.model_dump()
-        assert "subtitle" in dumped
-        assert dumped["subtitle"] == "COLEMAK"
+        assert "variant" in dumped
+        assert dumped["variant"] == "COLEMAK"
 
 
 class TestOutputKeymapTitle:

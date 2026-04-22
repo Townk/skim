@@ -118,7 +118,7 @@ class ConfigGenerator:
         for idx in range(num_layers):
             name = layer_names.get(str(idx), f"Layer {idx}")
             label = name.upper()[:4].strip() if name != f"Layer {idx}" else f"L{idx}"
-            layers.append({"index": idx, "label": label, "name": name, "id": None, "subtitle": None})
+            layers.append({"index": idx, "label": label, "name": name, "id": None, "variant": None})
         return layers
 
     def _build_palette_layers(

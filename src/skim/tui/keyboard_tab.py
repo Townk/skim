@@ -22,7 +22,7 @@ _FIELD_MAP = {
     "layer-label": "label",
     "layer-name": "name",
     "layer-id": "id",
-    "layer-subtitle": "subtitle",
+    "layer-variant": "variant",
 }
 
 
@@ -142,7 +142,7 @@ class KeyboardTab(Widget):
                     with Horizontal(classes="field-row"):
                         yield Label("Subtitle:", classes="field-label")
                         yield Input(
-                            value="", id="layer-subtitle", placeholder="e.g. COLEMAK (optional)", disabled=True
+                            value="", id="layer-variant", placeholder="e.g. COLEMAK (optional)", disabled=True
                         )
 
     def on_mount(self) -> None:
@@ -162,9 +162,9 @@ class KeyboardTab(Widget):
 
     def _col2_text(self, layer: dict[str, Any]) -> str:
         name = layer.get("name", "")
-        subtitle = layer.get("subtitle") or ""
-        if subtitle:
-            return f"{name} ({subtitle})"
+        variant = layer.get("variant") or ""
+        if variant:
+            return f"{name} ({variant})"
         return name
 
     def _column_widths(self) -> tuple[int, int]:
@@ -314,7 +314,7 @@ class KeyboardTab(Widget):
                 "label": f"L{next_index}",
                 "name": f"Layer {next_index}",
                 "id": None,
-                "subtitle": None,
+                "variant": None,
             }
             layers.append(new_layer)
             self._rebuild_list()
@@ -416,14 +416,14 @@ class KeyboardTab(Widget):
         self.query_one("#layer-label", Input).value = layer.get("label", "") or ""
         self.query_one("#layer-name", Input).value = layer.get("name", "") or ""
         self.query_one("#layer-id", Input).value = layer.get("id", "") or ""
-        self.query_one("#layer-subtitle", Input).value = layer.get("subtitle", "") or ""
+        self.query_one("#layer-variant", Input).value = layer.get("variant", "") or ""
 
     def _clear_detail_fields(self) -> None:
         self.query_one("#layer-index", Input).value = ""
         self.query_one("#layer-label", Input).value = ""
         self.query_one("#layer-name", Input).value = ""
         self.query_one("#layer-id", Input).value = ""
-        self.query_one("#layer-subtitle", Input).value = ""
+        self.query_one("#layer-variant", Input).value = ""
 
     def sync_layer_added(self, index: int) -> None:
         """Called when a layer color is added in the Style tab — add matching keyboard layer."""
@@ -437,7 +437,7 @@ class KeyboardTab(Widget):
             "label": f"L{next_index}",
             "name": f"Layer {next_index}",
             "id": None,
-            "subtitle": None,
+            "variant": None,
         }
         layers.insert(index, new_layer)
         self._rebuild_list()
@@ -477,7 +477,7 @@ class KeyboardTab(Widget):
         if self._selected_layer >= len(layers):
             return
         value: str | None = event.value
-        if config_key in ("id", "subtitle") and value == "":
+        if config_key in ("id", "variant") and value == "":
             value = None
         layers[self._selected_layer][config_key] = value
         self._update_selected_list_item()

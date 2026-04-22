@@ -575,7 +575,7 @@ def draw_overview(
         title_text = config.output.keymap_title
     elif num_layers > 0:
         first_layer = config.keyboard.layers[0]
-        title_text = f"{(first_layer.subtitle or first_layer.name)} Layers Layout"
+        title_text = f"{(first_layer.variant or first_layer.name)} Layers Layout"
     else:
         title_text = "Keymap Layout"
     d.append(draw.Text(
@@ -615,9 +615,9 @@ def draw_overview(
             text_anchor="start", dominant_baseline="central",
             font_family=label_font, fill="white",
         ))
-        if layer_cfg.subtitle:
+        if layer_cfg.variant:
             d.append(draw.Text(
-                layer_cfg.subtitle, font_size=badge_font_size,
+                layer_cfg.variant, font_size=badge_font_size,
                 x=badge_x + _BADGE_PADDING_LEFT,
                 y=badge_y + badge_h + badge_font_size * 0.2,
                 text_anchor="start", dominant_baseline="text-before-edge",

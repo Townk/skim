@@ -6,47 +6,47 @@ keyboard:
     index: 0
     label: BASE
     name: Letters
-    subtitle: COLEMAK
+    variant: COLEMAK
   - id: _GAME
     index: 1
     label: GAME
     name: Gaming
-    subtitle: null
+    variant: null
   - id: _NAV
     index: 2
     label: NAV
     name: Navigation
-    subtitle: null
+    variant: null
   - id: _NUM
     index: 3
     label: NUM
     name: Numbers
-    subtitle: null
+    variant: null
   - id: _SYM
     index: 4
     label: SYM
     name: Symbols
-    subtitle: null
+    variant: null
   - id: _FUN
     index: 5
     label: FN
     name: Function Keys
-    subtitle: null
+    variant: null
   - id: _MED
     index: 6
     label: MED
     name: Multimedia
-    subtitle: null
+    variant: null
   - id: _SYS
     index: 7
     label: SYS
     name: System
-    subtitle: null
+    variant: null
   - id: _MBO
     index: 15
     label: MBO
     name: Mouse
-    subtitle: null
+    variant: null
 keycodes:
   pre_process:
   - keycode: LSFT(KC_TAB)

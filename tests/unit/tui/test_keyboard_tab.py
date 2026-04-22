@@ -26,8 +26,8 @@ class TestKeyboardTab:
     def config_with_layers(self) -> dict:
         config = SkimConfig().model_dump(mode="json")
         config["keyboard"]["layers"] = [
-            {"index": 0, "label": "BASE", "name": "Letters", "id": "_BASE", "subtitle": "COLEMAK"},
-            {"index": 1, "label": "NAV", "name": "Navigation", "id": "_NAV", "subtitle": None},
+            {"index": 0, "label": "BASE", "name": "Letters", "id": "_BASE", "variant": "COLEMAK"},
+            {"index": 1, "label": "NAV", "name": "Navigation", "id": "_NAV", "variant": None},
         ]
         return config
 
@@ -55,7 +55,7 @@ class TestKeyboardTab:
         app = KeyboardTabTestApp(config_data=config_with_layers)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            for field_id in ["layer-index", "layer-label", "layer-name", "layer-id", "layer-subtitle"]:
+            for field_id in ["layer-index", "layer-label", "layer-name", "layer-id", "layer-variant"]:
                 inp = app.query_one(f"#{field_id}", Input)
                 assert inp.disabled is True
 
