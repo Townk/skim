@@ -38,7 +38,7 @@ class ListDetailPane(Widget):
     ListDetailPane .ldp-list-col {
         width: 35%;
         min-width: 25;
-        height: 100%;
+        height: auto;
     }
     ListDetailPane .ldp-list {
         height: 1fr;

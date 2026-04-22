@@ -34,10 +34,8 @@ class LayerListPane(ListDetailPane):
         height: auto;
     }
     LayerListPane .ldp-list-col {
-        width: 1fr;
-        max-width: 33%;
+        width: 35%;
         min-width: 25;
-        height: 100%;
     }
     """
 

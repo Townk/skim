@@ -91,25 +91,8 @@ class LayerColorListPane(ListDetailPane):
         height: auto;
     }
     LayerColorListPane .ldp-list-col {
-        width: 35;
+        width: 35%;
         min-width: 25;
-        height: auto;
-    }
-    LayerColorListPane .ldp-list {
-        min-height: 12;
-        max-height: 12;
-        height: auto;
-        border: solid $accent 50%;
-    }
-    LayerColorListPane .ldp-detail {
-        padding: 0 1;
-        height: auto;
-        max-height: 12;
-        overflow-x: hidden;
-        border: solid $accent 30%;
-    }
-    LayerColorListPane .ldp-detail:focus-within {
-        border: solid $accent;
     }
     LayerColorListPane .lc-swatch {
         width: 4;

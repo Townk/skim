@@ -195,7 +195,10 @@ class KeycodesTab(Widget):
         padding: 0 1;
     }
     KeycodesTab .keycodes-section {
-        height: 50%;
+        height: 1fr;
+    }
+    KeycodesTab .keycodes-section ListDetailPane {
+        height: 1fr;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-list-col {
         width: 50%;
@@ -203,13 +206,8 @@ class KeycodesTab(Widget):
         height: 100%;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-list {
-        max-height: 100%;
+        height: 1fr;
         border: solid $accent 50%;
-    }
-    KeycodesTab .keycodes-section ListDetailPane .ldp-buttons {
-        dock: bottom;
-        height: auto;
-        width: 100%;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-detail {
         padding: 0 1;
