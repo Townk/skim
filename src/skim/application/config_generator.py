@@ -28,6 +28,7 @@ Example:
 import colorsys
 import json
 import re
+from collections.abc import Callable
 from typing import Any
 
 import yaml
@@ -101,36 +102,11 @@ class ConfigGenerator:
                 qmk_header_content, apply_adjustment
             )
 
-        config_dict: dict[str, Any] = {
-            "keyboard": {
-                "features": {"double_south": False},
-                "layers": keyboard_layers,
-            },
-            "keycodes": {
-                "pre_process": [],
-                "overrides": keycode_overrides,
-            },
-            "output": {
-                "layout": {"width": 800, "spacing": {"margin": 0, "inset": 20}},
-                "style": {
-                    "use_layer_colors_on_keys": True,
-                    "hold_symbol_position": "outward",
-                    "border": {"width": 2, "radius": 10},
-                    "palette": {
-                        "overrides": palette_overrides,
-                        "neutral_color": "#6F768B",
-                        "text_color": "black",
-                        "key_label_color": "white",
-                        "background_color": "white",
-                        "border_color": "black",
-                        "layers": palette_layers,
-                    },
-                    "use_system_fonts": False,
-                    "show_layer_indicators": True,
-                },
-                "copyright": None,
-            },
-        }
+        config_dict: dict[str, Any] = SkimConfig().model_dump(mode="json")
+        config_dict["keyboard"]["layers"] = keyboard_layers
+        config_dict["keycodes"]["overrides"] = keycode_overrides
+        config_dict["output"]["style"]["palette"]["layers"] = palette_layers
+        config_dict["output"]["style"]["palette"]["overrides"] = palette_overrides
 
         return yaml.dump(config_dict, sort_keys=False, default_flow_style=False)
 
@@ -149,7 +125,7 @@ class ConfigGenerator:
         self,
         num_layers: int,
         layer_colors_raw: list[dict[str, int]],
-        apply_adjustment: Any,
+        apply_adjustment: Callable[[str], str],
     ) -> list[dict[str, Any]]:
         """Convert HSV layer colors to hex palette entries."""
         palette_layers = []
@@ -186,7 +162,7 @@ class ConfigGenerator:
         return overrides
 
     def _parse_qmk_colors(
-        self, header_content: str, apply_adjustment: Any
+        self, header_content: str, apply_adjustment: Callable[[str], str]
     ) -> dict[str, str]:
         """Parse QMK color.h defines into name->hex mapping.
 
