@@ -644,6 +644,13 @@ class OutputTab(Widget):
                         id="show-layer-indicators",
                     )
                 with Horizontal(classes="field-row"):
+                    yield Label("Show layer connectors:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
+                    yield SkimSwitch(
+                        value=style.get("show_layer_connectors", True),
+                        id="show-layer-connectors",
+                    )
+                with Horizontal(classes="field-row"):
                     yield Label("Use system fonts:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
                     yield SkimSwitch(
@@ -868,6 +875,8 @@ class OutputTab(Widget):
             self.config_data["output"]["style"]["use_layer_colors_on_keys"] = value
         elif switch_id == "show-layer-indicators":
             self.config_data["output"]["style"]["show_layer_indicators"] = value
+        elif switch_id == "show-layer-connectors":
+            self.config_data["output"]["style"]["show_layer_connectors"] = value
         elif switch_id == "use-system-fonts":
             self.config_data["output"]["style"]["use_system_fonts"] = value
         elif switch_id == "border-enabled":
