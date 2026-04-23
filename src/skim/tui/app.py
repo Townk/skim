@@ -20,7 +20,6 @@ from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
-    Footer,
     Input,
     Label,
     ListView,
@@ -31,7 +30,7 @@ from textual.widgets import (
 )
 
 from skim.data.config import SkimConfig
-from skim.tui.widgets import SkimListView
+from skim.tui.widgets import SkimFooter, SkimListView
 
 
 class LayerAdded(Message):
@@ -307,16 +306,16 @@ class SkimConfigApp(App):
     """
 
     BINDINGS = [
-        Binding(key="ctrl+q", action="request_quit", description="Quit"),
-        Binding(key="ctrl+s", action="save", description="Save"),
-        Binding(key="ctrl+p", action="previous_tab", description="Previous Tab", priority=True),
-        Binding(key="ctrl+n", action="next_tab", description="Next Tab", priority=True),
+        Binding(key="ctrl+q", action="request_quit", description="Quit", key_display="\u2303Q"),
+        Binding(key="ctrl+s", action="save", description="Save", key_display="\u2303S"),
+        Binding(key="ctrl+p", action="previous_tab", description="Previous Tab", key_display="\u2303P", priority=True),
+        Binding(key="ctrl+n", action="next_tab", description="Next Tab", key_display="\u2303N", priority=True),
         Binding(key="up", action="focus_direction('up')", show=False, priority=True),
         Binding(key="down", action="focus_direction('down')", show=False, priority=True),
         Binding(key="left", action="focus_direction('left')", show=False, priority=True),
         Binding(key="right", action="focus_direction('right')", show=False, priority=True),
-        Binding(key="ctrl+e", action="scroll_view('down')", show=False, priority=True),
-        Binding(key="ctrl+y", action="scroll_view('up')", show=False, priority=True),
+        Binding(key="ctrl+e", action="scroll_view('down')", description="Scroll down", key_display="\u2303E", priority=True),
+        Binding(key="ctrl+y", action="scroll_view('up')", description="Scroll up", key_display="\u2303Y", priority=True),
     ]
 
     def __init__(
@@ -349,7 +348,7 @@ class SkimConfigApp(App):
                 from skim.tui.output_tab import OutputTab
 
                 yield OutputTab(config_data=self.config_data)
-        yield Footer()
+        yield SkimFooter()
 
     @property
     def has_unsaved_changes(self) -> bool:

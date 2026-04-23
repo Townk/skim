@@ -22,7 +22,7 @@ from textual_autocomplete import AutoComplete, DropdownItem, TargetState
 from skim.application.render.styling import default_layer_color, make_gradient
 from skim.tui.app import LayerAdded, LayerRemoved
 from skim.tui.list_detail_pane import ListDetailPane
-from skim.tui.widgets import SkimInput, SkimSelect, SkimSwitch, SkimVerticalScroll
+from skim.tui.widgets import SkimInput, SkimSelect, SkimStandaloneInput, SkimSwitch, SkimVerticalScroll
 
 _COLOR_NAMES = sorted(webcolors.names())
 
@@ -596,7 +596,7 @@ class OutputTab(Widget):
                 with Horizontal(classes="field-row"):
                     yield Label("Width:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
-                    yield SkimInput(
+                    yield SkimStandaloneInput(
                         value=str(layout.get("width", 800.0)),
                         id="layout-width",
                         placeholder="800.0",
@@ -604,7 +604,7 @@ class OutputTab(Widget):
                 with Horizontal(classes="field-row"):
                     yield Label("Margin:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
-                    yield SkimInput(
+                    yield SkimStandaloneInput(
                         value=str(spacing.get("margin", 0.0)),
                         id="layout-margin",
                         placeholder="0.0",
@@ -612,7 +612,7 @@ class OutputTab(Widget):
                 with Horizontal(classes="field-row"):
                     yield Label("Inset:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
-                    yield SkimInput(
+                    yield SkimStandaloneInput(
                         value=str(spacing.get("inset", 20.0)),
                         id="layout-inset",
                         placeholder="20.0",
@@ -660,7 +660,7 @@ class OutputTab(Widget):
                 with Horizontal(classes="field-row"):
                     yield Label("Border width:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
-                    yield SkimInput(
+                    yield SkimStandaloneInput(
                         value=str(border.get("width", 2.0)) if border else "2.0",
                         id="border-width",
                         placeholder="2.0",
@@ -668,7 +668,7 @@ class OutputTab(Widget):
                 with Horizontal(classes="field-row"):
                     yield Label("Border radius:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
-                    yield SkimInput(
+                    yield SkimStandaloneInput(
                         value=str(border.get("radius", 10.0)) if border else "10.0",
                         id="border-radius",
                         placeholder="10.0",
@@ -692,7 +692,7 @@ class OutputTab(Widget):
                             classes="color-swatch",
                             id=f"swatch-{field_id}",
                         )
-                        color_input = SkimInput(
+                        color_input = SkimStandaloneInput(
                             value=color_val,
                             id=field_id,
                             placeholder=placeholder,

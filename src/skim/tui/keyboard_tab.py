@@ -14,7 +14,7 @@ from textual.widgets import Input, Label, Static
 
 from skim.tui.app import LayerAdded, LayerRemoved, LayerUpdated
 from skim.tui.list_detail_pane import ListDetailPane
-from skim.tui.widgets import SkimInput, SkimSwitch, SkimVerticalScroll
+from skim.tui.widgets import SkimInput, SkimStandaloneInput, SkimSwitch, SkimVerticalScroll
 
 _FIELD_MAP = {
     "layer-index": "index",
@@ -241,14 +241,14 @@ class KeyboardTab(Widget):
                 yield Static("Information", classes="section-title section-title-first")
                 with Horizontal(classes="field-row"):
                     yield Label("Keymap Title:", classes="field-label")
-                    yield SkimInput(
+                    yield SkimStandaloneInput(
                         value=keymap_title,
                         id="keymap-title-text",
                         placeholder="e.g. My Keymap (leave empty for auto)",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Copyright:", classes="field-label")
-                    yield SkimInput(
+                    yield SkimStandaloneInput(
                         value=copyright_text,
                         id="copyright-text",
                         placeholder="e.g. (c) 2024 Your Name (leave empty for none)",
