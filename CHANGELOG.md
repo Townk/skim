@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Contextual help system for the TUI configurator — press F1 or Alt+H on any field to see a help modal with field-specific documentation.
+  - Per-field markdown help content for all fields across Keyboard, Keycodes, and Style tabs.
+  - Vim-style scroll bindings in help modal (j/k, Ctrl+D/U, Ctrl+F/B, G/g).
+  - General help fallback with keyboard shortcuts overview.
 - `show_layer_connectors` configuration option to toggle layer connector lines in overview images.
 - `--title` and `--copyright` options to `configure` command.
 - `--layer-count` option with sparse fill logic for `configure` command.
