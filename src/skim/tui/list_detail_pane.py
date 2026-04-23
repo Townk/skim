@@ -85,9 +85,10 @@ class ListDetailPane(Widget):
 
     _MOVE_INDICATOR = " \u2195 "  # ↕ with surrounding spaces
 
-    def __init__(self, pane_id: str, **kwargs: Any) -> None:
+    def __init__(self, pane_id: str, list_help_key: str | None = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.pane_id = pane_id
+        self.list_help_key = list_help_key
         self._selected: int = 0
         self._editing: bool = False
         self._snapshot: dict | None = None
@@ -98,7 +99,11 @@ class ListDetailPane(Widget):
     def compose(self) -> ComposeResult:
         with Horizontal(classes="ldp-container"):
             with Vertical(classes="ldp-list-col"):
-                yield SkimListView(id=f"{self.pane_id}-list", classes="ldp-list")
+                yield SkimListView(
+                    id=f"{self.pane_id}-list",
+                    classes="ldp-list",
+                    help_key=self.list_help_key,
+                )
                 with Horizontal(classes="ldp-buttons"):
                     yield SkimButton("+ Add (a)", id=f"{self.pane_id}-add", variant="success")
                     yield SkimButton("- Delete (d)", id=f"{self.pane_id}-remove", variant="error")
