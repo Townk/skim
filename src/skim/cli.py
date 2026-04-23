@@ -358,10 +358,12 @@ def configure(
 
         generator = ConfigGenerator()
 
+        # Generate config data from keymap if provided
         if keymap:
+            import yaml as _yaml
+
             raw_content = keymap.read_text()
 
-            # Detect format and route to appropriate generator
             from skim.application.loaders.keymap_loader import (
                 _detect_format_from_path,
             )
@@ -370,7 +372,6 @@ def configure(
             detected = _detect_format_from_path(keymap)
 
             if detected == KeymapType.KEYBARD:
-                # Keybard: use rich metadata extraction
                 qmk_content = (
                     qmk_color_header.read_text() if qmk_color_header else None
                 )
@@ -378,21 +379,25 @@ def configure(
                     raw_content, qmk_content, adjust_lightness, adjust_saturation
                 )
             else:
-                # Vial, c2json, or unknown extension: use generic path
                 content = generator.generate_from_keymap(raw_content)
 
-            if output:
-                _write_config(output, content, force)
+            if interactive:
+                # Feed generated config into the TUI
+                config_data = _yaml.safe_load(content)
             else:
-                click.echo(content)
-            return
+                if output:
+                    _write_config(output, content, force)
+                else:
+                    click.echo(content)
+                return
 
         # Interactive mode
         if interactive:
             try:
                 from skim.tui import launch_tui
 
-                config_data = _load_initial_config(config)
+                if not keymap:
+                    config_data = _load_initial_config(config)
                 if title is not None:
                     config_data["output"]["keymap_title"] = title
                 if copyright is not None:

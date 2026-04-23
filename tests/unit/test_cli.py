@@ -588,6 +588,34 @@ class TestConfigureCommand:
 
 
     @patch("skim.cli.setup_logging")
+    @patch("skim.tui.launch_tui")
+    def test_interactive_with_keymap_launches_tui(self, mock_tui, mock_setup, tmp_path):
+        """Using -i with -k feeds generated config into TUI."""
+        import json
+
+        kbi = tmp_path / "test.kbi"
+        kbi.write_text(
+            json.dumps(
+                {
+                    "layers": 2,
+                    "keymap": [["KC_A"] * 60, ["KC_B"] * 60],
+                    "layer_colors": [
+                        {"hue": 85, "sat": 255, "val": 255},
+                        {"hue": 0, "sat": 255, "val": 255},
+                    ],
+                    "cosmetic": {"layer": {"0": "Base", "1": "Sym"}},
+                    "custom_keycodes": [],
+                }
+            )
+        )
+        runner = CliRunner()
+        runner.invoke(main, ["configure", "-i", "-k", str(kbi)])
+        mock_tui.assert_called_once()
+        config_data = mock_tui.call_args[1]["config_data"]
+        assert len(config_data["keyboard"]["layers"]) == 2
+        assert config_data["keyboard"]["layers"][0]["name"] == "Base"
+
+    @patch("skim.cli.setup_logging")
     def test_title_copyright_layer_count_non_interactive(self, mock_setup, tmp_path):
         """All three options together in non-interactive mode."""
         out = tmp_path / "out.yaml"

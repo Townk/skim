@@ -163,14 +163,14 @@ class ConfigGenerator:
     ) -> list[dict[str, str]]:
         """Find keycodes in layers that are not in the standard QMK set.
 
-        Extracts all identifier tokens from each keycode string (including
-        arguments inside macro function calls) and returns overrides for
-        any token not in the standard set.
+        Checks each raw keycode string against the known keycodes and
+        macro function names. Function calls (containing parentheses)
+        are skipped since the renderer handles them via macro expansion.
 
         Args:
             layers: List of layers, each a list of keycode strings.
-            standard_keycodes: Set of known QMK keycode names, macro
-                function names, and modifier constants.
+            standard_keycodes: Set of known QMK keycode names and macro
+                function names from keycode-mappings.yaml.
 
         Returns:
             List of override dicts with keycode mapped to itself.
@@ -179,39 +179,44 @@ class ConfigGenerator:
         overrides: list[dict[str, str]] = []
         for layer in layers:
             for keycode in layer:
-                tokens = re.findall(r"[A-Za-z_][A-Za-z0-9_]*", keycode)
-                for token in tokens:
-                    if token not in standard_keycodes and token not in seen:
-                        seen.add(token)
-                        overrides.append({"keycode": token, "target": token})
+                if keycode in standard_keycodes or keycode in seen:
+                    continue
+                if "(" in keycode and ")" in keycode:
+                    continue
+                seen.add(keycode)
+                overrides.append({"keycode": keycode, "target": keycode})
         return overrides
 
     @staticmethod
     def _load_standard_keycodes() -> set[str]:
-        """Load the set of all known QMK keycode identifiers.
+        """Load the set of known QMK keycodes and macro function names.
 
-        Combines keycodes, pre_processing keys, macro_functions keys,
-        and modifier_union keys from keycode-mappings.yaml.
+        Combines keycodes and macro_functions keys from
+        keycode-mappings.yaml.
 
         Returns:
-            Set of all known QMK keycode/function/modifier names.
+            Set of known QMK keycode and macro function names.
         """
         from skim.assets import ASSETS
 
         mapping = yaml.safe_load(ASSETS.keycode_mappings.read_text())
         standard: set[str] = set()
-        for section in ("keycodes", "pre_processing", "macro_functions", "modifier_union"):
+        for section in ("keycodes", "macro_functions"):
             if section in mapping:
                 standard.update(mapping[section].keys())
         return standard
 
     def _build_default_palette_layers(self, num_layers: int) -> list[dict[str, Any]]:
         """Build palette layers with default colors for each layer index."""
+        return self._build_default_palette_layers_for_indices(list(range(num_layers)))
+
+    def _build_default_palette_layers_for_indices(self, indices: list[int]) -> list[dict[str, Any]]:
+        """Build palette layers with default colors for specific layer indices."""
         from skim.application.render.styling import default_layer_color
 
         return [
             {"base_color": default_layer_color(idx), "color_index": 2, "gradient": None}
-            for idx in range(num_layers)
+            for idx in indices
         ]
 
     @staticmethod
@@ -286,16 +291,25 @@ class ConfigGenerator:
         else:  # C2JSON
             raw_layers = data.get("layers", [])
 
-        num_layers = len(raw_layers)
-
-        # Build default layers and palette
-        keyboard_layers = self._build_layers(num_layers, {})
-        palette_layers = self._build_default_palette_layers(num_layers)
-
-        # Scan for non-standard keycodes
+        # Flatten and filter out empty layers (all KC_NO/KC_TRNS)
         flat_layers = self._flatten_keymap_layers(raw_layers, keymap_type)
+        _EMPTY_KEYCODES = {"KC_NO", "KC_TRNS"}
+        active_indices = [
+            i for i, layer in enumerate(flat_layers)
+            if not all(k in _EMPTY_KEYCODES for k in layer)
+        ]
+
+        # Build layers and palette only for non-empty indices
+        keyboard_layers = [
+            {"index": idx, "label": f"L{idx}", "name": f"Layer {idx}", "id": None, "variant": None}
+            for idx in active_indices
+        ]
+        palette_layers = self._build_default_palette_layers_for_indices(active_indices)
+
+        # Scan for non-standard keycodes (only active layers)
+        active_flat = [flat_layers[i] for i in active_indices]
         standard = self._load_standard_keycodes()
-        keycode_overrides = self._find_non_standard_keycodes(flat_layers, standard)
+        keycode_overrides = self._find_non_standard_keycodes(active_flat, standard)
 
         config_dict: dict[str, Any] = SkimConfig().model_dump(mode="json")
         config_dict["keyboard"]["layers"] = keyboard_layers

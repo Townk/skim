@@ -285,14 +285,15 @@ class TestFindNonStandardKeycodes:
 
     @pytest.fixture()
     def standard_keycodes(self) -> set[str]:
-        """A minimal set of standard keycodes for testing."""
+        """A minimal set of standard keycodes and macro functions for testing."""
         return {
+            # keycodes
             "KC_A", "KC_B", "KC_NO", "KC_TRNS",
             "KC_SPACE", "KC_ENTER", "KC_LEFT_CTRL",
             "KC_LEFT_SHIFT", "KC_LEFT_ALT", "KC_LEFT_GUI",
+            # macro_functions
             "MO", "LT", "TG", "OSL", "MT", "TO", "DF",
             "LSFT", "LCTL", "LALT", "LGUI",
-            "MOD_LCTL", "MOD_LSFT",
         }
 
     def test_all_standard_returns_empty(self, standard_keycodes):
@@ -308,24 +309,15 @@ class TestFindNonStandardKeycodes:
         assert len(result) == 1
         assert result[0] == {"keycode": "MY_CUSTOM", "target": "MY_CUSTOM"}
 
-    def test_custom_inside_macro_found(self, standard_keycodes):
-        """Non-standard keycode inside a macro function is detected."""
-        layers = [["LT(2, MY_KEY)", "KC_A"]]
+    def test_function_calls_skipped(self, standard_keycodes):
+        """Keycodes that are function calls (with parens) are skipped."""
+        layers = [["LT(2, MY_KEY)", "MO(_BASE)", "LSFT(KC_A)"]]
         result = ConfigGenerator._find_non_standard_keycodes(layers, standard_keycodes)
-        assert len(result) == 1
-        assert result[0] == {"keycode": "MY_KEY", "target": "MY_KEY"}
+        assert result == []
 
-    def test_layer_name_reference_found(self, standard_keycodes):
-        """Layer name references like _BASE are detected as non-standard."""
-        layers = [["MO(_BASE)", "TG(_NAV)"]]
-        result = ConfigGenerator._find_non_standard_keycodes(layers, standard_keycodes)
-        names = {o["keycode"] for o in result}
-        assert "_BASE" in names
-        assert "_NAV" in names
-
-    def test_numeric_args_ignored(self, standard_keycodes):
-        """Numeric arguments to functions are not treated as keycodes."""
-        layers = [["LT(2, KC_A)", "MO(3)"]]
+    def test_custom_function_call_skipped(self, standard_keycodes):
+        """Even unknown function calls are skipped."""
+        layers = [["MY_FUNC(KC_A)", "KC_B"]]
         result = ConfigGenerator._find_non_standard_keycodes(layers, standard_keycodes)
         assert result == []
 
@@ -365,7 +357,8 @@ class TestGenerateFromKeymap:
         generator = ConfigGenerator()
         result = generator.generate_from_keymap(content)
         parsed = yaml.safe_load(result)
-        assert len(parsed["keyboard"]["layers"]) == 3
+        # Layer 2 is all KC_NO, so it's skipped
+        assert len(parsed["keyboard"]["layers"]) == 2
         assert parsed["keyboard"]["layers"][0]["index"] == 0
         assert parsed["keyboard"]["layers"][0]["name"] == "Layer 0"
         assert parsed["keyboard"]["layers"][0]["label"] == "L0"
@@ -493,6 +486,49 @@ class TestGenerateFromKeymap:
         with pytest.raises(ValueError, match="Unknown keymap format"):
             generator.generate_from_keymap(content)
 
+    def test_empty_layers_skipped(self):
+        """Layers with all KC_NO keys are not created."""
+        content = json.dumps({
+            "keyboard": "test",
+            "keymap": "test",
+            "layout": "LAYOUT",
+            "layers": [
+                ["KC_A"] * 60,
+                ["KC_NO"] * 60,
+                ["KC_B"] * 60,
+            ],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(content)
+        parsed = yaml.safe_load(result)
+        layers = parsed["keyboard"]["layers"]
+        assert len(layers) == 2
+        assert layers[0]["index"] == 0
+        assert layers[1]["index"] == 2
+
+    def test_empty_layers_with_trns_skipped(self):
+        """Layers with mix of KC_NO and KC_TRNS are skipped."""
+        content = json.dumps({
+            "keyboard": "test",
+            "keymap": "test",
+            "layout": "LAYOUT",
+            "layers": [
+                ["KC_A"] * 60,
+                ["KC_NO"] * 30 + ["KC_TRNS"] * 30,
+                ["KC_B"] * 60,
+                ["KC_TRNS"] * 60,
+            ],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(content)
+        parsed = yaml.safe_load(result)
+        layers = parsed["keyboard"]["layers"]
+        assert len(layers) == 2
+        assert layers[0]["index"] == 0
+        assert layers[1]["index"] == 2
+        palette_layers = parsed["output"]["style"]["palette"]["layers"]
+        assert len(palette_layers) == 2
+
 
 class TestWithSampleKeybard:
     """Integration tests using the real keybard sample file."""
@@ -548,3 +584,85 @@ class TestWithSampleKeybard:
 
         config = SkimConfig.model_validate(parsed)
         assert len(config.output.style.palette.layers) == 16
+
+
+class TestWithSampleVial:
+    """Integration tests using the real Vial sample file."""
+
+    @pytest.fixture()
+    def sample_vial(self) -> str:
+        sample_path = (
+            Path(__file__).parent.parent.parent.parent
+            / "samples"
+            / "keymaps"
+            / "vial-sample.vil"
+        )
+        if not sample_path.exists():
+            pytest.skip("Sample Vial file not found")
+        return sample_path.read_text()
+
+    def test_sample_produces_valid_config(self, sample_vial):
+        """Real Vial sample file produces a valid SkimConfig."""
+        from skim.data.config import SkimConfig
+
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(sample_vial)
+        parsed = yaml.safe_load(result)
+        config = SkimConfig.model_validate(parsed)
+        # Layers with all KC_NO/KC_TRNS keys are skipped
+        assert len(config.keyboard.layers) == 11
+
+    def test_sample_palette_matches_layer_count(self, sample_vial):
+        """Palette layer count matches keyboard layer count."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(sample_vial)
+        parsed = yaml.safe_load(result)
+        assert len(parsed["output"]["style"]["palette"]["layers"]) == len(
+            parsed["keyboard"]["layers"]
+        )
+
+
+class TestWithSampleC2json:
+    """Integration tests using the real c2json sample file."""
+
+    @pytest.fixture()
+    def sample_c2json(self) -> str:
+        sample_path = (
+            Path(__file__).parent.parent.parent.parent
+            / "samples"
+            / "keymaps"
+            / "c2json-sample.json"
+        )
+        if not sample_path.exists():
+            pytest.skip("Sample c2json file not found")
+        return sample_path.read_text()
+
+    def test_sample_produces_valid_config(self, sample_c2json):
+        """Real c2json sample file produces a valid SkimConfig."""
+        from skim.data.config import SkimConfig
+
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(sample_c2json)
+        parsed = yaml.safe_load(result)
+        config = SkimConfig.model_validate(parsed)
+        assert len(config.keyboard.layers) == 9
+
+    def test_sample_detects_custom_keycodes(self, sample_c2json):
+        """Real c2json sample has non-standard keycodes detected."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(sample_c2json)
+        parsed = yaml.safe_load(result)
+        overrides = parsed["keycodes"]["overrides"]
+        keycode_names = {o["keycode"] for o in overrides}
+        # These are known non-standard keycodes in the c2json sample
+        assert "CKC_SPC" in keycode_names
+        assert "MKC_DKTP" in keycode_names
+
+    def test_sample_palette_matches_layer_count(self, sample_c2json):
+        """Palette layer count matches keyboard layer count."""
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(sample_c2json)
+        parsed = yaml.safe_load(result)
+        assert len(parsed["output"]["style"]["palette"]["layers"]) == len(
+            parsed["keyboard"]["layers"]
+        )
