@@ -3,7 +3,7 @@
 import pytest
 
 from skim.data.config import SkimConfig
-from skim.tui.app import SkimConfigApp
+from skim.tui.app import HelpScreen, SkimConfigApp
 
 
 class TestSkimConfigApp:
@@ -48,3 +48,50 @@ class TestSkimConfigApp:
         async with app.run_test() as pilot:
             await pilot.press("ctrl+q")
             assert app.return_code is not None or not app.is_running
+
+
+class TestHelpScreen:
+    """Tests for the HelpScreen modal."""
+
+    @pytest.fixture()
+    def default_config_data(self) -> dict:
+        return SkimConfig().model_dump(mode="json")
+
+    @pytest.mark.asyncio()
+    async def test_f1_opens_help_screen(self, default_config_data):
+        """Pressing F1 opens a HelpScreen."""
+        app = SkimConfigApp(config_data=default_config_data)
+        async with app.run_test() as pilot:
+            await pilot.press("f1")
+            assert isinstance(app.screen, HelpScreen)
+
+    @pytest.mark.asyncio()
+    async def test_help_screen_dismiss_with_escape(self, default_config_data):
+        """HelpScreen can be dismissed with Escape."""
+        app = SkimConfigApp(config_data=default_config_data)
+        async with app.run_test() as pilot:
+            await pilot.press("f1")
+            assert isinstance(app.screen, HelpScreen)
+            await pilot.press("escape")
+            assert not isinstance(app.screen, HelpScreen)
+
+    @pytest.mark.asyncio()
+    async def test_help_screen_dismiss_with_q(self, default_config_data):
+        """HelpScreen can be dismissed with q."""
+        app = SkimConfigApp(config_data=default_config_data)
+        async with app.run_test() as pilot:
+            await pilot.press("f1")
+            assert isinstance(app.screen, HelpScreen)
+            await pilot.press("q")
+            assert not isinstance(app.screen, HelpScreen)
+
+    @pytest.mark.asyncio()
+    async def test_help_screen_shows_general_by_default(self, default_config_data):
+        """F1 with no help_key on focused widget shows general help."""
+        app = SkimConfigApp(config_data=default_config_data)
+        async with app.run_test() as pilot:
+            await pilot.press("f1")
+            from textual.widgets import Markdown
+
+            md = app.screen.query_one(Markdown)
+            assert md is not None

@@ -23,12 +23,14 @@ from textual.widgets import (
     Input,
     Label,
     ListView,
+    Markdown,
     OptionList,
     TabbedContent,
     TabPane,
     Tabs,
 )
 
+from skim.assets import ASSETS
 from skim.data.config import SkimConfig
 from skim.tui.widgets import SkimButton, SkimFooter, SkimListView
 
@@ -198,13 +200,33 @@ class ErrorDialog(ModalScreen[None]):
         self.dismiss(None)
 
 
+class HelpScreen(ModalScreen[None]):
+    """Modal dialog to show contextual help as rendered markdown."""
+
+    BINDINGS = [
+        Binding(key="escape", action="dismiss_help", description="Close", show=False),
+        Binding(key="q", action="dismiss_help", description="Close", show=False),
+    ]
+
+    def __init__(self, content: str) -> None:
+        super().__init__()
+        self.content = content
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="help-dialog"):
+            yield Markdown(self.content)
+
+    def action_dismiss_help(self) -> None:
+        self.dismiss(None)
+
+
 class SkimConfigApp(App):
     """Interactive skim configuration editor."""
 
     ENABLE_COMMAND_PALETTE = False
     TITLE = "skim configure"
     CSS = """
-    QuitConfirmScreen, SaveTargetScreen, OverwriteConfirmScreen, ErrorDialog {
+    QuitConfirmScreen, SaveTargetScreen, OverwriteConfirmScreen, ErrorDialog, HelpScreen {
         align: center middle;
     }
     #quit-dialog, #save-target-dialog, #error-dialog {
@@ -241,6 +263,15 @@ class SkimConfigApp(App):
     #quit-buttons Button, #overwrite-buttons Button, #error-buttons Button {
         margin: 0 1;
         padding: 0 3;
+    }
+    #help-dialog {
+        padding: 1 2;
+        width: 80%;
+        max-width: 90;
+        max-height: 80%;
+        border: thick $background 80%;
+        background: $surface;
+        overflow-y: auto;
     }
     #save-target-buttons {
         width: 100%;
@@ -354,6 +385,13 @@ class SkimConfigApp(App):
             key_display="\u2303Y",
             priority=True,
         ),
+        Binding(
+            key="f1",
+            action="show_help",
+            description="Help",
+            key_display="F1",
+            priority=True,
+        ),
     ]
 
     def __init__(
@@ -397,6 +435,18 @@ class SkimConfigApp(App):
             self.push_screen(QuitConfirmScreen(), self._handle_quit_confirm)
         else:
             self.exit()
+
+    def action_show_help(self) -> None:
+        """Show contextual help for the currently focused widget."""
+        widget = self.focused
+        help_key = None
+        while widget is not None:
+            if hasattr(widget, "help_key") and widget.help_key:
+                help_key = widget.help_key
+                break
+            widget = widget.parent
+        content = ASSETS.help_text(help_key or "general")
+        self.push_screen(HelpScreen(content))
 
     def _handle_quit_confirm(self, result: str | None) -> None:
         if result == "save":
