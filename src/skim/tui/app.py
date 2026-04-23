@@ -214,7 +214,33 @@ class HelpScreen(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="help-dialog"):
-            yield Markdown(self.content)
+            with ScrollableContainer(id="help-scroll", can_focus=True):
+                yield Markdown(self.content)
+
+    def on_mount(self) -> None:
+        self.query_one("#help-scroll", ScrollableContainer).focus()
+
+    def on_key(self, event: events.Key) -> None:
+        scroll = self.query_one("#help-scroll", ScrollableContainer)
+        key = event.key
+        if key == "j":
+            scroll.scroll_down(animate=False)
+        elif key == "k":
+            scroll.scroll_up(animate=False)
+        elif key in ("ctrl+d", "ctrl+f"):
+            scroll.scroll_page_down(animate=False)
+        elif key in ("ctrl+u", "ctrl+b"):
+            scroll.scroll_page_up(animate=False)
+        elif key == "G":
+            scroll.scroll_end(animate=False)
+        elif key == "g":
+            scroll.scroll_home(animate=False)
+        elif key == "ctrl+q":
+            self.dismiss(None)
+            self.app.call_later(self.app.action_request_quit)
+        else:
+            return
+        event.stop()
 
     def action_dismiss_help(self) -> None:
         self.dismiss(None)
@@ -266,12 +292,13 @@ class SkimConfigApp(App):
     }
     #help-dialog {
         padding: 1 2;
-        width: 80%;
-        max-width: 90;
-        max-height: 80%;
+        width: 70;
+        max-height: 50%;
         border: thick $background 80%;
         background: $surface;
-        overflow-y: auto;
+    }
+    #help-scroll {
+        height: 1fr;
     }
     #save-target-buttons {
         width: 100%;
@@ -602,6 +629,13 @@ class SkimConfigApp(App):
 
     def action_scroll_view(self, direction: str) -> None:
         """Scroll the VerticalScroll in the active tab (skip ListViews)."""
+        if isinstance(self.screen, HelpScreen):
+            scroll = self.screen.query_one("#help-scroll", ScrollableContainer)
+            if direction == "up":
+                scroll.scroll_up(animate=False)
+            else:
+                scroll.scroll_down(animate=False)
+            return
         if isinstance(self.screen, ModalScreen):
             return
 
@@ -746,6 +780,16 @@ class SkimConfigApp(App):
         """Move focus to the nearest focusable widget in the given direction."""
         focused = self.focused
         if focused is None:
+            return
+
+        # HelpScreen: scroll content instead of navigating.
+        if isinstance(self.screen, HelpScreen):
+            if direction in ("up", "down"):
+                scroll = self.screen.query_one("#help-scroll", ScrollableContainer)
+                if direction == "up":
+                    scroll.scroll_up(animate=False)
+                else:
+                    scroll.scroll_down(animate=False)
             return
 
         # Modal screens: navigate among the modal's own widgets only.
