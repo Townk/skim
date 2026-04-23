@@ -12,7 +12,7 @@ from textual.actions import SkipAction
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import VerticalScroll
-from textual.widgets import Footer, Input, ListView, Select, Switch, Tabs
+from textual.widgets import Button, Footer, Input, ListView, Select, Switch, Tabs
 from textual.widgets._footer import FooterKey
 from textual.widgets._select import SelectCurrent, SelectOverlay
 
@@ -33,6 +33,7 @@ _ACTION_ORDER: dict[str, int] = {
     "focus_previous": 6,
     "focus_next": 7,
     # Per-widget
+    "press": 10,
     "toggle_switch": 10,
     "show_overlay": 10,
     "select": 11,
@@ -170,6 +171,23 @@ class SkimListView(ListView):
         Binding("down", "cursor_down", "Next item", show=True),
         Binding("enter", "select_cursor", "Edit", key_display="\u23ce", show=True),
     ]
+
+
+class SkimButton(Button):
+    """Button that responds to both Enter and Space."""
+
+    BINDINGS = [
+        Binding("enter", "press", "Press button", key_display="\u23ce,\u2423", show=True),
+        Binding("space", "press", "Press button", show=False),
+    ]
+
+    async def _on_key(self, event: events.Key) -> None:
+        if event.key == "space":
+            self.action_press()
+            event.stop()
+            event.prevent_default()
+            return
+        await super()._on_key(event)
 
 
 class SkimSwitch(Switch):

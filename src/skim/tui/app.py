@@ -30,7 +30,7 @@ from textual.widgets import (
 )
 
 from skim.data.config import SkimConfig
-from skim.tui.widgets import SkimFooter, SkimListView
+from skim.tui.widgets import SkimButton, SkimFooter, SkimListView
 
 
 class LayerAdded(Message):
@@ -74,8 +74,8 @@ class QuitConfirmScreen(ModalScreen[str]):
                 id="question",
             )
             with Horizontal(id="quit-buttons"):
-                yield Button("Save & Quit (s)", variant="success", id="save")
-                yield Button("Discard (d)", variant="error", id="discard")
+                yield SkimButton("Save & Quit (s)", variant="success", id="save")
+                yield SkimButton("Discard (d)", variant="error", id="discard")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         self.dismiss(event.button.id)
@@ -112,12 +112,12 @@ class SaveTargetScreen(ModalScreen[str | None]):
                 id="question",
             )
             with Vertical(id="save-target-buttons"):
-                yield Button(
+                yield SkimButton(
                     f"Overwrite {self.config_path.name} (o)",
                     variant="warning",
                     id="overwrite",
                 )
-                yield Button(
+                yield SkimButton(
                     f"Create ./{_DEFAULT_CONFIG_NAME} (c)",
                     variant="success",
                     id="default",
@@ -158,8 +158,8 @@ class OverwriteConfirmScreen(ModalScreen[bool]):
                 id="question",
             )
             with Horizontal(id="overwrite-buttons"):
-                yield Button("Overwrite (y)", variant="warning", id="confirm")
-                yield Button("Cancel (n)", variant="default", id="cancel")
+                yield SkimButton("Overwrite (y)", variant="warning", id="confirm")
+                yield SkimButton("Cancel (n)", variant="default", id="cancel")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         self.dismiss(event.button.id == "confirm")
@@ -189,7 +189,7 @@ class ErrorDialog(ModalScreen[None]):
         with Vertical(id="error-dialog"):
             yield Label(self.message, id="error-message")
             with Horizontal(id="error-buttons"):
-                yield Button("OK", variant="primary", id="ok")
+                yield SkimButton("OK", variant="primary", id="ok")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         self.dismiss(None)

@@ -19,7 +19,7 @@ from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Input, ListItem, Static
 
-from skim.tui.widgets import SkimListView
+from skim.tui.widgets import SkimButton, SkimListView
 
 
 class ListDetailPane(Widget):
@@ -96,8 +96,8 @@ class ListDetailPane(Widget):
             with Vertical(classes="ldp-list-col"):
                 yield SkimListView(id=f"{self.pane_id}-list", classes="ldp-list")
                 with Horizontal(classes="ldp-buttons"):
-                    yield Button("+ Add (a)", id=f"{self.pane_id}-add", variant="success")
-                    yield Button("- Delete (d)", id=f"{self.pane_id}-remove", variant="error")
+                    yield SkimButton("+ Add (a)", id=f"{self.pane_id}-add", variant="success")
+                    yield SkimButton("- Delete (d)", id=f"{self.pane_id}-remove", variant="error")
             with Vertical(id=f"{self.pane_id}-detail", classes="ldp-detail"):
                 yield from self.compose_detail_fields()
 
