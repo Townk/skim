@@ -469,9 +469,9 @@ class SkimConfigApp(App):
             display_name = self._friendly_path(path) if prettify_name else None
             self.push_screen(
                 OverwriteConfirmScreen(path, display_name=display_name),
-                lambda confirmed: self._do_write(path, exit_after=exit_after)
-                if confirmed
-                else None,
+                lambda confirmed: (
+                    self._do_write(path, exit_after=exit_after) if confirmed else None
+                ),
             )
             return
         self._do_write(path, exit_after=exit_after)
