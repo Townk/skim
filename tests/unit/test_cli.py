@@ -514,6 +514,36 @@ class TestConfigureCommand:
         assert "--interactive" in result.output  # help text
 
 
+    @patch("skim.cli.setup_logging")
+    def test_title_copyright_layer_count_non_interactive(self, mock_setup, tmp_path):
+        """All three options together in non-interactive mode."""
+        out = tmp_path / "out.yaml"
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            ["configure", "-t", "Full Config", "-r", "© 2026", "-n", "4", "-o", str(out)],
+        )
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(out.read_text())
+        assert parsed["output"]["keymap_title"] == "Full Config"
+        assert parsed["output"]["copyright"] == "© 2026"
+        assert len(parsed["keyboard"]["layers"]) == 4
+
+    @patch("skim.cli.setup_logging")
+    @patch("skim.tui.launch_tui")
+    def test_all_options_interactive(self, mock_tui, mock_setup):
+        """All three options with -i populates config before TUI launch."""
+        runner = CliRunner()
+        runner.invoke(
+            main,
+            ["configure", "-i", "-t", "Interactive", "-r", "© Me", "-n", "2"],
+        )
+        config_data = mock_tui.call_args[1]["config_data"]
+        assert config_data["output"]["keymap_title"] == "Interactive"
+        assert config_data["output"]["copyright"] == "© Me"
+        assert len(config_data["keyboard"]["layers"]) == 2
+
+
 class TestDoctorCommand:
     """Tests for doctor subcommand."""
 
