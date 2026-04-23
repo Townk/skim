@@ -30,7 +30,7 @@ class SVGGroup(draw.Group):
         """Return the SVG XML string for this group by wrapping in a Drawing."""
         d = draw.Drawing(0, 0)
         d.append(self)
-        full = d.as_svg()
+        full = str(d.as_svg())
         # Extract just the content inside <svg>...</svg>
         start = full.find("<g")
         end = full.rfind("</g>") + len("</g>")
@@ -160,7 +160,11 @@ class LayerIndicator:
             case ConnectorType.VERTICAL:
                 # connector_target_y overrides where the endpoint lands
                 # (used for DD key where circle is above Down but endpoint is in DD)
-                target_y = self._connector_target_y if self._connector_target_y is not None else self._key_y
+                target_y = (
+                    self._connector_target_y
+                    if self._connector_target_y is not None
+                    else self._key_y
+                )
                 self._line_x1 = self._cx
                 self._line_y1 = self._cy + self._radius
                 self._line_x2 = self._cx
@@ -206,37 +210,47 @@ class LayerIndicator:
         """Build the SVG group containing the indicator."""
         g = SVGGroup()
 
-        g.append(draw.Raw(
-            f'<line x1="{self._line_x1}" y1="{self._line_y1}"'
-            f' x2="{self._line_x2}" y2="{self._line_y2}"'
-            f' stroke="{self._stroke_color}" stroke-width="{_CONNECTOR_WIDTH}" />'
-        ))
+        g.append(
+            draw.Raw(
+                f'<line x1="{self._line_x1}" y1="{self._line_y1}"'
+                f' x2="{self._line_x2}" y2="{self._line_y2}"'
+                f' stroke="{self._stroke_color}" stroke-width="{_CONNECTOR_WIDTH}" />'
+            )
+        )
 
-        g.append(draw.Circle(
-            self._ep_x, self._ep_y,
-            _ENDPOINT_RADIUS,
-            fill=self._stroke_color,
-        ))
+        g.append(
+            draw.Circle(
+                self._ep_x,
+                self._ep_y,
+                _ENDPOINT_RADIUS,
+                fill=self._stroke_color,
+            )
+        )
 
-        g.append(draw.Circle(
-            self._cx, self._cy,
-            self._radius,
-            fill=self._fill_color,
-            stroke=self._stroke_color,
-            stroke_width=_CIRCLE_STROKE_WIDTH,
-        ))
+        g.append(
+            draw.Circle(
+                self._cx,
+                self._cy,
+                self._radius,
+                fill=self._fill_color,
+                stroke=self._stroke_color,
+                stroke_width=_CIRCLE_STROKE_WIDTH,
+            )
+        )
 
-        g.append(draw.Text(
-            str(self._target_layer),
-            font_size=self._radius * 1.2,
-            x=self._cx,
-            y=self._cy,
-            fill="white",
-            text_anchor="middle",
-            dominant_baseline="central",
-            font_family="Roboto, sans-serif",
-            font_weight="bold",
-        ))
+        g.append(
+            draw.Text(
+                str(self._target_layer),
+                font_size=self._radius * 1.2,
+                x=self._cx,
+                y=self._cy,
+                fill="white",
+                text_anchor="middle",
+                dominant_baseline="central",
+                font_family="Roboto, sans-serif",
+                font_weight="bold",
+            )
+        )
 
         return g
 
@@ -261,7 +275,12 @@ def _finger_cluster_offset(
 
 
 _FINGER_KEY_NAMES = [
-    "center_key", "north_key", "east_key", "south_key", "west_key", "double_south_key"
+    "center_key",
+    "north_key",
+    "east_key",
+    "south_key",
+    "west_key",
+    "double_south_key",
 ]
 
 
@@ -284,9 +303,7 @@ def _thumb_cluster_offset(
             return outward, ConnectorType.HORIZONTAL
 
 
-_THUMB_KEY_NAMES = [
-    "down_key", "pad_key", "up_key", "nail_key", "knuckle_key", "double_down_key"
-]
+_THUMB_KEY_NAMES = ["down_key", "pad_key", "up_key", "nail_key", "knuckle_key", "double_down_key"]
 
 # Thumb key aspect ratios expressed as height_per_width (height = width * ratio)
 _THUMB_KEY_HEIGHT_RATIOS: dict[str, float] = {
@@ -339,19 +356,21 @@ class LayerIndicatorOverlay:
             # adjacent keys (E/W and S)
             key_gap = gap * 3 if key_name == "center_key" else gap
 
-            indicators.append(LayerIndicator(
-                key_x=layout.pos.x,
-                key_y=layout.pos.y,
-                key_width=layout.width,
-                key_height=layout.width,  # finger cluster keys are square
-                target_layer=key.layer_switch,
-                palette=palette,
-                circle_diameter=circle_diameter,
-                gap=key_gap,
-                offset_direction=offset_dir,
-                connector_type=conn_type,
-                qmk_index_to_position=qmk_index_to_position,
-            ))
+            indicators.append(
+                LayerIndicator(
+                    key_x=layout.pos.x,
+                    key_y=layout.pos.y,
+                    key_width=layout.width,
+                    key_height=layout.width,  # finger cluster keys are square
+                    target_layer=key.layer_switch,
+                    palette=palette,
+                    circle_diameter=circle_diameter,
+                    gap=key_gap,
+                    offset_direction=offset_dir,
+                    connector_type=conn_type,
+                    qmk_index_to_position=qmk_index_to_position,
+                )
+            )
 
         return cls(indicators)
 
@@ -410,19 +429,21 @@ class LayerIndicatorOverlay:
                 ref_height = layout.width * _THUMB_KEY_HEIGHT_RATIOS.get(key_name, 1.0)
                 connector_target_y = None
 
-            indicators.append(LayerIndicator(
-                key_x=layout.pos.x,
-                key_y=ref_y,
-                key_width=layout.width,
-                key_height=ref_height,
-                target_layer=key.layer_switch,
-                palette=palette,
-                circle_diameter=circle_diameter,
-                gap=gap,
-                offset_direction=offset_dir,
-                connector_type=conn_type,
-                connector_target_y=connector_target_y,
-                qmk_index_to_position=qmk_index_to_position,
-            ))
+            indicators.append(
+                LayerIndicator(
+                    key_x=layout.pos.x,
+                    key_y=ref_y,
+                    key_width=layout.width,
+                    key_height=ref_height,
+                    target_layer=key.layer_switch,
+                    palette=palette,
+                    circle_diameter=circle_diameter,
+                    gap=gap,
+                    offset_direction=offset_dir,
+                    connector_type=conn_type,
+                    connector_target_y=connector_target_y,
+                    qmk_index_to_position=qmk_index_to_position,
+                )
+            )
 
         return cls(indicators)

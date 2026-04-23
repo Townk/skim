@@ -3,12 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import pytest
 import drawsvg as draw
+import pytest
 
+from skim.application.render.overview import draw_overview
 from skim.data.config import (
     Keyboard,
-    KeyboardFeatures,
     KeyboardLayer,
     LayerColor,
     Output,
@@ -18,17 +18,14 @@ from skim.data.config import (
 )
 from skim.data.keyboard import SvalboardKeymap, SvalboardLayout
 from skim.domain.domain_types import SvalboardTargetKey
-from skim.application.render.overview import draw_overview
 
 
 def _make_config(num_layers: int = 3, width: float = 1600) -> SkimConfig:
     layers_cfg = tuple(
-        KeyboardLayer(index=i, label=str(i), name=f"Layer{i}")
-        for i in range(num_layers)
+        KeyboardLayer(index=i, label=str(i), name=f"Layer{i}") for i in range(num_layers)
     )
     layer_colors = tuple(
-        LayerColor(base_color=f"#{(i+1)*30:02x}5050")
-        for i in range(num_layers)
+        LayerColor(base_color=f"#{(i + 1) * 30:02x}5050") for i in range(num_layers)
     )
     return SkimConfig(
         keyboard=Keyboard(layers=layers_cfg),
@@ -144,10 +141,12 @@ class TestOverviewConnectorLines:
         )
         config = SkimConfig(
             keyboard=Keyboard(layers=layers_cfg),
-            output=Output(style=Style(
-                palette=Palette(layers=layer_colors),
-                show_layer_indicators=True,
-            )),
+            output=Output(
+                style=Style(
+                    palette=Palette(layers=layer_colors),
+                    show_layer_indicators=True,
+                )
+            ),
         )
 
         # Create keymap where a key switches to layer 1

@@ -8,10 +8,6 @@
 from pathlib import Path
 from typing import Any
 
-import yaml
-
-from skim.data.config import SkimConfig
-
 
 def launch_tui(
     config_data: dict[str, Any],

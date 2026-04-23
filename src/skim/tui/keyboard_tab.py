@@ -12,10 +12,9 @@ from textual.containers import Horizontal, Vertical
 from textual.widget import Widget
 from textual.widgets import Input, Label, Static
 
-from skim.tui.app import ErrorDialog, LayerAdded, LayerRemoved, LayerUpdated
+from skim.tui.app import LayerAdded, LayerRemoved, LayerUpdated
 from skim.tui.list_detail_pane import ListDetailPane
 from skim.tui.widgets import SkimInput, SkimSwitch, SkimVerticalScroll
-
 
 _FIELD_MAP = {
     "layer-index": "index",
@@ -58,8 +57,8 @@ class LayerListPane(ListDetailPane):
 
     def _column_widths(self) -> tuple[int, int]:
         layers = self.get_entries()
-        col0_w = max((len(self._col0_text(i, l)) for i, l in enumerate(layers)), default=0)
-        col1_w = max((len(l.get("label", "")) for l in layers), default=0)
+        col0_w = max((len(self._col0_text(i, layer)) for i, layer in enumerate(layers)), default=0)
+        col1_w = max((len(layer.get("label", "")) for layer in layers), default=0)
         return col0_w, col1_w
 
     def format_entry(self, index: int, entry: dict) -> str:
@@ -75,7 +74,9 @@ class LayerListPane(ListDetailPane):
             yield SkimInput(value="", id="layer-index", placeholder="e.g. 0", disabled=True)
         with Horizontal(classes="field-row"):
             yield Label("ID:", classes="field-label")
-            yield SkimInput(value="", id="layer-id", placeholder="e.g. _BASE (optional)", disabled=True)
+            yield SkimInput(
+                value="", id="layer-id", placeholder="e.g. _BASE (optional)", disabled=True
+            )
         with Horizontal(classes="field-row"):
             yield Label("Label:", classes="field-label")
             yield SkimInput(value="", id="layer-label", placeholder="e.g. BASE", disabled=True)
@@ -107,7 +108,9 @@ class LayerListPane(ListDetailPane):
 
     def create_entry(self, index: int) -> dict:
         layers = self.get_entries()
-        used_indices = {l.get("index", i) for i, l in enumerate(layers) if l is not layers[-1]}
+        used_indices = {
+            layer.get("index", i) for i, layer in enumerate(layers) if layer is not layers[-1]
+        }
         # When called from _add_entry, the new entry is already appended,
         # so exclude it from used_indices. But we also need to handle the
         # case where it hasn't been appended yet.
@@ -125,7 +128,7 @@ class LayerListPane(ListDetailPane):
     def _add_entry(self) -> None:
         """Override to compute next index before appending."""
         entries = self.get_entries()
-        used_indices = {l.get("index", i) for i, l in enumerate(entries)}
+        used_indices = {entry.get("index", i) for i, entry in enumerate(entries)}
         next_index = 0
         while next_index in used_indices:
             next_index += 1
@@ -139,6 +142,7 @@ class LayerListPane(ListDetailPane):
         }
         entries.append(new_entry)
         from skim.tui.widgets import SkimListView
+
         list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
         list_view.append(self._make_list_item(idx, new_entry))
         self._selected = idx
@@ -162,25 +166,20 @@ class LayerListPane(ListDetailPane):
         layers = self.get_entries()
         for i, other in enumerate(layers):
             if i != self._selected and other.get("index", i) == new_index:
-                self._revert_and_show_error(
-                    f"Index {new_index} is already used by another layer."
-                )
+                self._revert_and_show_error(f"Index {new_index} is already used by another layer.")
                 return False
         entry["index"] = new_index
         # Sort layers and palette.layers by index
         palette_layers = (
-            self.config_data.get("output", {})
-            .get("style", {})
-            .get("palette", {})
-            .get("layers", [])
+            self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
         )
         if palette_layers and len(palette_layers) == len(layers):
-            paired = list(zip(layers, palette_layers))
+            paired = list(zip(layers, palette_layers, strict=False))
             paired.sort(key=lambda p: p[0].get("index", 0))
             layers[:] = [p[0] for p in paired]
             palette_layers[:] = [p[1] for p in paired]
         else:
-            layers.sort(key=lambda l: l.get("index", 0))
+            layers.sort(key=lambda layer: layer.get("index", 0))
         self._selected = layers.index(entry)
         return True
 
@@ -302,7 +301,7 @@ class KeyboardTab(Widget):
         """Called when a layer color is added in the Style tab."""
         pane = self.query_one(LayerListPane)
         layers = pane.get_entries()
-        used_indices = {l.get("index", i) for i, l in enumerate(layers)}
+        used_indices = {layer.get("index", i) for i, layer in enumerate(layers)}
         next_index = 0
         while next_index in used_indices:
             next_index += 1

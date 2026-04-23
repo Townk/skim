@@ -5,19 +5,19 @@
 
 """Output tab widget for the skim TUI configuration editor."""
 
+import contextlib
 from typing import Any
 
 import webcolors
+from rich.text import Text
 from textual.app import ComposeResult
-from textual.content import Content
 from textual.containers import Horizontal, Vertical
+from textual.content import Content
 from textual.events import DescendantBlur
 from textual.suggester import SuggestFromList
 from textual.widget import Widget
 from textual.widgets import Input, Label, ListItem, Static
 from textual_autocomplete import AutoComplete, DropdownItem, TargetState
-
-from rich.text import Text
 
 from skim.application.render.styling import default_layer_color, make_gradient
 from skim.tui.app import LayerAdded, LayerRemoved
@@ -149,7 +149,9 @@ class LayerColorListPane(ListDetailPane):
         self._select_active: bool = False
 
     def get_entries(self) -> list[dict]:
-        return self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
+        return (
+            self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
+        )
 
     def _layer_name(self, index: int) -> str:
         layers = self.config_data.get("keyboard", {}).get("layers", [])
@@ -186,10 +188,8 @@ class LayerColorListPane(ListDetailPane):
     @staticmethod
     def _safe_set_color(widget: Static, color: str) -> None:
         """Set foreground color, silently ignoring invalid values."""
-        try:
+        with contextlib.suppress(Exception):
             widget.styles.color = color if color else "white"
-        except Exception:
-            pass
 
     def _make_list_item(self, index: int, entry: dict) -> ListItem:
         color = entry.get("base_color", "")
@@ -199,7 +199,7 @@ class LayerColorListPane(ListDetailPane):
 
     def _update_list_item_content(self, item: ListItem, index: int, entry: dict) -> None:
         item.query_one(Static).update(self.format_entry(index, entry))
-        for s in item.query(".lc-swatch"):
+        for s in item.query(Static).filter(".lc-swatch"):
             self._safe_set_color(s, entry.get("base_color", ""))
 
     def compose_detail_fields(self) -> ComposeResult:
@@ -216,16 +216,22 @@ class LayerColorListPane(ListDetailPane):
             yield Label("Main gradient step index:", classes="field-label")
             yield Static(" ", classes="swatch-spacer")
             yield SkimInput(
-                value="", id="lc-color-index",
-                placeholder="2", disabled=True,
+                value="",
+                id="lc-color-index",
+                placeholder="2",
+                disabled=True,
             )
         # --- Dynamic mode fields ---
         with Horizontal(classes="field-row", id="lc-dynamic-color"):
             yield Label("Main gradient step color:", classes="field-label")
-            yield Static("\ue0b6\u2588\u2588\ue0b4", classes="color-swatch", id="swatch-lc-base-color")
+            yield Static(
+                "\ue0b6\u2588\u2588\ue0b4", classes="color-swatch", id="swatch-lc-base-color"
+            )
             lc_color_input = SkimInput(
-                value="", id="lc-base-color",
-                placeholder="#RRGGBB", disabled=True,
+                value="",
+                id="lc-base-color",
+                placeholder="#RRGGBB",
+                disabled=True,
                 suggester=_COLOR_SUGGESTER,
             )
             yield lc_color_input
@@ -257,8 +263,10 @@ class LayerColorListPane(ListDetailPane):
                     id=f"swatch-lc-step-{i}",
                 )
                 step_input = SkimInput(
-                    value="", id=f"lc-step-{i}",
-                    placeholder="#RRGGBB", disabled=True,
+                    value="",
+                    id=f"lc-step-{i}",
+                    placeholder="#RRGGBB",
+                    disabled=True,
                     suggester=_COLOR_SUGGESTER,
                 )
                 yield step_input
@@ -308,12 +316,11 @@ class LayerColorListPane(ListDetailPane):
                 if self._select_active and event.key in ("enter", "space"):
                     self.set_timer(0.15, self._clear_select_active)
                 return
-            if event.key == "escape":
-                if self._select_active:
-                    event.stop()
-                    event.prevent_default()
-                    self._dismiss_select_overlay()
-                    return
+            if event.key == "escape" and self._select_active:
+                event.stop()
+                event.prevent_default()
+                self._dismiss_select_overlay()
+                return
                 # Escape on closed Select — fall through to base (cancel edit)
         super().on_key(event)
 
@@ -327,7 +334,7 @@ class LayerColorListPane(ListDetailPane):
         """Dismiss the overlay and clear _select_active after focus settles."""
         try:
             select = self.query_one("#lc-gradient-type", SkimSelect)
-            select.query_one("SelectOverlay").action_dismiss()
+            select.query_one("SelectOverlay").action_dismiss()  # type: ignore[attr-defined]
         except Exception:
             pass
         self.set_timer(0.1, self._clear_select_active)
@@ -349,10 +356,8 @@ class LayerColorListPane(ListDetailPane):
     def _set_fields_enabled(self, enabled: bool) -> None:
         """Override to also enable/disable the gradient type Select."""
         super()._set_fields_enabled(enabled)
-        try:
+        with contextlib.suppress(Exception):
             self.query_one("#lc-gradient-type", SkimSelect).disabled = not enabled
-        except Exception:
-            pass
 
     def _check_focus_commit(self) -> None:
         """Override to keep editing when Select or its overlay is focused."""
@@ -493,17 +498,14 @@ class LayerColorListPane(ListDetailPane):
         self.refresh_fields(entry)
         self.update_selected_list_item()
 
-    def on_select_changed(self, event: SkimSelect.Changed) -> None:
-        if event.select.id == "lc-gradient-type" and event.value is not SkimSelect.BLANK:
-            self._on_gradient_type_changed(str(event.value))
-
     def _update_list_swatch(self, color: str) -> None:
         """Update the color swatch in the currently selected list item."""
         from skim.tui.widgets import SkimListView
+
         list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
         if self._selected < len(list_view.children):
             item = list_view.children[self._selected]
-            for s in item.query(".lc-swatch"):
+            for s in item.query(Static).filter(".lc-swatch"):
                 self._safe_set_color(s, color)
 
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -520,15 +522,13 @@ class LayerColorListPane(ListDetailPane):
         elif input_id == "lc-color-index":
             layer_colors = self.get_entries()
             if self._selected < len(layer_colors):
-                try:
+                with contextlib.suppress(ValueError):
                     layer_colors[self._selected]["color_index"] = int(event.value)
-                except ValueError:
-                    pass
                 base_color, color_index = self._current_gradient_params()
                 self._update_gradient_preview(base_color, color_index)
         elif input_id.startswith("lc-step-"):
             # Manual gradient step color changed
-            step = int(input_id[len("lc-step-"):])
+            step = int(input_id[len("lc-step-") :])
             layer_colors = self.get_entries()
             if self._selected < len(layer_colors):
                 entry = layer_colors[self._selected]
@@ -687,9 +687,14 @@ class OutputTab(Widget):
                     color_val = palette.get(config_key, "") or ""
                     with Horizontal(classes="field-row"):
                         yield Label(color_label, classes="field-label")
-                        yield Static("\ue0b6\u2588\u2588\ue0b4", classes="color-swatch", id=f"swatch-{field_id}")
+                        yield Static(
+                            "\ue0b6\u2588\u2588\ue0b4",
+                            classes="color-swatch",
+                            id=f"swatch-{field_id}",
+                        )
                         color_input = SkimInput(
-                            value=color_val, id=field_id,
+                            value=color_val,
+                            id=field_id,
                             placeholder=placeholder,
                             suggester=_COLOR_SUGGESTER,
                         )
@@ -720,17 +725,13 @@ class OutputTab(Widget):
 
     @staticmethod
     def _safe_set_background(widget: Static, color: str) -> None:
-        try:
+        with contextlib.suppress(Exception):
             widget.styles.background = color if color else "transparent"
-        except Exception:
-            pass
 
     @staticmethod
     def _safe_set_color(widget: Static, color: str) -> None:
-        try:
+        with contextlib.suppress(Exception):
             widget.styles.color = color if color else "white"
-        except Exception:
-            pass
 
     def _update_all_palette_swatches(self) -> None:
         palette = self.config_data.get("output", {}).get("style", {}).get("palette", {})
@@ -752,7 +753,9 @@ class OutputTab(Widget):
         return ""
 
     def _layer_colors(self) -> list[dict[str, Any]]:
-        return self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
+        return (
+            self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
+        )
 
     def _lc_column_widths(self) -> tuple[int, int]:
         layer_colors = self._layer_colors()
@@ -829,22 +832,16 @@ class OutputTab(Widget):
         value = event.value
 
         if input_id == "layout-width":
-            try:
+            with contextlib.suppress(ValueError):
                 self.config_data["output"]["layout"]["width"] = float(value)
-            except ValueError:
-                pass
 
         elif input_id == "layout-margin":
-            try:
+            with contextlib.suppress(ValueError):
                 self.config_data["output"]["layout"]["spacing"]["margin"] = float(value)
-            except ValueError:
-                pass
 
         elif input_id == "layout-inset":
-            try:
+            with contextlib.suppress(ValueError):
                 self.config_data["output"]["layout"]["spacing"]["inset"] = float(value)
-            except ValueError:
-                pass
 
         elif input_id in _PALETTE_FIELD_MAP:
             config_key = _PALETTE_FIELD_MAP[input_id]
@@ -854,18 +851,14 @@ class OutputTab(Widget):
         elif input_id == "border-width":
             border = self.config_data["output"]["style"].get("border")
             if border is not None:
-                try:
+                with contextlib.suppress(ValueError):
                     border["width"] = float(value)
-                except ValueError:
-                    pass
 
         elif input_id == "border-radius":
             border = self.config_data["output"]["style"].get("border")
             if border is not None:
-                try:
+                with contextlib.suppress(ValueError):
                     border["radius"] = float(value)
-                except ValueError:
-                    pass
 
     def on_switch_changed(self, event: SkimSwitch.Changed) -> None:
         switch_id = event.switch.id or ""
@@ -886,6 +879,5 @@ class OutputTab(Widget):
                 self.config_data["output"]["style"]["border"] = None
 
     def on_select_changed(self, event: SkimSelect.Changed) -> None:
-        if event.select.id == "hold-symbol-position":
-            if event.value is not SkimSelect.BLANK:
-                self.config_data["output"]["style"]["hold_symbol_position"] = str(event.value)
+        if event.select.id == "hold-symbol-position" and event.value is not SkimSelect.BLANK:
+            self.config_data["output"]["style"]["hold_symbol_position"] = str(event.value)

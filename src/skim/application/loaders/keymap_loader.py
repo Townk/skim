@@ -247,9 +247,11 @@ def load_keymap(
 
     if keymap_json is not None:
         indices = layer_indices or list(range(len(keymap_json)))
-        return SvalboardKeymap({
-            idx: SvalboardLayout[str].from_sequence(layer)
-            for idx, layer in zip(indices, keymap_json)
-        })
+        return SvalboardKeymap(
+            {
+                idx: SvalboardLayout[str].from_sequence(layer)
+                for idx, layer in zip(indices, keymap_json, strict=False)
+            }
+        )
 
     raise ValueError("The provided keymap file path does not exist")

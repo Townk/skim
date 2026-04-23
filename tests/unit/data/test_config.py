@@ -80,9 +80,7 @@ class TestKeyboardLayerIndex:
 
     def test_layer_index_unknown_key_returns_none(self):
         """layer_index returns None for unknown keys."""
-        keyboard = Keyboard(
-            layers=[KeyboardLayer(index=0, id="base", label="1", name="Base")]
-        )
+        keyboard = Keyboard(layers=[KeyboardLayer(index=0, id="base", label="1", name="Base")])
         assert keyboard.layer_index("unknown") is None
 
     def test_layer_index_with_none_returns_none(self):

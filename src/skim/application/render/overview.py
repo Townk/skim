@@ -17,24 +17,24 @@ from collections.abc import Callable
 import drawsvg as draw
 
 from skim.assets import ASSETS
-from skim.data import SkimConfig, SvalboardKeymap
+from skim.data import Palette, SkimConfig, SvalboardKeymap
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .components import FingerClusterComponent, ThumbClusterComponent
 from .context import RenderContext
 from .geometry import AspectRatio
 from .indicators import (
+    _THUMB_KEY_HEIGHT_RATIOS,
+    _THUMB_KEY_NAMES,
     LayerIndicator,
     _thumb_cluster_offset,
-    _THUMB_KEY_NAMES,
-    _THUMB_KEY_HEIGHT_RATIOS,
 )
 from .layout import Boundary, KeymapLayoutMetrics
 from .overview_layout import (
-    BadgeDimensions,
-    OverviewLayout,
     _BADGE_PADDING_LEFT,
     _BADGE_PADDING_RIGHT,
+    BadgeDimensions,
+    OverviewLayout,
 )
 from .text import Font
 
@@ -76,12 +76,13 @@ def _compute_badge_dims(
     badge_font_size = badge_height * _BADGE_FONT_SIZE_RATIO
     try:
         from .text import Font as SkimFont
+
         # Measure at a large reference size then scale proportionally
         ref_size = 100
         pil_font = SkimFont.FINGER_KEY.load(ref_size)
-        max_text_width_at_ref = max(
-            pil_font.getlength(t) for t in badge_texts
-        ) if badge_texts else 50
+        max_text_width_at_ref = (
+            max(pil_font.getlength(t) for t in badge_texts) if badge_texts else 50
+        )
         max_text_width = max_text_width_at_ref * (badge_font_size / ref_size)
     except Exception:
         char_width = badge_font_size * 0.65
@@ -188,25 +189,31 @@ def _collect_thumb_indicators(
                 connector_target_y = None
 
             indicator = LayerIndicator(
-                key_x=layout_b.pos.x, key_y=ref_y,
-                key_width=layout_b.width, key_height=ref_height,
-                target_layer=key.layer_switch, palette=palette,
-                circle_diameter=circle_diameter, gap=gap,
-                offset_direction=offset_dir, connector_type=conn_type,
+                key_x=layout_b.pos.x,
+                key_y=ref_y,
+                key_width=layout_b.width,
+                key_height=ref_height,
+                target_layer=key.layer_switch,
+                palette=palette,
+                circle_diameter=circle_diameter,
+                gap=gap,
+                offset_direction=offset_dir,
+                connector_type=conn_type,
                 connector_target_y=connector_target_y,
             )
 
-            results.append((
-                thumb_comp.x + indicator.circle_center_x,
-                thumb_comp.y + indicator.circle_center_y,
-                circle_diameter / 2.0,
-                key.layer_switch,
-                key_name,
-                side,
-            ))
+            results.append(
+                (
+                    thumb_comp.x + indicator.circle_center_x,
+                    thumb_comp.y + indicator.circle_center_y,
+                    circle_diameter / 2.0,
+                    key.layer_switch,
+                    key_name,
+                    side,
+                )
+            )
 
     return results
-
 
 
 def _compute_connector_paths(
@@ -227,8 +234,7 @@ def _compute_connector_paths(
     segments don't cross any thumb keys.
     """
     lines = [
-        (cx, cy, r, tgt, kn, sd) for cx, cy, r, tgt, kn, sd in all_indicators
-        if tgt in layer_to_row
+        (cx, cy, r, tgt, kn, sd) for cx, cy, r, tgt, kn, sd in all_indicators if tgt in layer_to_row
     ]
     if not lines:
         return []
@@ -238,7 +244,7 @@ def _compute_connector_paths(
 
     # Thumb cluster top/bottom for clearance
     if thumb_bbox:
-        tb_x, tb_y, tb_w, tb_h = thumb_bbox
+        _tb_x, tb_y, _tb_w, tb_h = thumb_bbox
         thumb_top = tb_y
         thumb_bottom = tb_y + tb_h
     else:
@@ -248,11 +254,10 @@ def _compute_connector_paths(
         thumb_bottom = max(all_cy) + nk
 
     # Routing columns staggered to the right
-    target_layers_used = sorted(set(ln[3] for ln in lines))
+    target_layers_used = sorted({ln[3] for ln in lines})
     base_routing_x = end_x + padding + nk
     routing_x_by_layer = {
-        layer: base_routing_x + i * nk
-        for i, layer in enumerate(target_layers_used)
+        layer: base_routing_x + i * nk for i, layer in enumerate(target_layers_used)
     }
 
     # Y-stagger: group by escape direction, assign increasing multipliers
@@ -260,7 +265,7 @@ def _compute_connector_paths(
     down_indices: list[tuple[int, float]] = []
     right_indices: list[tuple[int, float]] = []
 
-    for i, (cx, cy, r, tgt, key_name, side) in enumerate(lines):
+    for i, (cx, cy, _r, _tgt, key_name, side) in enumerate(lines):
         escape = _THUMB_ESCAPE_DIRECTIONS.get((key_name, side), "RIGHT")
         if escape == "UP":
             up_indices.append((i, cy))
@@ -303,7 +308,7 @@ def _compute_connector_paths(
 
     for line_idx, (cx, cy, radius, target_layer, key_name, side) in enumerate(lines):
         target_row_idx = layer_to_row[target_layer]
-        tgt_x, tgt_y, tgt_w, tgt_h = all_row_bounds[target_row_idx]
+        _tgt_x, tgt_y, _tgt_w, _tgt_h = all_row_bounds[target_row_idx]
         target_ew_center_y = tgt_y + ew_offset + nk / 2.0
         routing_x = routing_x_by_layer[target_layer]
         mult = escape_mult.get(line_idx, 1)
@@ -342,8 +347,7 @@ def _compute_connector_paths(
                 slot = max(len(up_escape_ys), len(down_escape_ys)) + 1
                 escape_y = thumb_top - slot * nk
                 reserved_ys.add(round(escape_y))
-                pts = [(start_x, cy), (escape_x, cy), (escape_x, escape_y),
-                       (routing_x, escape_y)]
+                pts = [(start_x, cy), (escape_x, cy), (escape_x, escape_y), (routing_x, escape_y)]
                 if abs(escape_y - target_ew_center_y) > 1.0:
                     pts.append((routing_x, target_ew_center_y))
                 pts.append((end_x, target_ew_center_y))
@@ -379,16 +383,18 @@ def _draw_connector_paths(
         for px, py in pts[1:]:
             path_d += f" L {px:.2f} {py:.2f}"
 
-        d.append(draw.Raw(
-            f'<path d="{path_d}"'
-            f' stroke="{stroke_color}"'
-            f' stroke-width="2.5"'
-            f' stroke-dasharray="1 4"'
-            f' stroke-linecap="round"'
-            f' fill="none"'
-            f' opacity="0.7"'
-            f'/>'
-        ))
+        d.append(
+            draw.Raw(
+                f'<path d="{path_d}"'
+                f' stroke="{stroke_color}"'
+                f' stroke-width="2.5"'
+                f' stroke-dasharray="1 4"'
+                f' stroke-linecap="round"'
+                f' fill="none"'
+                f' opacity="0.7"'
+                f"/>"
+            )
+        )
 
 
 def _build_thumb_clusters(
@@ -406,7 +412,8 @@ def _build_thumb_clusters(
     layer0 = keymap.layers[first_qmk_idx]
     palette = config.output.style.palette
     thumb_ctx = RenderContext(
-        palette=palette, layer_index=0,
+        palette=palette,
+        layer_index=0,
         has_double_south=config.keyboard.features.double_south,
         use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
         hold_symbol_position=config.output.style.hold_symbol_position,
@@ -417,12 +424,16 @@ def _build_thumb_clusters(
     thumb_w = layout.thumb_cluster_width
     left_pos, right_pos = layout.thumb_cluster_positions()
     left_thumb = ThumbClusterComponent(
-        keymap_cluster=layer0.left.thumb, side=KeyboardSide.LEFT,
-        layout=Boundary(width=thumb_w, pos=left_pos), render_context=thumb_ctx,
+        keymap_cluster=layer0.left.thumb,
+        side=KeyboardSide.LEFT,
+        layout=Boundary(width=thumb_w, pos=left_pos),
+        render_context=thumb_ctx,
     )
     right_thumb = ThumbClusterComponent(
-        keymap_cluster=layer0.right.thumb, side=KeyboardSide.RIGHT,
-        layout=Boundary(width=thumb_w, pos=right_pos), render_context=thumb_ctx,
+        keymap_cluster=layer0.right.thumb,
+        side=KeyboardSide.RIGHT,
+        layout=Boundary(width=thumb_w, pos=right_pos),
+        render_context=thumb_ctx,
     )
     return left_thumb, right_thumb
 
@@ -465,7 +476,9 @@ def draw_overview(
         if left_thumb_prelim and right_thumb_prelim:
             all_row_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
             max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
-            indicators = _collect_thumb_indicators(left_thumb_prelim, right_thumb_prelim, keymap, config)
+            indicators = _collect_thumb_indicators(
+                left_thumb_prelim, right_thumb_prelim, keymap, config
+            )
 
             def _thumb_bb(lt: ThumbClusterComponent, rt: ThumbClusterComponent):
                 bx = lt.x
@@ -476,16 +489,20 @@ def draw_overview(
 
             tb = _thumb_bb(left_thumb_prelim, right_thumb_prelim)
             connector_paths = _compute_connector_paths(
-                indicators, all_row_bounds, layer_to_row,
-                nk, ew_offset, max_cluster_right, layout.padding, tb,
+                indicators,
+                all_row_bounds,
+                layer_to_row,
+                nk,
+                ew_offset,
+                max_cluster_right,
+                layout.padding,
+                tb,
             )
 
             # Find clearance needed: only check the ESCAPE segment
             # (first 2 points of each path, near the thumb cluster area).
             # Don't include routing/target Y values which are at layer rows.
-            last_row_bottom = (
-                layout.layer_row_y_positions[-1] + layout.layer_row_heights[-1]
-            )
+            last_row_bottom = layout.layer_row_y_positions[-1] + layout.layer_row_heights[-1]
             escape_ys: list[float] = []
             for pts, _ in connector_paths:
                 # Escape points are the first 2 (start + first turn)
@@ -509,13 +526,23 @@ def draw_overview(
                 config, keymap, layout, use_system_fonts
             )
             if left_thumb_final and right_thumb_final:
-                all_row_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
+                all_row_bounds = [
+                    layout.layer_row_bounding_box(i) for i in range(render_layer_count)
+                ]
                 max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
-                indicators = _collect_thumb_indicators(left_thumb_final, right_thumb_final, keymap, config)
+                indicators = _collect_thumb_indicators(
+                    left_thumb_final, right_thumb_final, keymap, config
+                )
                 tb = _thumb_bb(left_thumb_final, right_thumb_final)
                 connector_paths = _compute_connector_paths(
-                    indicators, all_row_bounds, layer_to_row,
-                    nk, ew_offset, max_cluster_right, layout.padding, tb,
+                    indicators,
+                    all_row_bounds,
+                    layer_to_row,
+                    nk,
+                    ew_offset,
+                    max_cluster_right,
+                    layout.padding,
+                    tb,
                 )
                 # Re-adjust canvas for the final escape extents
                 final_escape_ys = [py for pts, _ in connector_paths for _, py in pts[:2]]
@@ -542,18 +569,23 @@ def draw_overview(
             d.append_css(font.css_style)
 
     border = config.output.style.border
-    d.append(draw.Rectangle(
-        x=margin, y=margin,
-        width=canvas_w - margin * 2.0,
-        height=canvas_h - margin * 2.0,
-        rx=border.radius if border else None,
-        ry=border.radius if border else None,
-        fill=palette.background_color,
-        stroke=palette.border_color if border else None,
-        stroke_width=border.width if border else None,
-    ))
+    d.append(
+        draw.Rectangle(
+            x=margin,
+            y=margin,
+            width=canvas_w - margin * 2.0,
+            height=canvas_h - margin * 2.0,
+            rx=border.radius if border else None,
+            ry=border.radius if border else None,
+            fill=palette.background_color,
+            stroke=palette.border_color if border else None,
+            stroke_width=border.width if border else None,
+        )
+    )
 
-    label_font = Font.FINGER_KEY.get_system_font_family() if use_system_fonts else Font.FINGER_KEY.value
+    label_font = (
+        Font.FINGER_KEY.get_system_font_family() if use_system_fonts else Font.FINGER_KEY.value
+    )
     title_font = Font.TITLE.get_system_font_family() if use_system_fonts else Font.TITLE.value
 
     badge_w = badge_dims.width
@@ -565,11 +597,16 @@ def draw_overview(
     # Header: logo + title
     logo_width = badge_w * 1.19
     logo_height = _LOGO_ASPECT_RATIO.height_from_width(logo_width)
-    d.append(draw.Image(
-        x=padding, y=padding,
-        width=logo_width, height=logo_height,
-        path=ASSETS.logo_svalboard, embed=True,
-    ))
+    d.append(
+        draw.Image(
+            x=padding,
+            y=padding,
+            width=logo_width,
+            height=logo_height,
+            path=ASSETS.logo_svalboard,
+            embed=True,
+        )
+    )
 
     if config.output.keymap_title:
         title_text = config.output.keymap_title
@@ -578,70 +615,112 @@ def draw_overview(
         title_text = f"{(first_layer.variant or first_layer.name)} Layers Layout"
     else:
         title_text = "Keymap Layout"
-    d.append(draw.Text(
-        title_text, font_size=badge_font_size * 1.8,
-        x=layout.right_column_x, y=padding + logo_height / 2.0,
-        text_anchor="start", dominant_baseline="central",
-        font_family=title_font, fill=palette.text_color,
-    ))
+    d.append(
+        draw.Text(
+            title_text,
+            font_size=badge_font_size * 1.8,
+            x=layout.right_column_x,
+            y=padding + logo_height / 2.0,
+            text_anchor="start",
+            dominant_baseline="central",
+            font_family=title_font,
+            fill=palette.text_color,
+        )
+    )
 
     # LAYERS heading
     if row_to_layer:
         first_badge_y = layout.layer_row_y_positions[0] + ew_offset
-        d.append(draw.Text(
-            "LAYERS", font_size=badge_font_size,
-            x=badge_x + _BADGE_PADDING_LEFT,
-            y=first_badge_y - badge_font_size * 0.2,
-            text_anchor="start", dominant_baseline="text-after-edge",
-            font_family=label_font, fill=palette.neutral_color,
-        ))
+        d.append(
+            draw.Text(
+                "LAYERS",
+                font_size=badge_font_size,
+                x=badge_x + _BADGE_PADDING_LEFT,
+                y=first_badge_y - badge_font_size * 0.2,
+                text_anchor="start",
+                dominant_baseline="text-after-edge",
+                font_family=label_font,
+                fill=palette.neutral_color,
+            )
+        )
 
     # Layer badges
     for row_idx, (pos, qmk_idx) in enumerate(row_to_layer):
         row_y = layout.layer_row_y_positions[row_idx]
         layer_cfg = config.keyboard.layers[pos]
         layer_color = (
-            palette.layers[pos].base_color
-            if pos < len(palette.layers) else palette.neutral_color
+            palette.layers[pos].base_color if pos < len(palette.layers) else palette.neutral_color
         )
         badge_y = row_y + ew_offset
-        d.append(draw.Rectangle(
-            x=badge_x, y=badge_y, width=badge_w, height=badge_h,
-            rx=badge_r, ry=badge_r, fill=layer_color,
-        ))
-        d.append(draw.Text(
-            f"{qmk_idx} {layer_cfg.name.upper()}", font_size=badge_font_size,
-            x=badge_x + _BADGE_PADDING_LEFT, y=badge_y + badge_h / 2.0,
-            text_anchor="start", dominant_baseline="central",
-            font_family=label_font, fill="white",
-        ))
-        if layer_cfg.variant:
-            d.append(draw.Text(
-                layer_cfg.variant, font_size=badge_font_size,
+        d.append(
+            draw.Rectangle(
+                x=badge_x,
+                y=badge_y,
+                width=badge_w,
+                height=badge_h,
+                rx=badge_r,
+                ry=badge_r,
+                fill=layer_color,
+            )
+        )
+        d.append(
+            draw.Text(
+                f"{qmk_idx} {layer_cfg.name.upper()}",
+                font_size=badge_font_size,
                 x=badge_x + _BADGE_PADDING_LEFT,
-                y=badge_y + badge_h + badge_font_size * 0.2,
-                text_anchor="start", dominant_baseline="text-before-edge",
-                font_family=label_font, fill=layer_color,
-            ))
+                y=badge_y + badge_h / 2.0,
+                text_anchor="start",
+                dominant_baseline="central",
+                font_family=label_font,
+                fill="white",
+            )
+        )
+        if layer_cfg.variant:
+            d.append(
+                draw.Text(
+                    layer_cfg.variant,
+                    font_size=badge_font_size,
+                    x=badge_x + _BADGE_PADDING_LEFT,
+                    y=badge_y + badge_h + badge_font_size * 0.2,
+                    text_anchor="start",
+                    dominant_baseline="text-before-edge",
+                    font_family=label_font,
+                    fill=layer_color,
+                )
+            )
 
     # THUMBS badge
-    d.append(draw.Rectangle(
-        x=badge_x, y=layout.thumb_row_y, width=badge_w, height=badge_h,
-        rx=badge_r, ry=badge_r, fill=palette.text_color,
-    ))
-    d.append(draw.Text(
-        "THUMBS", font_size=badge_font_size,
-        x=badge_x + _BADGE_PADDING_LEFT, y=layout.thumb_row_y + badge_h / 2.0,
-        text_anchor="start", dominant_baseline="central",
-        font_family=label_font, fill="white",
-    ))
+    d.append(
+        draw.Rectangle(
+            x=badge_x,
+            y=layout.thumb_row_y,
+            width=badge_w,
+            height=badge_h,
+            rx=badge_r,
+            ry=badge_r,
+            fill=palette.text_color,
+        )
+    )
+    d.append(
+        draw.Text(
+            "THUMBS",
+            font_size=badge_font_size,
+            x=badge_x + _BADGE_PADDING_LEFT,
+            y=layout.thumb_row_y + badge_h / 2.0,
+            text_anchor="start",
+            dominant_baseline="central",
+            font_family=label_font,
+            fill="white",
+        )
+    )
 
     # Finger clusters
     cluster_width = layout.finger_cluster_width
     for row_idx, (pos, qmk_idx) in enumerate(row_to_layer):
         layer_data = keymap.layers[qmk_idx]
         ctx = RenderContext(
-            palette=palette, layer_index=pos,
+            palette=palette,
+            layer_index=pos,
             has_double_south=config.keyboard.features.double_south,
             use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
             hold_symbol_position=config.output.style.hold_symbol_position,
@@ -652,13 +731,16 @@ def draw_overview(
         positions = layout.finger_cluster_positions(row_idx)
         for i in range(_FINGER_CLUSTERS_PER_SIDE):
             c = FingerClusterComponent(
-                keymap_cluster=layer_data.left.fingers[i], side=KeyboardSide.LEFT,
-                layout=Boundary(width=cluster_width, pos=positions[i]), render_context=ctx,
+                keymap_cluster=layer_data.left.fingers[i],
+                side=KeyboardSide.LEFT,
+                layout=Boundary(width=cluster_width, pos=positions[i]),
+                render_context=ctx,
             )
             d.append(c.build())
         for i in range(_FINGER_CLUSTERS_PER_SIDE):
             c = FingerClusterComponent(
-                keymap_cluster=layer_data.right.fingers[i], side=KeyboardSide.RIGHT,
+                keymap_cluster=layer_data.right.fingers[i],
+                side=KeyboardSide.RIGHT,
                 layout=Boundary(width=cluster_width, pos=positions[_FINGER_CLUSTERS_PER_SIDE + i]),
                 render_context=ctx,
             )
@@ -677,11 +759,18 @@ def draw_overview(
 
     # Copyright
     if config.output.copyright:
-        d.append(draw.Text(
-            config.output.copyright, font_size=max(6, int(canvas_h * 0.012)),
-            x=canvas_w - padding, y=canvas_h - padding,
-            text_anchor="end", dominant_baseline="text-after-edge",
-            font_family=title_font, fill=palette.text_color, opacity=0.6,
-        ))
+        d.append(
+            draw.Text(
+                config.output.copyright,
+                font_size=max(6, int(canvas_h * 0.012)),
+                x=canvas_w - padding,
+                y=canvas_h - padding,
+                text_anchor="end",
+                dominant_baseline="text-after-edge",
+                font_family=title_font,
+                fill=palette.text_color,
+                opacity=0.6,
+            )
+        )
 
     return d

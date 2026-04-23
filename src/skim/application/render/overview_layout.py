@@ -42,6 +42,7 @@ class BadgeDimensions:
         height: Uniform height matching the E/W key size.
         border_radius: Corner radius.
     """
+
     width: float
     height: float
     border_radius: float
@@ -103,7 +104,9 @@ class OverviewLayout:
         side_width = m.side_width * scale
 
         # Refine col_gap: ensure it's at least the thumb cluster gap
-        thumb_center_gap = col2_width - 2 * (side_width - thumb_cluster_width) - 2 * thumb_cluster_width
+        thumb_center_gap = (
+            col2_width - 2 * (side_width - thumb_cluster_width) - 2 * thumb_cluster_width
+        )
         col_gap = max(col_gap, thumb_center_gap, m.inset * 3)
 
         # Recompute col2 with refined gap

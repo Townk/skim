@@ -56,7 +56,13 @@ class TestKeyboardTab:
         app = KeyboardTabTestApp(config_data=config_with_layers)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            for field_id in ["layer-index", "layer-label", "layer-name", "layer-id", "layer-variant"]:
+            for field_id in [
+                "layer-index",
+                "layer-label",
+                "layer-name",
+                "layer-id",
+                "layer-variant",
+            ]:
                 inp = app.query_one(f"#{field_id}", Input)
                 assert inp.disabled is True
 
@@ -168,5 +174,5 @@ class TestKeyboardTab:
             layers = app.config_data["keyboard"]["layers"]
             assert len(layers) == 3
             # After commit, layers are sorted by index; find the new one
-            indices = {l["index"] for l in layers}
+            indices = {layer["index"] for layer in layers}
             assert 1 in indices

@@ -80,7 +80,9 @@ class KeymapTargetAdapter:
             A new keymap containing SvalboardTargetKey objects at each
             position, ready for rendering.
         """
-        return SvalboardKeymap({idx: self._transform_layer(layer) for idx, layer in keymap.layers.items()})
+        return SvalboardKeymap(
+            {idx: self._transform_layer(layer) for idx, layer in keymap.layers.items()}
+        )
 
     def _transform_layer(self, layer: SvalboardLayout[str]) -> SvalboardLayout[SvalboardTargetKey]:
         """Transform a single layer from strings to target keys.

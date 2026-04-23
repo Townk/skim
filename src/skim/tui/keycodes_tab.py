@@ -33,7 +33,7 @@ def _load_base_keycode_names() -> list[str]:
     mapping = yaml.safe_load(ASSETS.keycode_mappings.read_text())
     names: set[str] = set()
     names.update(mapping.get("keycodes", {}).keys())
-    for func_name in mapping.get("macro_functions", {}).keys():
+    for func_name in mapping.get("macro_functions", {}):
         names.add(f"{func_name}()")
     return sorted(names)
 
@@ -53,8 +53,10 @@ def _all_keycode_names(config_data: dict[str, Any]) -> list[str]:
 
 def _make_keycode_candidates(config_data: dict[str, Any]):
     """Return a candidates callable that includes override keycodes."""
+
     def _candidates(state: TargetState) -> list[DropdownItem]:
         return [DropdownItem(main=name) for name in _all_keycode_names(config_data)]
+
     return _candidates
 
 
@@ -111,7 +113,7 @@ class KeycodeAutoComplete(AutoComplete):
 
     def get_search_string(self, target_state: TargetState) -> str:
         start = self._token_start(target_state.text, target_state.cursor_position)
-        return target_state.text[start:target_state.cursor_position]
+        return target_state.text[start : target_state.cursor_position]
 
     def apply_completion(self, value: str, state: TargetState) -> None:
         start = self._token_start(state.text, state.cursor_position)
@@ -119,7 +121,7 @@ class KeycodeAutoComplete(AutoComplete):
         if value.endswith("()"):
             value = value[:-1]
         before = state.text[:start]
-        after = state.text[state.cursor_position:]
+        after = state.text[state.cursor_position :]
         self.target.value = f"{before}{value}{after}"
         self.target.cursor_position = start + len(value)
 
@@ -130,7 +132,7 @@ class KeycodeAutoComplete(AutoComplete):
         if not search_string:
             # Show all candidates right after a separator like ( or ,
             state = self._get_target_state()
-            before = state.text[:state.cursor_position]
+            before = state.text[: state.cursor_position]
             return bool(before) and before[-1] in _KEYCODE_SHOW_AFTER
         if option_list.option_count <= 1:
             return False
@@ -147,7 +149,7 @@ class KeycodeAutoComplete(AutoComplete):
             # After completing a macro (cursor right after a separator),
             # re-show the dropdown for the argument
             state = self._get_target_state()
-            before = state.text[:state.cursor_position]
+            before = state.text[: state.cursor_position]
             if before and before[-1] in _KEYCODE_SHOW_AFTER:
                 super()._handle_target_update()
                 return
@@ -170,7 +172,7 @@ def _find_active_prefix(text: str, cursor: int) -> tuple[str, int] | None:
         if pos == -1:
             continue
         # Check there's no closing ';' between the marker and cursor
-        between = before[pos + len(marker):]
+        between = before[pos + len(marker) :]
         if ";" not in between:
             return marker, pos
     return None
@@ -194,7 +196,7 @@ class OverrideTargetAutoComplete(AutoComplete):
         if result is None:
             return ""
         marker, pos = result
-        return target_state.text[pos + len(marker):target_state.cursor_position]
+        return target_state.text[pos + len(marker) : target_state.cursor_position]
 
     def get_candidates(self, target_state: TargetState) -> list[DropdownItem]:
         result = _find_active_prefix(target_state.text, target_state.cursor_position)
@@ -202,12 +204,9 @@ class OverrideTargetAutoComplete(AutoComplete):
             return []
         marker, pos = result
         if marker == "@@":
-            return [
-                DropdownItem(main=name)
-                for name in _all_keycode_names(self._config_data)
-            ]
+            return [DropdownItem(main=name) for name in _all_keycode_names(self._config_data)]
         # %% — use prefix lookup on the sorted names list
-        search = target_state.text[pos + len(marker):target_state.cursor_position]
+        search = target_state.text[pos + len(marker) : target_state.cursor_position]
         if not search:
             return _NERDFONT_ITEMS[:_NERDFONT_MAX_RESULTS]
         return _nerdfont_prefix_items(search)
@@ -221,7 +220,7 @@ class OverrideTargetAutoComplete(AutoComplete):
         if marker == "%%":
             value = value.split()[0] if value.strip() else value
         before = state.text[:pos]
-        after = state.text[state.cursor_position:]
+        after = state.text[state.cursor_position :]
         completed = f"{before}{marker}{value};{after}"
         self.target.value = completed
         self.target.cursor_position = pos + len(marker) + len(value) + 1  # after ';'
@@ -236,7 +235,7 @@ class OverrideTargetAutoComplete(AutoComplete):
             return False
         if option_list.option_count == 1:
             first_option = option_list.get_option_at_index(0).prompt
-            plain = first_option.plain if hasattr(first_option, 'plain') else str(first_option)
+            plain = first_option.plain if hasattr(first_option, "plain") else str(first_option)  # type: ignore[union-attr]
             if plain.split()[0] == search_string:
                 return False
         return True
@@ -279,18 +278,18 @@ class PreProcessListPane(ListDetailPane):
             mappings = load_keycode_mappings(config.keycodes)
             adapter = KeycodeLabelAdapter(config.keyboard, mappings)
             result = adapter.transform(target)
-            label = result.label.replace(SEPARATOR_CHAR, " | ")
+            label: str = (result.label or target).replace(SEPARATOR_CHAR, " | ")
             glyphs = load_nerdfont_glyphs()
 
             def _replace_nf(match: re.Match) -> str:
                 name = match.group(1)
                 key = name if name.startswith("nf-") else f"nf-{name}"
-                return glyphs.get(key, match.group(0))
+                return glyphs.get(key, match.group(0) or "")
 
             label = re.sub(r"%%([^;]+);", _replace_nf, label)
             return label
         except Exception:
-            return target
+            return target or ""
 
     def compose_detail_fields(self) -> ComposeResult:
         suggester = _make_keycode_suggester(self.config_data)
@@ -298,8 +297,10 @@ class PreProcessListPane(ListDetailPane):
         with Horizontal(classes="field-row"):
             yield Label("Keycode:", classes="field-label")
             pp_kc_input = SkimInput(
-                value="", id="pre-process-keycode",
-                placeholder="e.g. MKC_BKTAB", disabled=True,
+                value="",
+                id="pre-process-keycode",
+                placeholder="e.g. MKC_BKTAB",
+                disabled=True,
                 suggester=suggester,
             )
             yield pp_kc_input
@@ -307,8 +308,10 @@ class PreProcessListPane(ListDetailPane):
         with Horizontal(classes="field-row"):
             yield Label("Target:", classes="field-label")
             pp_tg_input = SkimInput(
-                value="", id="pre-process-target",
-                placeholder="e.g. LSFT(KC_TAB)", disabled=True,
+                value="",
+                id="pre-process-target",
+                placeholder="e.g. LSFT(KC_TAB)",
+                disabled=True,
                 suggester=suggester,
             )
             yield pp_tg_input
@@ -316,7 +319,8 @@ class PreProcessListPane(ListDetailPane):
         with Horizontal(classes="field-row"):
             yield Label("Preview:", classes="field-label")
             yield SkimInput(
-                value="", id="pre-process-preview",
+                value="",
+                id="pre-process-preview",
                 placeholder="resolved label",
                 disabled=True,
             )
@@ -359,7 +363,7 @@ class PreProcessListPane(ListDetailPane):
             return
         input_id = event.input.id or ""
         if input_id.startswith("pre-process-") and input_id != "pre-process-preview":
-            field = input_id[len("pre-process-"):]
+            field = input_id[len("pre-process-") :]
             entries = self.get_entries()
             if self._selected < len(entries):
                 entries[self._selected][field] = event.value
@@ -388,18 +392,18 @@ class OverrideListPane(ListDetailPane):
             mappings = load_keycode_mappings(config.keycodes)
             adapter = KeycodeLabelAdapter(config.keyboard, mappings)
             result = adapter.transform(keycode)
-            label = result.label
+            label: str = result.label or keycode
             glyphs = load_nerdfont_glyphs()
 
             def _replace_nf(match: re.Match) -> str:
                 name = match.group(1)
                 key = name if name.startswith("nf-") else f"nf-{name}"
-                return glyphs.get(key, match.group(0))
+                return glyphs.get(key, match.group(0) or "")
 
             label = re.sub(r"%%([^;]+);", _replace_nf, label)
             return label
         except Exception:
-            return keycode
+            return keycode or ""
 
     def format_entry(self, index: int, entry: dict) -> str:
         entries = self.get_entries()
@@ -414,8 +418,10 @@ class OverrideListPane(ListDetailPane):
         with Horizontal(classes="field-row"):
             yield Label("Keycode:", classes="field-label")
             ov_kc_input = SkimInput(
-                value="", id="override-keycode",
-                placeholder="e.g. KC_ESC", disabled=True,
+                value="",
+                id="override-keycode",
+                placeholder="e.g. KC_ESC",
+                disabled=True,
                 suggester=suggester,
             )
             yield ov_kc_input
@@ -423,15 +429,18 @@ class OverrideListPane(ListDetailPane):
         with Horizontal(classes="field-row"):
             yield Label("Target:", classes="field-label")
             ov_tg_input = SkimInput(
-                value="", id="override-target",
-                placeholder="e.g. @@KC_ESC; or %%nf-md-icon;", disabled=True,
+                value="",
+                id="override-target",
+                placeholder="e.g. @@KC_ESC; or %%nf-md-icon;",
+                disabled=True,
             )
             yield ov_tg_input
         yield OverrideTargetAutoComplete(ov_tg_input, config_data=self.config_data)
         with Horizontal(classes="field-row"):
             yield Label("Preview:", classes="field-label")
             yield SkimInput(
-                value="", id="override-preview",
+                value="",
+                id="override-preview",
                 placeholder="resolved label",
                 disabled=True,
             )
@@ -474,7 +483,7 @@ class OverrideListPane(ListDetailPane):
             return
         input_id = event.input.id or ""
         if input_id.startswith("override-") and input_id != "override-preview":
-            field = input_id[len("override-"):]
+            field = input_id[len("override-") :]
             entries = self.get_entries()
             if self._selected < len(entries):
                 entries[self._selected][field] = event.value

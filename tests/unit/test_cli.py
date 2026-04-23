@@ -257,13 +257,17 @@ class TestConfigureCommand:
         import json
 
         kbi = tmp_path / "test.kbi"
-        kbi.write_text(json.dumps({
-            "layers": 1,
-            "keymap": [["KC_A"] * 60],
-            "layer_colors": [{"hue": 85, "sat": 255, "val": 255}],
-            "cosmetic": {"layer": {"0": "Base"}},
-            "custom_keycodes": [],
-        }))
+        kbi.write_text(
+            json.dumps(
+                {
+                    "layers": 1,
+                    "keymap": [["KC_A"] * 60],
+                    "layer_colors": [{"hue": 85, "sat": 255, "val": 255}],
+                    "cosmetic": {"layer": {"0": "Base"}},
+                    "custom_keycodes": [],
+                }
+            )
+        )
         runner = CliRunner()
         result = runner.invoke(main, ["configure", "-k", str(kbi)])
         assert result.exit_code == 0
@@ -286,13 +290,17 @@ class TestConfigureCommand:
         import json
 
         kbi = tmp_path / "test.kbi"
-        kbi.write_text(json.dumps({
-            "layers": 1,
-            "keymap": [["KC_A"] * 60],
-            "layer_colors": [{"hue": 85, "sat": 255, "val": 255}],
-            "cosmetic": {"layer": {"0": "Base"}},
-            "custom_keycodes": [],
-        }))
+        kbi.write_text(
+            json.dumps(
+                {
+                    "layers": 1,
+                    "keymap": [["KC_A"] * 60],
+                    "layer_colors": [{"hue": 85, "sat": 255, "val": 255}],
+                    "cosmetic": {"layer": {"0": "Base"}},
+                    "custom_keycodes": [],
+                }
+            )
+        )
         runner = CliRunner()
         result = runner.invoke(main, ["configure", "-k", str(kbi)])
         assert result.exit_code == 0
@@ -305,13 +313,17 @@ class TestConfigureCommand:
         import json
 
         kbi = tmp_path / "test.kbi"
-        kbi.write_text(json.dumps({
-            "layers": 1,
-            "keymap": [["KC_A"] * 60],
-            "layer_colors": [{"hue": 85, "sat": 255, "val": 255}],
-            "cosmetic": {"layer": {"0": "Base"}},
-            "custom_keycodes": [],
-        }))
+        kbi.write_text(
+            json.dumps(
+                {
+                    "layers": 1,
+                    "keymap": [["KC_A"] * 60],
+                    "layer_colors": [{"hue": 85, "sat": 255, "val": 255}],
+                    "cosmetic": {"layer": {"0": "Base"}},
+                    "custom_keycodes": [],
+                }
+            )
+        )
         runner = CliRunner()
         result = runner.invoke(main, ["configure", "-k", str(kbi)])
         assert result.exit_code == 0

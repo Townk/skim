@@ -145,7 +145,7 @@ def check_system_fonts() -> Generator[CheckResult, None, None]:
 def check_textual_available() -> bool:
     """Check if textual TUI library is available."""
     try:
-        import textual  # noqa: F401
+        import textual  # noqa: F401  # pyright: ignore[reportUnusedImport]
 
         return True
     except ImportError:

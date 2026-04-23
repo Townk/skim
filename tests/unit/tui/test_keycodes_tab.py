@@ -5,7 +5,7 @@ from textual.app import App, ComposeResult
 from textual.widgets import Button, Input
 
 from skim.data.config import SkimConfig
-from skim.tui.keycodes_tab import KeycodesTab, OverrideListPane, PreProcessListPane
+from skim.tui.keycodes_tab import KeycodesTab
 from skim.tui.widgets import SkimListView
 
 
@@ -81,7 +81,12 @@ class TestKeycodesTab:
         app = KeycodesTabTestApp(config_data=config_with_keycodes)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            for fid in ["override-keycode", "override-target", "pre-process-keycode", "pre-process-target"]:
+            for fid in [
+                "override-keycode",
+                "override-target",
+                "pre-process-keycode",
+                "pre-process-target",
+            ]:
                 assert app.query_one(f"#{fid}", Input).disabled is True
 
     @pytest.mark.asyncio()
@@ -125,7 +130,10 @@ class TestKeycodesTab:
             await pilot.pause()
             tab._exit_edit_mode(commit=False)
             await pilot.pause()
-            assert app.config_data["keycodes"]["overrides"][0]["target"] == "%%nf-md-keyboard_tab_reverse;"
+            assert (
+                app.config_data["keycodes"]["overrides"][0]["target"]
+                == "%%nf-md-keyboard_tab_reverse;"
+            )
 
     @pytest.mark.asyncio()
     async def test_empty_list_unfocusable(self, empty_config):

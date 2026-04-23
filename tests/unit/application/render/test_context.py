@@ -194,7 +194,7 @@ class TestRenderContextKeyFillColor:
             has_double_south=False,
             use_layer_colors_on_keys=True,
             hold_symbol_position=SplitSidePosition.OUTWARD,
-            qmk_index_to_position=lambda idx: None,
+            qmk_index_to_position=lambda _idx: None,
         )
         key = SvalboardTargetKey(label="L99", layer_switch=99)
         result = ctx.key_fill_color(key, default="#AABBCC")

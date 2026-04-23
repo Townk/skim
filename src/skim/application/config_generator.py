@@ -91,16 +91,12 @@ class ConfigGenerator:
             return hex_c
 
         keyboard_layers = self._build_layers(num_layers, layer_names)
-        palette_layers = self._build_palette_layers(
-            num_layers, layer_colors_raw, apply_adjustment
-        )
+        palette_layers = self._build_palette_layers(num_layers, layer_colors_raw, apply_adjustment)
         keycode_overrides = self._build_keycode_overrides(custom_keycodes)
 
         palette_overrides: dict[str, str] = {}
         if qmk_header_content:
-            palette_overrides = self._parse_qmk_colors(
-                qmk_header_content, apply_adjustment
-            )
+            palette_overrides = self._parse_qmk_colors(qmk_header_content, apply_adjustment)
 
         config_dict: dict[str, Any] = SkimConfig().model_dump(mode="json")
         config_dict["keyboard"]["layers"] = keyboard_layers
@@ -176,9 +172,7 @@ class ConfigGenerator:
             if not line.startswith("#define"):
                 continue
 
-            hsv_match = re.match(
-                r"#define\s+HSV_(\w+)\s+(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", line
-            )
+            hsv_match = re.match(r"#define\s+HSV_(\w+)\s+(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", line)
             if hsv_match:
                 name = hsv_match.group(1).lower()
                 h = int(hsv_match.group(2)) / 255.0
@@ -188,9 +182,7 @@ class ConfigGenerator:
                 colors[name] = apply_adjustment(hex_str(r, g, b))
                 continue
 
-            rgb_match = re.match(
-                r"#define\s+RGB_(\w+)\s+(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", line
-            )
+            rgb_match = re.match(r"#define\s+RGB_(\w+)\s+(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", line)
             if rgb_match:
                 name = rgb_match.group(1).lower()
                 r = int(rgb_match.group(2)) / 255.0

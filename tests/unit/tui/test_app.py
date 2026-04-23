@@ -1,7 +1,6 @@
 """Unit tests for skim.tui.app module."""
 
 import pytest
-import yaml
 
 from skim.data.config import SkimConfig
 from skim.tui.app import SkimConfigApp
@@ -18,7 +17,7 @@ class TestSkimConfigApp:
     async def test_app_starts_with_three_tabs(self, default_config_data):
         """App has Keyboard, Keycodes, and Output tabs."""
         app = SkimConfigApp(config_data=default_config_data)
-        async with app.run_test() as pilot:
+        async with app.run_test():
             tabs = app.query("TabPane")
             assert len(tabs) == 3
 
@@ -26,7 +25,7 @@ class TestSkimConfigApp:
     async def test_app_has_footer(self, default_config_data):
         """App shows a footer with keybindings."""
         app = SkimConfigApp(config_data=default_config_data)
-        async with app.run_test() as pilot:
+        async with app.run_test():
             from textual.widgets import Footer
 
             footers = app.query(Footer)
@@ -36,7 +35,7 @@ class TestSkimConfigApp:
     async def test_app_starts_on_keyboard_tab(self, default_config_data):
         """App starts with the Keyboard tab active."""
         app = SkimConfigApp(config_data=default_config_data)
-        async with app.run_test() as pilot:
+        async with app.run_test():
             from textual.widgets import TabbedContent
 
             tabbed = app.query_one(TabbedContent)

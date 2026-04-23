@@ -31,8 +31,8 @@ from .context import (
     FingerClusterKeyColors,
     RenderContext,
 )
-from .indicators import LayerIndicatorOverlay
 from .geometry import AspectRatio
+from .indicators import LayerIndicatorOverlay
 from .keys import (
     CenterKey,
     DirectionalKey,

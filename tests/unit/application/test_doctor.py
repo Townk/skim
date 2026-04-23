@@ -12,7 +12,6 @@ from skim.application.doctor import (
     check_installation_integrity,
     check_render_engines,
     check_system_fonts,
-    check_textual_available,
     run_doctor_checks,
 )
 

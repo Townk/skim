@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import copy
 from abc import abstractmethod
 from typing import Any
@@ -160,9 +161,9 @@ class ListDetailPane(Widget):
         """Update the text of all list items in place."""
         entries = self.get_entries()
         list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
-        for i, item in enumerate(list_view.children):
-            if i < len(entries):
-                self._update_list_item_content(item, i, entries[i])
+        for i, child in enumerate(list_view.children):
+            if i < len(entries) and isinstance(child, ListItem):
+                self._update_list_item_content(child, i, entries[i])
 
     def _update_list_item_content(self, item: ListItem, index: int, entry: dict) -> None:
         """Update a single list item's content. Override for custom rendering."""
@@ -175,8 +176,9 @@ class ListDetailPane(Widget):
             return
         list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
         if self._selected < len(list_view.children):
-            item = list_view.children[self._selected]
-            self._update_list_item_content(item, self._selected, entries[self._selected])
+            child = list_view.children[self._selected]
+            if isinstance(child, ListItem):
+                self._update_list_item_content(child, self._selected, entries[self._selected])
 
     def _update_list_state(self) -> None:
         """Update list focusability and Remove button state."""
@@ -191,10 +193,8 @@ class ListDetailPane(Widget):
     def _set_fields_enabled(self, enabled: bool) -> None:
         """Enable or disable all detail Input fields."""
         for field_id in self.detail_field_ids():
-            try:
+            with contextlib.suppress(Exception):
                 self.query_one(f"#{field_id}", Input).disabled = not enabled
-            except Exception:
-                pass
 
     def _enter_edit_mode(self) -> None:
         """Enter edit mode: snapshot data, enable fields, focus first field."""
@@ -251,9 +251,10 @@ class ListDetailPane(Widget):
                 self.refresh_fields(entries[self._selected])
         elif commit:
             entries = self.get_entries()
-            if self._selected < len(entries):
-                if not self.validate_and_apply(entries[self._selected]):
-                    return  # validate_and_apply handles revert + error
+            if self._selected < len(entries) and not self.validate_and_apply(
+                entries[self._selected]
+            ):
+                return  # validate_and_apply handles revert + error
         self._adding = False
         self._editing = False
         self._snapshot = None
@@ -395,5 +396,9 @@ class ListDetailPane(Widget):
         if not self._editing:
             return
         focused = self.app.focused
-        if focused is None or not isinstance(focused, Input) or focused.id not in self.detail_field_ids():
+        if (
+            focused is None
+            or not isinstance(focused, Input)
+            or focused.id not in self.detail_field_ids()
+        ):
             self._exit_edit_mode(commit=True)

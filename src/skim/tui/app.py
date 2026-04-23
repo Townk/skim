@@ -16,8 +16,8 @@ from textual.actions import SkipAction
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, ScrollableContainer, Vertical
-from textual.screen import ModalScreen
 from textual.message import Message
+from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
     Footer,
@@ -25,15 +25,13 @@ from textual.widgets import (
     Label,
     ListView,
     OptionList,
-    Static,
-    TabPane,
     TabbedContent,
+    TabPane,
     Tabs,
 )
 
-from skim.tui.widgets import SkimListView
-
 from skim.data.config import SkimConfig
+from skim.tui.widgets import SkimListView
 
 
 class LayerAdded(Message):
@@ -345,9 +343,11 @@ class SkimConfigApp(App):
                 yield KeyboardTab(config_data=self.config_data)
             with TabPane("Keycodes", id="keycodes-tab"):
                 from skim.tui.keycodes_tab import KeycodesTab
+
                 yield KeycodesTab(config_data=self.config_data)
             with TabPane("Style", id="output-tab"):
                 from skim.tui.output_tab import OutputTab
+
                 yield OutputTab(config_data=self.config_data)
         yield Footer()
 
@@ -372,9 +372,13 @@ class SkimConfigApp(App):
         tabbed = self.query_one(TabbedContent)
         pane = tabbed.active_pane
         focused = self.focused
-        if pane is not None and focused is not None and focused.id is not None:
-            if focused in pane.query("*"):
-                self._tab_focus[pane.id] = focused.id
+        if (
+            pane is not None
+            and focused is not None
+            and focused.id is not None
+            and focused in pane.query("*")
+        ):
+            self._tab_focus[pane.id] = focused.id  # type: ignore[index]
 
     def action_previous_tab(self) -> None:
         self._save_current_tab_focus()
@@ -392,7 +396,7 @@ class SkimConfigApp(App):
         pane = tabbed.active_pane
         if pane is None:
             return
-        saved_id = self._tab_focus.get(pane.id)
+        saved_id = self._tab_focus.get(pane.id)  # type: ignore[arg-type]
         if saved_id is not None:
             try:
                 widget = pane.query_one(f"#{saved_id}")
@@ -437,7 +441,9 @@ class SkimConfigApp(App):
             self._do_write(self.config_path, exit_after=exit_after)
         elif result == "default":
             self._save_to_path(
-                Path.cwd() / _DEFAULT_CONFIG_NAME, prettify_name=True, exit_after=exit_after,
+                Path.cwd() / _DEFAULT_CONFIG_NAME,
+                prettify_name=True,
+                exit_after=exit_after,
             )
 
     @staticmethod
@@ -453,13 +459,19 @@ class SkimConfigApp(App):
         return path_str
 
     def _save_to_path(
-        self, path: Path, *, prettify_name: bool = False, exit_after: bool = False,
+        self,
+        path: Path,
+        *,
+        prettify_name: bool = False,
+        exit_after: bool = False,
     ) -> None:
         if path.exists() and not self.force:
             display_name = self._friendly_path(path) if prettify_name else None
             self.push_screen(
                 OverwriteConfirmScreen(path, display_name=display_name),
-                lambda confirmed: self._do_write(path, exit_after=exit_after) if confirmed else None,
+                lambda confirmed: self._do_write(path, exit_after=exit_after)
+                if confirmed
+                else None,
             )
             return
         self._do_write(path, exit_after=exit_after)
@@ -576,13 +588,16 @@ class SkimConfigApp(App):
             dx = tx - cx
             dy = ty - cy
 
-            if direction == "down" and dy <= 0:
-                continue
-            elif direction == "up" and dy >= 0:
-                continue
-            elif direction == "right" and dx <= 0:
-                continue
-            elif direction == "left" and dx >= 0:
+            if (
+                direction == "down"
+                and dy <= 0
+                or direction == "up"
+                and dy >= 0
+                or direction == "right"
+                and dx <= 0
+                or direction == "left"
+                and dx >= 0
+            ):
                 continue
 
             # Left/right: only navigate to widgets in the same visual row
@@ -593,16 +608,14 @@ class SkimConfigApp(App):
             # is expected.
             if direction in ("left", "right"):
                 same_row = (
-                    current.y < region.y + region.height
-                    and region.y < current.y + current.height
+                    current.y < region.y + region.height and region.y < current.y + current.height
                 )
                 if not same_row:
                     continue
                 score = abs(dx)
             else:
                 same_col = (
-                    current.x < region.x + region.width
-                    and region.x < current.x + current.width
+                    current.x < region.x + region.width and region.x < current.x + current.width
                 )
                 score = abs(dy) + (0 if same_col else abs(dx) * 5)
 
@@ -620,10 +633,7 @@ class SkimConfigApp(App):
         pane = tabbed.active_pane
         if pane is None:
             return False
-        for ac in pane.query(AutoComplete):
-            if ac.target is widget and ac.display:
-                return True
-        return False
+        return any(ac.target is widget and ac.display for ac in pane.query(AutoComplete))
 
     def action_focus_direction(self, direction: str) -> None:
         """Move focus to the nearest focusable widget in the given direction."""
@@ -681,7 +691,10 @@ class SkimConfigApp(App):
             if isinstance(node, ListDetailPane) and node._editing:
                 detail = node.query_one(f"#{node.pane_id}-detail")
                 target = self._best_in_direction(
-                    current, direction, detail.query("*"), focused,
+                    current,
+                    direction,
+                    detail.query("*"),
+                    focused,
                 )
                 if target is not None:
                     target.focus()
@@ -697,7 +710,10 @@ class SkimConfigApp(App):
         scroll = self._scroll_ancestor(focused)
         if scroll is not None and direction in ("up", "down"):
             inner = self._best_in_direction(
-                current, direction, scroll.query("*"), focused,
+                current,
+                direction,
+                scroll.query("*"),
+                focused,
             )
             if inner is not None:
                 self._record_nav(direction)
@@ -706,9 +722,8 @@ class SkimConfigApp(App):
             # No widget inside the scroll container in that direction.
             # Only leave if the container is fully scrolled to the edge
             # AND this is not a hold-down repeat.
-            at_scroll_edge = (
-                (direction == "down" and scroll.scroll_y >= scroll.max_scroll_y)
-                or (direction == "up" and scroll.scroll_y <= 0)
+            at_scroll_edge = (direction == "down" and scroll.scroll_y >= scroll.max_scroll_y) or (
+                direction == "up" and scroll.scroll_y <= 0
             )
             if not at_scroll_edge or self._is_hold_repeat(direction):
                 self._record_nav(direction)
@@ -726,6 +741,9 @@ class SkimConfigApp(App):
 
     def on_descendant_focus(self, event: events.DescendantFocus) -> None:
         widget = event.widget
-        if isinstance(widget, (ListView, SkimListView)) and widget.index is None and len(widget.children) > 0:
+        if (
+            isinstance(widget, (ListView, SkimListView))
+            and widget.index is None
+            and len(widget.children) > 0
+        ):
             widget.index = 0
-

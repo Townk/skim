@@ -5,6 +5,7 @@
 
 """Unit tests for skim.application.render.overview_layout module."""
 
+from skim.application.render.overview_layout import BadgeDimensions, OverviewLayout
 from skim.data.config import (
     Keyboard,
     KeyboardLayer,
@@ -14,17 +15,14 @@ from skim.data.config import (
     SkimConfig,
     Style,
 )
-from skim.application.render.overview_layout import BadgeDimensions, OverviewLayout
 
 
 def _make_config(num_layers: int, width: float = 1600) -> SkimConfig:
     layers_cfg = tuple(
-        KeyboardLayer(index=i, label=str(i), name=f"Layer {i}")
-        for i in range(num_layers)
+        KeyboardLayer(index=i, label=str(i), name=f"Layer {i}") for i in range(num_layers)
     )
     layer_colors = tuple(
-        LayerColor(base_color=f"#{i+1:02x}{i+1:02x}{i+1:02x}")
-        for i in range(num_layers)
+        LayerColor(base_color=f"#{i + 1:02x}{i + 1:02x}{i + 1:02x}") for i in range(num_layers)
     )
     return SkimConfig(
         keyboard=Keyboard(layers=layers_cfg),

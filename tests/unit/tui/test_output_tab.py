@@ -5,7 +5,7 @@ from textual.app import App, ComposeResult
 from textual.widgets import Button, Input, Select, Switch
 
 from skim.data.config import SkimConfig
-from skim.tui.output_tab import LayerColorListPane, OutputTab
+from skim.tui.output_tab import OutputTab
 from skim.tui.widgets import SkimListView
 
 
@@ -142,7 +142,10 @@ class TestOutputTab:
             await pilot.pause()
             tab._exit_lc_edit_mode(commit=False)
             await pilot.pause()
-            assert app.config_data["output"]["style"]["palette"]["layers"][0]["base_color"] == "#347156"
+            assert (
+                app.config_data["output"]["style"]["palette"]["layers"][0]["base_color"]
+                == "#347156"
+            )
 
     @pytest.mark.asyncio()
     async def test_empty_lc_list_unfocusable(self, empty_config):

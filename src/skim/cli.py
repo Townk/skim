@@ -39,7 +39,6 @@ from pathlib import Path
 import click
 
 from skim import __prog_name__, __version__
-
 from skim.application import generate_keymap, setup_logging
 from skim.application.doctor import run_doctor_checks
 from skim.application.exporter import get_available_export_formats
@@ -129,7 +128,12 @@ def doctor() -> None:
         else:
             status = click.style("FAIL", fg="red", bold=True)
             # Some failures might be warnings (like system fonts which are optional)
-            if "System Font" in result.name or "Cairo" in result.name or "Playwright" in result.name or "Textual" in result.name:
+            if (
+                "System Font" in result.name
+                or "Cairo" in result.name
+                or "Playwright" in result.name
+                or "Textual" in result.name
+            ):
                 status = click.style("WARN", fg="yellow", bold=True)
 
             click.echo(f"[{status}] {result.name}: {result.message}")
