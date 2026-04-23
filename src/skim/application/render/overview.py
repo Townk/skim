@@ -388,7 +388,7 @@ def _draw_connector_paths(
                 f'<path d="{path_d}"'
                 f' stroke="{stroke_color}"'
                 f' stroke-width="2.5"'
-                f' stroke-dasharray="1 4"'
+                f' stroke-dasharray="0.1 7"'
                 f' stroke-linecap="round"'
                 f' fill="none"'
                 f' opacity="0.7"'
