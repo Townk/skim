@@ -513,6 +513,79 @@ class TestConfigureCommand:
         assert result.exit_code == 0
         assert "--interactive" in result.output  # help text
 
+    @patch("skim.cli.setup_logging")
+    def test_keymap_with_vial_file(self, mock_setup, tmp_path):
+        """Vial keymap generates config with layers."""
+        import json
+
+        vil = tmp_path / "test.vil"
+        vil.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "uid": 12345,
+                    "layout": [
+                        [["KC_A"] * 6] * 10,
+                        [["KC_B"] * 6] * 10,
+                    ],
+                }
+            )
+        )
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-k", str(vil)])
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(result.output)
+        assert len(parsed["keyboard"]["layers"]) == 2
+
+    @patch("skim.cli.setup_logging")
+    def test_keymap_with_c2json_file(self, mock_setup, tmp_path):
+        """c2json keymap generates config with layers and non-standard overrides."""
+        import json
+
+        c2j = tmp_path / "test.json"
+        c2j.write_text(
+            json.dumps(
+                {
+                    "keyboard": "test",
+                    "keymap": "test",
+                    "layout": "LAYOUT",
+                    "layers": [
+                        ["KC_A", "MY_KEY"] + ["KC_NO"] * 58,
+                    ],
+                }
+            )
+        )
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-k", str(c2j)])
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(result.output)
+        assert len(parsed["keyboard"]["layers"]) == 1
+        keycode_names = [o["keycode"] for o in parsed["keycodes"]["overrides"]]
+        assert "MY_KEY" in keycode_names
+
+    @patch("skim.cli.setup_logging")
+    def test_keymap_with_keybard_still_works(self, mock_setup, tmp_path):
+        """Keybard keymap still uses existing generate_from_keybard path."""
+        import json
+
+        kbi = tmp_path / "test.kbi"
+        kbi.write_text(
+            json.dumps(
+                {
+                    "layers": 1,
+                    "keymap": [["KC_A"] * 60],
+                    "layer_colors": [{"hue": 85, "sat": 255, "val": 255}],
+                    "cosmetic": {"layer": {"0": "Base"}},
+                    "custom_keycodes": [],
+                }
+            )
+        )
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-k", str(kbi)])
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(result.output)
+        assert parsed["keyboard"]["layers"][0]["name"] == "Base"
+
 
     @patch("skim.cli.setup_logging")
     def test_title_copyright_layer_count_non_interactive(self, mock_setup, tmp_path):

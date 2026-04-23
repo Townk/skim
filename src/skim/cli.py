@@ -359,12 +359,27 @@ def configure(
         generator = ConfigGenerator()
 
         if keymap:
-            # CLI path: generate from keybard file
             raw_content = keymap.read_text()
-            qmk_content = qmk_color_header.read_text() if qmk_color_header else None
-            content = generator.generate_from_keybard(
-                raw_content, qmk_content, adjust_lightness, adjust_saturation
+
+            # Detect format and route to appropriate generator
+            from skim.application.loaders.keymap_loader import (
+                _detect_format_from_path,
             )
+            from skim.domain import KeymapType
+
+            detected = _detect_format_from_path(keymap)
+
+            if detected == KeymapType.KEYBARD:
+                # Keybard: use rich metadata extraction
+                qmk_content = (
+                    qmk_color_header.read_text() if qmk_color_header else None
+                )
+                content = generator.generate_from_keybard(
+                    raw_content, qmk_content, adjust_lightness, adjust_saturation
+                )
+            else:
+                # Vial, c2json, or unknown extension: use generic path
+                content = generator.generate_from_keymap(raw_content)
 
             if output:
                 _write_config(output, content, force)
