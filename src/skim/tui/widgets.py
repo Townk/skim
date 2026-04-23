@@ -8,8 +8,10 @@
 from __future__ import annotations
 
 from textual import events
+from textual.actions import SkipAction
 from textual.app import ComposeResult
 from textual.binding import Binding
+from textual.containers import VerticalScroll
 from textual.widgets import Input, ListView, Select, Switch
 from textual.widgets._select import SelectCurrent, SelectOverlay
 
@@ -69,13 +71,39 @@ class SkimSelect(Select):
         Binding("escape", "cancel_edit", "Cancel changes", key_display="\U000f12b7", show=True),
         Binding("tab", "focus_next", "Next field", key_display="\u21e5", show=True),
         Binding("shift+tab", "focus_previous", "Previous field", key_display="\u21e4", show=True),
+        Binding("up", "skip_arrow", show=False),
+        Binding("down", "skip_arrow", show=False),
     ]
 
     def action_cancel_edit(self) -> None:
         """No-op — handled by ListDetailPane.on_key via event bubbling."""
+
+    def action_skip_arrow(self) -> None:
+        """Yield arrow keys to app-level spatial navigation."""
+        raise SkipAction()
 
     def compose(self) -> ComposeResult:
         yield SelectCurrent(self.prompt)
         yield _SkimSelectOverlay(type_to_search=self._type_to_search).data_bind(
             compact=Select.compact
         )
+
+
+class SkimVerticalScroll(VerticalScroll):
+    """VerticalScroll that yields arrow keys for spatial focus navigation.
+
+    Arrow keys raise SkipAction so the app-level directional focus handler
+    receives them.  Page Up/Down and Home/End still scroll normally.
+    """
+
+    def action_scroll_up(self) -> None:
+        raise SkipAction()
+
+    def action_scroll_down(self) -> None:
+        raise SkipAction()
+
+    def action_scroll_left(self) -> None:
+        raise SkipAction()
+
+    def action_scroll_right(self) -> None:
+        raise SkipAction()

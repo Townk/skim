@@ -10,7 +10,7 @@ from typing import Any
 import webcolors
 from textual.app import ComposeResult
 from textual.content import Content
-from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical
 from textual.events import DescendantBlur
 from textual.suggester import SuggestFromList
 from textual.widget import Widget
@@ -22,7 +22,7 @@ from rich.text import Text
 from skim.application.render.styling import default_layer_color, make_gradient
 from skim.tui.app import LayerAdded, LayerRemoved
 from skim.tui.list_detail_pane import ListDetailPane
-from skim.tui.widgets import SkimInput, SkimSelect, SkimSwitch
+from skim.tui.widgets import SkimInput, SkimSelect, SkimSwitch, SkimVerticalScroll
 
 _COLOR_NAMES = sorted(webcolors.names())
 
@@ -589,7 +589,7 @@ class OutputTab(Widget):
         border = style.get("border")
         hold_position = style.get("hold_symbol_position", "outward")
 
-        with VerticalScroll(can_focus=False):
+        with SkimVerticalScroll(can_focus=False):
             # --- Layout section ---
             with Vertical(classes="section"):
                 yield Static("Layout", classes="section-title section-title-first")

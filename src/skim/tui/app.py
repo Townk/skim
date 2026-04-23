@@ -6,21 +6,25 @@
 """Main TUI application for skim configuration editing."""
 
 import copy
+import time
 from pathlib import Path
 from typing import Any
 
 import yaml
 from textual import events
+from textual.actions import SkipAction
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, ScrollableContainer, Vertical
 from textual.screen import ModalScreen
 from textual.message import Message
 from textual.widgets import (
     Button,
     Footer,
+    Input,
     Label,
     ListView,
+    OptionList,
     Static,
     TabPane,
     TabbedContent,
@@ -309,6 +313,12 @@ class SkimConfigApp(App):
         Binding(key="ctrl+s", action="save", description="Save"),
         Binding(key="ctrl+p", action="previous_tab", description="Previous Tab", priority=True),
         Binding(key="ctrl+n", action="next_tab", description="Next Tab", priority=True),
+        Binding(key="up", action="focus_direction('up')", show=False, priority=True),
+        Binding(key="down", action="focus_direction('down')", show=False, priority=True),
+        Binding(key="left", action="focus_direction('left')", show=False, priority=True),
+        Binding(key="right", action="focus_direction('right')", show=False, priority=True),
+        Binding(key="ctrl+e", action="scroll_view('down')", show=False, priority=True),
+        Binding(key="ctrl+y", action="scroll_view('up')", show=False, priority=True),
     ]
 
     def __init__(
@@ -325,6 +335,7 @@ class SkimConfigApp(App):
         self.output_path = output_path
         self.config_path = config_path
         self.force = force
+        self._last_nav_time: dict[str, float] = {}  # direction -> monotonic timestamp
 
     def compose(self) -> ComposeResult:
         from skim.tui.keyboard_tab import KeyboardTab
@@ -483,6 +494,235 @@ class SkimConfigApp(App):
             self.query_one(OutputTab).sync_layer_removed(event.index)
         elif event.source_tab == "style":
             self.query_one(KeyboardTab).sync_layer_removed(event.index)
+
+    # ------------------------------------------------------------------
+    # Spatial focus navigation
+    # ------------------------------------------------------------------
+
+    def action_scroll_view(self, direction: str) -> None:
+        """Scroll the VerticalScroll in the active tab (skip ListViews)."""
+        from skim.tui.widgets import SkimVerticalScroll
+
+        focused = self.focused
+        if focused is None:
+            return
+
+        # Walk up from the focused widget, skipping ListViews.
+        scroll = self._scroll_ancestor(focused)
+        while scroll is not None and isinstance(scroll, ListView):
+            scroll = self._scroll_ancestor(scroll)
+
+        # When focused on the tab bar (or no scroll ancestor found),
+        # look for the SkimVerticalScroll inside the active pane.
+        if scroll is None:
+            tabbed = self.query_one(TabbedContent)
+            pane = tabbed.active_pane
+            if pane is not None:
+                results = pane.query(SkimVerticalScroll)
+                if results:
+                    scroll = results.first()
+
+        if scroll is None:
+            return
+        if direction == "down":
+            scroll.scroll_down(animate=False)
+        else:
+            scroll.scroll_up(animate=False)
+
+    _REPEAT_THRESHOLD = 0.3  # seconds — key repeats are ~30ms apart
+
+    def _is_hold_repeat(self, direction: str) -> bool:
+        """Return True if this is a held-down key repeat for *direction*.
+
+        We consider it a repeat when the previous navigation in the same
+        direction happened very recently (within _REPEAT_THRESHOLD seconds).
+        """
+        last = self._last_nav_time.get(direction)
+        return last is not None and (time.monotonic() - last) < self._REPEAT_THRESHOLD
+
+    def _record_nav(self, direction: str) -> None:
+        """Record that a navigation key was pressed for *direction*."""
+        self._last_nav_time[direction] = time.monotonic()
+
+    @staticmethod
+    def _scroll_ancestor(widget):
+        """Return the nearest ScrollableContainer ancestor, if any."""
+        node = widget.parent
+        while node is not None:
+            if isinstance(node, ScrollableContainer):
+                return node
+            node = node.parent
+        return None
+
+    @staticmethod
+    def _best_in_direction(current, direction, candidates, focused):
+        """Find the nearest focusable widget in *direction* from *current*."""
+        cx = current.x + current.width / 2
+        cy = current.y + current.height / 2
+        best = None
+        best_score = float("inf")
+
+        for widget in candidates:
+            if widget is focused:
+                continue
+            if not widget.can_focus or widget.disabled:
+                continue
+            region = widget.region
+            if not region.width or not region.height:
+                continue
+
+            tx = region.x + region.width / 2
+            ty = region.y + region.height / 2
+            dx = tx - cx
+            dy = ty - cy
+
+            if direction == "down" and dy <= 0:
+                continue
+            elif direction == "up" and dy >= 0:
+                continue
+            elif direction == "right" and dx <= 0:
+                continue
+            elif direction == "left" and dx >= 0:
+                continue
+
+            # Left/right: only navigate to widgets in the same visual row
+            # (y-ranges must overlap).  This prevents jumping to unrelated
+            # widgets far above or below.
+            # Up/down: prefer same-column widgets but allow cross-column
+            # with a penalty, since vertical navigation across sections
+            # is expected.
+            if direction in ("left", "right"):
+                same_row = (
+                    current.y < region.y + region.height
+                    and region.y < current.y + current.height
+                )
+                if not same_row:
+                    continue
+                score = abs(dx)
+            else:
+                same_col = (
+                    current.x < region.x + region.width
+                    and region.x < current.x + current.width
+                )
+                score = abs(dy) + (0 if same_col else abs(dx) * 5)
+
+            if score < best_score:
+                best_score = score
+                best = widget
+
+        return best
+
+    def _has_visible_autocomplete(self, widget) -> bool:
+        """Check if *widget* has a visible autocomplete dropdown."""
+        from textual_autocomplete import AutoComplete
+
+        tabbed = self.query_one(TabbedContent)
+        pane = tabbed.active_pane
+        if pane is None:
+            return False
+        for ac in pane.query(AutoComplete):
+            if ac.target is widget and ac.display:
+                return True
+        return False
+
+    def action_focus_direction(self, direction: str) -> None:
+        """Move focus to the nearest focusable widget in the given direction."""
+        focused = self.focused
+        if focused is None:
+            return
+
+        # OptionList: don't navigate away from Select/AutoComplete overlays
+        if isinstance(focused, OptionList):
+            raise SkipAction()
+
+        # ListView: allow escape at edges unless it's a hold-down repeat.
+        if isinstance(focused, ListView):
+            if direction in ("left", "right"):
+                raise SkipAction()
+            at_edge = False
+            if direction == "up" and focused.index == 0:
+                at_edge = True
+            elif direction == "down" and focused.index is not None:
+                at_edge = focused.index >= len(focused._nodes) - 1
+            if not at_edge:
+                self._record_nav(direction)
+                raise SkipAction()  # Normal cursor movement within list
+            # At the edge — block if this is a hold-down repeat.
+            if self._is_hold_repeat(direction):
+                self._record_nav(direction)
+                raise SkipAction()
+            self._record_nav(direction)
+            # Fall through to spatial navigation (escape the list).
+
+        # Input: left/right must move the cursor, not navigate
+        elif isinstance(focused, Input) and direction in ("left", "right"):
+            raise SkipAction()
+
+        # Input: when an autocomplete dropdown is visible, let it handle
+        # up/down to navigate the completion list.
+        elif isinstance(focused, Input) and direction in ("up", "down"):
+            if self._has_visible_autocomplete(focused):
+                raise SkipAction()
+
+        # Tab bar: left/right must switch tabs, not navigate
+        elif isinstance(focused, Tabs) and direction in ("left", "right"):
+            raise SkipAction()
+
+        current = focused.region
+        if not current.width or not current.height:
+            return
+
+        # If inside an editing ListDetailPane, trap arrows within the
+        # detail pane — only Tab/Shift-Tab can leave.
+        from skim.tui.list_detail_pane import ListDetailPane
+
+        node = focused.parent
+        while node is not None:
+            if isinstance(node, ListDetailPane) and node._editing:
+                detail = node.query_one(f"#{node.pane_id}-detail")
+                target = self._best_in_direction(
+                    current, direction, detail.query("*"), focused,
+                )
+                if target is not None:
+                    target.focus()
+                return  # Never escape the edit pane via arrows
+            node = node.parent
+
+        tabbed = self.query_one(TabbedContent)
+        pane = tabbed.active_pane
+        if pane is None:
+            return
+
+        # If inside a scrollable container, try to stay within it first.
+        scroll = self._scroll_ancestor(focused)
+        if scroll is not None and direction in ("up", "down"):
+            inner = self._best_in_direction(
+                current, direction, scroll.query("*"), focused,
+            )
+            if inner is not None:
+                self._record_nav(direction)
+                inner.focus()
+                return
+            # No widget inside the scroll container in that direction.
+            # Only leave if the container is fully scrolled to the edge
+            # AND this is not a hold-down repeat.
+            at_scroll_edge = (
+                (direction == "down" and scroll.scroll_y >= scroll.max_scroll_y)
+                or (direction == "up" and scroll.scroll_y <= 0)
+            )
+            if not at_scroll_edge or self._is_hold_repeat(direction):
+                self._record_nav(direction)
+                return
+            self._record_nav(direction)
+
+        # Search the full pane + the tab bar.
+        tabs_widget = tabbed.query_one(Tabs)
+        all_candidates = list(pane.query("*"))
+        all_candidates.append(tabs_widget)
+
+        target = self._best_in_direction(current, direction, all_candidates, focused)
+        if target is not None:
+            target.focus()
 
     def on_descendant_focus(self, event: events.DescendantFocus) -> None:
         widget = event.widget

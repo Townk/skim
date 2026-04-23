@@ -8,13 +8,13 @@
 from typing import Any
 
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical
 from textual.widget import Widget
 from textual.widgets import Input, Label, Static
 
 from skim.tui.app import ErrorDialog, LayerAdded, LayerRemoved, LayerUpdated
 from skim.tui.list_detail_pane import ListDetailPane
-from skim.tui.widgets import SkimInput, SkimSwitch
+from skim.tui.widgets import SkimInput, SkimSwitch, SkimVerticalScroll
 
 
 _FIELD_MAP = {
@@ -237,7 +237,7 @@ class KeyboardTab(Widget):
         keymap_title = self.config_data.get("output", {}).get("keymap_title") or ""
         copyright_text = self.config_data.get("output", {}).get("copyright") or ""
 
-        with VerticalScroll(can_focus=False):
+        with SkimVerticalScroll(can_focus=False):
             with Vertical(id="info-section"):
                 yield Static("Information", classes="section-title section-title-first")
                 with Horizontal(classes="field-row"):
