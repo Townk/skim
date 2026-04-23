@@ -156,4 +156,7 @@ jobs:
     needs: release
     if: needs.release.outputs.released == 'true' && needs.release.outputs.is_prerelease == 'false'
     uses: ./.github/workflows/publish.yml
+    permissions:
+      contents: read
+      id-token: write
 
