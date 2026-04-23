@@ -256,7 +256,7 @@ class PreProcessListPane(ListDetailPane):
     """List/detail pane for pre-process keycode entries."""
 
     def __init__(self, config_data: dict[str, Any], **kwargs: Any) -> None:
-        super().__init__(pane_id="pre-process", **kwargs)
+        super().__init__(pane_id="pre-process", list_help_key="preprocess-list", **kwargs)
         self.config_data = config_data
         self._refreshing: bool = False
 
@@ -302,6 +302,7 @@ class PreProcessListPane(ListDetailPane):
                 placeholder="e.g. MKC_BKTAB",
                 disabled=True,
                 suggester=suggester,
+                help_key="preprocess-keycode",
             )
             yield pp_kc_input
         yield KeycodeAutoComplete(pp_kc_input, candidates=candidates)
@@ -313,6 +314,7 @@ class PreProcessListPane(ListDetailPane):
                 placeholder="e.g. LSFT(KC_TAB)",
                 disabled=True,
                 suggester=suggester,
+                help_key="preprocess-target",
             )
             yield pp_tg_input
         yield KeycodeAutoComplete(pp_tg_input, candidates=candidates)
@@ -376,7 +378,7 @@ class OverrideListPane(ListDetailPane):
     """List/detail pane for override keycode entries."""
 
     def __init__(self, config_data: dict[str, Any], **kwargs: Any) -> None:
-        super().__init__(pane_id="override", **kwargs)
+        super().__init__(pane_id="override", list_help_key="override-list", **kwargs)
         self.config_data = config_data
         self._refreshing: bool = False
 
@@ -423,6 +425,7 @@ class OverrideListPane(ListDetailPane):
                 placeholder="e.g. KC_ESC",
                 disabled=True,
                 suggester=suggester,
+                help_key="override-keycode",
             )
             yield ov_kc_input
         yield KeycodeAutoComplete(ov_kc_input, candidates=candidates)
@@ -433,6 +436,7 @@ class OverrideListPane(ListDetailPane):
                 id="override-target",
                 placeholder="e.g. @@KC_ESC; or %%nf-md-icon;",
                 disabled=True,
+                help_key="override-target",
             )
             yield ov_tg_input
         yield OverrideTargetAutoComplete(ov_tg_input, config_data=self.config_data)
