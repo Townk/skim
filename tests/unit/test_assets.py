@@ -218,3 +218,43 @@ class TestAssetContent:
         content = ASSETS.logo_svalboard.read_text()
         assert "<svg" in content
         assert "</svg>" in content
+
+
+class TestHelpText:
+    """Tests for the help_text method."""
+
+    def test_help_text_returns_string(self):
+        """help_text returns a string for an existing key."""
+        assets = BundleAssets()
+        content = assets.help_text("general")
+        assert isinstance(content, str)
+        assert len(content) > 0
+
+    def test_help_text_general_contains_navigation(self):
+        """general.md contains navigation info."""
+        assets = BundleAssets()
+        content = assets.help_text("general")
+        assert "Navigation" in content
+
+    def test_help_text_missing_key_falls_back_to_general(self):
+        """Missing key falls back to general.md content."""
+        assets = BundleAssets()
+        general = assets.help_text("general")
+        fallback = assets.help_text("nonexistent-key-xyz")
+        assert fallback == general
+
+    def test_help_text_fallback_when_no_general(self, tmp_path, monkeypatch):
+        """Raises FileNotFoundError when general.md is also missing."""
+        import importlib.resources
+
+        original_files = importlib.resources.files
+
+        def fake_files(package):
+            if package == "skim.assets":
+                return tmp_path
+            return original_files(package)
+
+        monkeypatch.setattr(importlib.resources, "files", fake_files)
+        assets = BundleAssets()
+        with pytest.raises(FileNotFoundError):
+            assets.help_text("anything")

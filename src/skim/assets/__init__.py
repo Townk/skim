@@ -160,6 +160,42 @@ class BundleAssets:
             )
         return path_obj
 
+    def help_text(self, key: str) -> str:
+        """Load markdown help content for the given key.
+
+        Falls back to 'general' if the specific file doesn't exist.
+
+        Args:
+            key: Help topic key (maps to help/{key}.md).
+
+        Returns:
+            Markdown content as a string.
+
+        Raises:
+            FileNotFoundError: If neither the key file nor general.md exists.
+        """
+        return self._resolve_help(key).read_text()
+
+    def _resolve_help(self, key: str) -> Path:
+        """Resolve help asset path with fallback to general.md.
+
+        Args:
+            key: Help topic key.
+
+        Returns:
+            Path to the help markdown file.
+
+        Raises:
+            FileNotFoundError: If neither the key file nor general.md exists.
+        """
+        path = cast(Path, resources.files("skim.assets") / "help" / f"{key}.md")
+        if path.is_file():
+            return path
+        fallback = cast(Path, resources.files("skim.assets") / "help" / "general.md")
+        if fallback.is_file():
+            return fallback
+        raise FileNotFoundError("No help content available.")
+
 
 # Module-level singleton for direct import
 ASSETS = BundleAssets()
