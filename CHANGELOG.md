@@ -9,9 +9,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `show_layer_connectors` configuration option to toggle layer connector lines in overview images.
+- `--title` and `--copyright` options to `configure` command.
+- `--layer-count` option with sparse fill logic for `configure` command.
+- `--keymap` option to `configure` for Vial and c2json format support.
+- Layer move mode to reorder layers in list views.
+- Custom `SkimButton` widget with Space and Enter activation.
+
 ### Changed
 
+- Renamed `--keybard-keymap` CLI option to `--keymap`.
+- Non-standard keycode scanning for configuration generation.
+- Skip empty layers and simplify keycode override detection.
+
 ### Fixed
+
+- Directional focus navigation inside modal dialogs.
+- QMK firmware index used for layer lookup, fixing overview rendering issues.
+- Circular dots for overview layer connectors (previously rendered as pills).
+- Footer keybind display order and styling standardised.
+
+## [0.5.3] - 2026-04-22
+
+### Fixed
+
+- GitHub Actions and PyPI publishing fixes.
+
+## [0.5.2] - 2026-04-22
+
+### Fixed
+
+- GitHub Actions and PyPI publishing fixes.
+
+## [0.5.1] - 2026-04-22
+
+### Fixed
+
+- GitHub Actions and PyPI publishing fixes.
+
+## [0.5.0] - 2026-04-22
+
+### Added
+
+- Interactive TUI for configuration editing via `skim configure --interactive`.
+  - Tabbed interface with Keyboard, Keycodes, and Style tabs.
+  - List/detail panels for layers, keycodes, and layer colors.
+  - Enter-to-edit, Escape-to-rollback field editing with commit/cancel hints.
+  - Add/Remove buttons for layers, keycodes, and layer colors.
+  - Color swatches and W3C named color suggestions for color input fields.
+  - Gradient preview on dark and light backgrounds with index numbers.
+  - Dynamic/Manual gradient type selector for layer colors.
+  - Keycode autocomplete and spatial arrow-key focus navigation.
+  - Save & quit dialog with confirmation.
+- Overview image rendering with layer badges and cluster layout.
+  - Dotted connector lines from layer indicator circles to target layers.
+  - Intelligent connector routing with per-key escape directions.
+- Layer indicator circles on individual layer images.
+- Non-sequential layer index support (QMK index independent of config position).
+  - Layer index field editing with validation in TUI.
+  - Dict-based keymap layers in data model.
+- `skim doctor` command with cairo optional dependency check.
+- `ConfigGenerator` for generating default and keybard-based configurations.
+- Font subsetting support via `FontUsageAnalyzer` and `FontSubsetter`.
+- `subtitle` (later renamed to `variant`) field for `KeyboardLayer`.
+- Optional `copyright` field in Output configuration.
+- `--interactive` and `--config` flags for `configure` command.
+
+### Changed
+
+- Renamed `KeyboardLayer.subtitle` to `variant`.
+- Extracted reusable `ListDetailPane` base class for TUI widgets.
+- Major overview layout overhaul with improved badge positioning and connector routing.
+- Upgraded dependencies.
+
+### Fixed
+
+- Resolved all ruff lint, formatting, and basedpyright errors.
+- Granted `id-token` permission for PyPI trusted publishing.
+- Numerous TUI layout, focus, and interaction fixes.
 
 ## [0.4.4] - 2026-01-19
 
@@ -97,7 +172,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sphinx documentation with GitHub Pages deployment workflow
 - Pre-commit hooks for ruff formatting/linting and basedpyright type checking
 
-[Unreleased]: https://github.com/Townk/skim/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/Townk/skim/compare/v0.5.3...HEAD
+[0.5.3]: https://github.com/Townk/skim/compare/v0.5.2...v0.5.3
+[0.5.2]: https://github.com/Townk/skim/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/Townk/skim/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/Townk/skim/compare/v0.4.4...v0.5.0
+[0.4.4]: https://github.com/Townk/skim/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/Townk/skim/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/Townk/skim/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Townk/skim/compare/v0.4.0...v0.4.1
