@@ -512,6 +512,9 @@ class SkimConfigApp(App):
 
     def action_scroll_view(self, direction: str) -> None:
         """Scroll the VerticalScroll in the active tab (skip ListViews)."""
+        if isinstance(self.screen, ModalScreen):
+            return
+
         from skim.tui.widgets import SkimVerticalScroll
 
         focused = self.focused
@@ -638,6 +641,18 @@ class SkimConfigApp(App):
         """Move focus to the nearest focusable widget in the given direction."""
         focused = self.focused
         if focused is None:
+            return
+
+        # Modal screens: navigate among the modal's own widgets only.
+        if isinstance(self.screen, ModalScreen):
+            current = focused.region
+            if not current.width or not current.height:
+                return
+            target = self._best_in_direction(
+                current, direction, self.screen.query("*"), focused,
+            )
+            if target is not None:
+                target.focus()
             return
 
         # OptionList: don't navigate away from Select/AutoComplete overlays
