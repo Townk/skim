@@ -480,60 +480,15 @@ def draw_overview(
                 left_thumb_prelim, right_thumb_prelim, keymap, config
             )
 
-            def _thumb_bb(lt: ThumbClusterComponent, rt: ThumbClusterComponent):
-                bx = lt.x
-                by = min(lt.y, rt.y)
-                br = rt.x + rt.width
-                bb = max(lt.y + lt.height, rt.y + rt.height)
-                return (bx, by, br - bx, bb - by)
+            if config.output.style.show_layer_connectors:
+                def _thumb_bb(lt: ThumbClusterComponent, rt: ThumbClusterComponent):
+                    bx = lt.x
+                    by = min(lt.y, rt.y)
+                    br = rt.x + rt.width
+                    bb = max(lt.y + lt.height, rt.y + rt.height)
+                    return (bx, by, br - bx, bb - by)
 
-            tb = _thumb_bb(left_thumb_prelim, right_thumb_prelim)
-            connector_paths = _compute_connector_paths(
-                indicators,
-                all_row_bounds,
-                layer_to_row,
-                nk,
-                ew_offset,
-                max_cluster_right,
-                layout.padding,
-                tb,
-            )
-
-            # Find clearance needed: only check the ESCAPE segment
-            # (first 2 points of each path, near the thumb cluster area).
-            # Don't include routing/target Y values which are at layer rows.
-            last_row_bottom = layout.layer_row_y_positions[-1] + layout.layer_row_heights[-1]
-            escape_ys: list[float] = []
-            for pts, _ in connector_paths:
-                # Escape points are the first 2 (start + first turn)
-                for _, py in pts[:2]:
-                    escape_ys.append(py)
-
-            min_escape_y = min(escape_ys) if escape_ys else layout.thumb_row_y
-            max_escape_y = max(escape_ys) if escape_ys else layout.thumb_row_y
-
-            if min_escape_y < last_row_bottom + nk:
-                needed_shift = (last_row_bottom + nk) - min_escape_y
-                min_thumb_y = layout.thumb_row_y + needed_shift
-            else:
-                min_thumb_y = layout.thumb_row_y
-
-            layout.adjust_for_connectors(min_thumb_y, max_escape_y)
-
-            # Rebuild thumb clusters at adjusted position, recompute paths,
-            # and re-adjust canvas height for the new DOWN extents
-            left_thumb_final, right_thumb_final = _build_thumb_clusters(
-                config, keymap, layout, use_system_fonts
-            )
-            if left_thumb_final and right_thumb_final:
-                all_row_bounds = [
-                    layout.layer_row_bounding_box(i) for i in range(render_layer_count)
-                ]
-                max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
-                indicators = _collect_thumb_indicators(
-                    left_thumb_final, right_thumb_final, keymap, config
-                )
-                tb = _thumb_bb(left_thumb_final, right_thumb_final)
+                tb = _thumb_bb(left_thumb_prelim, right_thumb_prelim)
                 connector_paths = _compute_connector_paths(
                     indicators,
                     all_row_bounds,
@@ -544,17 +499,63 @@ def draw_overview(
                     layout.padding,
                     tb,
                 )
-                # Re-adjust canvas for the final escape extents
-                final_escape_ys = [py for pts, _ in connector_paths for _, py in pts[:2]]
-                final_max_y = max(final_escape_ys) if final_escape_ys else layout.thumb_row_y
-                layout.adjust_for_connectors(layout.thumb_row_y, final_max_y)
 
-                # Adjust canvas width to fit actual routing columns (+ padding)
-                max_path_x = max(
-                    (max(px for px, _ in pts) for pts, _ in connector_paths),
-                    default=layout.canvas_width,
+                # Find clearance needed: only check the ESCAPE segment
+                # (first 2 points of each path, near the thumb cluster area).
+                # Don't include routing/target Y values which are at layer rows.
+                last_row_bottom = layout.layer_row_y_positions[-1] + layout.layer_row_heights[-1]
+                escape_ys: list[float] = []
+                for pts, _ in connector_paths:
+                    # Escape points are the first 2 (start + first turn)
+                    for _, py in pts[:2]:
+                        escape_ys.append(py)
+
+                min_escape_y = min(escape_ys) if escape_ys else layout.thumb_row_y
+                max_escape_y = max(escape_ys) if escape_ys else layout.thumb_row_y
+
+                if min_escape_y < last_row_bottom + nk:
+                    needed_shift = (last_row_bottom + nk) - min_escape_y
+                    min_thumb_y = layout.thumb_row_y + needed_shift
+                else:
+                    min_thumb_y = layout.thumb_row_y
+
+                layout.adjust_for_connectors(min_thumb_y, max_escape_y)
+
+                # Rebuild thumb clusters at adjusted position, recompute paths,
+                # and re-adjust canvas height for the new DOWN extents
+                left_thumb_final, right_thumb_final = _build_thumb_clusters(
+                    config, keymap, layout, use_system_fonts
                 )
-                layout.adjust_canvas_width(max_path_x + layout.padding)
+                if left_thumb_final and right_thumb_final:
+                    all_row_bounds = [
+                        layout.layer_row_bounding_box(i) for i in range(render_layer_count)
+                    ]
+                    max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
+                    indicators = _collect_thumb_indicators(
+                        left_thumb_final, right_thumb_final, keymap, config
+                    )
+                    tb = _thumb_bb(left_thumb_final, right_thumb_final)
+                    connector_paths = _compute_connector_paths(
+                        indicators,
+                        all_row_bounds,
+                        layer_to_row,
+                        nk,
+                        ew_offset,
+                        max_cluster_right,
+                        layout.padding,
+                        tb,
+                    )
+                    # Re-adjust canvas for the final escape extents
+                    final_escape_ys = [py for pts, _ in connector_paths for _, py in pts[:2]]
+                    final_max_y = max(final_escape_ys) if final_escape_ys else layout.thumb_row_y
+                    layout.adjust_for_connectors(layout.thumb_row_y, final_max_y)
+
+                    # Adjust canvas width to fit actual routing columns (+ padding)
+                    max_path_x = max(
+                        (max(px for px, _ in pts) for pts, _ in connector_paths),
+                        default=layout.canvas_width,
+                    )
+                    layout.adjust_canvas_width(max_path_x + layout.padding)
 
     # --- Phase 3: Render everything at final positions ---
     # Extend canvas to fit copyright text below all content

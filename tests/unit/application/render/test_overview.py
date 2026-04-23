@@ -126,6 +126,37 @@ class TestDrawOverview:
         svg = result.as_svg()
         assert "THUMBS" in svg
 
+    def test_no_connector_paths_when_show_layer_connectors_false(self):
+        """When show_layer_connectors is False, no dashed paths appear in SVG."""
+        layers_cfg = tuple(
+            KeyboardLayer(index=i, label=str(i), name=f"Layer{i}") for i in range(3)
+        )
+        layer_colors = tuple(
+            LayerColor(base_color=f"#{(i + 1) * 30:02x}5050") for i in range(3)
+        )
+        config = SkimConfig(
+            keyboard=Keyboard(layers=layers_cfg),
+            output=Output(
+                style=Style(
+                    show_layer_connectors=False,
+                    palette=Palette(layers=layer_colors),
+                ),
+            ),
+        )
+        # Build a keymap where a thumb key has layer_switch set, so connectors
+        # would be drawn if show_layer_connectors were True.
+        keys = [SvalboardTargetKey(label=f"L0K{i}") for i in range(60)]
+        keys[54] = SvalboardTargetKey(label="NAV", layer_switch=1)  # left thumb down
+        layer0 = SvalboardLayout.from_sequence(keys)
+        keys_l1 = [SvalboardTargetKey(label=f"L1K{i}") for i in range(60)]
+        layer1 = SvalboardLayout.from_sequence(keys_l1)
+        keys_l2 = [SvalboardTargetKey(label=f"L2K{i}") for i in range(60)]
+        layer2 = SvalboardLayout.from_sequence(keys_l2)
+        keymap = SvalboardKeymap(layers={0: layer0, 1: layer1, 2: layer2})
+        result = draw_overview(config, keymap)
+        svg = result.as_svg()
+        assert 'stroke-dasharray="1 4"' not in svg
+
 
 class TestOverviewConnectorLines:
     @pytest.mark.skip(reason="Connector line routing disabled pending design spec")
