@@ -266,7 +266,7 @@ def generate(
     "--config",
     "-c",
     type=click.Path(exists=True, path_type=Path),
-    help="Load an existing configuration file.",
+    help="Load an existing configuration file (interactive mode).",
 )
 @click.option(
     "--keybard-keymap",
@@ -285,19 +285,19 @@ def generate(
     "--qmk-color-header",
     "-C",
     type=click.Path(exists=True, path_type=Path),
-    help="Path to QMK color.h file.",
+    help="Path to QMK color.h file (non-interactive).",
 )
 @click.option(
     "--adjust-lightness",
     "-l",
     type=float,
-    help="Adjust lightness (0.0-1.0).",
+    help="Adjust lightness (0.0-1.0) (non-interactive).",
 )
 @click.option(
     "--adjust-saturation",
     "-s",
     type=float,
-    help="Adjust saturation (0.0-1.0).",
+    help="Adjust saturation (0.0-1.0) (non-interactive).",
 )
 @click.option("--title", "-t", type=str, help="Set the keymap title (output.keymap_title).")
 @click.option("--copyright", "-r", type=str, help="Set the copyright notice (output.copyright).")
