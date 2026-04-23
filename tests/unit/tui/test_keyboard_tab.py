@@ -139,12 +139,11 @@ class TestKeyboardTab:
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
             pane = app.query_one(LayerListPane)
-            # Press escape first to exit any edit mode triggered by add
             add_btn = app.query_one("#layer-add")
             add_btn.press()
             await pilot.pause()
-            # Exit edit mode without committing
-            pane._exit_edit_mode(commit=False)
+            # Commit to keep the new entry
+            pane._exit_edit_mode(commit=True)
             await pilot.pause()
             layers = app.config_data["keyboard"]["layers"]
             assert len(layers) == 3
@@ -163,8 +162,11 @@ class TestKeyboardTab:
             add_btn = app.query_one("#layer-add")
             add_btn.press()
             await pilot.pause()
-            pane._exit_edit_mode(commit=False)
+            # Commit to keep the new entry
+            pane._exit_edit_mode(commit=True)
             await pilot.pause()
             layers = app.config_data["keyboard"]["layers"]
-            new_layer = layers[-1]
-            assert new_layer["index"] == 1
+            assert len(layers) == 3
+            # After commit, layers are sorted by index; find the new one
+            indices = {l["index"] for l in layers}
+            assert 1 in indices

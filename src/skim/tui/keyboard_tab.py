@@ -138,15 +138,15 @@ class LayerListPane(ListDetailPane):
             "variant": None,
         }
         entries.append(new_entry)
-        self.rebuild_list()
         from skim.tui.widgets import SkimListView
         list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
+        list_view.append(self._make_list_item(idx, new_entry))
         self._selected = idx
         self.refresh_fields(new_entry)
-        list_view.index = idx
         self._update_list_state()
         self.post_message(self.EntryAdded(idx))
-        self._enter_edit_mode()
+        self._adding = True
+        self.call_after_refresh(self._finish_add, idx)
 
     def validate_and_apply(self, entry: dict) -> bool:
         """Validate index (0-31, no duplicates), apply fields, re-sort."""
@@ -182,7 +182,6 @@ class LayerListPane(ListDetailPane):
         else:
             layers.sort(key=lambda l: l.get("index", 0))
         self._selected = layers.index(entry)
-        self.rebuild_list()
         return True
 
     def on_input_changed(self, event: Input.Changed) -> None:

@@ -88,6 +88,7 @@ class ListDetailPane(Widget):
         self._selected: int = 0
         self._editing: bool = False
         self._snapshot: dict | None = None
+        self._adding: bool = False
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="ldp-container"):
@@ -219,6 +220,30 @@ class ListDetailPane(Widget):
 
     def _exit_edit_mode(self, commit: bool) -> None:
         """Exit edit mode: commit or rollback, disable fields, focus list."""
+        if not commit and self._adding:
+            # Cancel after add: remove the newly added entry entirely
+            entries = self.get_entries()
+            list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
+            if self._selected < len(entries):
+                entries.pop(self._selected)
+            if self._selected < len(list_view.children):
+                list_view.children[self._selected].remove()
+            self._adding = False
+            self._editing = False
+            self._snapshot = None
+            self._set_fields_enabled(False)
+            if entries:
+                self._selected = min(self._selected, len(entries) - 1)
+                self.refresh_fields(entries[self._selected])
+                list_view.index = self._selected
+                list_view.focus()
+            else:
+                self._selected = 0
+                self.clear_fields()
+                self.query_one(f"#{self.pane_id}-add", Button).focus()
+            self._update_list_state()
+            return
+
         if not commit and self._snapshot is not None:
             entries = self.get_entries()
             if self._selected < len(entries):
@@ -229,6 +254,7 @@ class ListDetailPane(Widget):
             if self._selected < len(entries):
                 if not self.validate_and_apply(entries[self._selected]):
                     return  # validate_and_apply handles revert + error
+        self._adding = False
         self._editing = False
         self._snapshot = None
         self._set_fields_enabled(False)
@@ -266,13 +292,20 @@ class ListDetailPane(Widget):
         idx = len(entries)
         new_entry = self.create_entry(idx)
         entries.append(new_entry)
-        self.rebuild_list()
         list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
+        list_view.append(self._make_list_item(idx, new_entry))
         self._selected = idx
         self.refresh_fields(new_entry)
-        list_view.index = idx
         self._update_list_state()
         self.post_message(self.EntryAdded(idx))
+        self._adding = True
+        # Defer index + edit mode until after layout so scroll-to-visible works
+        self.call_after_refresh(self._finish_add, idx)
+
+    def _finish_add(self, idx: int) -> None:
+        """Set the list index (triggering scroll) and enter edit mode."""
+        list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
+        list_view.index = idx
         self._enter_edit_mode()
 
     def _remove_entry(self) -> None:
@@ -282,12 +315,15 @@ class ListDetailPane(Widget):
             return
         removed_index = self._selected
         entries.pop(removed_index)
-        self.rebuild_list()
+        list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
+        if removed_index < len(list_view.children):
+            list_view.children[removed_index].remove()
+        self.update_all_list_items()
         if entries:
             self._selected = min(self._selected, len(entries) - 1)
             self.refresh_fields(entries[self._selected])
-            list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
-            self.call_after_refresh(setattr, list_view, "index", self._selected)
+            list_view.index = self._selected
+            list_view.focus()
         else:
             self._selected = 0
             self.clear_fields()
