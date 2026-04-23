@@ -269,10 +269,10 @@ def generate(
     help="Load an existing configuration file (interactive mode).",
 )
 @click.option(
-    "--keybard-keymap",
+    "--keymap",
     "-k",
     type=click.Path(exists=True, path_type=Path),
-    help="Keybard keymap file path (.kbi).",
+    help="Keymap file path (.kbi, .vil, .json).",
 )
 @click.option(
     "--output",
@@ -307,7 +307,7 @@ def configure(
     ctx: click.Context,
     interactive: bool,
     config: Path | None,
-    keybard_keymap: Path | None,
+    keymap: Path | None,
     output: Path | None,
     force: bool,
     qmk_color_header: Path | None,
@@ -334,7 +334,7 @@ def configure(
 
     # No flags at all: show help
     has_config_overrides = title is not None or copyright is not None
-    if not interactive and not keybard_keymap and not has_config_overrides:
+    if not interactive and not keymap and not has_config_overrides:
         click.echo(ctx.get_help())
         return
 
@@ -358,9 +358,9 @@ def configure(
 
         generator = ConfigGenerator()
 
-        if keybard_keymap:
+        if keymap:
             # CLI path: generate from keybard file
-            raw_content = keybard_keymap.read_text()
+            raw_content = keymap.read_text()
             qmk_content = qmk_color_header.read_text() if qmk_color_header else None
             content = generator.generate_from_keybard(
                 raw_content, qmk_content, adjust_lightness, adjust_saturation

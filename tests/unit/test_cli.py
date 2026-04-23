@@ -241,7 +241,7 @@ class TestConfigureCommand:
         result = runner.invoke(main, ["configure"])
         assert result.exit_code == 0
         assert "--interactive" in result.output
-        assert "--config" in result.output
+        assert "--keymap" in result.output
 
     @patch("skim.cli.setup_logging")
     def test_interactive_flag_required_for_tui(self, mock_setup):
