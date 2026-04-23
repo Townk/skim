@@ -391,6 +391,24 @@ class TestConfigureCommand:
         parsed = yaml.safe_load(result.output)
         assert parsed["output"]["keymap_title"] == "My Title"
 
+    @patch("skim.cli.setup_logging")
+    @patch("skim.tui.launch_tui")
+    def test_title_passed_to_tui(self, mock_tui, mock_setup):
+        """--title pre-populates keymap_title in TUI config data."""
+        runner = CliRunner()
+        runner.invoke(main, ["configure", "-i", "-t", "TUI Title"])
+        config_data = mock_tui.call_args[1]["config_data"]
+        assert config_data["output"]["keymap_title"] == "TUI Title"
+
+    @patch("skim.cli.setup_logging")
+    @patch("skim.tui.launch_tui")
+    def test_copyright_passed_to_tui(self, mock_tui, mock_setup):
+        """--copyright pre-populates copyright in TUI config data."""
+        runner = CliRunner()
+        runner.invoke(main, ["configure", "-i", "-r", "© 2026"])
+        config_data = mock_tui.call_args[1]["config_data"]
+        assert config_data["output"]["copyright"] == "© 2026"
+
 
 class TestDoctorCommand:
     """Tests for doctor subcommand."""

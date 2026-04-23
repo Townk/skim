@@ -378,6 +378,10 @@ def configure(
                 from skim.tui import launch_tui
 
                 config_data = _load_initial_config(config)
+                if title is not None:
+                    config_data["output"]["keymap_title"] = title
+                if copyright is not None:
+                    config_data["output"]["copyright"] = copyright
                 launch_tui(
                     config_data=config_data,
                     output_path=output,
