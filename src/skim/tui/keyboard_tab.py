@@ -35,7 +35,7 @@ class LayerListPane(ListDetailPane):
     """
 
     def __init__(self, config_data: dict[str, Any], **kwargs: Any) -> None:
-        super().__init__(pane_id="layer", **kwargs)
+        super().__init__(pane_id="layer", list_help_key="layer-list", **kwargs)
         self.config_data = config_data
 
     def get_entries(self) -> list[dict]:
@@ -71,22 +71,33 @@ class LayerListPane(ListDetailPane):
     def compose_detail_fields(self) -> ComposeResult:
         with Horizontal(classes="field-row"):
             yield Label("Index:", classes="field-label")
-            yield SkimInput(value="", id="layer-index", placeholder="e.g. 0", disabled=True)
+            yield SkimInput(
+                value="", id="layer-index", placeholder="e.g. 0",
+                disabled=True, help_key="layer-index",
+            )
         with Horizontal(classes="field-row"):
             yield Label("ID:", classes="field-label")
             yield SkimInput(
-                value="", id="layer-id", placeholder="e.g. _BASE (optional)", disabled=True
+                value="", id="layer-id", placeholder="e.g. _BASE (optional)",
+                disabled=True, help_key="layer-id",
             )
         with Horizontal(classes="field-row"):
             yield Label("Label:", classes="field-label")
-            yield SkimInput(value="", id="layer-label", placeholder="e.g. BASE", disabled=True)
+            yield SkimInput(
+                value="", id="layer-label", placeholder="e.g. BASE",
+                disabled=True, help_key="layer-label",
+            )
         with Horizontal(classes="field-row"):
             yield Label("Name:", classes="field-label")
-            yield SkimInput(value="", id="layer-name", placeholder="e.g. Letters", disabled=True)
+            yield SkimInput(
+                value="", id="layer-name", placeholder="e.g. Letters",
+                disabled=True, help_key="layer-name",
+            )
         with Horizontal(classes="field-row"):
             yield Label("Variant:", classes="field-label")
             yield SkimInput(
-                value="", id="layer-variant", placeholder="e.g. COLEMAK (optional)", disabled=True
+                value="", id="layer-variant", placeholder="e.g. COLEMAK (optional)",
+                disabled=True, help_key="layer-variant",
             )
 
     def detail_field_ids(self) -> set[str]:
@@ -288,6 +299,7 @@ class KeyboardTab(Widget):
                         value=keymap_title,
                         id="keymap-title-text",
                         placeholder="e.g. My Keymap (leave empty for auto)",
+                        help_key="keymap-title",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Copyright:", classes="field-label")
@@ -295,13 +307,14 @@ class KeyboardTab(Widget):
                         value=copyright_text,
                         id="copyright-text",
                         placeholder="e.g. (c) 2024 Your Name (leave empty for none)",
+                        help_key="copyright",
                     )
 
             with Vertical(id="features-section"):
                 yield Static("Features", classes="section-title")
                 with Horizontal(id="features-row"):
                     yield Label("Double South: ", classes="field-label")
-                    yield SkimSwitch(value=double_south, id="double-south")
+                    yield SkimSwitch(value=double_south, id="double-south", help_key="double-south")
 
             yield Static("Layers", classes="section-title")
             yield LayerListPane(config_data=self.config_data)
