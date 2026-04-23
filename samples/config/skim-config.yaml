@@ -2,48 +2,48 @@ keyboard:
   features:
     double_south: true
   layers:
-  - id: _BASE
-    index: 0
+  - index: 0
+    id: _BASE
     label: BASE
     name: Letters
     variant: COLEMAK
-  - id: _GAME
-    index: 1
+  - index: 1
+    id: _GAME
     label: GAME
     name: Gaming
     variant: null
-  - id: _NAV
-    index: 2
+  - index: 2
+    id: _NAV
     label: NAV
     name: Navigation
     variant: null
-  - id: _NUM
-    index: 3
+  - index: 3
+    id: _NUM
     label: NUM
     name: Numbers
     variant: null
-  - id: _SYM
-    index: 4
+  - index: 4
+    id: _SYM
     label: SYM
     name: Symbols
     variant: null
-  - id: _FUN
-    index: 5
+  - index: 5
+    id: _FUN
     label: FN
     name: Function Keys
     variant: null
-  - id: _MED
-    index: 6
+  - index: 6
+    id: _MED
     label: MED
     name: Multimedia
     variant: null
-  - id: _SYS
-    index: 7
+  - index: 14
+    id: _SYS
     label: SYS
     name: System
     variant: null
-  - id: _MBO
-    index: 15
+  - index: 15
+    id: _MBO
     label: MBO
     name: Mouse
     variant: null
@@ -180,5 +180,5 @@ output:
         gradient: null
     use_system_fonts: false
     show_layer_indicators: true
-  keymap_title: null
-  copyright: (c) Thiago Alves
+  keymap_title: COLEMAK Miryoku-inspired Layout
+  copyright: "\xA9 Thiago Alves"

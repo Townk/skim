@@ -78,6 +78,30 @@ class TestKeyboardLayerIndex:
         assert keyboard.layer_index("0") == 0
         assert keyboard.layer_index("1") == 1
 
+    def test_layer_index_returns_qmk_index_not_position(self):
+        """layer_index returns the QMK firmware index, not the list position."""
+        keyboard = Keyboard(
+            layers=[
+                KeyboardLayer(index=0, id="base", label="1", name="Base"),
+                KeyboardLayer(index=1, id="nav", label="N", name="Navigation"),
+                KeyboardLayer(index=14, id="sys", label="S", name="System"),
+                KeyboardLayer(index=15, id="mouse", label="M", name="Mouse"),
+            ]
+        )
+        assert keyboard.layer_index("sys") == 14
+        assert keyboard.layer_index("mouse") == 15
+
+    def test_layer_index_without_ids_returns_qmk_index(self):
+        """layer_index returns QMK index for layers without explicit ids."""
+        keyboard = Keyboard(
+            layers=[
+                KeyboardLayer(index=0, label="1", name="Base"),
+                KeyboardLayer(index=15, label="M", name="Mouse"),
+            ]
+        )
+        assert keyboard.layer_index("0") == 0
+        assert keyboard.layer_index("1") == 15
+
     def test_layer_index_unknown_key_returns_none(self):
         """layer_index returns None for unknown keys."""
         keyboard = Keyboard(layers=[KeyboardLayer(index=0, id="base", label="1", name="Base")])

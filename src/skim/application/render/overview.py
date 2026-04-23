@@ -557,8 +557,15 @@ def draw_overview(
                 layout.adjust_canvas_width(max_path_x + layout.padding)
 
     # --- Phase 3: Render everything at final positions ---
+    # Extend canvas to fit copyright text below all content
+    copyright_extra = 0.0
+    if config.output.copyright:
+        # Reserve space: gap + text line + padding
+        prelim_badge_font_size = badge_dims.height * _BADGE_FONT_SIZE_RATIO
+        copyright_extra = prelim_badge_font_size + layout.padding
+
     canvas_w = layout.canvas_width
-    canvas_h = layout.canvas_height
+    canvas_h = layout.canvas_height + copyright_extra
     padding = layout.padding
     margin = base_metrics.margin
 
@@ -595,7 +602,7 @@ def draw_overview(
     badge_x = padding
 
     # Header: logo + title
-    logo_width = badge_w * 1.19
+    logo_width = badge_w * 1.06
     logo_height = _LOGO_ASPECT_RATIO.height_from_width(logo_width)
     d.append(
         draw.Image(
@@ -762,12 +769,12 @@ def draw_overview(
         d.append(
             draw.Text(
                 config.output.copyright,
-                font_size=max(6, int(canvas_h * 0.012)),
+                font_size=badge_font_size,
                 x=canvas_w - padding,
                 y=canvas_h - padding,
                 text_anchor="end",
                 dominant_baseline="text-after-edge",
-                font_family=title_font,
+                font_family=label_font,
                 fill=palette.text_color,
                 opacity=0.6,
             )

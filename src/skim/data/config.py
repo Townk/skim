@@ -157,10 +157,10 @@ class Keyboard(BaseModel):
     def model_post_init(self, context: object) -> None:
         """Initialize the layer ID lookup map after model construction.
 
-        Builds an internal mapping from layer identifiers to their numeric
-        indices for efficient layer lookup. If a layer has an explicit ``id``,
-        that ID is used as the key. Otherwise, the string representation of
-        the layer's position index is used.
+        Builds an internal mapping from layer identifiers to their QMK
+        firmware indices for efficient layer lookup. If a layer has an
+        explicit ``id``, that ID is used as the key. Otherwise, the string
+        representation of the layer's position index is used.
 
         This method is called automatically by Pydantic after the model is
         constructed.
@@ -172,26 +172,26 @@ class Keyboard(BaseModel):
         Example:
             >>> keyboard = Keyboard(
             ...     layers=[
-            ...         KeyboardLayer(id="base", label="1", name="Base"),
-            ...         KeyboardLayer(label="2", name="Symbols"),
+            ...         KeyboardLayer(index=0, id="base", label="1", name="Base"),
+            ...         KeyboardLayer(index=15, label="2", name="Symbols"),
             ...     ]
             ... )
             >>> keyboard.layer_index("base")
             0
-            >>> keyboard.layer_index("1")  # Second layer has no id, uses index
-            1
+            >>> keyboard.layer_index("1")  # Second layer has no id, uses QMK index
+            15
         """
         for idx, layer in enumerate(self.layers):
             if layer.id is not None:
-                self._layer_id_map[layer.id] = idx
+                self._layer_id_map[layer.id] = layer.index
             else:
-                self._layer_id_map[str(idx)] = idx
+                self._layer_id_map[str(idx)] = layer.index
             self._qmk_index_map[layer.index] = idx
 
     def layer_index(self, key: str | None) -> int | None:
-        """Look up a layer's numeric index by its identifier.
+        """Look up a layer's QMK firmware index by its identifier.
 
-        Returns the zero-based index of the layer matching the given key.
+        Returns the QMK firmware index of the layer matching the given key.
         The key can be either a layer's explicit ``id``, the string
         representation of its position index (for layers without an id),
         or an integer index which is converted to string for lookup.
@@ -203,20 +203,20 @@ class Keyboard(BaseModel):
                 ``None``.
 
         Returns:
-            The numeric index of the matching layer, or ``None`` if no
+            The QMK firmware index of the matching layer, or ``None`` if no
             layer matches the given key or if key is ``None``.
 
         Example:
             >>> keyboard = Keyboard(
             ...     layers=[
-            ...         KeyboardLayer(id="nav", label="N", name="Navigation"),
-            ...         KeyboardLayer(label="S", name="Symbols"),
+            ...         KeyboardLayer(index=0, id="nav", label="N", name="Navigation"),
+            ...         KeyboardLayer(index=15, label="S", name="Symbols"),
             ...     ]
             ... )
             >>> keyboard.layer_index("nav")
             0
             >>> keyboard.layer_index("1")
-            1
+            15
             >>> keyboard.layer_index("unknown") is None
             True
         """
