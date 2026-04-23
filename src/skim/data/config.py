@@ -650,6 +650,7 @@ class Style(BaseModel):
     palette: Palette = Field(default_factory=Palette)
     use_system_fonts: bool = False
     show_layer_indicators: bool = True
+    show_layer_connectors: bool = True
 
 
 class Output(BaseModel):

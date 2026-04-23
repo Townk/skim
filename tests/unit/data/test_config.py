@@ -233,3 +233,17 @@ class TestOutputCopyright:
         """copyright can be set to a string value."""
         output = Output(copyright="© 2026 My Layout")
         assert output.copyright == "© 2026 My Layout"
+
+
+class TestStyleShowLayerConnectors:
+    """Tests for Style.show_layer_connectors field."""
+
+    def test_default_is_true(self):
+        """show_layer_connectors defaults to True."""
+        style = Style()
+        assert style.show_layer_connectors is True
+
+    def test_can_set_to_false(self):
+        """show_layer_connectors can be set to False."""
+        style = Style(show_layer_connectors=False)
+        assert style.show_layer_connectors is False
