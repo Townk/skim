@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from textual import events
 from textual.actions import SkipAction
 from textual.app import ComposeResult
@@ -23,6 +25,7 @@ from textual.widgets._select import SelectCurrent, SelectOverlay
 
 # Sort priority for actions.  Lower value → further left in the footer.
 _ACTION_ORDER: dict[str, int] = {
+    "show_help": -1,
     # Always-visible (app-level)
     "request_quit": 0,
     "save": 1,
@@ -160,6 +163,10 @@ class SkimStandaloneInput(Input):
         ),
     ]
 
+    def __init__(self, *args: Any, help_key: str | None = None, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.help_key = help_key
+
 
 class SkimInput(Input):
     """Input with footer bindings for edit-pane field navigation."""
@@ -172,6 +179,10 @@ class SkimInput(Input):
         Binding("enter", "submit", "Confirm changes", key_display="\u23ce", show=True),
         Binding("escape", "cancel_edit", "Discard changes", key_display="\U000f12b7", show=True),
     ]
+
+    def __init__(self, *args: Any, help_key: str | None = None, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.help_key = help_key
 
     def action_cancel_edit(self) -> None:
         """No-op — handled by ListDetailPane.on_key via event bubbling."""
@@ -192,6 +203,10 @@ class SkimListView(ListView):
         Binding("enter", "confirm_move", "Confirm position", key_display="\u23ce", show=True),
         Binding("escape", "cancel_move", "Discard changes", key_display="\U000f12b7", show=True),
     ]
+
+    def __init__(self, *args: Any, help_key: str | None = None, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.help_key = help_key
 
     def _parent_pane(self):
         """Find the parent ListDetailPane, if any."""
@@ -242,6 +257,10 @@ class SkimButton(Button):
         Binding("space", "press", "Activate", show=False),
     ]
 
+    def __init__(self, *args: Any, help_key: str | None = None, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.help_key = help_key
+
     async def _on_key(self, event: events.Key) -> None:
         if event.key == "space":
             self.action_press()
@@ -258,6 +277,10 @@ class SkimSwitch(Switch):
         Binding("enter", "toggle_switch", "Toggle", key_display="\u23ce,\u2423", show=True),
         Binding("space", "toggle_switch", "Toggle", show=False),
     ]
+
+    def __init__(self, *args: Any, help_key: str | None = None, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.help_key = help_key
 
 
 class _SkimSelectOverlay(SelectOverlay):
@@ -292,6 +315,10 @@ class SkimSelect(Select):
         Binding("up", "skip_arrow", show=False),
         Binding("down", "skip_arrow", show=False),
     ]
+
+    def __init__(self, *args: Any, help_key: str | None = None, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.help_key = help_key
 
     def action_cancel_edit(self) -> None:
         """No-op — handled by ListDetailPane.on_key via event bubbling."""
