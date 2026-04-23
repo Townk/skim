@@ -291,7 +291,7 @@ class SkimConfigApp(App):
         padding: 0 3;
     }
     #help-dialog {
-        padding: 1 2;
+        padding: 0 2 1 2;
         width: 70;
         max-height: 50%;
         border: thick $background 80%;
@@ -416,9 +416,10 @@ class SkimConfigApp(App):
             key="f1",
             action="show_help",
             description="Help",
-            key_display="F1",
+            key_display="F1,\u2325H",
             priority=True,
         ),
+        Binding(key="alt+h", action="show_help", show=False, priority=True),
     ]
 
     def __init__(
@@ -465,6 +466,8 @@ class SkimConfigApp(App):
 
     def action_show_help(self) -> None:
         """Show contextual help for the currently focused widget."""
+        if isinstance(self.screen, HelpScreen):
+            return
         widget = self.focused
         help_key = None
         while widget is not None:
