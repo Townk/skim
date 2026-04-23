@@ -280,6 +280,73 @@ class TestQmkColorParsing:
         assert parsed["output"]["style"]["palette"]["overrides"] == {}
 
 
+class TestFindNonStandardKeycodes:
+    """Tests for ConfigGenerator._find_non_standard_keycodes()."""
+
+    @pytest.fixture()
+    def standard_keycodes(self) -> set[str]:
+        """A minimal set of standard keycodes for testing."""
+        return {
+            "KC_A", "KC_B", "KC_NO", "KC_TRNS",
+            "KC_SPACE", "KC_ENTER", "KC_LEFT_CTRL",
+            "KC_LEFT_SHIFT", "KC_LEFT_ALT", "KC_LEFT_GUI",
+            "MO", "LT", "TG", "OSL", "MT", "TO", "DF",
+            "LSFT", "LCTL", "LALT", "LGUI",
+            "MOD_LCTL", "MOD_LSFT",
+        }
+
+    def test_all_standard_returns_empty(self, standard_keycodes):
+        """All-standard keycodes produce no overrides."""
+        layers = [["KC_A", "KC_B", "KC_NO"]]
+        result = ConfigGenerator._find_non_standard_keycodes(layers, standard_keycodes)
+        assert result == []
+
+    def test_bare_custom_keycode_found(self, standard_keycodes):
+        """A bare non-standard keycode is detected."""
+        layers = [["KC_A", "MY_CUSTOM", "KC_B"]]
+        result = ConfigGenerator._find_non_standard_keycodes(layers, standard_keycodes)
+        assert len(result) == 1
+        assert result[0] == {"keycode": "MY_CUSTOM", "target": "MY_CUSTOM"}
+
+    def test_custom_inside_macro_found(self, standard_keycodes):
+        """Non-standard keycode inside a macro function is detected."""
+        layers = [["LT(2, MY_KEY)", "KC_A"]]
+        result = ConfigGenerator._find_non_standard_keycodes(layers, standard_keycodes)
+        assert len(result) == 1
+        assert result[0] == {"keycode": "MY_KEY", "target": "MY_KEY"}
+
+    def test_layer_name_reference_found(self, standard_keycodes):
+        """Layer name references like _BASE are detected as non-standard."""
+        layers = [["MO(_BASE)", "TG(_NAV)"]]
+        result = ConfigGenerator._find_non_standard_keycodes(layers, standard_keycodes)
+        names = {o["keycode"] for o in result}
+        assert "_BASE" in names
+        assert "_NAV" in names
+
+    def test_numeric_args_ignored(self, standard_keycodes):
+        """Numeric arguments to functions are not treated as keycodes."""
+        layers = [["LT(2, KC_A)", "MO(3)"]]
+        result = ConfigGenerator._find_non_standard_keycodes(layers, standard_keycodes)
+        assert result == []
+
+    def test_deduplicates_across_layers(self, standard_keycodes):
+        """Same non-standard keycode in multiple layers appears once."""
+        layers = [["MY_KEY", "KC_A"], ["KC_B", "MY_KEY"]]
+        result = ConfigGenerator._find_non_standard_keycodes(layers, standard_keycodes)
+        assert len(result) == 1
+
+    def test_empty_layers_returns_empty(self, standard_keycodes):
+        """Empty layer list produces no overrides."""
+        result = ConfigGenerator._find_non_standard_keycodes([], standard_keycodes)
+        assert result == []
+
+    def test_standard_macro_function_not_flagged(self, standard_keycodes):
+        """Standard macro function names are not flagged as non-standard."""
+        layers = [["LSFT(KC_A)", "LCTL(KC_B)"]]
+        result = ConfigGenerator._find_non_standard_keycodes(layers, standard_keycodes)
+        assert result == []
+
+
 class TestWithSampleKeybard:
     """Integration tests using the real keybard sample file."""
 

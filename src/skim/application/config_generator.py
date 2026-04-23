@@ -157,6 +157,35 @@ class ConfigGenerator:
 
         return overrides
 
+    @staticmethod
+    def _find_non_standard_keycodes(
+        layers: list[list[str]], standard_keycodes: set[str]
+    ) -> list[dict[str, str]]:
+        """Find keycodes in layers that are not in the standard QMK set.
+
+        Extracts all identifier tokens from each keycode string (including
+        arguments inside macro function calls) and returns overrides for
+        any token not in the standard set.
+
+        Args:
+            layers: List of layers, each a list of keycode strings.
+            standard_keycodes: Set of known QMK keycode names, macro
+                function names, and modifier constants.
+
+        Returns:
+            List of override dicts with keycode mapped to itself.
+        """
+        seen: set[str] = set()
+        overrides: list[dict[str, str]] = []
+        for layer in layers:
+            for keycode in layer:
+                tokens = re.findall(r"[A-Za-z_][A-Za-z0-9_]*", keycode)
+                for token in tokens:
+                    if token not in standard_keycodes and token not in seen:
+                        seen.add(token)
+                        overrides.append({"keycode": token, "target": token})
+        return overrides
+
     def _parse_qmk_colors(
         self, header_content: str, apply_adjustment: Callable[[str], str]
     ) -> dict[str, str]:
