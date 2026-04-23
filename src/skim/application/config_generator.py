@@ -186,6 +186,124 @@ class ConfigGenerator:
                         overrides.append({"keycode": token, "target": token})
         return overrides
 
+    @staticmethod
+    def _load_standard_keycodes() -> set[str]:
+        """Load the set of all known QMK keycode identifiers.
+
+        Combines keycodes, pre_processing keys, macro_functions keys,
+        and modifier_union keys from keycode-mappings.yaml.
+
+        Returns:
+            Set of all known QMK keycode/function/modifier names.
+        """
+        from skim.assets import ASSETS
+
+        mapping = yaml.safe_load(ASSETS.keycode_mappings.read_text())
+        standard: set[str] = set()
+        for section in ("keycodes", "pre_processing", "macro_functions", "modifier_union"):
+            if section in mapping:
+                standard.update(mapping[section].keys())
+        return standard
+
+    def _build_default_palette_layers(self, num_layers: int) -> list[dict[str, Any]]:
+        """Build palette layers with default colors for each layer index."""
+        from skim.application.render.styling import default_layer_color
+
+        return [
+            {"base_color": default_layer_color(idx), "color_index": 2, "gradient": None}
+            for idx in range(num_layers)
+        ]
+
+    @staticmethod
+    def _flatten_keymap_layers(
+        raw_layers: list, keymap_type: object
+    ) -> list[list[str]]:
+        """Flatten raw keymap layers into a list of string lists.
+
+        For Vial, each layer is a list of clusters (list of lists).
+        For c2json, each layer is already a flat list of strings.
+
+        Args:
+            raw_layers: Raw layer data from the keymap file.
+            keymap_type: The detected KeymapType enum value.
+
+        Returns:
+            List of layers, each a flat list of keycode strings.
+        """
+        from skim.domain import KeymapType
+
+        flat: list[list[str]] = []
+        for layer in raw_layers:
+            if keymap_type == KeymapType.VIAL:
+                keys: list[str] = []
+                for cluster in layer:
+                    if isinstance(cluster, list):
+                        keys.extend(cluster)
+                    else:
+                        keys.append(str(cluster))
+                flat.append(keys)
+            else:
+                flat.append(layer)
+        return flat
+
+    def generate_from_keymap(self, content: str) -> str:
+        """Generate config YAML from a Vial or c2json keymap file.
+
+        Detects the keymap format, counts layers to create default layer
+        entries with auto-generated colors, and scans for non-standard
+        keycodes to populate overrides.
+
+        For Keybard files, delegates to generate_from_keybard() which
+        extracts richer metadata (layer names, colors, custom keycodes).
+
+        Args:
+            content: JSON string from a keymap file (.vil or .json).
+
+        Returns:
+            YAML string containing the generated skim configuration.
+
+        Raises:
+            ValueError: If content is not valid JSON or format is unknown.
+        """
+        from skim.application.loaders.keymap_loader import (
+            _detect_keymap_from_json,
+        )
+        from skim.domain import KeymapType
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in keymap file: {e}") from e
+
+        keymap_type = _detect_keymap_from_json(data)
+
+        if keymap_type == KeymapType.KEYBARD:
+            return self.generate_from_keybard(content)
+
+        # Count layers based on format
+        if keymap_type == KeymapType.VIAL:
+            raw_layers = data.get("layout", [])
+        else:  # C2JSON
+            raw_layers = data.get("layers", [])
+
+        num_layers = len(raw_layers)
+
+        # Build default layers and palette
+        keyboard_layers = self._build_layers(num_layers, {})
+        palette_layers = self._build_default_palette_layers(num_layers)
+
+        # Scan for non-standard keycodes
+        flat_layers = self._flatten_keymap_layers(raw_layers, keymap_type)
+        standard = self._load_standard_keycodes()
+        keycode_overrides = self._find_non_standard_keycodes(flat_layers, standard)
+
+        config_dict: dict[str, Any] = SkimConfig().model_dump(mode="json")
+        config_dict["keyboard"]["layers"] = keyboard_layers
+        config_dict["keycodes"]["overrides"] = keycode_overrides
+        config_dict["output"]["style"]["palette"]["layers"] = palette_layers
+
+        return yaml.dump(config_dict, sort_keys=False, default_flow_style=False)
+
     def _parse_qmk_colors(
         self, header_content: str, apply_adjustment: Callable[[str], str]
     ) -> dict[str, str]:

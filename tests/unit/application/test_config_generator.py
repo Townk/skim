@@ -347,6 +347,153 @@ class TestFindNonStandardKeycodes:
         assert result == []
 
 
+class TestGenerateFromKeymap:
+    """Tests for ConfigGenerator.generate_from_keymap()."""
+
+    def test_c2json_creates_correct_layer_count(self):
+        """c2json with 3 layers creates 3 keyboard layers."""
+        content = json.dumps({
+            "keyboard": "test",
+            "keymap": "test",
+            "layout": "LAYOUT",
+            "layers": [
+                ["KC_A"] * 60,
+                ["KC_B"] * 60,
+                ["KC_NO"] * 60,
+            ],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(content)
+        parsed = yaml.safe_load(result)
+        assert len(parsed["keyboard"]["layers"]) == 3
+        assert parsed["keyboard"]["layers"][0]["index"] == 0
+        assert parsed["keyboard"]["layers"][0]["name"] == "Layer 0"
+        assert parsed["keyboard"]["layers"][0]["label"] == "L0"
+
+    def test_c2json_creates_matching_palette_layers(self):
+        """Palette layers count matches keyboard layers."""
+        content = json.dumps({
+            "keyboard": "test",
+            "keymap": "test",
+            "layout": "LAYOUT",
+            "layers": [["KC_A"] * 60, ["KC_B"] * 60],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(content)
+        parsed = yaml.safe_load(result)
+        palette_layers = parsed["output"]["style"]["palette"]["layers"]
+        assert len(palette_layers) == 2
+        for layer in palette_layers:
+            assert layer["base_color"].startswith("#")
+            assert layer["color_index"] == 2
+            assert layer["gradient"] is None
+
+    def test_c2json_detects_non_standard_keycodes(self):
+        """Non-standard keycodes in c2json are added as overrides."""
+        content = json.dumps({
+            "keyboard": "test",
+            "keymap": "test",
+            "layout": "LAYOUT",
+            "layers": [
+                ["KC_A", "MY_CUSTOM"] + ["KC_NO"] * 58,
+            ],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(content)
+        parsed = yaml.safe_load(result)
+        overrides = parsed["keycodes"]["overrides"]
+        keycode_names = [o["keycode"] for o in overrides]
+        assert "MY_CUSTOM" in keycode_names
+
+    def test_c2json_no_overrides_when_all_standard(self):
+        """All-standard keycodes produce empty overrides."""
+        content = json.dumps({
+            "keyboard": "test",
+            "keymap": "test",
+            "layout": "LAYOUT",
+            "layers": [["KC_A", "KC_B"] + ["KC_NO"] * 58],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(content)
+        parsed = yaml.safe_load(result)
+        assert parsed["keycodes"]["overrides"] == []
+
+    def test_vial_creates_correct_layer_count(self):
+        """Vial with 2 layers creates 2 keyboard layers."""
+        content = json.dumps({
+            "version": 1,
+            "uid": 12345,
+            "layout": [
+                [["KC_A"] * 6] * 10,
+                [["KC_B"] * 6] * 10,
+            ],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(content)
+        parsed = yaml.safe_load(result)
+        assert len(parsed["keyboard"]["layers"]) == 2
+
+    def test_vial_detects_non_standard_keycodes(self):
+        """Non-standard keycodes in Vial are added as overrides."""
+        content = json.dumps({
+            "version": 1,
+            "uid": 12345,
+            "layout": [
+                [["KC_A", "MY_VIL_KEY"] + ["KC_NO"] * 4] + [["KC_NO"] * 6] * 9,
+            ],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(content)
+        parsed = yaml.safe_load(result)
+        overrides = parsed["keycodes"]["overrides"]
+        keycode_names = [o["keycode"] for o in overrides]
+        assert "MY_VIL_KEY" in keycode_names
+
+    def test_keybard_delegates_to_generate_from_keybard(self):
+        """Keybard format delegates to generate_from_keybard."""
+        content = json.dumps({
+            "layers": 1,
+            "keymap": [["KC_A"] * 60],
+            "layer_colors": [{"hue": 85, "sat": 255, "val": 255}],
+            "cosmetic": {"layer": {"0": "Base"}},
+            "custom_keycodes": [],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(content)
+        parsed = yaml.safe_load(result)
+        # Should use Keybard path which extracts cosmetic names
+        assert parsed["keyboard"]["layers"][0]["name"] == "Base"
+
+    def test_roundtrips_through_skim_config(self):
+        """Generated config validates as a SkimConfig."""
+        from skim.data.config import SkimConfig
+
+        content = json.dumps({
+            "keyboard": "test",
+            "keymap": "test",
+            "layout": "LAYOUT",
+            "layers": [["KC_A"] * 60],
+        })
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(content)
+        parsed = yaml.safe_load(result)
+        config = SkimConfig.model_validate(parsed)
+        assert len(config.keyboard.layers) == 1
+
+    def test_invalid_json_raises_value_error(self):
+        """Non-JSON input raises ValueError."""
+        generator = ConfigGenerator()
+        with pytest.raises(ValueError, match="Invalid JSON"):
+            generator.generate_from_keymap("not json {{{")
+
+    def test_unknown_format_raises_value_error(self):
+        """Unrecognized JSON structure raises ValueError."""
+        content = json.dumps({"something": "else"})
+        generator = ConfigGenerator()
+        with pytest.raises(ValueError, match="Unknown keymap format"):
+            generator.generate_from_keymap(content)
+
+
 class TestWithSampleKeybard:
     """Integration tests using the real keybard sample file."""
 
