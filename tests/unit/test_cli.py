@@ -330,6 +330,67 @@ class TestConfigureCommand:
         parsed = yaml.safe_load(result.output)
         assert parsed["keyboard"]["layers"][0]["name"] == "Base"
 
+    @patch("skim.cli.setup_logging")
+    def test_title_sets_keymap_title_non_interactive(self, mock_setup, tmp_path):
+        """--title sets output.keymap_title and writes config."""
+        out = tmp_path / "out.yaml"
+        runner = CliRunner()
+        result = runner.invoke(
+            main, ["configure", "--title", "My Keymap", "-o", str(out)]
+        )
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(out.read_text())
+        assert parsed["output"]["keymap_title"] == "My Keymap"
+
+    @patch("skim.cli.setup_logging")
+    def test_copyright_sets_copyright_non_interactive(self, mock_setup, tmp_path):
+        """--copyright sets output.copyright and writes config."""
+        out = tmp_path / "out.yaml"
+        runner = CliRunner()
+        result = runner.invoke(
+            main, ["configure", "--copyright", "© 2026 Me", "-o", str(out)]
+        )
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(out.read_text())
+        assert parsed["output"]["copyright"] == "© 2026 Me"
+
+    @patch("skim.cli.setup_logging")
+    def test_title_and_copyright_together_non_interactive(self, mock_setup, tmp_path):
+        """--title and --copyright together writes both values."""
+        out = tmp_path / "out.yaml"
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            ["configure", "-t", "Title", "-r", "© Me", "-o", str(out)],
+        )
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(out.read_text())
+        assert parsed["output"]["keymap_title"] == "Title"
+        assert parsed["output"]["copyright"] == "© Me"
+
+    @patch("skim.cli.setup_logging")
+    def test_title_with_existing_config(self, mock_setup, tmp_path):
+        """--title overrides keymap_title in existing config file."""
+        cfg = tmp_path / "cfg.yaml"
+        cfg.write_text(yaml.dump({"output": {"keymap_title": "Old"}}))
+        out = tmp_path / "out.yaml"
+        runner = CliRunner()
+        result = runner.invoke(
+            main, ["configure", "-c", str(cfg), "-t", "New Title", "-o", str(out)]
+        )
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(out.read_text())
+        assert parsed["output"]["keymap_title"] == "New Title"
+
+    @patch("skim.cli.setup_logging")
+    def test_title_without_output_echoes_yaml(self, mock_setup):
+        """--title without -o echoes YAML to stdout."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-t", "My Title"])
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(result.output)
+        assert parsed["output"]["keymap_title"] == "My Title"
+
 
 class TestDoctorCommand:
     """Tests for doctor subcommand."""

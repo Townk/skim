@@ -299,6 +299,9 @@ def generate(
     type=float,
     help="Adjust saturation (0.0-1.0).",
 )
+@click.option("--title", "-t", type=str, help="Set the keymap title (output.keymap_title).")
+@click.option("--copyright", "-r", type=str, help="Set the copyright notice (output.copyright).")
+@click.option("--layer-count", "-n", type=int, help="Number of layers to pre-create with defaults (interactive mode).")
 @click.pass_context
 def configure(
     ctx: click.Context,
@@ -310,6 +313,9 @@ def configure(
     qmk_color_header: Path | None,
     adjust_lightness: float | None,
     adjust_saturation: float | None,
+    title: str | None,
+    copyright: str | None,
+    layer_count: int | None,
 ) -> None:
     """Generate or edit a configuration file.
 
@@ -327,11 +333,29 @@ def configure(
     from skim.application.config_generator import ConfigGenerator
 
     # No flags at all: show help
-    if not interactive and not keybard_keymap:
+    has_config_overrides = title is not None or copyright is not None
+    if not interactive and not keybard_keymap and not has_config_overrides:
         click.echo(ctx.get_help())
         return
 
     try:
+        if has_config_overrides and not interactive:
+            import yaml
+
+            config_data = _load_initial_config(config)
+            if title is not None:
+                config_data["output"]["keymap_title"] = title
+            if copyright is not None:
+                config_data["output"]["copyright"] = copyright
+            if layer_count is not None:
+                _apply_layer_count(config_data, layer_count)
+            content = yaml.dump(config_data, sort_keys=False, default_flow_style=False)
+            if output:
+                _write_config(output, content, force)
+            else:
+                click.echo(content)
+            return
+
         generator = ConfigGenerator()
 
         if keybard_keymap:
@@ -387,6 +411,11 @@ def _load_initial_config(config_path: Path | None) -> dict:
             return config.model_dump(mode="json")
 
     return SkimConfig().model_dump(mode="json")
+
+
+def _apply_layer_count(config_data: dict, layer_count: int) -> None:
+    """Fill config_data with default layers up to layer_count. (Implemented in Task 3)"""
+    pass
 
 
 def _write_config(output: Path, content: str, force: bool) -> None:
