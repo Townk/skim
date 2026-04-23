@@ -583,7 +583,7 @@ class SkimConfigApp(App):
         else:
             scroll.scroll_up(animate=False)
 
-    _REPEAT_THRESHOLD = 0.3  # seconds — key repeats are ~30ms apart
+    _REPEAT_THRESHOLD = 0.1  # seconds — key repeats are ~30ms apart
 
     def _is_hold_repeat(self, direction: str) -> bool:
         """Return True if this is a held-down key repeat for *direction*.
@@ -676,6 +676,21 @@ class SkimConfigApp(App):
         if pane is None:
             return False
         return any(ac.target is widget and ac.display for ac in pane.query(AutoComplete))
+
+    @staticmethod
+    def _maybe_select_edge(widget, direction: str) -> None:
+        """Select the edge item when a ListView gains focus with no selection.
+
+        When navigating *up* into a ListView that has no selected item, the
+        bottom-most item is selected so the cursor position matches the
+        spatial direction.
+        """
+        if not isinstance(widget, ListView):
+            return
+        if widget.index is not None:
+            return
+        if direction == "up" and len(widget._nodes) > 0:
+            widget.index = len(widget._nodes) - 1
 
     def action_focus_direction(self, direction: str) -> None:
         """Move focus to the nearest focusable widget in the given direction."""
@@ -775,10 +790,11 @@ class SkimConfigApp(App):
             if inner is not None:
                 self._record_nav(direction)
                 inner.focus()
+                self._maybe_select_edge(inner, direction)
                 return
             # No widget inside the scroll container in that direction.
             # Only leave if the container is fully scrolled to the edge
-            # AND this is not a hold-down repeat.
+            # AND this is not the first rapid press (fly-out prevention).
             at_scroll_edge = (direction == "down" and scroll.scroll_y >= scroll.max_scroll_y) or (
                 direction == "up" and scroll.scroll_y <= 0
             )
@@ -795,6 +811,7 @@ class SkimConfigApp(App):
         target = self._best_in_direction(current, direction, all_candidates, focused)
         if target is not None:
             target.focus()
+            self._maybe_select_edge(target, direction)
 
     def on_descendant_focus(self, event: events.DescendantFocus) -> None:
         widget = event.widget

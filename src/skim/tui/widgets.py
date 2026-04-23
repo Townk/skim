@@ -238,8 +238,8 @@ class SkimButton(Button):
     """Button that responds to both Enter and Space."""
 
     BINDINGS = [
-        Binding("enter", "press", "Press button", key_display="\u23ce,\u2423", show=True),
-        Binding("space", "press", "Press button", show=False),
+        Binding("enter", "press", "Activate", key_display="\u23ce,\u2423", show=True),
+        Binding("space", "press", "Activate", show=False),
     ]
 
     async def _on_key(self, event: events.Key) -> None:
