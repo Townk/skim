@@ -199,6 +199,49 @@ class LayerListPane(ListDetailPane):
         layers[self._selected][config_key] = value
         self.update_selected_list_item()
 
+    # ------------------------------------------------------------------
+    # Move mode hooks
+    # ------------------------------------------------------------------
+
+    @property
+    def move_enabled(self) -> bool:
+        return True
+
+    def _palette_layers(self) -> list[dict]:
+        return (
+            self.config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
+        )
+
+    def move_paired_lists(self) -> list[list[dict]]:
+        palette = self._palette_layers()
+        return [palette] if palette else []
+
+    def on_move_swap(
+        self,
+        entries: list[dict],
+        pos: int,
+        target: int,
+        direction: int,
+    ) -> None:
+        moved = entries[pos]
+        neighbor = entries[target]
+        old_moved_index = moved["index"]
+        moved["index"] = neighbor["index"]
+        neighbor["index"] = self._next_adjacent_index(
+            neighbor["index"],
+            direction,
+            old_moved_index,
+        )
+
+    def _next_adjacent_index(self, from_index: int, direction: int, exclude_index: int) -> int:
+        """Find the next free index stepping toward the moved layer's origin."""
+        layers = self.get_entries()
+        used = {l.get("index", i) for i, l in enumerate(layers)} - {exclude_index}
+        candidate = from_index - direction
+        while candidate in used:
+            candidate -= direction
+        return max(0, min(31, candidate))
+
 
 class KeyboardTab(Widget):
     """Keyboard configuration tab.
@@ -283,6 +326,11 @@ class KeyboardTab(Widget):
             self.config_data["output"]["keymap_title"] = event.value if event.value else None
         elif input_id == "copyright-text":
             self.config_data["output"]["copyright"] = event.value if event.value else None
+
+    def _rebuild_layer_list(self) -> None:
+        """Rebuild the layer list. Called from app.py on LayerUpdated."""
+        pane = self.query_one(LayerListPane)
+        pane.rebuild_list()
 
     # -- Cross-tab sync via ListDetailPane messages --
 

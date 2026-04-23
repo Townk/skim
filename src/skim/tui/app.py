@@ -288,13 +288,27 @@ class SkimConfigApp(App):
             border-left: wide $accent;
         }
     }
+    ListItem {
+        layout: horizontal;
+    }
     ListItem > Static {
         text-wrap: nowrap;
         text-overflow: ellipsis;
         width: 1fr;
     }
+    ListItem.moving {
+        background: $accent 30%;
+    }
+    ListItem.moving > Static {
+        color: $accent;
+    }
     ListItem > .lc-swatch {
         width: 4;
+    }
+    ListItem > .move-indicator {
+        dock: right;
+        width: 3;
+        color: $accent;
     }
     .list-buttons {
         height: auto;
@@ -308,14 +322,38 @@ class SkimConfigApp(App):
     BINDINGS = [
         Binding(key="ctrl+q", action="request_quit", description="Quit", key_display="\u2303Q"),
         Binding(key="ctrl+s", action="save", description="Save", key_display="\u2303S"),
-        Binding(key="ctrl+p", action="previous_tab", description="Previous Tab", key_display="\u2303P", priority=True),
-        Binding(key="ctrl+n", action="next_tab", description="Next Tab", key_display="\u2303N", priority=True),
+        Binding(
+            key="ctrl+p",
+            action="previous_tab",
+            description="Previous Tab",
+            key_display="\u2303P",
+            priority=True,
+        ),
+        Binding(
+            key="ctrl+n",
+            action="next_tab",
+            description="Next Tab",
+            key_display="\u2303N",
+            priority=True,
+        ),
         Binding(key="up", action="focus_direction('up')", show=False, priority=True),
         Binding(key="down", action="focus_direction('down')", show=False, priority=True),
         Binding(key="left", action="focus_direction('left')", show=False, priority=True),
         Binding(key="right", action="focus_direction('right')", show=False, priority=True),
-        Binding(key="ctrl+e", action="scroll_view('down')", description="Scroll down", key_display="\u2303E", priority=True),
-        Binding(key="ctrl+y", action="scroll_view('up')", description="Scroll up", key_display="\u2303Y", priority=True),
+        Binding(
+            key="ctrl+e",
+            action="scroll_view('down')",
+            description="Scroll down",
+            key_display="\u2303E",
+            priority=True,
+        ),
+        Binding(
+            key="ctrl+y",
+            action="scroll_view('up')",
+            description="Scroll up",
+            key_display="\u2303Y",
+            priority=True,
+        ),
     ]
 
     def __init__(
@@ -493,8 +531,10 @@ class SkimConfigApp(App):
             self.query_one(KeyboardTab).sync_layer_added(event.index)
 
     def on_layer_updated(self, event: LayerUpdated) -> None:
+        from skim.tui.keyboard_tab import KeyboardTab
         from skim.tui.output_tab import OutputTab
 
+        self.query_one(KeyboardTab)._rebuild_layer_list()
         self.query_one(OutputTab)._rebuild_layer_colors_list()
 
     def on_layer_removed(self, event: LayerRemoved) -> None:
@@ -649,7 +689,10 @@ class SkimConfigApp(App):
             if not current.width or not current.height:
                 return
             target = self._best_in_direction(
-                current, direction, self.screen.query("*"), focused,
+                current,
+                direction,
+                self.screen.query("*"),
+                focused,
             )
             if target is not None:
                 target.focus()

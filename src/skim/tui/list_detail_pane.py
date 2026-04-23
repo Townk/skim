@@ -83,6 +83,8 @@ class ListDetailPane(Widget):
     class EntryUpdated(Message):
         """Posted after a successful commit."""
 
+    _MOVE_INDICATOR = " \u2195 "  # ↕ with surrounding spaces
+
     def __init__(self, pane_id: str, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.pane_id = pane_id
@@ -90,6 +92,8 @@ class ListDetailPane(Widget):
         self._editing: bool = False
         self._snapshot: dict | None = None
         self._adding: bool = False
+        self._moving: bool = False
+        self._move_snapshots: list[tuple[list[dict], list[dict]]] | None = None
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="ldp-container"):
@@ -145,9 +149,13 @@ class ListDetailPane(Widget):
     # List helpers
     # ------------------------------------------------------------------
 
+    def _padded_text(self, index: int, entry: dict) -> str:
+        """Return format_entry text with leading/trailing padding."""
+        return f" {self.format_entry(index, entry)} "
+
     def _make_list_item(self, index: int, entry: dict) -> ListItem:
         """Create a ListItem for an entry. Override for custom rendering."""
-        return ListItem(Static(self.format_entry(index, entry)))
+        return ListItem(Static(self._padded_text(index, entry)))
 
     def rebuild_list(self) -> None:
         """Rebuild the entire list from get_entries()."""
@@ -167,7 +175,7 @@ class ListDetailPane(Widget):
 
     def _update_list_item_content(self, item: ListItem, index: int, entry: dict) -> None:
         """Update a single list item's content. Override for custom rendering."""
-        item.query_one(Static).update(self.format_entry(index, entry))
+        item.query_one(Static).update(self._padded_text(index, entry))
 
     def update_selected_list_item(self) -> None:
         """Update only the selected list item."""
@@ -334,6 +342,104 @@ class ListDetailPane(Widget):
             self.query_one(f"#{self.pane_id}-add", Button).focus()
 
     # ------------------------------------------------------------------
+    # Move mode
+    # ------------------------------------------------------------------
+
+    def move_paired_lists(self) -> list[list[dict]]:
+        """Return additional lists that must be swapped in sync with entries.
+
+        Subclasses override this to return lists (e.g. palette layers,
+        keyboard layers) that are paired 1:1 with ``get_entries()``.
+        """
+        return []
+
+    def on_move_swap(
+        self,
+        entries: list[dict],
+        pos: int,
+        target: int,
+        direction: int,
+    ) -> None:
+        """Hook called before swapping entries at *pos* and *target*.
+
+        Subclasses override this to adjust entry data (e.g. QMK indices)
+        before the positional swap happens.
+        """
+
+    @property
+    def move_enabled(self) -> bool:
+        """Whether this pane supports move mode. Override to enable."""
+        return False
+
+    def _enter_move_mode(self) -> None:
+        entries = self.get_entries()
+        if len(entries) < 2:
+            return
+        self._moving = True
+        paired = [self.get_entries()] + self.move_paired_lists()
+        self._move_snapshots = [(lst, copy.deepcopy(lst)) for lst in paired]
+        self.query_one(f"#{self.pane_id}-list", SkimListView).refresh_bindings()
+        self._apply_move_visual(self._selected)
+
+    def _exit_move_mode(self, commit: bool) -> None:
+        if not commit and self._move_snapshots is not None:
+            for lst, snapshot in self._move_snapshots:
+                lst[:] = snapshot
+        self._moving = False
+        self._move_snapshots = None
+        self._clear_move_visuals()
+        self.update_all_list_items()
+        list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
+        list_view.refresh_bindings()
+        list_view.index = self._selected
+        self.refresh_fields(self.get_entries()[self._selected])
+        list_view.focus()
+        if commit:
+            self.post_message(self.EntryUpdated())
+
+    def _apply_move_visual(self, pos: int) -> None:
+        """Add the moving CSS class and a move indicator widget."""
+        list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
+        self._clear_move_visuals()
+        if pos < len(list_view.children):
+            item = list_view.children[pos]
+            if isinstance(item, ListItem):
+                item.add_class("moving")
+                item.mount(Static(self._MOVE_INDICATOR, classes="move-indicator"))
+
+    def _clear_move_visuals(self) -> None:
+        """Remove moving CSS class and indicator from all items."""
+        list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
+        for child in list_view.children:
+            if isinstance(child, ListItem) and child.has_class("moving"):
+                child.remove_class("moving")
+                for ind in child.query(Static).filter(".move-indicator"):
+                    ind.remove()
+
+    def _move_entry(self, direction: int) -> None:
+        """Move the selected entry up (-1) or down (+1)."""
+        entries = self.get_entries()
+        pos = self._selected
+        target = pos + direction
+        if target < 0 or target >= len(entries):
+            return
+
+        self.on_move_swap(entries, pos, target, direction)
+
+        # Swap positions in entries and all paired lists
+        entries[pos], entries[target] = entries[target], entries[pos]
+        for paired in self.move_paired_lists():
+            if len(paired) > max(pos, target):
+                paired[pos], paired[target] = paired[target], paired[pos]
+
+        self._selected = target
+        self.update_all_list_items()
+        self._apply_move_visual(target)
+        list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
+        list_view.index = target
+        self.refresh_fields(entries[target])
+
+    # ------------------------------------------------------------------
     # Event handlers
     # ------------------------------------------------------------------
 
@@ -363,7 +469,20 @@ class ListDetailPane(Widget):
                 self.refresh_fields(entries[index])
 
     def on_key(self, event) -> None:
-        """Handle Enter/Escape in edit mode, a/d shortcuts on list."""
+        """Handle move mode, Enter/Escape in edit mode, a/d/m shortcuts on list."""
+        if self._moving:
+            if event.key == "up":
+                self._move_entry(-1)
+            elif event.key == "down":
+                self._move_entry(1)
+            elif event.key == "enter":
+                self._exit_move_mode(commit=True)
+            elif event.key == "escape":
+                self._exit_move_mode(commit=False)
+            event.prevent_default()
+            event.stop()
+            return
+
         if self._editing:
             if event.key == "enter":
                 event.prevent_default()
@@ -385,6 +504,10 @@ class ListDetailPane(Widget):
                 event.prevent_default()
                 event.stop()
                 self.query_one(f"#{self.pane_id}-remove", Button).press()
+            elif event.key == "m" and self.move_enabled:
+                event.prevent_default()
+                event.stop()
+                self._enter_move_mode()
 
     def on_descendant_blur(self, event: DescendantBlur) -> None:
         """Commit edit when focus leaves the editing pane."""

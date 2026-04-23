@@ -72,8 +72,12 @@ class SkimFooter(Footer):
         tooltip: str = "",
     ) -> FooterKey:
         return FooterKey(
-            key, key_display, description, action,
-            disabled=not enabled, tooltip=tooltip,
+            key,
+            key_display,
+            description,
+            action,
+            disabled=not enabled,
+            tooltip=tooltip,
         ).data_bind(compact=Footer.compact)
 
     def compose(self) -> ComposeResult:
@@ -112,8 +116,11 @@ class SkimFooter(Footer):
                         + self.app.get_key_display(second_binding)
                     )
                     yield self._yield_key(
-                        binding.key, key_display, description,
-                        binding.action, enabled=enabled,
+                        binding.key,
+                        key_display,
+                        description,
+                        binding.action,
+                        enabled=enabled,
                     )
                     continue
 
@@ -131,7 +138,10 @@ class SkimFooter(Footer):
         if isinstance(focused, Tabs):
             yield self._yield_key("down", "\u2193", "Next field", "")
             yield self._yield_key(
-                "left", "\u2190/\u2192", "Prev/Next tab", "",
+                "left",
+                "\u2190/\u2192",
+                "Prev/Next tab",
+                "",
             )
 
 
@@ -145,7 +155,9 @@ class SkimStandaloneInput(Input):
 
     BINDINGS = [
         Binding("tab", "focus_next", "Next field", key_display="\u2193,\u21e5", show=True),
-        Binding("shift+tab", "focus_previous", "Previous field", key_display="\u2191,\u21e4", show=True),
+        Binding(
+            "shift+tab", "focus_previous", "Previous field", key_display="\u2191,\u21e4", show=True
+        ),
     ]
 
 
@@ -154,7 +166,9 @@ class SkimInput(Input):
 
     BINDINGS = [
         Binding("tab", "focus_next", "Next field", key_display="\u2193,\u21e5", show=True),
-        Binding("shift+tab", "focus_previous", "Previous field", key_display="\u2191,\u21e4", show=True),
+        Binding(
+            "shift+tab", "focus_previous", "Previous field", key_display="\u2191,\u21e4", show=True
+        ),
         Binding("enter", "submit", "Confirm changes", key_display="\u23ce", show=True),
         Binding("escape", "cancel_edit", "Discard changes", key_display="\U000f12b7", show=True),
     ]
@@ -167,10 +181,57 @@ class SkimListView(ListView):
     """ListView with footer bindings for navigation and edit."""
 
     BINDINGS = [
+        # Normal mode
         Binding("up", "cursor_up", "Prev item", show=True),
         Binding("down", "cursor_down", "Next item", show=True),
         Binding("enter", "select_cursor", "Edit", key_display="\u23ce", show=True),
+        Binding("m", "move_mode", "Move", show=True),
+        # Move mode (toggled via check_action)
+        Binding("up", "move_up", "Move up", show=True),
+        Binding("down", "move_down", "Move down", show=True),
+        Binding("enter", "confirm_move", "Confirm position", key_display="\u23ce", show=True),
+        Binding("escape", "cancel_move", "Discard changes", key_display="\U000f12b7", show=True),
     ]
+
+    def _parent_pane(self):
+        """Find the parent ListDetailPane, if any."""
+        from skim.tui.list_detail_pane import ListDetailPane
+
+        node = self.parent
+        while node is not None:
+            if isinstance(node, ListDetailPane):
+                return node
+            node = node.parent
+        return None
+
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        pane = self._parent_pane()
+        moving = pane is not None and pane._moving
+        move_supported = pane is not None and pane.move_enabled
+        normal_actions = {"cursor_up", "cursor_down", "select_cursor"}
+        move_actions = {"move_up", "move_down", "confirm_move", "cancel_move"}
+        if action == "move_mode":
+            return move_supported and not moving
+        if action in normal_actions:
+            return not moving
+        if action in move_actions:
+            return moving
+        return True
+
+    def action_move_mode(self) -> None:
+        """No-op — handled by LayerListPane.on_key via event bubbling."""
+
+    def action_move_up(self) -> None:
+        """No-op — handled by LayerListPane.on_key via event bubbling."""
+
+    def action_move_down(self) -> None:
+        """No-op — handled by LayerListPane.on_key via event bubbling."""
+
+    def action_confirm_move(self) -> None:
+        """No-op — handled by LayerListPane.on_key via event bubbling."""
+
+    def action_cancel_move(self) -> None:
+        """No-op — handled by LayerListPane.on_key via event bubbling."""
 
 
 class SkimButton(Button):
@@ -224,7 +285,9 @@ class SkimSelect(Select):
         Binding("enter", "show_overlay", "Show options", key_display="\u23ce,\u2423", show=True),
         Binding("space", "show_overlay", "Show options", show=False),
         Binding("tab", "focus_next", "Next field", key_display="\u2193,\u21e5", show=True),
-        Binding("shift+tab", "focus_previous", "Previous field", key_display="\u2191,\u21e4", show=True),
+        Binding(
+            "shift+tab", "focus_previous", "Previous field", key_display="\u2191,\u21e4", show=True
+        ),
         Binding("escape", "cancel_edit", "Discard changes", key_display="\U000f12b7", show=True),
         Binding("up", "skip_arrow", show=False),
         Binding("down", "skip_arrow", show=False),

@@ -22,7 +22,14 @@ from textual_autocomplete import AutoComplete, DropdownItem, TargetState
 from skim.application.render.styling import default_layer_color, make_gradient
 from skim.tui.app import LayerAdded, LayerRemoved
 from skim.tui.list_detail_pane import ListDetailPane
-from skim.tui.widgets import SkimInput, SkimSelect, SkimStandaloneInput, SkimSwitch, SkimVerticalScroll
+from skim.tui.widgets import (
+    SkimInput,
+    SkimListView,
+    SkimSelect,
+    SkimStandaloneInput,
+    SkimSwitch,
+    SkimVerticalScroll,
+)
 
 _COLOR_NAMES = sorted(webcolors.names())
 
@@ -195,10 +202,10 @@ class LayerColorListPane(ListDetailPane):
         color = entry.get("base_color", "")
         swatch = Static("\uebb4", classes="lc-swatch")
         self._safe_set_color(swatch, color)
-        return ListItem(Static(self.format_entry(index, entry)), swatch)
+        return ListItem(Static(self._padded_text(index, entry)), swatch)
 
     def _update_list_item_content(self, item: ListItem, index: int, entry: dict) -> None:
-        item.query_one(Static).update(self.format_entry(index, entry))
+        item.query_one(Static).update(self._padded_text(index, entry))
         for s in item.query(Static).filter(".lc-swatch"):
             self._safe_set_color(s, entry.get("base_color", ""))
 
@@ -284,6 +291,41 @@ class LayerColorListPane(ListDetailPane):
             self.query_one("#lc-gradient-type", SkimSelect).focus()
         except Exception:
             super()._focus_first_field()
+
+    # ------------------------------------------------------------------
+    # Move mode hooks
+    # ------------------------------------------------------------------
+
+    @property
+    def move_enabled(self) -> bool:
+        return True
+
+    def _keyboard_layers(self) -> list[dict]:
+        return self.config_data.get("keyboard", {}).get("layers", [])
+
+    def move_paired_lists(self) -> list[list[dict]]:
+        kl = self._keyboard_layers()
+        return [kl] if kl else []
+
+    def on_move_swap(
+        self,
+        entries: list[dict],
+        pos: int,
+        target: int,
+        direction: int,
+    ) -> None:
+        kl = self._keyboard_layers()
+        if len(kl) > max(pos, target):
+            moved = kl[pos]
+            neighbor = kl[target]
+            old_moved_index = moved["index"]
+            moved["index"] = neighbor["index"]
+            # Find next free adjacent index toward origin
+            used = {l.get("index", i) for i, l in enumerate(kl)} - {old_moved_index}
+            candidate = neighbor["index"] - direction
+            while candidate in used:
+                candidate -= direction
+            neighbor["index"] = max(0, min(31, candidate))
 
     def _is_inside_select(self) -> bool:
         """Check if the currently focused widget is inside a SkimSelect."""

@@ -176,3 +176,107 @@ class TestKeyboardTab:
             # After commit, layers are sorted by index; find the new one
             indices = {layer["index"] for layer in layers}
             assert 1 in indices
+
+    # -- Move mode tests --
+
+    @pytest.mark.asyncio()
+    async def test_move_enabled(self, config_with_layers):
+        """LayerListPane has move_enabled = True."""
+        app = KeyboardTabTestApp(config_data=config_with_layers)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(LayerListPane)
+            assert pane.move_enabled is True
+
+    @pytest.mark.asyncio()
+    async def test_enter_move_mode(self, config_with_layers):
+        """Pressing 'm' on the list enters move mode."""
+        app = KeyboardTabTestApp(config_data=config_with_layers)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            list_view = app.query_one("#layer-list", SkimListView)
+            list_view.focus()
+            await pilot.pause()
+            await pilot.press("m")
+            await pilot.pause()
+            pane = app.query_one(LayerListPane)
+            assert pane._moving is True
+
+    @pytest.mark.asyncio()
+    async def test_move_layer_down_swaps_positions(self, config_with_layers):
+        """Moving a layer down swaps it with the neighbor."""
+        app = KeyboardTabTestApp(config_data=config_with_layers)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(LayerListPane)
+            list_view = app.query_one("#layer-list", SkimListView)
+            list_view.focus()
+            await pilot.pause()
+            # Enter move mode on first layer (index=0, BASE)
+            await pilot.press("m")
+            await pilot.pause()
+            # Move down
+            await pilot.press("down")
+            await pilot.pause()
+            # Confirm
+            await pilot.press("enter")
+            await pilot.pause()
+            layers = app.config_data["keyboard"]["layers"]
+            # NAV should now be first, BASE second
+            assert layers[0]["label"] == "NAV"
+            assert layers[1]["label"] == "BASE"
+
+    @pytest.mark.asyncio()
+    async def test_move_layer_escape_rollback(self, config_with_layers):
+        """Pressing Escape during move mode rolls back all changes."""
+        app = KeyboardTabTestApp(config_data=config_with_layers)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(LayerListPane)
+            list_view = app.query_one("#layer-list", SkimListView)
+            list_view.focus()
+            await pilot.pause()
+            await pilot.press("m")
+            await pilot.pause()
+            await pilot.press("down")
+            await pilot.pause()
+            # Escape to rollback
+            await pilot.press("escape")
+            await pilot.pause()
+            layers = app.config_data["keyboard"]["layers"]
+            assert layers[0]["label"] == "BASE"
+            assert layers[1]["label"] == "NAV"
+            assert pane._moving is False
+
+    @pytest.mark.asyncio()
+    async def test_move_sparse_indices_adjacent_shift(self):
+        """Moving across a sparse gap uses adjacent shift for the displaced layer."""
+        config = SkimConfig().model_dump(mode="json")
+        config["keyboard"]["layers"] = [
+            {"index": 0, "label": "BASE", "name": "Letters", "id": "_BASE", "variant": None},
+            {"index": 5, "label": "NAV", "name": "Navigation", "id": "_NAV", "variant": None},
+            {"index": 7, "label": "SYM", "name": "Symbols", "id": "_SYM", "variant": None},
+        ]
+        app = KeyboardTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            list_view = app.query_one("#layer-list", SkimListView)
+            list_view.focus()
+            await pilot.pause()
+            # Select second layer (NAV, index=5), move it down toward SYM (index=7)
+            await pilot.press("down")  # highlight first item
+            await pilot.pause()
+            await pilot.press("down")  # highlight second item (NAV)
+            await pilot.pause()
+            await pilot.press("m")
+            await pilot.pause()
+            await pilot.press("down")
+            await pilot.pause()
+            await pilot.press("enter")
+            await pilot.pause()
+            layers = config["keyboard"]["layers"]
+            # NAV took SYM's index (7), SYM shifted adjacent (6)
+            nav = next(l for l in layers if l["label"] == "NAV")
+            sym = next(l for l in layers if l["label"] == "SYM")
+            assert nav["index"] == 7
+            assert sym["index"] == 6
