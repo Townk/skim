@@ -409,6 +409,110 @@ class TestConfigureCommand:
         config_data = mock_tui.call_args[1]["config_data"]
         assert config_data["output"]["copyright"] == "© 2026"
 
+    @patch("skim.cli.setup_logging")
+    @patch("skim.tui.launch_tui")
+    def test_layer_count_creates_default_layers(self, mock_tui, mock_setup):
+        """--layer-count creates N layers with defaults in interactive mode."""
+        runner = CliRunner()
+        runner.invoke(main, ["configure", "-i", "-n", "3"])
+        config_data = mock_tui.call_args[1]["config_data"]
+        layers = config_data["keyboard"]["layers"]
+        assert len(layers) == 3
+        assert layers[0]["index"] == 0
+        assert layers[1]["index"] == 1
+        assert layers[2]["index"] == 2
+        palette_layers = config_data["output"]["style"]["palette"]["layers"]
+        assert len(palette_layers) == 3
+
+    @patch("skim.cli.setup_logging")
+    @patch("skim.tui.launch_tui")
+    def test_layer_count_fills_sparse_gaps(self, mock_tui, mock_setup, tmp_path):
+        """--layer-count fills gaps in sparse layer indices."""
+        cfg = tmp_path / "cfg.yaml"
+        cfg.write_text(
+            yaml.dump(
+                {
+                    "keyboard": {
+                        "layers": [
+                            {"index": 0, "label": "L0", "name": "Base", "id": None, "variant": None},
+                            {"index": 1, "label": "L1", "name": "Nav", "id": None, "variant": None},
+                            {"index": 4, "label": "L4", "name": "Sym", "id": None, "variant": None},
+                            {"index": 5, "label": "L5", "name": "Num", "id": None, "variant": None},
+                        ],
+                    },
+                    "output": {
+                        "style": {
+                            "palette": {
+                                "layers": [
+                                    {"base_color": "#AA0000"},
+                                    {"base_color": "#BB0000"},
+                                    {"base_color": "#CC0000"},
+                                    {"base_color": "#DD0000"},
+                                ],
+                            },
+                        },
+                    },
+                }
+            )
+        )
+        runner = CliRunner()
+        runner.invoke(main, ["configure", "-i", "-c", str(cfg), "-n", "7"])
+        config_data = mock_tui.call_args[1]["config_data"]
+        layers = config_data["keyboard"]["layers"]
+        indices = sorted(l["index"] for l in layers)
+        assert indices == [0, 1, 2, 3, 4, 5, 6]
+        assert len(layers) == 7
+        # Original layers preserved
+        orig_names = {l["index"]: l["name"] for l in layers}
+        assert orig_names[0] == "Base"
+        assert orig_names[1] == "Nav"
+        assert orig_names[4] == "Sym"
+        assert orig_names[5] == "Num"
+        # New layers have default names
+        assert orig_names[2] == "Layer 2"
+        assert orig_names[3] == "Layer 3"
+        assert orig_names[6] == "Layer 6"
+        # Palette layers match count
+        palette_layers = config_data["output"]["style"]["palette"]["layers"]
+        assert len(palette_layers) == 7
+
+    @patch("skim.cli.setup_logging")
+    @patch("skim.tui.launch_tui")
+    def test_layer_count_no_change_when_enough_layers(self, mock_tui, mock_setup, tmp_path):
+        """--layer-count does nothing when config already has enough layers."""
+        cfg = tmp_path / "cfg.yaml"
+        cfg.write_text(
+            yaml.dump(
+                {
+                    "keyboard": {
+                        "layers": [
+                            {"index": i, "label": f"L{i}", "name": f"Layer {i}", "id": None, "variant": None}
+                            for i in range(5)
+                        ],
+                    },
+                    "output": {
+                        "style": {
+                            "palette": {
+                                "layers": [{"base_color": f"#00{i:02x}00"} for i in range(5)],
+                            },
+                        },
+                    },
+                }
+            )
+        )
+        runner = CliRunner()
+        runner.invoke(main, ["configure", "-i", "-c", str(cfg), "-n", "3"])
+        config_data = mock_tui.call_args[1]["config_data"]
+        assert len(config_data["keyboard"]["layers"]) == 5
+
+    @patch("skim.cli.setup_logging")
+    def test_layer_count_ignored_without_interactive(self, mock_setup, tmp_path):
+        """--layer-count alone (no -i, no -k) is silently ignored, shows help."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-n", "5"])
+        assert result.exit_code == 0
+        assert "--interactive" in result.output  # help text
+
 
 class TestDoctorCommand:
     """Tests for doctor subcommand."""

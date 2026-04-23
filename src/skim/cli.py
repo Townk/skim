@@ -382,6 +382,8 @@ def configure(
                     config_data["output"]["keymap_title"] = title
                 if copyright is not None:
                     config_data["output"]["copyright"] = copyright
+                if layer_count is not None:
+                    _apply_layer_count(config_data, layer_count)
                 launch_tui(
                     config_data=config_data,
                     output_path=output,
@@ -418,8 +420,53 @@ def _load_initial_config(config_path: Path | None) -> dict:
 
 
 def _apply_layer_count(config_data: dict, layer_count: int) -> None:
-    """Fill config_data with default layers up to layer_count. (Implemented in Task 3)"""
-    pass
+    """Fill config_data with default layers up to layer_count.
+
+    For indices 0 to layer_count-1, any index not already present in
+    keyboard.layers gets a default layer entry and a default palette
+    color. Existing layers are preserved. The resulting layers list is
+    sorted by index.
+    """
+    from skim.application.render.styling import default_layer_color
+
+    keyboard_layers = config_data.get("keyboard", {}).get("layers", [])
+    palette_layers = config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
+
+    existing_indices = {layer["index"] for layer in keyboard_layers}
+
+    if len(existing_indices) >= layer_count:
+        return
+
+    # Build index-to-position map for existing layers
+    index_to_kb = {layer["index"]: layer for layer in keyboard_layers}
+    index_to_palette = {}
+    for pos, layer in enumerate(keyboard_layers):
+        if pos < len(palette_layers):
+            index_to_palette[layer["index"]] = palette_layers[pos]
+
+    # Fill missing indices
+    for idx in range(layer_count):
+        if idx not in existing_indices:
+            index_to_kb[idx] = {
+                "index": idx,
+                "label": f"L{idx}",
+                "name": f"Layer {idx}",
+                "id": None,
+                "variant": None,
+            }
+            index_to_palette[idx] = {
+                "base_color": default_layer_color(idx),
+                "color_index": 2,
+                "gradient": None,
+            }
+
+    # Rebuild sorted by index
+    sorted_indices = sorted(index_to_kb.keys())
+    config_data["keyboard"]["layers"] = [index_to_kb[i] for i in sorted_indices]
+    config_data["output"]["style"]["palette"]["layers"] = [
+        index_to_palette.get(i, {"base_color": default_layer_color(i), "color_index": 2, "gradient": None})
+        for i in sorted_indices
+    ]
 
 
 def _write_config(output: Path, content: str, force: bool) -> None:
