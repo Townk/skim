@@ -106,7 +106,11 @@ Key Features
 - **Multiple input formats**: Supports Keybard, Vial, and QMK c2json files
 - **Flexible output**: Generate vector (SVG) or raster (PNG, JPEG, WEBP, AVIF) images
 - **Layer selection**: Generate all layers, specific layers, or overview images
-- **Customizable appearance**: Configure colors, borders, and layer names
+- **Layer indicator circles**: Visual indicators showing which layers each key targets
+- **Overview connectors**: Dotted connector lines from layer indicators to target layers
+- **Interactive TUI configurator**: Edit configuration files in a tabbed interface with color swatches, autocomplete, and live previews
+- **System doctor**: Check your environment for required dependencies
+- **Customizable appearance**: Configure colors, borders, layer names, titles, and copyright notices
 - **QMK color import**: Import named colors from your QMK ``color.h`` file
 - **Stdin support**: Pipe keymap data directly for scripting workflows
 
