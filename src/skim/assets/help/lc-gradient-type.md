@@ -1,6 +1,10 @@
 # Gradient Type
 
-Controls how the 6-step color gradient is generated for this layer.
+To make the generated keymap more polished and easy to read, SKIM does not use
+the same color for adjacent keys whenever possible. Since each layer has a
+single color associated with it, SKIM uses that color to create a gradient
+with 6 steps to distribute across keys in the same cluster when the user
+chooses the `Dynamic` gradient mode.
 
-- **Dynamic** — automatically generates a gradient from the base color. You set one color and the gradient steps are computed.
-- **Manual** — lets you specify each of the 6 gradient step colors individually.
+When the gradient type is set to `Manual`, you can set each of the 6 step
+colors manually, regardless of contrast or hue.

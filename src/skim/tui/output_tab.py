@@ -636,9 +636,9 @@ class OutputTab(Widget):
         hold_position = style.get("hold_symbol_position", "outward")
 
         with SkimVerticalScroll(can_focus=False):
-            # --- Layout section ---
+            # --- Page section ---
             with Vertical(classes="section"):
-                yield Static("Layout", classes="section-title section-title-first")
+                yield Static("Page", classes="section-title section-title-first")
                 with Horizontal(classes="field-row"):
                     yield Label("Width:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
@@ -665,51 +665,6 @@ class OutputTab(Widget):
                         id="layout-inset",
                         placeholder="20.0",
                         help_key="layout-inset",
-                    )
-
-            # --- Style section ---
-            with Vertical(classes="section"):
-                yield Static("Style", classes="section-title")
-                with Horizontal(classes="field-row"):
-                    yield Label("Use layer colors on keys:", classes="field-label")
-                    yield Static(" ", classes="swatch-spacer")
-                    yield SkimSwitch(
-                        value=style.get("use_layer_colors_on_keys", True),
-                        id="use-layer-colors",
-                        help_key="use-layer-colors",
-                    )
-                with Horizontal(classes="field-row"):
-                    yield Label("Hold symbol position:", classes="field-label")
-                    yield Static(" ", classes="swatch-spacer")
-                    yield SkimSelect(
-                        options=_HOLD_SYMBOL_OPTIONS,
-                        value=hold_position,
-                        id="hold-symbol-position",
-                        help_key="hold-symbol-position",
-                    )
-                with Horizontal(classes="field-row"):
-                    yield Label("Show layer indicators:", classes="field-label")
-                    yield Static(" ", classes="swatch-spacer")
-                    yield SkimSwitch(
-                        value=style.get("show_layer_indicators", True),
-                        id="show-layer-indicators",
-                        help_key="show-layer-indicators",
-                    )
-                with Horizontal(classes="field-row"):
-                    yield Label("Show layer connectors:", classes="field-label")
-                    yield Static(" ", classes="swatch-spacer")
-                    yield SkimSwitch(
-                        value=style.get("show_layer_connectors", True),
-                        id="show-layer-connectors",
-                        help_key="show-layer-connectors",
-                    )
-                with Horizontal(classes="field-row"):
-                    yield Label("Use system fonts:", classes="field-label")
-                    yield Static(" ", classes="swatch-spacer")
-                    yield SkimSwitch(
-                        value=style.get("use_system_fonts", False),
-                        id="use-system-fonts",
-                        help_key="use-system-fonts",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Border enabled:", classes="field-label")
@@ -738,15 +693,60 @@ class OutputTab(Widget):
                         help_key="border-radius",
                     )
 
+            # --- Style section ---
+            with Vertical(classes="section"):
+                yield Static("Style", classes="section-title")
+                with Horizontal(classes="field-row"):
+                    yield Label("Hold symbol position:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
+                    yield SkimSelect(
+                        options=_HOLD_SYMBOL_OPTIONS,
+                        value=hold_position,
+                        id="hold-symbol-position",
+                        help_key="hold-symbol-position",
+                    )
+                with Horizontal(classes="field-row"):
+                    yield Label("Use system fonts:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
+                    yield SkimSwitch(
+                        value=style.get("use_system_fonts", False),
+                        id="use-system-fonts",
+                        help_key="use-system-fonts",
+                    )
+                with Horizontal(classes="field-row"):
+                    yield Label("Use layer colors on keys:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
+                    yield SkimSwitch(
+                        value=style.get("use_layer_colors_on_keys", True),
+                        id="use-layer-colors",
+                        help_key="use-layer-colors",
+                    )
+                with Horizontal(classes="field-row"):
+                    yield Label("Show layer indicators:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
+                    yield SkimSwitch(
+                        value=style.get("show_layer_indicators", True),
+                        id="show-layer-indicators",
+                        help_key="show-layer-indicators",
+                    )
+                with Horizontal(classes="field-row"):
+                    yield Label("Show layer connectors:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
+                    yield SkimSwitch(
+                        value=style.get("show_layer_connectors", True),
+                        id="show-layer-connectors",
+                        help_key="show-layer-connectors",
+                    )
+
             # --- Palette section ---
             with Vertical(classes="section"):
                 yield Static("Palette", classes="section-title")
                 for color_label, field_id, config_key, placeholder in [
-                    ("Neutral color:", "palette-neutral-color", "neutral_color", "#6F768B"),
-                    ("Text color:", "palette-text-color", "text_color", "black"),
-                    ("Key label color:", "palette-key-label-color", "key_label_color", "white"),
                     ("Background color:", "palette-background-color", "background_color", "white"),
+                    ("Text color:", "palette-text-color", "text_color", "black"),
                     ("Border color:", "palette-border-color", "border_color", "black"),
+                    ("Neutral color:", "palette-neutral-color", "neutral_color", "#6F768B"),
+                    ("Key label color:", "palette-key-label-color", "key_label_color", "white"),
                 ]:
                     color_val = palette.get(config_key, "") or ""
                     with Horizontal(classes="field-row"):

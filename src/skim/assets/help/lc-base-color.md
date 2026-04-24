@@ -1,7 +1,11 @@
 # Main Gradient Step Color
 
-The base color for this layer's gradient (dynamic mode only).
+This is the color associated with this layer everywhere in the keymap. It is
+also the base color used to create a color gradient (dynamic mode only) to
+paint different keys on the layer layout.
 
-The gradient is generated around this color at the step position defined by the gradient step index. Enter a CSS color name (e.g. `dodgerblue`) or hex value (e.g. `#1E90FF`).
+The gradient is generated around this color at the **step** position defined by
+the gradient step index.
 
-Autocomplete is available for named colors.
+Accepts CSS color names or hex values. Autocomplete is available for named
+colors.

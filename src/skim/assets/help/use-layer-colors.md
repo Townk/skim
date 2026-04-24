@@ -1,5 +1,8 @@
 # Use Layer Colors on Keys
 
-When enabled, individual key backgrounds are tinted with the layer's color to visually distinguish which layer a key belongs to.
+Only relevant for keys that trigger a layer change in your keymap.
 
-When disabled, all keys use the same neutral background color regardless of layer.
+When enabled, individual key backgrounds are tinted with the target layer color
+to indicate which layer they will trigger.
+
+When disabled, all keys use their default background color.

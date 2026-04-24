@@ -1,6 +1,7 @@
 # Keymap Title
 
-The title displayed at the top of the rendered keymap SVG.
+The text used as title in the _overview keymap_ image (individual layer keymap
+images use the layer name as title).
 
 Leave empty to use an auto-generated title based on the config filename.
 

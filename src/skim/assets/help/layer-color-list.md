@@ -1,11 +1,12 @@
 # Layer Colors
 
-The list of color settings for each layer. Each entry defines how a layer's keys and indicator are colored in the rendered keymap.
+The list of color settings for each layer. Each entry defines how layer keys
+and indicators are colored in the rendered keymap.
 
 ## Interaction
 
 | Key | Action |
-|-----|--------|
+| --- | ------ |
 | Enter | Edit the selected layer's color settings |
 | A | Add a new layer color entry |
 | D | Delete the selected entry |

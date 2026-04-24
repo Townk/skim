@@ -171,5 +171,6 @@ output:
         gradient: null
     use_system_fonts: false
     show_layer_indicators: true
-  keymap_title: COLEMAK Miryoku-inspired Layout
-  copyright: "\xA9 Thiago Alves"
+    show_layer_connectors: true
+  keymap_title: Miryoku-inspired Layout
+  copyright: "\xA9 2025, Thiago Alves"

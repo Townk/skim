@@ -16,6 +16,7 @@ from textual.actions import SkipAction
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, ScrollableContainer, Vertical
+from textual.geometry import Size
 from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import (
@@ -200,6 +201,35 @@ class ErrorDialog(ModalScreen[None]):
         self.dismiss(None)
 
 
+class _HelpMarkdown(Markdown):
+    """Markdown widget that reports its content height for layout sizing.
+
+    Overrides ``get_content_height`` so that a parent container with
+    ``height: auto; max-height: 80%`` can size itself to the content on
+    the very first frame — no post-render measurement or flashing.
+    """
+
+    def get_content_height(
+        self, container: Size, viewport: Size, width: int
+    ) -> int:
+        total = 0
+        children = list(self.children)
+        # Zero the last child's bottom margin so the virtual size matches
+        # the reported content height (prevents a spurious scrollbar).
+        if children:
+            last = children[-1]
+            if last.styles.margin.bottom:
+                last.styles.margin = (last.styles.margin.top, 0, 0, 0)
+        for child in children:
+            m = child.styles.margin
+            total += (
+                m.top
+                + child.get_content_height(container, viewport, width)
+                + m.bottom
+            )
+        return total
+
+
 class HelpScreen(ModalScreen[None]):
     """Modal dialog to show contextual help as rendered markdown."""
 
@@ -214,27 +244,28 @@ class HelpScreen(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="help-dialog"):
-            with ScrollableContainer(id="help-scroll", can_focus=True):
-                yield Markdown(self.content)
+            yield _HelpMarkdown(self.content)
 
     def on_mount(self) -> None:
-        self.query_one("#help-scroll", ScrollableContainer).focus()
+        md = self.query_one(_HelpMarkdown)
+        md.can_focus = True
+        md.focus()
 
     def on_key(self, event: events.Key) -> None:
-        scroll = self.query_one("#help-scroll", ScrollableContainer)
+        md = self.query_one(_HelpMarkdown)
         key = event.key
         if key == "j":
-            scroll.scroll_down(animate=False)
+            md.scroll_down(animate=False)
         elif key == "k":
-            scroll.scroll_up(animate=False)
+            md.scroll_up(animate=False)
         elif key in ("ctrl+d", "ctrl+f"):
-            scroll.scroll_page_down(animate=False)
+            md.scroll_page_down(animate=False)
         elif key in ("ctrl+u", "ctrl+b"):
-            scroll.scroll_page_up(animate=False)
+            md.scroll_page_up(animate=False)
         elif key == "G":
-            scroll.scroll_end(animate=False)
+            md.scroll_end(animate=False)
         elif key == "g":
-            scroll.scroll_home(animate=False)
+            md.scroll_home(animate=False)
         elif key == "ctrl+q":
             self.dismiss(None)
             self.app.call_later(self.app.action_request_quit)
@@ -291,14 +322,25 @@ class SkimConfigApp(App):
         padding: 0 3;
     }
     #help-dialog {
-        padding: 0 2 1 2;
+        padding: 0;
         width: 70;
-        max-height: 50%;
+        height: auto;
+        max-height: 80%;
         border: thick $background 80%;
         background: $surface;
     }
-    #help-scroll {
-        height: 1fr;
+    #help-dialog _HelpMarkdown {
+        padding: 1 3;
+        overflow-y: auto;
+        max-height: 100%;
+    }
+    #help-dialog MarkdownH1 {
+        background: transparent;
+        margin: 0 0 1 0;
+    }
+    #help-dialog MarkdownH2,
+    #help-dialog MarkdownH3 {
+        background: transparent;
     }
     #save-target-buttons {
         width: 100%;
@@ -633,7 +675,7 @@ class SkimConfigApp(App):
     def action_scroll_view(self, direction: str) -> None:
         """Scroll the VerticalScroll in the active tab (skip ListViews)."""
         if isinstance(self.screen, HelpScreen):
-            scroll = self.screen.query_one("#help-scroll", ScrollableContainer)
+            scroll = self.screen.query_one(_HelpMarkdown)
             if direction == "up":
                 scroll.scroll_up(animate=False)
             else:
@@ -788,7 +830,7 @@ class SkimConfigApp(App):
         # HelpScreen: scroll content instead of navigating.
         if isinstance(self.screen, HelpScreen):
             if direction in ("up", "down"):
-                scroll = self.screen.query_one("#help-scroll", ScrollableContainer)
+                scroll = self.screen.query_one(_HelpMarkdown)
                 if direction == "up":
                     scroll.scroll_up(animate=False)
                 else:

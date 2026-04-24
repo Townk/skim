@@ -1,5 +1,9 @@
 # Show Layer Connectors
 
-When enabled, circular dot connectors are drawn between layers in the rendered keymap to show the visual flow between them.
+Only relevant for keys that trigger a layer change in your keymap on the
+overview keymap image.
 
-Disable this for a cleaner look without the connecting elements between layers.
+When enabled, a dotted line connecting the **layer indicator badge** to the
+layer layout is drawn in the overview keymap image.
+
+This option has no effect if the **layer indicator** option is disabled.
