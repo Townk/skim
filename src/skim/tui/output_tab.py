@@ -61,6 +61,10 @@ class ColorAutoComplete(AutoComplete):
     new value.
     """
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._just_completed: bool = False
+
     def should_show_dropdown(self, search_string: str) -> bool:
         option_list = self.option_list
         if option_list.option_count <= 1:
@@ -74,8 +78,15 @@ class ColorAutoComplete(AutoComplete):
         super().apply_completion(color_name, state)
 
     def post_completion(self) -> None:
+        self._just_completed = True
         super().post_completion()
         self.target.post_message(Input.Changed(self.target, self.target.value))
+
+    def _handle_target_update(self) -> None:
+        if self._just_completed:
+            self._just_completed = False
+            return
+        super()._handle_target_update()
 
 
 _HOLD_SYMBOL_OPTIONS = [
