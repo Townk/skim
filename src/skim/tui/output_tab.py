@@ -162,7 +162,7 @@ class LayerColorListPane(ListDetailPane):
     """
 
     def __init__(self, config_data: dict[str, Any], **kwargs: Any) -> None:
-        super().__init__(pane_id="layer-colors", list_help_key="layer-color-list", **kwargs)
+        super().__init__(pane_id="layer-colors", list_help_key="output-layer-color-list", **kwargs)
         self.config_data = config_data
         self._select_active: bool = False
 
@@ -229,7 +229,7 @@ class LayerColorListPane(ListDetailPane):
                 value="dynamic",
                 id="lc-gradient-type",
                 disabled=True,
-                help_key="lc-gradient-type",
+                help_key="output-layer-color-gradient-type",
             )
         with Horizontal(classes="field-row"):
             yield Label("Main gradient step index:", classes="field-label")
@@ -239,7 +239,7 @@ class LayerColorListPane(ListDetailPane):
                 id="lc-color-index",
                 placeholder="2",
                 disabled=True,
-                help_key="lc-color-index",
+                help_key="output-layer-color-color-index",
             )
         # --- Dynamic mode fields ---
         with Horizontal(classes="field-row", id="lc-dynamic-color"):
@@ -253,7 +253,7 @@ class LayerColorListPane(ListDetailPane):
                 placeholder="#RRGGBB",
                 disabled=True,
                 suggester=_COLOR_SUGGESTER,
-                help_key="lc-base-color",
+                help_key="output-layer-color-base-color",
             )
             yield lc_color_input
         yield ColorAutoComplete(lc_color_input, candidates=_color_candidates)
@@ -289,7 +289,7 @@ class LayerColorListPane(ListDetailPane):
                     placeholder="#RRGGBB",
                     disabled=True,
                     suggester=_COLOR_SUGGESTER,
-                    help_key="lc-step",
+                    help_key="output-layer-color-step",
                 )
                 yield step_input
             yield ColorAutoComplete(step_input, candidates=_color_candidates)
@@ -657,7 +657,7 @@ class OutputTab(Widget):
                         value=str(layout.get("width", 800.0)),
                         id="layout-width",
                         placeholder="800.0",
-                        help_key="layout-width",
+                        help_key="output-page-width",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Margin:", classes="field-label")
@@ -666,7 +666,7 @@ class OutputTab(Widget):
                         value=str(spacing.get("margin", 0.0)),
                         id="layout-margin",
                         placeholder="0.0",
-                        help_key="layout-margin",
+                        help_key="output-page-margin",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Inset:", classes="field-label")
@@ -675,7 +675,7 @@ class OutputTab(Widget):
                         value=str(spacing.get("inset", 20.0)),
                         id="layout-inset",
                         placeholder="20.0",
-                        help_key="layout-inset",
+                        help_key="output-page-inset",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Border enabled:", classes="field-label")
@@ -683,7 +683,7 @@ class OutputTab(Widget):
                     yield SkimSwitch(
                         value=border is not None,
                         id="border-enabled",
-                        help_key="border-enabled",
+                        help_key="output-page-border-enabled",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Border width:", classes="field-label")
@@ -692,7 +692,7 @@ class OutputTab(Widget):
                         value=str(border.get("width", 2.0)) if border else "2.0",
                         id="border-width",
                         placeholder="2.0",
-                        help_key="border-width",
+                        help_key="output-page-border-width",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Border radius:", classes="field-label")
@@ -701,7 +701,7 @@ class OutputTab(Widget):
                         value=str(border.get("radius", 10.0)) if border else "10.0",
                         id="border-radius",
                         placeholder="10.0",
-                        help_key="border-radius",
+                        help_key="output-page-border-radius",
                     )
 
             # --- Style section ---
@@ -714,7 +714,7 @@ class OutputTab(Widget):
                         options=_HOLD_SYMBOL_OPTIONS,
                         value=hold_position,
                         id="hold-symbol-position",
-                        help_key="hold-symbol-position",
+                        help_key="output-style-hold-symbol-position",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Use system fonts:", classes="field-label")
@@ -722,7 +722,7 @@ class OutputTab(Widget):
                     yield SkimSwitch(
                         value=style.get("use_system_fonts", False),
                         id="use-system-fonts",
-                        help_key="use-system-fonts",
+                        help_key="output-style-use-system-fonts",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Use layer colors on keys:", classes="field-label")
@@ -730,7 +730,7 @@ class OutputTab(Widget):
                     yield SkimSwitch(
                         value=style.get("use_layer_colors_on_keys", True),
                         id="use-layer-colors",
-                        help_key="use-layer-colors",
+                        help_key="output-style-use-layer-colors",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Show layer indicators:", classes="field-label")
@@ -738,7 +738,7 @@ class OutputTab(Widget):
                     yield SkimSwitch(
                         value=style.get("show_layer_indicators", True),
                         id="show-layer-indicators",
-                        help_key="show-layer-indicators",
+                        help_key="output-style-show-layer-indicators",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Show layer connectors:", classes="field-label")
@@ -746,7 +746,7 @@ class OutputTab(Widget):
                     yield SkimSwitch(
                         value=style.get("show_layer_connectors", True),
                         id="show-layer-connectors",
-                        help_key="show-layer-connectors",
+                        help_key="output-style-show-layer-connectors",
                     )
 
             # --- Palette section ---

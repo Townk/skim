@@ -490,7 +490,7 @@ class SkimConfigApp(App):
                 from skim.tui.keycodes_tab import KeycodesTab
 
                 yield KeycodesTab(config_data=self.config_data)
-            with TabPane("Style", id="output-tab"):
+            with TabPane("Output", id="output-tab"):
                 from skim.tui.output_tab import OutputTab
 
                 yield OutputTab(config_data=self.config_data)

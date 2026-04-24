@@ -46,32 +46,32 @@ class TestWidgetHelpKey:
         assert widget.help_key is None
 
     def test_skim_input_help_key_set(self):
-        widget = SkimInput(help_key="layer-index")
-        assert widget.help_key == "layer-index"
+        widget = SkimInput(help_key="keyboard-layer-index")
+        assert widget.help_key == "keyboard-layer-index"
 
     def test_skim_standalone_input_help_key_default_none(self):
         widget = SkimStandaloneInput()
         assert widget.help_key is None
 
     def test_skim_standalone_input_help_key_set(self):
-        widget = SkimStandaloneInput(help_key="keymap-title")
-        assert widget.help_key == "keymap-title"
+        widget = SkimStandaloneInput(help_key="keyboard-info-title")
+        assert widget.help_key == "keyboard-info-title"
 
     def test_skim_select_help_key_default_none(self):
         widget = SkimSelect(options=[("A", "a")])
         assert widget.help_key is None
 
     def test_skim_select_help_key_set(self):
-        widget = SkimSelect(options=[("A", "a")], help_key="hold-symbol-position")
-        assert widget.help_key == "hold-symbol-position"
+        widget = SkimSelect(options=[("A", "a")], help_key="output-style-hold-symbol-position")
+        assert widget.help_key == "output-style-hold-symbol-position"
 
     def test_skim_switch_help_key_default_none(self):
         widget = SkimSwitch()
         assert widget.help_key is None
 
     def test_skim_switch_help_key_set(self):
-        widget = SkimSwitch(help_key="double-south")
-        assert widget.help_key == "double-south"
+        widget = SkimSwitch(help_key="keyboard-feature-double-south")
+        assert widget.help_key == "keyboard-feature-double-south"
 
     def test_skim_button_help_key_default_none(self):
         widget = SkimButton("Click")
@@ -86,5 +86,5 @@ class TestWidgetHelpKey:
         assert widget.help_key is None
 
     def test_skim_list_view_help_key_set(self):
-        widget = SkimListView(help_key="layer-list")
-        assert widget.help_key == "layer-list"
+        widget = SkimListView(help_key="keyboard-layer-list")
+        assert widget.help_key == "keyboard-layer-list"

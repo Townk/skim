@@ -34,7 +34,7 @@ class LayerListPane(ListDetailPane):
     """
 
     def __init__(self, config_data: dict[str, Any], **kwargs: Any) -> None:
-        super().__init__(pane_id="layer", list_help_key="layer-list", **kwargs)
+        super().__init__(pane_id="layer", list_help_key="keyboard-layer-list", **kwargs)
         self.config_data = config_data
 
     def get_entries(self) -> list[dict]:
@@ -69,7 +69,7 @@ class LayerListPane(ListDetailPane):
                 id="layer-index",
                 placeholder="e.g. 0",
                 disabled=True,
-                help_key="layer-index",
+                help_key="keyboard-layer-index",
             )
         with Horizontal(classes="field-row"):
             yield Label("ID:", classes="field-label")
@@ -78,7 +78,7 @@ class LayerListPane(ListDetailPane):
                 id="layer-id",
                 placeholder="e.g. _BASE (optional)",
                 disabled=True,
-                help_key="layer-id",
+                help_key="keyboard-layer-id",
             )
         with Horizontal(classes="field-row"):
             yield Label("Name:", classes="field-label")
@@ -87,7 +87,7 @@ class LayerListPane(ListDetailPane):
                 id="layer-name",
                 placeholder="e.g. Letters",
                 disabled=True,
-                help_key="layer-name",
+                help_key="keyboard-layer-name",
             )
         with Horizontal(classes="field-row"):
             yield Label("Variant:", classes="field-label")
@@ -96,7 +96,7 @@ class LayerListPane(ListDetailPane):
                 id="layer-variant",
                 placeholder="e.g. COLEMAK (optional)",
                 disabled=True,
-                help_key="layer-variant",
+                help_key="keyboard-layer-variant",
             )
 
     def detail_field_ids(self) -> set[str]:
@@ -294,7 +294,7 @@ class KeyboardTab(Widget):
                         value=keymap_title,
                         id="keymap-title-text",
                         placeholder="e.g. My Keymap (leave empty for auto)",
-                        help_key="keymap-title",
+                        help_key="keyboard-info-title",
                     )
                 with Horizontal(classes="field-row"):
                     yield Label("Copyright:", classes="field-label")
@@ -302,14 +302,14 @@ class KeyboardTab(Widget):
                         value=copyright_text,
                         id="copyright-text",
                         placeholder="e.g. (c) 2024 Your Name (leave empty for none)",
-                        help_key="copyright",
+                        help_key="keyboard-info-copyright",
                     )
 
             with Vertical(id="features-section"):
                 yield Static("Features", classes="section-title")
                 with Horizontal(id="features-row"):
                     yield Label("Double South: ", classes="field-label")
-                    yield SkimSwitch(value=double_south, id="double-south", help_key="double-south")
+                    yield SkimSwitch(value=double_south, id="double-south", help_key="keyboard-feature-double-south")
 
             yield Static("Layers", classes="section-title")
             yield LayerListPane(config_data=self.config_data)
