@@ -103,14 +103,14 @@ This project uses `uv` for dependency management and `just` as a command runner.
 git clone https://github.com/Townk/skim.git
 cd skim
 
-# Install dependencies
+# Install dependencies (dev + docs + extras)
 just sync
 ```
 
 ### Testing
 
 ```bash
-# Run all tests (unit + integration)
+# Run all tests (unit + integration) with coverage
 just tests
 
 # Run only unit tests
@@ -122,25 +122,34 @@ just integration-tests
 
 ### Code Quality
 
-Run the full suite of checks (linting, formatting, type checking) before
-submitting a PR:
-
 ```bash
+# Run all checks (lint, format, type check)
 just check
+
+# Quick feedback loop (format + lint + typecheck)
+just quick-check
+
+# Full CI pipeline (all checks + all tests)
+just ci
 ```
 
 Individual checks:
 
 ```bash
-just lint      # Run ruff linter
-just format    # Format code with ruff
-just typecheck # Run basedpyright
+just lint          # Run ruff linter
+just format        # Format code with ruff
+just format-check  # Check formatting without modifying
+just fix           # Auto-fix lint issues
+just typecheck     # Run basedpyright
 ```
 
-### Building Documentation
+### Building
 
 ```bash
-just build-docs
+just build       # Build the package
+just build-docs  # Build Sphinx documentation
+just serve-docs  # Build and open documentation in browser
+just clean       # Remove build artifacts and caches
 ```
 
 ## License
