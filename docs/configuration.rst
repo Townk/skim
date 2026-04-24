@@ -101,6 +101,53 @@ This section controls the visual appearance of the generated images.
                 - "#442200"
                 - "#221100"
 
+Interactive TUI Configurator
+----------------------------
+
+The interactive TUI provides a visual editor for configuration files:
+
+.. code-block:: bash
+
+    # Create a new configuration
+    skim configure --interactive
+
+    # Edit an existing configuration
+    skim configure --interactive --config skim-config.yaml
+
+    # Pre-populate layers from a keymap file
+    skim configure --interactive --keymap my-keymap.kbi
+
+    # Pre-create a specific number of layers
+    skim configure --interactive --layer-count 8
+
+The TUI has three tabs:
+
+- **Keyboard**: Edit layer names, indices, variants, and hardware features.
+- **Keycodes**: Define keycode pre-processing rules and display overrides.
+- **Style**: Configure colors, borders, gradients, and visual options.
+
+Key bindings:
+
+- ``Tab`` / ``Shift+Tab``: Navigate between panels
+- ``Enter``: Edit a field or select a list item
+- ``Escape``: Cancel editing / go back
+- ``Ctrl+S``: Save and quit
+- ``F1`` or ``Alt+H``: Show contextual help for the focused field
+
+Doctor Command
+--------------
+
+Use ``skim doctor`` to check your system environment:
+
+.. code-block:: bash
+
+    skim doctor
+
+This verifies:
+
+- Whether Cairo is installed (for Cairo render engine)
+- Whether Playwright/Chromium is available (for Chromium render engine)
+
 Render Engines
 --------------
 
