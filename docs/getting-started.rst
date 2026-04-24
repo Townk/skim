@@ -68,25 +68,52 @@ To use the Cairo render engine:
 
 - **Windows:** GTK+ runtime is required (instructions vary).
 
+Checking Your Setup
+-------------------
+
+After installation, run the ``doctor`` command to verify your environment:
+
+.. code-block:: bash
+
+    skim doctor
+
+This checks for available render engines (Chromium, Cairo) and reports any
+missing optional dependencies.
+
 Quick Start
 -----------
 
-1. **Generate a default configuration:**
+1. **Launch the interactive configurator:**
+
+   The easiest way to create a configuration file is the interactive TUI:
 
    .. code-block:: bash
 
-       skim configure --output skim-config.yaml
+       skim configure --interactive
 
-2. **Generate images from a keymap:**
+   This opens a tabbed interface where you can set layer names, colors,
+   keycodes, and styling options. Save with ``Ctrl+S``.
+
+2. **Or generate a config from a keymap:**
+
+   If you have a Keybard, Vial, or QMK c2json file, extract a config from it:
 
    .. code-block:: bash
 
-       skim generate --keymap my-keymap.json --config skim-config.yaml
+       skim configure --keymap my-keymap.kbi --output skim-config.yaml
 
-   This will generate SVG images for all layers in the current directory.
+3. **Generate images:**
 
-3. **Explore options:**
+   .. code-block:: bash
+
+       skim generate --keymap my-keymap.kbi --config skim-config.yaml
+
+   This generates SVG images for all layers plus an overview in the current
+   directory.
+
+4. **Explore options:**
 
    .. code-block:: bash
 
        skim generate --help
+       skim configure --help
