@@ -49,9 +49,9 @@ def sample_config():
     output = Output(style=style)
     keyboard = Keyboard(
         layers=(
-            KeyboardLayer(index=0, label="1", name="Base Layer"),
-            KeyboardLayer(index=1, label="2", name="Symbol Layer"),
-            KeyboardLayer(index=2, label="3", name="Nav Layer"),
+            KeyboardLayer(index=0, name="Base Layer"),
+            KeyboardLayer(index=1, name="Symbol Layer"),
+            KeyboardLayer(index=2, name="Nav Layer"),
         )
     )
     return SkimConfig(output=output, keyboard=keyboard)
@@ -289,8 +289,8 @@ class TestDrawKeymapWithSpecialKeys:
         """Drawing renders with layer switch keys."""
         keys = [SvalboardTargetKey(label=f"K{i}") for i in range(60)]
         # Add some layer switch keys
-        keys[0] = SvalboardTargetKey(label="L1", layer_switch=1)
-        keys[10] = SvalboardTargetKey(label="L0", layer_switch=0)
+        keys[0] = SvalboardTargetKey(layer_switch=1)
+        keys[10] = SvalboardTargetKey(layer_switch=0)
 
         layer = SvalboardLayout.from_sequence(keys)
         keymap = SvalboardKeymap(layers={0: layer})

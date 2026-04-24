@@ -101,7 +101,7 @@ class TestRenderContextKeyFillColor:
             use_layer_colors_on_keys=False,
             hold_symbol_position=SplitSidePosition.OUTWARD,
         )
-        key = SvalboardTargetKey(label="A", layer_switch=1)
+        key = SvalboardTargetKey(layer_switch=1)
         result = ctx.key_fill_color(key, default="#AABBCC")
         assert result == "#AABBCC"
 
@@ -114,7 +114,7 @@ class TestRenderContextKeyFillColor:
             use_layer_colors_on_keys=True,
             hold_symbol_position=SplitSidePosition.OUTWARD,
         )
-        key = SvalboardTargetKey(label="A", layer_switch=None)
+        key = SvalboardTargetKey(layer_switch=None)
         result = ctx.key_fill_color(key, default="#AABBCC")
         assert result == "#AABBCC"
 
@@ -127,7 +127,7 @@ class TestRenderContextKeyFillColor:
             use_layer_colors_on_keys=True,
             hold_symbol_position=SplitSidePosition.OUTWARD,
         )
-        key = SvalboardTargetKey(label="L1", layer_switch=1)
+        key = SvalboardTargetKey(layer_switch=1)
         result = ctx.key_fill_color(key, default="#AABBCC")
         # Should return color from layer 1's gradient at color_index (2)
         assert result == "#003300"
@@ -141,7 +141,7 @@ class TestRenderContextKeyFillColor:
             use_layer_colors_on_keys=True,
             hold_symbol_position=SplitSidePosition.OUTWARD,
         )
-        key = SvalboardTargetKey(label="L1", layer_switch=1)
+        key = SvalboardTargetKey(layer_switch=1)
         result = ctx.key_fill_color(key, default="#AABBCC", use_accent=True)
         # color_index is 2, so accent is at index 1
         assert result == "#002200"
@@ -155,7 +155,7 @@ class TestRenderContextKeyFillColor:
             use_layer_colors_on_keys=True,
             hold_symbol_position=SplitSidePosition.OUTWARD,
         )
-        key = SvalboardTargetKey(label="L99", layer_switch=99)
+        key = SvalboardTargetKey(layer_switch=99)
         result = ctx.key_fill_color(key, default="#AABBCC")
         assert result == "#AABBCC"
 
@@ -168,7 +168,7 @@ class TestRenderContextKeyFillColor:
             use_layer_colors_on_keys=True,
             hold_symbol_position=SplitSidePosition.OUTWARD,
         )
-        key = SvalboardTargetKey(label="L-1", layer_switch=-1)
+        key = SvalboardTargetKey(layer_switch=-1)
         result = ctx.key_fill_color(key, default="#AABBCC")
         assert result == "#AABBCC"
 
@@ -182,7 +182,7 @@ class TestRenderContextKeyFillColor:
             hold_symbol_position=SplitSidePosition.OUTWARD,
             qmk_index_to_position=lambda idx: {0: 0, 15: 1, 3: 2}.get(idx),
         )
-        key = SvalboardTargetKey(label="L15", layer_switch=15)
+        key = SvalboardTargetKey(layer_switch=15)
         result = ctx.key_fill_color(key, default="#AABBCC")
         assert result == "#003300"
 
@@ -196,7 +196,7 @@ class TestRenderContextKeyFillColor:
             hold_symbol_position=SplitSidePosition.OUTWARD,
             qmk_index_to_position=lambda _idx: None,
         )
-        key = SvalboardTargetKey(label="L99", layer_switch=99)
+        key = SvalboardTargetKey(layer_switch=99)
         result = ctx.key_fill_color(key, default="#AABBCC")
         assert result == "#AABBCC"
 
@@ -258,7 +258,7 @@ class TestClusterRenderContext:
             hold_symbol_position=SplitSidePosition.OUTWARD,
             side=KeyboardSide.LEFT,
         )
-        key = SvalboardTargetKey(label="L1", layer_switch=1)
+        key = SvalboardTargetKey(layer_switch=1)
         result = ctx.key_fill_color(key, default="#AABBCC")
         # Should use layer colors
         assert result == "#003300"

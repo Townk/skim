@@ -276,14 +276,14 @@ class TestKeyWithLayerSwitch:
 
     def test_key_with_layer_switch(self, cluster_context, key_layout, sample_palette):
         """Key with layer_switch uses layer colors."""
-        target = SvalboardTargetKey(label="L1", layer_switch=0)
+        target = SvalboardTargetKey(layer_switch=0)
         colors = FingerClusterKeyColors(primary="#FF0000", accent="#AA0000")
         key = CenterKey(cluster_context, target, colors, key_layout)
         assert key is not None
 
     def test_key_without_layer_switch(self, cluster_context, key_layout):
         """Key without layer_switch uses default colors."""
-        target = SvalboardTargetKey(label="A", layer_switch=None)
+        target = SvalboardTargetKey(layer_switch=None)
         colors = FingerClusterKeyColors(primary="#FF0000", accent="#AA0000")
         key = CenterKey(cluster_context, target, colors, key_layout)
         assert key is not None

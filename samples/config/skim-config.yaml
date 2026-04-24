@@ -4,47 +4,38 @@ keyboard:
   layers:
   - index: 0
     id: _BASE
-    label: BASE
     name: Letters
     variant: COLEMAK
   - index: 1
     id: _GAME
-    label: GAME
     name: Gaming
     variant: null
   - index: 2
     id: _NAV
-    label: NAV
     name: Navigation
     variant: null
   - index: 3
     id: _NUM
-    label: NUM
     name: Numbers
     variant: null
   - index: 4
     id: _SYM
-    label: SYM
     name: Symbols
     variant: null
   - index: 5
     id: _FUN
-    label: FN
     name: Function Keys
     variant: null
   - index: 6
     id: _MED
-    label: MED
     name: Multimedia
     variant: null
   - index: 14
     id: _SYS
-    label: SYS
     name: System
     variant: null
   - index: 15
     id: _MBO
-    label: MBO
     name: Mouse
     variant: null
 keycodes:

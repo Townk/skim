@@ -86,9 +86,7 @@ class TestKeymapTargetAdapterTransform:
         assert label_adapter.transform.call_count == 60
 
     def test_layer_switch_propagated(self):
-        label_adapter = MockLabelAdapter(
-            {"L0_L_I": SvalboardTargetKey(label="Layer 1", layer_switch=1)}
-        )
+        label_adapter = MockLabelAdapter({"L0_L_I": SvalboardTargetKey(layer_switch=1)})
         adapter = KeymapTargetAdapter(label_adapter)  # type: ignore[arg-type]
         keymap = make_keymap(1)
         result = adapter.transform(keymap)

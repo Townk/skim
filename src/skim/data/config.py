@@ -58,16 +58,14 @@ class KeyboardLayer(BaseModel):
     """Configuration for a single keyboard layer.
 
     Defines the metadata associated with a layer in the keymap, including
-    its display label and internal name. This is used to customize how
-    layers are labeled in generated images.
+    its internal name. This is used to customize how layers are named in
+    generated images.
 
     Attributes:
         id: Optional unique identifier for the layer. Used for internal
             reference when processing a keymap from `c2json` that uses C
             define-macros instead of layer numbers in with the layer switch
             functions. It may be None if not specified.
-        label: Short display label shown in the generated image (e.g., "1",
-            "Sym", "Nav"). Should be brief for visual clarity.
         name: Full descriptive name of the layer (e.g., "Base Layer",
             "Symbols", "Navigation"). Used as the "image title" on the
             generated images.
@@ -76,9 +74,7 @@ class KeyboardLayer(BaseModel):
             in the overview image. Defaults to None if not specified.
 
     Example:
-        >>> layer = KeyboardLayer(label="1", name="Base Layer")
-        >>> layer.label
-        '1'
+        >>> layer = KeyboardLayer(name="Base Layer")
         >>> layer.name
         'Base Layer'
         >>> layer.variant is None
@@ -89,7 +85,6 @@ class KeyboardLayer(BaseModel):
 
     index: int
     id: str | None = None
-    label: str
     name: str
     variant: str | None = None
 
@@ -139,8 +134,8 @@ class Keyboard(BaseModel):
         >>> keyboard = Keyboard(
         ...     features=KeyboardFeatures(double_south=True),
         ...     layers=(
-        ...         KeyboardLayer(label="1", name="Base"),
-        ...         KeyboardLayer(label="2", name="Symbols"),
+        ...         KeyboardLayer(name="Base"),
+        ...         KeyboardLayer(name="Symbols"),
         ...     ),
         ... )
         >>> len(keyboard.layers)
@@ -172,8 +167,8 @@ class Keyboard(BaseModel):
         Example:
             >>> keyboard = Keyboard(
             ...     layers=[
-            ...         KeyboardLayer(index=0, id="base", label="1", name="Base"),
-            ...         KeyboardLayer(index=15, label="2", name="Symbols"),
+            ...         KeyboardLayer(index=0, id="base", name="Base"),
+            ...         KeyboardLayer(index=15, name="Symbols"),
             ...     ]
             ... )
             >>> keyboard.layer_index("base")
@@ -209,8 +204,8 @@ class Keyboard(BaseModel):
         Example:
             >>> keyboard = Keyboard(
             ...     layers=[
-            ...         KeyboardLayer(index=0, id="nav", label="N", name="Navigation"),
-            ...         KeyboardLayer(index=15, label="S", name="Symbols"),
+            ...         KeyboardLayer(index=0, id="nav", name="Navigation"),
+            ...         KeyboardLayer(index=15, name="Symbols"),
             ...     ]
             ... )
             >>> keyboard.layer_index("nav")
@@ -241,8 +236,8 @@ class Keyboard(BaseModel):
         Example:
             >>> keyboard = Keyboard(
             ...     layers=[
-            ...         KeyboardLayer(index=0, label="1", name="Base"),
-            ...         KeyboardLayer(index=15, label="M", name="Mouse"),
+            ...         KeyboardLayer(index=0, name="Base"),
+            ...         KeyboardLayer(index=15, name="Mouse"),
             ...     ]
             ... )
             >>> keyboard.qmk_index_to_position(15)
@@ -267,8 +262,8 @@ class Keyboard(BaseModel):
         Example:
             >>> keyboard = Keyboard(
             ...     layers=[
-            ...         KeyboardLayer(index=0, label="1", name="Base"),
-            ...         KeyboardLayer(index=15, label="M", name="Mouse"),
+            ...         KeyboardLayer(index=0, name="Base"),
+            ...         KeyboardLayer(index=15, name="Mouse"),
             ...     ]
             ... )
             >>> keyboard.layer_qmk_index(1)

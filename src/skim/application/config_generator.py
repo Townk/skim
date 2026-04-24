@@ -113,8 +113,7 @@ class ConfigGenerator:
         layers = []
         for idx in range(num_layers):
             name = layer_names.get(str(idx), f"Layer {idx}")
-            label = name.upper()[:4].strip() if name != f"Layer {idx}" else f"L{idx}"
-            layers.append({"index": idx, "label": label, "name": name, "id": None, "variant": None})
+            layers.append({"index": idx, "name": name, "id": None, "variant": None})
         return layers
 
     def _build_palette_layers(
@@ -220,9 +219,7 @@ class ConfigGenerator:
         ]
 
     @staticmethod
-    def _flatten_keymap_layers(
-        raw_layers: list, keymap_type: object
-    ) -> list[list[str]]:
+    def _flatten_keymap_layers(raw_layers: list, keymap_type: object) -> list[list[str]]:
         """Flatten raw keymap layers into a list of string lists.
 
         For Vial, each layer is a list of clusters (list of lists).
@@ -295,13 +292,12 @@ class ConfigGenerator:
         flat_layers = self._flatten_keymap_layers(raw_layers, keymap_type)
         _EMPTY_KEYCODES = {"KC_NO", "KC_TRNS"}
         active_indices = [
-            i for i, layer in enumerate(flat_layers)
-            if not all(k in _EMPTY_KEYCODES for k in layer)
+            i for i, layer in enumerate(flat_layers) if not all(k in _EMPTY_KEYCODES for k in layer)
         ]
 
         # Build layers and palette only for non-empty indices
         keyboard_layers = [
-            {"index": idx, "label": f"L{idx}", "name": f"Layer {idx}", "id": None, "variant": None}
+            {"index": idx, "name": f"Layer {idx}", "id": None, "variant": None}
             for idx in active_indices
         ]
         palette_layers = self._build_default_palette_layers_for_indices(active_indices)

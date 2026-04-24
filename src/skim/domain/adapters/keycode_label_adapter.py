@@ -118,7 +118,7 @@ class KeycodeLabelAdapter:
         Example:
             >>> from skim.application.loaders import load_keycode_mappings
             >>> from skim.data import Keyboard, KeyboardLayer, SkimConfig
-            >>> keyboard = Keyboard(layers=[KeyboardLayer(id="base", label="1", name="Base")])
+            >>> keyboard = Keyboard(layers=[KeyboardLayer(id="base", name="Base")])
             >>> config = SkimConfig()
             >>> mappings = load_keycode_mappings(config.keycodes)
             >>> adapter = KeycodeLabelAdapter(keyboard, mappings)

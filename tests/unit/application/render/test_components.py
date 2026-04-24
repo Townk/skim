@@ -245,12 +245,12 @@ class TestFingerClusterIndicators:
     def test_indicators_rendered_when_enabled(self, two_layer_palette):
         """Indicators appear in SVG when show_layer_indicators is True."""
         keys = FingerCluster(
-            center_key=SvalboardTargetKey(label="C", layer_switch=1),
-            north_key=SvalboardTargetKey(label="N", layer_switch=None),
-            east_key=SvalboardTargetKey(label="E", layer_switch=None),
-            south_key=SvalboardTargetKey(label="S", layer_switch=None),
-            west_key=SvalboardTargetKey(label="W", layer_switch=None),
-            double_south_key=SvalboardTargetKey(label="DS", layer_switch=None),
+            center_key=SvalboardTargetKey(layer_switch=1),
+            north_key=SvalboardTargetKey(layer_switch=None),
+            east_key=SvalboardTargetKey(layer_switch=None),
+            south_key=SvalboardTargetKey(layer_switch=None),
+            west_key=SvalboardTargetKey(layer_switch=None),
+            double_south_key=SvalboardTargetKey(layer_switch=None),
         )
         ctx = RenderContext(
             palette=two_layer_palette,
@@ -276,12 +276,12 @@ class TestFingerClusterIndicators:
     def test_indicators_not_rendered_when_disabled(self, two_layer_palette):
         """No indicators in SVG when show_layer_indicators is False."""
         keys = FingerCluster(
-            center_key=SvalboardTargetKey(label="C", layer_switch=1),
-            north_key=SvalboardTargetKey(label="N", layer_switch=None),
-            east_key=SvalboardTargetKey(label="E", layer_switch=None),
-            south_key=SvalboardTargetKey(label="S", layer_switch=None),
-            west_key=SvalboardTargetKey(label="W", layer_switch=None),
-            double_south_key=SvalboardTargetKey(label="DS", layer_switch=None),
+            center_key=SvalboardTargetKey(layer_switch=1),
+            north_key=SvalboardTargetKey(layer_switch=None),
+            east_key=SvalboardTargetKey(layer_switch=None),
+            south_key=SvalboardTargetKey(layer_switch=None),
+            west_key=SvalboardTargetKey(layer_switch=None),
+            double_south_key=SvalboardTargetKey(layer_switch=None),
         )
         ctx = RenderContext(
             palette=two_layer_palette,

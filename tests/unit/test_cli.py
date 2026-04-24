@@ -335,9 +335,7 @@ class TestConfigureCommand:
         """--title sets output.keymap_title and writes config."""
         out = tmp_path / "out.yaml"
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["configure", "--title", "My Keymap", "-o", str(out)]
-        )
+        result = runner.invoke(main, ["configure", "--title", "My Keymap", "-o", str(out)])
         assert result.exit_code == 0
         parsed = yaml.safe_load(out.read_text())
         assert parsed["output"]["keymap_title"] == "My Keymap"
@@ -347,9 +345,7 @@ class TestConfigureCommand:
         """--copyright sets output.copyright and writes config."""
         out = tmp_path / "out.yaml"
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["configure", "--copyright", "© 2026 Me", "-o", str(out)]
-        )
+        result = runner.invoke(main, ["configure", "--copyright", "© 2026 Me", "-o", str(out)])
         assert result.exit_code == 0
         parsed = yaml.safe_load(out.read_text())
         assert parsed["output"]["copyright"] == "© 2026 Me"
@@ -434,10 +430,10 @@ class TestConfigureCommand:
                 {
                     "keyboard": {
                         "layers": [
-                            {"index": 0, "label": "L0", "name": "Base", "id": None, "variant": None},
-                            {"index": 1, "label": "L1", "name": "Nav", "id": None, "variant": None},
-                            {"index": 4, "label": "L4", "name": "Sym", "id": None, "variant": None},
-                            {"index": 5, "label": "L5", "name": "Num", "id": None, "variant": None},
+                            {"index": 0, "name": "Base", "id": None, "variant": None},
+                            {"index": 1, "name": "Nav", "id": None, "variant": None},
+                            {"index": 4, "name": "Sym", "id": None, "variant": None},
+                            {"index": 5, "name": "Num", "id": None, "variant": None},
                         ],
                     },
                     "output": {
@@ -486,7 +482,7 @@ class TestConfigureCommand:
                 {
                     "keyboard": {
                         "layers": [
-                            {"index": i, "label": f"L{i}", "name": f"Layer {i}", "id": None, "variant": None}
+                            {"index": i, "name": f"Layer {i}", "id": None, "variant": None}
                             for i in range(5)
                         ],
                     },
@@ -585,7 +581,6 @@ class TestConfigureCommand:
         assert result.exit_code == 0
         parsed = yaml.safe_load(result.output)
         assert parsed["keyboard"]["layers"][0]["name"] == "Base"
-
 
     @patch("skim.cli.setup_logging")
     @patch("skim.tui.launch_tui")

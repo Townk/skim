@@ -27,8 +27,8 @@ class TestKeyboardTab:
     def config_with_layers(self) -> dict:
         config = SkimConfig().model_dump(mode="json")
         config["keyboard"]["layers"] = [
-            {"index": 0, "label": "BASE", "name": "Letters", "id": "_BASE", "variant": "COLEMAK"},
-            {"index": 1, "label": "NAV", "name": "Navigation", "id": "_NAV", "variant": None},
+            {"index": 0, "name": "Letters", "id": "_BASE", "variant": "COLEMAK"},
+            {"index": 1, "name": "Navigation", "id": "_NAV", "variant": None},
         ]
         return config
 
@@ -58,7 +58,6 @@ class TestKeyboardTab:
             await pilot.pause()
             for field_id in [
                 "layer-index",
-                "layer-label",
                 "layer-name",
                 "layer-id",
                 "layer-variant",
@@ -75,7 +74,7 @@ class TestKeyboardTab:
             pane = app.query_one(LayerListPane)
             pane._enter_edit_mode()
             await pilot.pause()
-            inp = app.query_one("#layer-label", Input)
+            inp = app.query_one("#layer-name", Input)
             assert inp.disabled is False
 
     @pytest.mark.asyncio()
@@ -223,8 +222,8 @@ class TestKeyboardTab:
             await pilot.pause()
             layers = app.config_data["keyboard"]["layers"]
             # NAV should now be first, BASE second
-            assert layers[0]["label"] == "NAV"
-            assert layers[1]["label"] == "BASE"
+            assert layers[0]["name"] == "Navigation"
+            assert layers[1]["name"] == "Letters"
 
     @pytest.mark.asyncio()
     async def test_move_layer_escape_rollback(self, config_with_layers):
@@ -244,8 +243,8 @@ class TestKeyboardTab:
             await pilot.press("escape")
             await pilot.pause()
             layers = app.config_data["keyboard"]["layers"]
-            assert layers[0]["label"] == "BASE"
-            assert layers[1]["label"] == "NAV"
+            assert layers[0]["name"] == "Letters"
+            assert layers[1]["name"] == "Navigation"
             assert pane._moving is False
 
     @pytest.mark.asyncio()
@@ -253,9 +252,9 @@ class TestKeyboardTab:
         """Moving across a sparse gap uses adjacent shift for the displaced layer."""
         config = SkimConfig().model_dump(mode="json")
         config["keyboard"]["layers"] = [
-            {"index": 0, "label": "BASE", "name": "Letters", "id": "_BASE", "variant": None},
-            {"index": 5, "label": "NAV", "name": "Navigation", "id": "_NAV", "variant": None},
-            {"index": 7, "label": "SYM", "name": "Symbols", "id": "_SYM", "variant": None},
+            {"index": 0, "name": "Letters", "id": "_BASE", "variant": None},
+            {"index": 5, "name": "Navigation", "id": "_NAV", "variant": None},
+            {"index": 7, "name": "Symbols", "id": "_SYM", "variant": None},
         ]
         app = KeyboardTabTestApp(config_data=config)
         async with app.run_test(size=(120, 40)) as pilot:
@@ -276,7 +275,7 @@ class TestKeyboardTab:
             await pilot.pause()
             layers = config["keyboard"]["layers"]
             # NAV took SYM's index (7), SYM shifted adjacent (6)
-            nav = next(l for l in layers if l["label"] == "NAV")
-            sym = next(l for l in layers if l["label"] == "SYM")
+            nav = next(l for l in layers if l["name"] == "Navigation")
+            sym = next(l for l in layers if l["name"] == "Symbols")
             assert nav["index"] == 7
             assert sym["index"] == 6

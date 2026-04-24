@@ -21,9 +21,7 @@ from skim.domain.domain_types import SvalboardTargetKey
 
 
 def _make_config(num_layers: int = 3, width: float = 1600) -> SkimConfig:
-    layers_cfg = tuple(
-        KeyboardLayer(index=i, label=str(i), name=f"Layer{i}") for i in range(num_layers)
-    )
+    layers_cfg = tuple(KeyboardLayer(index=i, name=f"Layer{i}") for i in range(num_layers))
     layer_colors = tuple(
         LayerColor(base_color=f"#{(i + 1) * 30:02x}5050") for i in range(num_layers)
     )
@@ -69,8 +67,8 @@ class TestDrawOverview:
 
     def test_svg_contains_variant_when_set(self):
         layers_cfg = (
-            KeyboardLayer(index=0, label="0", name="Letters", variant="COLEMAK"),
-            KeyboardLayer(index=1, label="1", name="Numbers"),
+            KeyboardLayer(index=0, name="Letters", variant="COLEMAK"),
+            KeyboardLayer(index=1, name="Numbers"),
         )
         layer_colors = (
             LayerColor(base_color="#305050"),
@@ -128,12 +126,8 @@ class TestDrawOverview:
 
     def test_no_connector_paths_when_show_layer_connectors_false(self):
         """When show_layer_connectors is False, no dashed paths appear in SVG."""
-        layers_cfg = tuple(
-            KeyboardLayer(index=i, label=str(i), name=f"Layer{i}") for i in range(3)
-        )
-        layer_colors = tuple(
-            LayerColor(base_color=f"#{(i + 1) * 30:02x}5050") for i in range(3)
-        )
+        layers_cfg = tuple(KeyboardLayer(index=i, name=f"Layer{i}") for i in range(3))
+        layer_colors = tuple(LayerColor(base_color=f"#{(i + 1) * 30:02x}5050") for i in range(3))
         config = SkimConfig(
             keyboard=Keyboard(layers=layers_cfg),
             output=Output(
@@ -146,7 +140,7 @@ class TestDrawOverview:
         # Build a keymap where a thumb key has layer_switch set, so connectors
         # would be drawn if show_layer_connectors were True.
         keys = [SvalboardTargetKey(label=f"L0K{i}") for i in range(60)]
-        keys[54] = SvalboardTargetKey(label="NAV", layer_switch=1)  # left thumb down
+        keys[54] = SvalboardTargetKey(layer_switch=1)  # left thumb down
         layer0 = SvalboardLayout.from_sequence(keys)
         keys_l1 = [SvalboardTargetKey(label=f"L1K{i}") for i in range(60)]
         layer1 = SvalboardLayout.from_sequence(keys_l1)
@@ -163,8 +157,8 @@ class TestOverviewConnectorLines:
     def test_svg_contains_dashed_lines_for_layer_switching_keys(self):
         """When keys have layer_switch, dotted connector lines appear."""
         layers_cfg = (
-            KeyboardLayer(index=0, label="0", name="Base"),
-            KeyboardLayer(index=1, label="1", name="Nav"),
+            KeyboardLayer(index=0, name="Base"),
+            KeyboardLayer(index=1, name="Nav"),
         )
         layer_colors = (
             LayerColor(base_color="#305050"),
@@ -183,7 +177,7 @@ class TestOverviewConnectorLines:
         # Create keymap where a key switches to layer 1
         keys_l0 = [SvalboardTargetKey(label=f"K{i}") for i in range(60)]
         # Make a finger key switch to layer 1 (e.g. key index 2 = left index east key)
-        keys_l0[2] = SvalboardTargetKey(label="NAV", layer_switch=1)
+        keys_l0[2] = SvalboardTargetKey(layer_switch=1)
         layer0 = SvalboardLayout.from_sequence(keys_l0)
 
         keys_l1 = [SvalboardTargetKey(label=f"N{i}") for i in range(60)]

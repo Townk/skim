@@ -301,7 +301,12 @@ def generate(
 )
 @click.option("--title", "-t", type=str, help="Set the keymap title (output.keymap_title).")
 @click.option("--copyright", "-r", type=str, help="Set the copyright notice (output.copyright).")
-@click.option("--layer-count", "-n", type=int, help="Number of layers to pre-create with defaults (interactive mode).")
+@click.option(
+    "--layer-count",
+    "-n",
+    type=int,
+    help="Number of layers to pre-create with defaults (interactive mode).",
+)
 @click.pass_context
 def configure(
     ctx: click.Context,
@@ -372,9 +377,7 @@ def configure(
             detected = _detect_format_from_path(keymap)
 
             if detected == KeymapType.KEYBARD:
-                qmk_content = (
-                    qmk_color_header.read_text() if qmk_color_header else None
-                )
+                qmk_content = qmk_color_header.read_text() if qmk_color_header else None
                 content = generator.generate_from_keybard(
                     raw_content, qmk_content, adjust_lightness, adjust_saturation
                 )
@@ -450,7 +453,9 @@ def _apply_layer_count(config_data: dict, layer_count: int) -> None:
     from skim.application.render.styling import default_layer_color
 
     keyboard_layers = config_data.get("keyboard", {}).get("layers", [])
-    palette_layers = config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
+    palette_layers = (
+        config_data.get("output", {}).get("style", {}).get("palette", {}).get("layers", [])
+    )
 
     existing_indices = {layer["index"] for layer in keyboard_layers}
 
@@ -469,7 +474,6 @@ def _apply_layer_count(config_data: dict, layer_count: int) -> None:
         if idx not in existing_indices:
             index_to_kb[idx] = {
                 "index": idx,
-                "label": f"L{idx}",
                 "name": f"Layer {idx}",
                 "id": None,
                 "variant": None,
@@ -484,7 +488,9 @@ def _apply_layer_count(config_data: dict, layer_count: int) -> None:
     sorted_indices = sorted(index_to_kb.keys())
     config_data["keyboard"]["layers"] = [index_to_kb[i] for i in sorted_indices]
     config_data["output"]["style"]["palette"]["layers"] = [
-        index_to_palette.get(i, {"base_color": default_layer_color(i), "color_index": 2, "gradient": None})
+        index_to_palette.get(
+            i, {"base_color": default_layer_color(i), "color_index": 2, "gradient": None}
+        )
         for i in sorted_indices
     ]
 

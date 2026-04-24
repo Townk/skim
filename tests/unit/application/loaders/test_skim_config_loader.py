@@ -71,7 +71,7 @@ class TestLoadSkimConfigFromFile:
         config_data = {
             "keyboard": {
                 "features": {"double_south": True},
-                "layers": [{"index": 0, "label": "1", "name": "Base Layer"}],
+                "layers": [{"index": 0, "name": "Base Layer"}],
             }
         }
         path = tmp_path / "config.yaml"

@@ -18,7 +18,6 @@ from skim.tui.widgets import SkimInput, SkimStandaloneInput, SkimSwitch, SkimVer
 
 _FIELD_MAP = {
     "layer-index": "index",
-    "layer-label": "label",
     "layer-name": "name",
     "layer-id": "id",
     "layer-variant": "variant",
@@ -55,49 +54,49 @@ class LayerListPane(ListDetailPane):
             return f"{name} ({variant})"
         return name
 
-    def _column_widths(self) -> tuple[int, int]:
+    def format_entry(self, index: int, entry: dict) -> str:
         layers = self.get_entries()
         col0_w = max((len(self._col0_text(i, layer)) for i, layer in enumerate(layers)), default=0)
-        col1_w = max((len(layer.get("label", "")) for layer in layers), default=0)
-        return col0_w, col1_w
-
-    def format_entry(self, index: int, entry: dict) -> str:
-        col0_w, col1_w = self._column_widths()
         col0 = self._col0_text(index, entry)
-        label = entry.get("label", "")
         col2 = self._col2_text(entry)
-        return f"{col0:<{col0_w}}  {label:<{col1_w}}  {col2}"
+        return f"{col0:<{col0_w}}  {col2}"
 
     def compose_detail_fields(self) -> ComposeResult:
         with Horizontal(classes="field-row"):
             yield Label("Index:", classes="field-label")
             yield SkimInput(
-                value="", id="layer-index", placeholder="e.g. 0",
-                disabled=True, help_key="layer-index",
+                value="",
+                id="layer-index",
+                placeholder="e.g. 0",
+                disabled=True,
+                help_key="layer-index",
             )
         with Horizontal(classes="field-row"):
             yield Label("ID:", classes="field-label")
             yield SkimInput(
-                value="", id="layer-id", placeholder="e.g. _BASE (optional)",
-                disabled=True, help_key="layer-id",
-            )
-        with Horizontal(classes="field-row"):
-            yield Label("Label:", classes="field-label")
-            yield SkimInput(
-                value="", id="layer-label", placeholder="e.g. BASE",
-                disabled=True, help_key="layer-label",
+                value="",
+                id="layer-id",
+                placeholder="e.g. _BASE (optional)",
+                disabled=True,
+                help_key="layer-id",
             )
         with Horizontal(classes="field-row"):
             yield Label("Name:", classes="field-label")
             yield SkimInput(
-                value="", id="layer-name", placeholder="e.g. Letters",
-                disabled=True, help_key="layer-name",
+                value="",
+                id="layer-name",
+                placeholder="e.g. Letters",
+                disabled=True,
+                help_key="layer-name",
             )
         with Horizontal(classes="field-row"):
             yield Label("Variant:", classes="field-label")
             yield SkimInput(
-                value="", id="layer-variant", placeholder="e.g. COLEMAK (optional)",
-                disabled=True, help_key="layer-variant",
+                value="",
+                id="layer-variant",
+                placeholder="e.g. COLEMAK (optional)",
+                disabled=True,
+                help_key="layer-variant",
             )
 
     def detail_field_ids(self) -> set[str]:
@@ -105,14 +104,12 @@ class LayerListPane(ListDetailPane):
 
     def refresh_fields(self, entry: dict) -> None:
         self.query_one("#layer-index", Input).value = str(entry.get("index", self._selected))
-        self.query_one("#layer-label", Input).value = entry.get("label", "") or ""
         self.query_one("#layer-name", Input).value = entry.get("name", "") or ""
         self.query_one("#layer-id", Input).value = entry.get("id", "") or ""
         self.query_one("#layer-variant", Input).value = entry.get("variant", "") or ""
 
     def clear_fields(self) -> None:
         self.query_one("#layer-index", Input).value = ""
-        self.query_one("#layer-label", Input).value = ""
         self.query_one("#layer-name", Input).value = ""
         self.query_one("#layer-id", Input).value = ""
         self.query_one("#layer-variant", Input).value = ""
@@ -130,7 +127,6 @@ class LayerListPane(ListDetailPane):
             next_index += 1
         return {
             "index": next_index,
-            "label": f"L{next_index}",
             "name": f"Layer {next_index}",
             "id": None,
             "variant": None,
@@ -146,7 +142,6 @@ class LayerListPane(ListDetailPane):
         idx = len(entries)
         new_entry = {
             "index": next_index,
-            "label": f"L{next_index}",
             "name": f"Layer {next_index}",
             "id": None,
             "variant": None,
@@ -368,7 +363,6 @@ class KeyboardTab(Widget):
             next_index += 1
         new_layer = {
             "index": next_index,
-            "label": f"L{next_index}",
             "name": f"Layer {next_index}",
             "id": None,
             "variant": None,

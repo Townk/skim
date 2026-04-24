@@ -18,9 +18,7 @@ from skim.data.config import (
 
 
 def _make_config(num_layers: int, width: float = 1600) -> SkimConfig:
-    layers_cfg = tuple(
-        KeyboardLayer(index=i, label=str(i), name=f"Layer {i}") for i in range(num_layers)
-    )
+    layers_cfg = tuple(KeyboardLayer(index=i, name=f"Layer {i}") for i in range(num_layers))
     layer_colors = tuple(
         LayerColor(base_color=f"#{i + 1:02x}{i + 1:02x}{i + 1:02x}") for i in range(num_layers)
     )
