@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-04-24
+
 ### Added
 
 - Contextual help system for the TUI configurator — press F1 or Alt+H on any field to see a help modal with field-specific documentation.
@@ -25,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed `--keybard-keymap` CLI option to `--keymap`.
 - Non-standard keycode scanning for configuration generation.
 - Skip empty layers and simplify keycode override detection.
+- Updated documentation: README, Sphinx docs, and example SVGs to reflect current features.
 
 ### Fixed
 
@@ -32,11 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - QMK firmware index used for layer lookup, fixing overview rendering issues.
 - Circular dots for overview layer connectors (previously rendered as pills).
 - Footer keybind display order and styling standardised.
-
-## [0.5.3] - 2026-04-22
-
-### Fixed
-
 - GitHub Actions and PyPI publishing fixes.
 
 ## [0.5.2] - 2026-04-22
