@@ -48,7 +48,12 @@ pip install qmk-skim
 
 ## Usage
 
-The package installs the `skim` command-line tool.
+The package installs the `skim` command-line tool, but if you prefer to use the
+tool without installing it, you can use `uvx`:
+
+```bash
+uvx --python 3.10 --from 'qmk-skim[cairo,playwright]' skim doctor
+```
 
 ### Check your environment
 
