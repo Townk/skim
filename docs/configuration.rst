@@ -7,11 +7,15 @@ dimensions and spacing to colors and keycode display.
 Configuration File
 ------------------
 
-The configuration is defined in a YAML file. You can generate a default configuration file using the `configure` command:
+The configuration is defined in a YAML file. You can create one using the interactive TUI or by extracting metadata from a keymap file:
 
 .. code-block:: bash
 
-    skim configure --output skim-config.yaml
+    # Launch the interactive TUI editor
+    skim configure --interactive
+
+    # Or extract from a keymap file
+    skim configure --keymap my-keymap.kbi --output skim-config.yaml
 
 Structure
 ---------
@@ -33,10 +37,11 @@ This section defines the physical properties of the keyboard and the layers in y
       features:
         double_south: false  # Enable/disable double-south keys
       layers:
-        - label: "1"
+        - index: 0
           name: "Base Layer"
-          id: "base"         # Optional ID for layer lookup
-        - label: "2"
+          id: "base"         # Optional ID for c2json layer lookup
+          variant: "QWERTY"  # Optional secondary label (shown in overview)
+        - index: 1
           name: "Symbols"
 
 Keycodes Section
@@ -64,6 +69,8 @@ This section controls the visual appearance of the generated images.
 .. code-block:: yaml
 
     output:
+      keymap_title: "My Svalboard Layout"  # Optional title for overview image
+      copyright: "© 2026 Your Name"        # Optional copyright notice
       layout:
         width: 800
         spacing:
@@ -72,6 +79,9 @@ This section controls the visual appearance of the generated images.
       style:
         use_layer_colors_on_keys: true
         hold_symbol_position: "outward"  # "inward", "outward", or "qmk"
+        use_system_fonts: false           # Use system fonts instead of embedded
+        show_layer_indicators: true       # Layer indicator circles on keys
+        show_layer_connectors: true       # Connector lines in overview image
         border:
           width: 2
           radius: 10
