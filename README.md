@@ -50,10 +50,17 @@ pip install qmk-skim
 
 The package installs the `skim` command-line tool.
 
+### Check your environment
+
+```bash
+# Verify system dependencies (render engines, etc.)
+skim doctor
+```
+
 ### Generate keymap images
 
 ```bash
-# Generate from a keymap file
+# Generate all layers + overview from a keymap file
 skim generate --keymap my-keymap.kbi --output-dir ./images
 
 # Generate with custom configuration
@@ -61,13 +68,28 @@ skim generate --keymap my-keymap.kbi --config skim-config.yaml --output-dir ./im
 
 # Generate specific layers only
 skim generate --keymap my-keymap.kbi --layer 1 --layer 3-5 --layer overview
+
+# Generate PNG output (requires Chromium or Cairo)
+skim generate --keymap my-keymap.kbi --format png --output-dir ./images
+
+# Read keymap from stdin
+cat my-keymap.json | skim generate - --output-dir ./images
 ```
 
-### Configuration helper
+### Configure appearance
 
 ```bash
-# Create a configuration file from QMK color.h
-skim configure --qmk-color-header /path/to/qmk/quantum/color.h --output skim-config.yaml
+# Launch the interactive TUI configurator
+skim configure --interactive
+
+# Edit an existing configuration file in the TUI
+skim configure --interactive --config skim-config.yaml
+
+# Generate a config from a Keybard keymap (extracts layer colors, names, custom keycodes)
+skim configure --keymap my-keymap.kbi --output skim-config.yaml
+
+# Import QMK named colors from color.h
+skim configure --keymap my-keymap.kbi --qmk-color-header /path/to/color.h --output skim-config.yaml
 ```
 
 ## Development
