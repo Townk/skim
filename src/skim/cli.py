@@ -35,6 +35,7 @@ import json
 import sys
 from functools import partial
 from pathlib import Path
+from typing import Any
 
 import click
 
@@ -344,6 +345,8 @@ def configure(
         return
 
     try:
+        config_data: dict[str, Any] = {}
+
         if has_config_overrides and not interactive:
             import yaml
 

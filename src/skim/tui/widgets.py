@@ -18,7 +18,6 @@ from textual.widgets import Button, Footer, Input, ListView, Select, Switch, Tab
 from textual.widgets._footer import FooterKey
 from textual.widgets._select import SelectCurrent, SelectOverlay
 
-
 # ---------------------------------------------------------------------------
 # Custom footer with standardised binding order and paired display
 # ---------------------------------------------------------------------------
@@ -91,7 +90,7 @@ class SkimFooter(Footer):
 
         # Collect one representative binding per action.
         by_action: dict[str, tuple[Binding, bool, str]] = {}
-        for _key, (node, binding, enabled, tooltip) in active.items():
+        for _key, (_node, binding, enabled, tooltip) in active.items():
             if not binding.show:
                 continue
             if binding.action not in by_action:

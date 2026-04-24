@@ -207,7 +207,7 @@ class TestKeyboardTab:
         app = KeyboardTabTestApp(config_data=config_with_layers)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
-            pane = app.query_one(LayerListPane)
+            app.query_one(LayerListPane)
             list_view = app.query_one("#layer-list", SkimListView)
             list_view.focus()
             await pilot.pause()
@@ -275,7 +275,7 @@ class TestKeyboardTab:
             await pilot.pause()
             layers = config["keyboard"]["layers"]
             # NAV took SYM's index (7), SYM shifted adjacent (6)
-            nav = next(l for l in layers if l["name"] == "Navigation")
-            sym = next(l for l in layers if l["name"] == "Symbols")
+            nav = next(layer for layer in layers if layer["name"] == "Navigation")
+            sym = next(layer for layer in layers if layer["name"] == "Symbols")
             assert nav["index"] == 7
             assert sym["index"] == 6

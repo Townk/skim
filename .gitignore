@@ -30,5 +30,7 @@ prototype/
 .opencode/
 .claude/
 .sisyphus/
+.superpowers/
+docs/superpowers/
 CLAUDE.md
 AGENTS.md

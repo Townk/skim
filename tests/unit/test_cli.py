@@ -455,11 +455,11 @@ class TestConfigureCommand:
         runner.invoke(main, ["configure", "-i", "-c", str(cfg), "-n", "7"])
         config_data = mock_tui.call_args[1]["config_data"]
         layers = config_data["keyboard"]["layers"]
-        indices = sorted(l["index"] for l in layers)
+        indices = sorted(layer["index"] for layer in layers)
         assert indices == [0, 1, 2, 3, 4, 5, 6]
         assert len(layers) == 7
         # Original layers preserved
-        orig_names = {l["index"]: l["name"] for l in layers}
+        orig_names = {layer["index"]: layer["name"] for layer in layers}
         assert orig_names[0] == "Base"
         assert orig_names[1] == "Nav"
         assert orig_names[4] == "Sym"

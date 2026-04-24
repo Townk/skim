@@ -336,7 +336,7 @@ class LayerColorListPane(ListDetailPane):
             old_moved_index = moved["index"]
             moved["index"] = neighbor["index"]
             # Find next free adjacent index toward origin
-            used = {l.get("index", i) for i, l in enumerate(kl)} - {old_moved_index}
+            used = {layer.get("index", i) for i, layer in enumerate(kl)} - {old_moved_index}
             candidate = neighbor["index"] - direction
             while candidate in used:
                 candidate -= direction
@@ -557,7 +557,6 @@ class LayerColorListPane(ListDetailPane):
 
     def _update_list_swatch(self, color: str) -> None:
         """Update the color swatch in the currently selected list item."""
-        from skim.tui.widgets import SkimListView
 
         list_view = self.query_one(f"#{self.pane_id}-list", SkimListView)
         if self._selected < len(list_view.children):

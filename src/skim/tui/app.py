@@ -209,9 +209,7 @@ class _HelpMarkdown(Markdown):
     the very first frame — no post-render measurement or flashing.
     """
 
-    def get_content_height(
-        self, container: Size, viewport: Size, width: int
-    ) -> int:
+    def get_content_height(self, container: Size, viewport: Size, width: int) -> int:
         total = 0
         children = list(self.children)
         # Zero the last child's bottom margin so the virtual size matches
@@ -222,11 +220,7 @@ class _HelpMarkdown(Markdown):
                 last.styles.margin = (last.styles.margin.top, 0, 0, 0)
         for child in children:
             m = child.styles.margin
-            total += (
-                m.top
-                + child.get_content_height(container, viewport, width)
-                + m.bottom
-            )
+            total += m.top + child.get_content_height(container, viewport, width) + m.bottom
         return total
 
 
@@ -268,7 +262,7 @@ class HelpScreen(ModalScreen[None]):
             md.scroll_home(animate=False)
         elif key == "ctrl+q":
             self.dismiss(None)
-            self.app.call_later(self.app.action_request_quit)
+            self.app.call_later(self.app.action_request_quit)  # type: ignore[reportAttributeAccessIssue]
         else:
             return
         event.stop()
@@ -513,8 +507,8 @@ class SkimConfigApp(App):
         widget = self.focused
         help_key = None
         while widget is not None:
-            if hasattr(widget, "help_key") and widget.help_key:
-                help_key = widget.help_key
+            if hasattr(widget, "help_key") and widget.help_key:  # type: ignore[reportAttributeAccessIssue]
+                help_key = widget.help_key  # type: ignore[reportAttributeAccessIssue]
                 break
             widget = widget.parent
         content = ASSETS.help_text(help_key or "general")

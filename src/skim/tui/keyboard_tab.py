@@ -242,7 +242,7 @@ class LayerListPane(ListDetailPane):
     def _next_adjacent_index(self, from_index: int, direction: int, exclude_index: int) -> int:
         """Find the next free index stepping toward the moved layer's origin."""
         layers = self.get_entries()
-        used = {l.get("index", i) for i, l in enumerate(layers)} - {exclude_index}
+        used = {layer.get("index", i) for i, layer in enumerate(layers)} - {exclude_index}
         candidate = from_index - direction
         while candidate in used:
             candidate -= direction
@@ -309,7 +309,11 @@ class KeyboardTab(Widget):
                 yield Static("Features", classes="section-title")
                 with Horizontal(id="features-row"):
                     yield Label("Double South: ", classes="field-label")
-                    yield SkimSwitch(value=double_south, id="double-south", help_key="keyboard-feature-double-south")
+                    yield SkimSwitch(
+                        value=double_south,
+                        id="double-south",
+                        help_key="keyboard-feature-double-south",
+                    )
 
             yield Static("Layers", classes="section-title")
             yield LayerListPane(config_data=self.config_data)

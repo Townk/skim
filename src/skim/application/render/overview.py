@@ -481,6 +481,7 @@ def draw_overview(
             )
 
             if config.output.style.show_layer_connectors:
+
                 def _thumb_bb(lt: ThumbClusterComponent, rt: ThumbClusterComponent):
                     bx = lt.x
                     by = min(lt.y, rt.y)
