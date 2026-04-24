@@ -1,7 +1,7 @@
 # qmk-skim (Svalboard Keymap Image Maker)
 
 [![Coverage](https://img.shields.io/badge/coverage-81%25-yellowgreen.svg)](https://github.com/Townk/skim)
-[![Python Version](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/)
+[![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Build Status](https://github.com/Townk/skim/actions/workflows/release.yml/badge.svg)](https://github.com/Townk/skim/actions/workflows/release.yml)
 [![PyPI version](https://badge.fury.io/py/qmk-skim.svg)](https://badge.fury.io/py/qmk-skim)
 
@@ -10,16 +10,19 @@ A Python CLI tool for generating high-quality keymap layout images for the
 
 ## Features
 
-- Generate individual layer keymap images
-- Generate overview images showing all layers
+- Generate individual layer keymap images with layer indicator circles
+- Generate overview images showing all layers with connector lines
+- Interactive TUI configurator for editing configuration files
+- System dependency checker (`skim doctor`)
 - Support for multiple keymap formats:
   - Keybard (`.kbi`)
   - Vial (`.vil`)
   - QMK c2json (`.json`)
-- Configurable colors and appearance
+- Configurable colors, layer names, and appearance
 - High-quality output in multiple formats:
   - Vector: SVG
   - Raster: PNG, JPEG, WEBP, AVIF
+- Stdin support for piping keymap data in scripts
 
 ## Installation
 
