@@ -498,17 +498,39 @@ def _apply_layer_count(config_data: dict, layer_count: int) -> None:
     ]
 
 
+def _confirm_via_tty(prompt: str) -> None:
+    """Prompt for confirmation reading from /dev/tty instead of stdin.
+
+    When stdin is a pipe, click.confirm cannot read user input because
+    stdin is consumed by the piped data. Opening /dev/tty directly
+    bypasses the redirected stdin and reads from the real terminal.
+    """
+    try:
+        with open("/dev/tty") as tty:
+            saved_stdin = sys.stdin
+            sys.stdin = tty
+            try:
+                click.confirm(prompt, abort=True)
+            finally:
+                sys.stdin = saved_stdin
+    except OSError as err:
+        raise click.Abort(
+            "Cannot prompt for confirmation without a terminal."
+        ) from err
+
+
 def _write_config(output: Path, content: str, force: bool) -> None:
     """Write config content to file with overwrite protection."""
     if output.is_dir():
         output = output / "skim-config.yaml"
 
     if output.exists() and not force:
+        prompt = f"File {output} already exists. Do you want to overwrite?"
         try:
-            click.confirm(
-                f"File {output} already exists. Do you want to overwrite?",
-                abort=True,
-            )
+            if not sys.stdin.isatty():
+                _confirm_via_tty(prompt)
+            else:
+                click.confirm(prompt, abort=True)
         except click.Abort:
             click.echo("Aborted.", err=True)
             sys.exit(1)

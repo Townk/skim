@@ -6,6 +6,7 @@
 """Image exporter with support for Playwright and Cairo backends."""
 
 import asyncio
+import sys
 from pathlib import Path
 
 import click
@@ -159,6 +160,27 @@ def _save_keymap_images(
     )
 
 
+def _confirm_via_tty(prompt: str) -> None:
+    """Prompt for confirmation reading from /dev/tty instead of stdin.
+
+    When stdin is a pipe, click.confirm cannot read user input because
+    stdin is consumed by the piped data. Opening /dev/tty directly
+    bypasses the redirected stdin and reads from the real terminal.
+    """
+    try:
+        with open("/dev/tty") as tty:
+            saved_stdin = sys.stdin
+            sys.stdin = tty
+            try:
+                click.confirm(prompt, abort=True)
+            finally:
+                sys.stdin = saved_stdin
+    except OSError as err:
+        raise click.Abort(
+            "Cannot prompt for confirmation without a terminal."
+        ) from err
+
+
 def save_drawings(
     outputs: OutputFiles,
     drawings: dict[str, draw.Drawing],
@@ -172,10 +194,13 @@ def save_drawings(
                 existing_files.append(file_path)
         if existing_files:
             file_names = ", ".join(f.name for f in existing_files)
-            click.confirm(
-                f"Files already exist: {file_names}. Do you want to overwrite?",
-                abort=True,
+            prompt = (
+                f"Files already exist: {file_names}. Do you want to overwrite?"
             )
+            if not sys.stdin.isatty():
+                _confirm_via_tty(prompt)
+            else:
+                click.confirm(prompt, abort=True)
 
     # Determine if we need to convert text to paths
     # Cairo always needs text-to_paths because CairoSVG has poor font fallback and baseline support

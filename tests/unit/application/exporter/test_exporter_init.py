@@ -104,11 +104,15 @@ class TestSaveKeymapImages:
 
 
 class TestSaveDrawings:
+    @patch("skim.application.exporter.sys")
     @patch("skim.application.exporter.click.confirm")
     @patch("skim.application.exporter._save_keymap_images")
-    def test_confirms_when_files_exist(self, mock_save, mock_confirm, tmp_path):
+    def test_confirms_when_files_exist(
+        self, mock_save, mock_confirm, mock_sys, tmp_path
+    ):
         from skim.application.exporter import save_drawings
 
+        mock_sys.stdin.isatty.return_value = True
         (tmp_path / "test.png").touch()
         mock_drawing = MagicMock()
         drawings = {"test": mock_drawing}
@@ -122,6 +126,29 @@ class TestSaveDrawings:
         save_drawings(outputs, drawings)
 
         mock_confirm.assert_called_once()
+
+    @patch("skim.application.exporter._confirm_via_tty")
+    @patch("skim.application.exporter.sys")
+    @patch("skim.application.exporter._save_keymap_images")
+    def test_confirms_via_tty_when_stdin_is_pipe(
+        self, mock_save, mock_sys, mock_confirm_tty, tmp_path
+    ):
+        from skim.application.exporter import save_drawings
+
+        mock_sys.stdin.isatty.return_value = False
+        (tmp_path / "test.png").touch()
+        mock_drawing = MagicMock()
+        drawings = {"test": mock_drawing}
+        outputs = OutputFiles(
+            output_dir=tmp_path,
+            output_format="png",
+            force_overwrite=False,
+            use_system_fonts=False,
+        )
+
+        save_drawings(outputs, drawings)
+
+        mock_confirm_tty.assert_called_once()
 
     @patch("skim.application.exporter._save_keymap_images")
     def test_skips_confirm_when_force_overwrite(self, mock_save, tmp_path):

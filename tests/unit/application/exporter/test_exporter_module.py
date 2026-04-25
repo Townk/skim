@@ -89,9 +89,13 @@ class TestSaveDrawingsConfirmation:
         drawing.save_svg = MagicMock()
         return drawing
 
+    @patch("skim.application.exporter.sys")
     @patch("skim.application.exporter.click.confirm")
-    def test_shows_confirmation_when_files_exist(self, mock_confirm, tmp_path):
+    def test_shows_confirmation_when_files_exist(
+        self, mock_confirm, mock_sys, tmp_path
+    ):
         """Shows confirmation when output files already exist."""
+        mock_sys.stdin.isatty.return_value = True
         (tmp_path / "layer-0.svg").touch()
         drawing = MagicMock()
         drawing.save_svg = MagicMock()
@@ -107,9 +111,13 @@ class TestSaveDrawingsConfirmation:
 
         mock_confirm.assert_called_once()
 
+    @patch("skim.application.exporter.sys")
     @patch("skim.application.exporter.click.confirm")
-    def test_confirmation_lists_all_existing_files(self, mock_confirm, tmp_path):
+    def test_confirmation_lists_all_existing_files(
+        self, mock_confirm, mock_sys, tmp_path
+    ):
         """Confirmation lists all existing files."""
+        mock_sys.stdin.isatty.return_value = True
         (tmp_path / "layer-1.svg").touch()
         (tmp_path / "layer-2.svg").touch()
 
@@ -159,9 +167,13 @@ class TestSaveDrawingsConfirmation:
         save_drawings(output_files, drawings)
         assert drawing.save_svg.called
 
+    @patch("skim.application.exporter.sys")
     @patch("skim.application.exporter.click.confirm")
-    def test_aborts_when_user_denies_overwrite(self, mock_confirm, tmp_path):
+    def test_aborts_when_user_denies_overwrite(
+        self, mock_confirm, mock_sys, tmp_path
+    ):
         """Aborts program when user denies overwrite confirmation."""
+        mock_sys.stdin.isatty.return_value = True
         (tmp_path / "layer-0.svg").touch()
         drawing = MagicMock()
         drawing.save_svg = MagicMock()
@@ -183,10 +195,14 @@ class TestSaveDrawingsConfirmation:
         assert drawing.save_svg.call_count == 0
         mock_confirm.assert_called_once()
 
+    @patch("skim.application.exporter.sys")
     @patch("skim.application.exporter.click.confirm")
     @patch("skim.application.exporter._save_keymap_images")
-    def test_overwrites_file_when_user_confirms(self, mock_save, mock_confirm, tmp_path):
+    def test_overwrites_file_when_user_confirms(
+        self, mock_save, mock_confirm, mock_sys, tmp_path
+    ):
         """Overwrites existing file when user confirms overwrite."""
+        mock_sys.stdin.isatty.return_value = True
         (tmp_path / "layer-0.svg").touch()
         drawing = MagicMock()
         drawing.save_svg = MagicMock()
