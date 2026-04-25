@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-04-24
+
+### Fixed
+
+- Pydantic 2.13+ compatibility: `SplitSidePosition` enum used as a `BeforeValidator` caused a crash on Python 3.12+ due to stricter validator signature inspection.
+
+### Changed
+
+- Development environment now uses the latest Python version (via mise) to catch compatibility issues earlier. The project still supports Python 3.10+.
+
 ## [0.5.3] - 2026-04-24
 
 ### Added

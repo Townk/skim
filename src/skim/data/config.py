@@ -592,7 +592,7 @@ class SplitSidePosition(str, Enum):
     OUTWARD = "outward"
 
 
-SplitSidePositionStr = Annotated[SplitSidePosition, BeforeValidator(SplitSidePosition)]
+SplitSidePositionStr = Annotated[SplitSidePosition, BeforeValidator(lambda v: SplitSidePosition(v))]
 """Annotated type for SplitSidePosition that accepts string inputs.
 
 This type alias allows configuration files to specify hold symbol positions

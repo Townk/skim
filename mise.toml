@@ -1,4 +1,4 @@
 [tools]
 just = "latest"
-python = "3.10"
+python = "latest"
 uv = "latest"
