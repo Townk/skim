@@ -107,9 +107,7 @@ class TestSaveDrawings:
     @patch("skim.application.exporter.sys")
     @patch("skim.application.exporter.click.confirm")
     @patch("skim.application.exporter._save_keymap_images")
-    def test_confirms_when_files_exist(
-        self, mock_save, mock_confirm, mock_sys, tmp_path
-    ):
+    def test_confirms_when_files_exist(self, mock_save, mock_confirm, mock_sys, tmp_path):
         from skim.application.exporter import save_drawings
 
         mock_sys.stdin.isatty.return_value = True

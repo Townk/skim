@@ -176,9 +176,7 @@ def _confirm_via_tty(prompt: str) -> None:
             finally:
                 sys.stdin = saved_stdin
     except OSError as err:
-        raise click.Abort(
-            "Cannot prompt for confirmation without a terminal."
-        ) from err
+        raise click.Abort("Cannot prompt for confirmation without a terminal.") from err
 
 
 def save_drawings(
@@ -194,9 +192,7 @@ def save_drawings(
                 existing_files.append(file_path)
         if existing_files:
             file_names = ", ".join(f.name for f in existing_files)
-            prompt = (
-                f"Files already exist: {file_names}. Do you want to overwrite?"
-            )
+            prompt = f"Files already exist: {file_names}. Do you want to overwrite?"
             if not sys.stdin.isatty():
                 _confirm_via_tty(prompt)
             else:

@@ -514,9 +514,7 @@ def _confirm_via_tty(prompt: str) -> None:
             finally:
                 sys.stdin = saved_stdin
     except OSError as err:
-        raise click.Abort(
-            "Cannot prompt for confirmation without a terminal."
-        ) from err
+        raise click.Abort("Cannot prompt for confirmation without a terminal.") from err
 
 
 def _write_config(output: Path, content: str, force: bool) -> None:

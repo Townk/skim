@@ -42,7 +42,26 @@ logger = logging.getLogger(__name__)
 """Module-level logger for keymap generation operations."""
 
 
-def _get_config(config_path: Path | None, use_system_fonts: bool = False) -> SkimConfig:
+def _derive_default_config_from_keymap(keymap_path: Path) -> SkimConfig:
+    """Build a SkimConfig from a keymap file using the configurator's defaults.
+
+    Mirrors what ``skim configure -k <keymap>`` produces in memory so the
+    ``generate`` command behaves consistently when invoked without an explicit
+    ``--config``.
+    """
+    import yaml
+
+    from skim.application.config_generator import ConfigGenerator
+
+    yaml_str = ConfigGenerator().generate_from_keymap(keymap_path.read_text(encoding="utf-8"))
+    return SkimConfig.model_validate(yaml.safe_load(yaml_str))
+
+
+def _get_config(
+    config_path: Path | None,
+    use_system_fonts: bool = False,
+    keymap_for_defaults: Path | None = None,
+) -> SkimConfig:
     """Load and enhance configuration with generated gradients.
 
     Loads the skim configuration from the specified file (or uses defaults)
@@ -54,12 +73,20 @@ def _get_config(config_path: Path | None, use_system_fonts: bool = False) -> Ski
             default configuration.
         use_system_fonts: Whether to use system fonts instead of embedding
             fonts in the SVG output.
+        keymap_for_defaults: When ``config_path`` is None, the keymap file used
+            to derive default ``keyboard.layers`` and ``palette.layers`` so the
+            generator behaves like the configurator does for an unconfigured
+            keymap. Ignored when ``config_path`` is provided.
 
     Returns:
         A SkimConfig instance with all layer colors having gradient tuples
         populated.
     """
-    config: SkimConfig = load_skim_config(config_path)
+    config: SkimConfig
+    if config_path is None and keymap_for_defaults is not None and keymap_for_defaults.is_file():
+        config = _derive_default_config_from_keymap(keymap_for_defaults)
+    else:
+        config = load_skim_config(config_path)
 
     new_layers = tuple(
         layer.model_copy(update={"gradient": make_gradient(layer.base_color, layer.color_index)})
@@ -149,7 +176,10 @@ def generate_keymap(
     if not outputs.output_dir.exists():
         outputs.output_dir.mkdir()
 
-    config: SkimConfig = _get_config(inputs.config, outputs.use_system_fonts)
+    keymap_for_defaults = None if inputs.force_stdin_keymap else inputs.keymap
+    config: SkimConfig = _get_config(
+        inputs.config, outputs.use_system_fonts, keymap_for_defaults=keymap_for_defaults
+    )
     input_keymap = _get_input_keymap(inputs, config)
     keymap = _resolve_keymap(config, input_keymap)
     drawings = draw_keymap(config, keymap, targets)

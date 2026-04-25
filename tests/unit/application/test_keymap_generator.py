@@ -83,6 +83,26 @@ class TestGetConfig:
 
         assert result.output.style.palette.layers[0].gradient == existing_gradient
 
+    def test_derives_layers_from_keymap_when_no_config_path(self):
+        """When no config is provided, derives keyboard.layers and palette.layers from the keymap.
+
+        Regression for issue #2: skim generate -k <keymap> without --config crashed
+        in the overview render and silently produced no files when --layer was passed,
+        because palette.layers and keyboard.layers were both empty in the default config.
+        """
+        sample_vial = (
+            Path(__file__).parent.parent.parent.parent / "samples" / "keymaps" / "vial-sample.vil"
+        )
+
+        result = _get_config(None, keymap_for_defaults=sample_vial)
+
+        assert len(result.output.style.palette.layers) > 0, (
+            "palette.layers must be auto-populated from the keymap"
+        )
+        assert len(result.keyboard.layers) > 0, (
+            "keyboard.layers must be auto-populated from the keymap"
+        )
+
 
 class TestGetInputKeymap:
     """Tests for _get_input_keymap function."""
