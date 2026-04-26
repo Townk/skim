@@ -11,7 +11,7 @@ their target layer's row. See
 for the full algorithm.
 """
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Protocol
@@ -626,6 +626,8 @@ def phase2_route_to_targets(path_list: list[ConnectorStep]) -> None:
         outermost.current_point = outermost.target_point
 
 
+# NOTE: Deprecated by route_overview_connectors. Removed in Task 11
+# once overview.py is rewired. Do not call from new code.
 def route_thumb_connectors(
     left: ThumbCluster[SvalboardTargetKey],
     right: ThumbCluster[SvalboardTargetKey],
@@ -710,3 +712,195 @@ def route_thumb_connectors(
         extra_bottom_padding=extra_bottom,
         extra_right_padding=(cols_used + 1) * keymap_spacing,
     )
+
+
+def _layer_cluster_y_bounds(layout: RoutingLayout, source_layer: int) -> tuple[float, float]:
+    """Return (top_y, bottom_y) of the finger clusters in a given layer's row."""
+    _, row_y, _, row_h = layout.layer_row_bounding_box(source_layer)
+    return (row_y, row_y + row_h)
+
+
+def route_overview_connectors(
+    layers: Sequence[OverviewLayerSource],
+    thumb: ThumbSource,
+    layout: RoutingLayout,
+    compute_indicator_rects: Callable[
+        [], Mapping[SvalboardTargetKey, tuple[float, float, float, float]]
+    ],
+    keymap_spacing: float,
+) -> ConnectorRouting:
+    """Top-level orchestrator for overview connector routing.
+
+    Two-pass strategy: pass 1 discovers paddings per source and applies
+    cascading layout shifts; pass 2 rebuilds paths against the fully-shifted
+    layout for final geometry. Phase 2 column allocation runs once globally
+    across all sources combined.
+
+    Args:
+        layers: Per-layer finger sources.
+        thumb: The thumb cluster source.
+        layout: The mutable routing layout. Mutated in place via shift_*
+            methods during pass 1.
+        compute_indicator_rects: Callable invoked twice (once before pass 1,
+            once between passes). Each invocation MUST reflect the *current*
+            layout state — typically the caller rebuilds cluster components
+            on the second invocation, after pass 1's shifts have mutated the
+            layout. Passing a memoized closure that returns the same rects
+            twice will produce stale path coordinates in pass 2.
+        keymap_spacing: Spacing constant for routing geometry (typically
+            ``0.6 * outer_key_size``).
+
+    Returns:
+        ConnectorRouting with paths and the residual paddings the caller
+        must apply. ``extra_top_padding`` is always 0 (consumed via shifts);
+        ``extra_bottom_padding`` is the thumb cluster's bottom padding;
+        ``extra_right_padding`` is ``(cols_used + 1) * keymap_spacing``.
+    """
+    # --- Pass 1: discover paddings, apply cascading layout shifts. ---
+    rects_pass1 = compute_indicator_rects()
+    thumb_extra_bottom = _pass1_discover_and_shift(
+        layers, thumb, layout, rects_pass1, keymap_spacing
+    )
+
+    # --- Pass 2: rebuild paths against the now-shifted layout. ---
+    rects_pass2 = compute_indicator_rects()
+    all_paths = _pass2_build_paths(layers, thumb, layout, rects_pass2, keymap_spacing)
+
+    if not all_paths:
+        return ConnectorRouting(
+            paths=[],
+            extra_top_padding=0.0,
+            extra_bottom_padding=0.0,
+            extra_right_padding=0.0,
+        )
+
+    # --- Phase 2: global column allocation + drop to targets. ---
+    anchor = layers[0].source_layer if layers else thumb.source_layer
+    row_x, _, row_w, _ = layout.layer_row_bounding_box(anchor)
+    first_column_x = row_x + row_w + 2 * keymap_spacing
+    cols_used = allocate_columns(all_paths, first_column_x, keymap_spacing)
+    phase2_route_to_targets(all_paths)
+
+    return ConnectorRouting(
+        paths=[(s.path, s.target_layer) for s in all_paths],
+        extra_top_padding=0.0,
+        extra_bottom_padding=thumb_extra_bottom,
+        extra_right_padding=(cols_used + 1) * keymap_spacing,
+    )
+
+
+def _pass1_discover_and_shift(
+    layers: Sequence[OverviewLayerSource],
+    thumb: ThumbSource,
+    layout: RoutingLayout,
+    indicator_rects: Mapping[SvalboardTargetKey, tuple[float, float, float, float]],
+    keymap_spacing: float,
+) -> float:
+    """Pass 1: route each source, discover paddings, apply cascading shifts.
+
+    Returns the thumb's extra_bottom_padding (the only padding NOT applied
+    via layout shifts; it grows the canvas at the bottom).
+    """
+    for layer in layers:
+        paths = build_finger_path_list_for_layer(
+            layer.left, layer.right, layer.source_layer, layout, keymap_spacing
+        )
+        if not paths:
+            continue
+        _attach_rects_and_set_initial_moveto(paths, indicator_rects)
+        cluster_top, cluster_bottom = _layer_cluster_y_bounds(layout, layer.source_layer)
+        min_y = min(s.current_point[1] for s in paths)
+        max_y = max(s.current_point[1] for s in paths)
+        phase1_redirect_right_to_down(paths, keymap_spacing)
+        phase1_redirect_left_to_down(paths, keymap_spacing)
+        extra_top = phase1_up_to_right(paths, cluster_top, min_y, keymap_spacing)
+        extra_bottom = phase1_down_to_right(paths, cluster_bottom, max_y, keymap_spacing)
+        if extra_top > 0:
+            layout.shift_layer_row_and_below(layer.source_layer, extra_top)
+        if extra_bottom > 0:
+            layout.shift_below_layer_row(layer.source_layer, extra_bottom)
+
+    thumb_paths = build_thumb_path_list(
+        thumb.left, thumb.right, layout, thumb.source_layer, keymap_spacing
+    )
+    if not thumb_paths:
+        return 0.0
+    _attach_rects_and_set_initial_moveto(thumb_paths, indicator_rects)
+    cluster_top, cluster_bottom = layout.thumb_cluster_y_bounds()
+    min_y = min(s.current_point[1] for s in thumb_paths)
+    max_y = max(s.current_point[1] for s in thumb_paths)
+    phase1_redirect_left_to_down(thumb_paths, keymap_spacing)
+    extra_top = phase1_up_to_right(thumb_paths, cluster_top, min_y, keymap_spacing)
+    extra_bottom = phase1_down_to_right(thumb_paths, cluster_bottom, max_y, keymap_spacing)
+    if extra_top > 0:
+        layout.shift_thumb_down(extra_top)
+    return extra_bottom
+
+
+def _pass2_build_paths(
+    layers: Sequence[OverviewLayerSource],
+    thumb: ThumbSource,
+    layout: RoutingLayout,
+    indicator_rects: Mapping[SvalboardTargetKey, tuple[float, float, float, float]],
+    keymap_spacing: float,
+) -> list[ConnectorStep]:
+    """Pass 2: rebuild paths against the post-shift layout for final geometry.
+
+    Padding values are discarded — they were already applied in pass 1.
+    """
+    all_paths: list[ConnectorStep] = []
+    for layer in layers:
+        paths = build_finger_path_list_for_layer(
+            layer.left, layer.right, layer.source_layer, layout, keymap_spacing
+        )
+        if not paths:
+            continue
+        _attach_rects_and_set_initial_moveto(paths, indicator_rects)
+        cluster_top, cluster_bottom = _layer_cluster_y_bounds(layout, layer.source_layer)
+        min_y = min(s.current_point[1] for s in paths)
+        max_y = max(s.current_point[1] for s in paths)
+        phase1_redirect_right_to_down(paths, keymap_spacing)
+        phase1_redirect_left_to_down(paths, keymap_spacing)
+        phase1_up_to_right(paths, cluster_top, min_y, keymap_spacing)
+        phase1_down_to_right(paths, cluster_bottom, max_y, keymap_spacing)
+        all_paths.extend(paths)
+
+    thumb_paths = build_thumb_path_list(
+        thumb.left, thumb.right, layout, thumb.source_layer, keymap_spacing
+    )
+    if thumb_paths:
+        _attach_rects_and_set_initial_moveto(thumb_paths, indicator_rects)
+        cluster_top, cluster_bottom = layout.thumb_cluster_y_bounds()
+        min_y = min(s.current_point[1] for s in thumb_paths)
+        max_y = max(s.current_point[1] for s in thumb_paths)
+        phase1_redirect_left_to_down(thumb_paths, keymap_spacing)
+        phase1_up_to_right(thumb_paths, cluster_top, min_y, keymap_spacing)
+        phase1_down_to_right(thumb_paths, cluster_bottom, max_y, keymap_spacing)
+        all_paths.extend(thumb_paths)
+
+    return all_paths
+
+
+def _attach_rects_and_set_initial_moveto(
+    paths: list[ConnectorStep],
+    indicator_rects: Mapping[SvalboardTargetKey, tuple[float, float, float, float]],
+) -> None:
+    """Populate each step's indicator_rect from the map and set its initial moveTo.
+
+    Raises ``ValueError`` with a clear message if a step's key is missing
+    from the map (programmer error — the caller must populate every key
+    whose layer_switch enters the priority list).
+    """
+    for step in paths:
+        if step.key is None:
+            continue
+        try:
+            step.indicator_rect = indicator_rects[step.key]
+        except KeyError as e:
+            raise ValueError(
+                f"indicator_rects missing entry for key "
+                f"{step.key_origin_attr!r} in cluster {step.source_cluster_attr!r} "
+                f"(target_layer={step.target_layer}); caller must populate every "
+                f"key whose layer_switch enters the priority list"
+            ) from e
+        set_initial_moveto(step)

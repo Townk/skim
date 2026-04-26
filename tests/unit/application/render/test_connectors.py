@@ -23,6 +23,7 @@ from skim.application.render.connectors import (
     phase1_redirect_right_to_down,
     phase1_up_to_right,
     phase2_route_to_targets,
+    route_overview_connectors,
     route_thumb_connectors,
     set_initial_moveto,
     target_point_for,
@@ -1193,6 +1194,153 @@ class TestBuildFingerPathListForLayer:
         r4_step = next(s for s in steps if s.source_cluster_attr == "right.pinky")
         assert l4_step.direction == Direction.UP  # non-R4 priority
         assert r4_step.direction == Direction.RIGHT  # R4 priority
+
+
+class TestRouteOverviewConnectors:
+    def _layout(self):
+        layout = MagicMock()
+        layout.layer_row_y_positions = [100, 200, 300]
+        layout.layer_row_heights = [50, 50, 50]
+        layout.layer_row_bounding_box = lambda i: (200, layout.layer_row_y_positions[i], 600, 50)
+        layout.layer_row_target_y = lambda i: layout.layer_row_y_positions[i] + 25
+        layout.thumb_cluster_y_bounds = lambda: (400.0, 500.0)
+        # Mutating methods recorded but no-op for the test layout.
+        layout.shift_layer_row_and_below = MagicMock()
+        layout.shift_below_layer_row = MagicMock()
+        layout.shift_thumb_down = MagicMock()
+        return layout
+
+    def test_empty_sources_returns_zero_padding(self):
+        layout = self._layout()
+        result = route_overview_connectors(
+            layers=[],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
+            layout=layout,
+            compute_indicator_rects=lambda: {},
+            keymap_spacing=18,
+        )
+        assert result.paths == []
+        assert result.extra_top_padding == 0.0
+        assert result.extra_bottom_padding == 0.0
+        assert result.extra_right_padding == 0.0
+
+    def test_single_finger_trigger_produces_one_path(self):
+        layout = self._layout()
+        # Right-pinky north_key on layer 0 targets layer 1.
+        rp_n = _key(layer_switch=1)
+        right = _side(pinky=_finger(north_key=rp_n))
+        rects = {rp_n: (700.0, 110.0, 6.0, 6.0)}
+        result = route_overview_connectors(
+            layers=[OverviewLayerSource(source_layer=0, left=_side(), right=right)],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
+            layout=layout,
+            compute_indicator_rects=lambda: rects,
+            keymap_spacing=18,
+        )
+        assert len(result.paths) == 1
+        path, target_layer = result.paths[0]
+        assert target_layer == 1
+
+    def test_finger_up_trigger_applies_shift_layer_row_and_below(self):
+        # A non-R4 north_key trigger has direction=UP, which produces a
+        # non-zero extra_top_padding that the orchestrator applies via
+        # layout.shift_layer_row_and_below.
+        layout = self._layout()
+        l1_n = _key(layer_switch=1)  # left.index north_key
+        left = _side(index=_finger(north_key=l1_n))
+        rects = {l1_n: (300.0, 110.0, 6.0, 6.0)}
+        route_overview_connectors(
+            layers=[OverviewLayerSource(source_layer=0, left=left, right=_side())],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
+            layout=layout,
+            compute_indicator_rects=lambda: rects,
+            keymap_spacing=18,
+        )
+        # 1 UP step → extra_top_padding = 1 * 18 = 18.0.
+        layout.shift_layer_row_and_below.assert_called_with(0, 18.0)
+
+    def test_thumb_extra_bottom_returned_in_routing(self):
+        # A thumb DOWN trigger (RT_Knuckle) produces extra_bottom = (1 + 0.5) * 18 = 27.
+        layout = self._layout()
+        rt_knuckle = _key(layer_switch=1)
+        right_thumb = _thumb(knuckle_key=rt_knuckle)
+        rects = {rt_knuckle: (700.0, 450.0, 6.0, 6.0)}
+        result = route_overview_connectors(
+            layers=[],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=right_thumb),
+            layout=layout,
+            compute_indicator_rects=lambda: rects,
+            keymap_spacing=18,
+        )
+        assert result.extra_bottom_padding == 27.0
+        # No layer sources → no shift_layer_row_and_below calls.
+        layout.shift_layer_row_and_below.assert_not_called()
+
+    def test_compute_indicator_rects_called_twice(self):
+        # Two-pass strategy: pass 1 + pass 2.
+        layout = self._layout()
+        rp_n = _key(layer_switch=1)
+        right = _side(pinky=_finger(north_key=rp_n))
+        rects = {rp_n: (700.0, 110.0, 6.0, 6.0)}
+        compute_calls = [0]
+
+        def compute_rects():
+            compute_calls[0] += 1
+            return rects
+
+        route_overview_connectors(
+            layers=[OverviewLayerSource(source_layer=0, left=_side(), right=right)],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
+            layout=layout,
+            compute_indicator_rects=compute_rects,
+            keymap_spacing=18,
+        )
+        assert compute_calls[0] == 2
+
+    def test_extra_right_padding_uses_n_plus_one_formula(self):
+        # 1 column allocated → extra_right = (1 + 1) * 18 = 36.
+        layout = self._layout()
+        rp_n = _key(layer_switch=1)
+        right = _side(pinky=_finger(north_key=rp_n))
+        rects = {rp_n: (700.0, 110.0, 6.0, 6.0)}
+        result = route_overview_connectors(
+            layers=[OverviewLayerSource(source_layer=0, left=_side(), right=right)],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
+            layout=layout,
+            compute_indicator_rects=lambda: rects,
+            keymap_spacing=18,
+        )
+        assert result.extra_right_padding == 36.0
+
+    def test_multi_layer_cascading_calls_shift_per_layer(self):
+        # Two non-empty layers, each with a single UP trigger in left.index.
+        # Each layer should produce extra_top=18 and call shift_layer_row_and_below
+        # with its own source_layer.
+        layout = self._layout()
+        l0_n = _key(layer_switch=2)
+        l1_n = _key(layer_switch=2)
+        layer0_left = _side(index=_finger(north_key=l0_n))
+        layer1_left = _side(index=_finger(north_key=l1_n))
+        rects = {
+            l0_n: (300.0, 110.0, 6.0, 6.0),
+            l1_n: (300.0, 210.0, 6.0, 6.0),
+        }
+        route_overview_connectors(
+            layers=[
+                OverviewLayerSource(source_layer=0, left=layer0_left, right=_side()),
+                OverviewLayerSource(source_layer=1, left=layer1_left, right=_side()),
+            ],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
+            layout=layout,
+            compute_indicator_rects=lambda: rects,
+            keymap_spacing=18,
+        )
+        # Each layer triggers one UP step → extra_top = 1*18 = 18.
+        # Calls happen per-layer in the order layers were passed.
+        calls = layout.shift_layer_row_and_below.call_args_list
+        assert len(calls) == 2
+        assert calls[0].args == (0, 18.0)
+        assert calls[1].args == (1, 18.0)
 
 
 class TestSourceDataclasses:
