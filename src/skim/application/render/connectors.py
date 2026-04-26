@@ -42,6 +42,9 @@ class ConnectorStep:
         col_x: The routing column X coordinate, set during Phase 2 allocation.
         current_point: The path's current end point; updated on each move/line
             so subsequent routing phases can reason about where the pen sits.
+        key_origin_attr: The thumb-cluster attribute name that produced this
+            step (e.g. ``"down_key"``, ``"up_key"``). Used by Phase 1 routing
+            to identify partner paths (e.g. matching LT_Up to LT_Down).
         path: Accumulating SVG path; appended to during routing.
     """
 
@@ -51,6 +54,7 @@ class ConnectorStep:
     target_layer: int
     col_x: float = 0.0
     current_point: tuple[float, float] = (0.0, 0.0)
+    key_origin_attr: str = ""
     path: draw.Path = field(default_factory=lambda: draw.Path(fill="none"))
 
 
@@ -167,6 +171,7 @@ def build_thumb_path_list(
                 direction=direction,
                 target_point=target,
                 target_layer=key.layer_switch,
+                key_origin_attr=attr,
             )
         )
 
@@ -182,7 +187,39 @@ def build_thumb_path_list(
                     direction=direction,
                     target_point=target,
                     target_layer=left.up_key.layer_switch,
+                    key_origin_attr="up_key",
                 )
             )
 
     return steps
+
+
+def phase1_redirect_left_to_down(
+    path_list: list[ConnectorStep],
+    keymap_spacing: float,
+) -> None:
+    """Redirect LEFT-direction paths (LT_Up special case) to DOWN.
+
+    The path is extended west far enough to clear the conflicting DOWN path's
+    drop column (LT_Down), then its direction is flipped to DOWN so the regular
+    DOWN->RIGHT sub-step picks it up.
+    """
+    left_steps = [s for s in path_list if s.direction == Direction.LEFT]
+    if not left_steps:
+        return
+    # Find the LT_Down partner by its origin attr (set by build_thumb_path_list).
+    partner = next(
+        (s for s in path_list if s.direction == Direction.DOWN and s.key_origin_attr == "down_key"),
+        None,
+    )
+    # Fallback: use the first DOWN step in path_list if no annotated partner is found.
+    if partner is None:
+        partner = next((s for s in path_list if s.direction == Direction.DOWN), None)
+    if partner is None:
+        return  # malformed input; nothing to redirect against
+
+    new_x = partner.current_point[0] - keymap_spacing
+    for step in left_steps:
+        step.path.L(new_x, step.current_point[1])
+        step.current_point = (new_x, step.current_point[1])
+        step.direction = Direction.DOWN
