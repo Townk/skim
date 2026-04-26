@@ -16,6 +16,7 @@ from enum import Enum
 
 import drawsvg as draw
 
+from skim.application.render.overview_layout import OverviewLayout
 from skim.domain import SvalboardTargetKey
 
 
@@ -62,3 +63,26 @@ class ConnectorRouting:
     paths: list[draw.Path]
     extra_bottom_padding: float
     extra_right_padding: float
+
+
+def target_point_for(
+    layout: OverviewLayout,
+    target_layer: int,
+    source_layer: int,
+    keymap_spacing: float,
+) -> tuple[float, float] | None:
+    """Compute the target point for a connector, or return ``None`` to skip.
+
+    Returns ``None`` for:
+    - Self-referential triggers (source == target).
+    - Target layer index out of range for the layout's rendered layer rows.
+
+    The target point is one ``keymap_spacing`` to the right of the layer row's
+    right edge, vertically centered on the row.
+    """
+    if target_layer == source_layer:
+        return None
+    if target_layer < 0 or target_layer >= len(layout.layer_row_y_positions):
+        return None
+    x, y, w, h = layout.layer_row_bounding_box(target_layer)
+    return (x + w + keymap_spacing, y + h / 2.0)
