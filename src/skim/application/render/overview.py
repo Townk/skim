@@ -12,15 +12,14 @@ Generates a table-like overview SVG showing all keymap layers:
 - Dotted connector lines from layer indicator circles to target layer rows
 """
 
-from collections.abc import Callable
-
 import drawsvg as draw
 
 from skim.assets import ASSETS
-from skim.data import Palette, SkimConfig, SvalboardKeymap
+from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .components import FingerClusterComponent, ThumbClusterComponent
+from .connectors import ConnectorRouting, route_thumb_connectors
 from .context import RenderContext
 from .geometry import AspectRatio
 from .indicators import (
@@ -40,7 +39,6 @@ from .text import Font
 
 _LOGO_ASPECT_RATIO = AspectRatio.from_dimensions(width=2333.333, height=458.333, precision=2)
 _FINGER_CLUSTERS_PER_SIDE = 4
-_CONNECTOR_ROUTING_MARGIN = 12.0
 
 # Finger cluster key proportions (same as FingerClusterComponent)
 _OUTER_KEY_WIDTH_PROPORTION = 0.328
@@ -102,26 +100,6 @@ _IndicatorInfo = tuple[float, float, float, int, str, KeyboardSide]
 """(abs_cx, abs_cy, circle_radius, target_layer_idx, key_name, side)"""
 
 
-# First-segment escape direction per thumb key name and side.
-# "UP" = vertical up, "DOWN" = vertical down, "RIGHT" = horizontal right.
-_THUMB_ESCAPE_DIRECTIONS: dict[tuple[str, KeyboardSide], str] = {
-    # Left side
-    ("pad_key", KeyboardSide.LEFT): "UP",
-    ("nail_key", KeyboardSide.LEFT): "UP",
-    ("up_key", KeyboardSide.LEFT): "DOWN",
-    ("knuckle_key", KeyboardSide.LEFT): "DOWN",
-    ("down_key", KeyboardSide.LEFT): "DOWN",
-    ("double_down_key", KeyboardSide.LEFT): "UP",
-    # Right side
-    ("pad_key", KeyboardSide.RIGHT): "RIGHT",
-    ("nail_key", KeyboardSide.RIGHT): "UP",
-    ("up_key", KeyboardSide.RIGHT): "RIGHT",
-    ("knuckle_key", KeyboardSide.RIGHT): "DOWN",
-    ("down_key", KeyboardSide.RIGHT): "RIGHT",
-    ("double_down_key", KeyboardSide.RIGHT): "RIGHT",
-}
-
-
 def _collect_finger_indicators(
     clusters: list[list[FingerClusterComponent]],
     keymap: SvalboardKeymap[SvalboardTargetKey],
@@ -135,14 +113,18 @@ def _collect_finger_indicators(
     return []
 
 
-def _collect_thumb_indicators(
+def _compute_thumb_indicator_rects(
     left_thumb: ThumbClusterComponent,
     right_thumb: ThumbClusterComponent,
     keymap: SvalboardKeymap[SvalboardTargetKey],
     config: SkimConfig,
-) -> list[_IndicatorInfo]:
-    """Collect indicator circle positions and directions from thumb clusters."""
-    results: list[_IndicatorInfo] = []
+) -> dict[SvalboardTargetKey, tuple[float, float, float, float]]:
+    """Return ``{triggering_key: (rect_x, rect_y, rect_w, rect_h)}`` for thumb indicators.
+
+    Each rect is the bounding box of the indicator circle:
+    ``(cx - r, cy - r, 2r, 2r)`` in absolute SVG coordinates.
+    """
+    results: dict[SvalboardTargetKey, tuple[float, float, float, float]] = {}
     first_qmk_idx = config.keyboard.layers[0].index if config.keyboard.layers else 0
     if first_qmk_idx not in keymap.layers:
         return results
@@ -202,199 +184,63 @@ def _collect_thumb_indicators(
                 connector_target_y=connector_target_y,
             )
 
-            results.append(
-                (
-                    thumb_comp.x + indicator.circle_center_x,
-                    thumb_comp.y + indicator.circle_center_y,
-                    circle_diameter / 2.0,
-                    key.layer_switch,
-                    key_name,
-                    side,
-                )
+            radius = circle_diameter / 2.0
+            abs_cx = thumb_comp.x + indicator.circle_center_x
+            abs_cy = thumb_comp.y + indicator.circle_center_y
+            results[key] = (
+                abs_cx - radius,
+                abs_cy - radius,
+                circle_diameter,
+                circle_diameter,
             )
 
     return results
 
 
-def _compute_connector_paths(
-    all_indicators: list[_IndicatorInfo],
-    all_row_bounds: list[tuple[float, float, float, float]],
-    layer_to_row: dict[int, int],
-    nk: float,
-    ew_offset: float,
-    max_cluster_right: float,
-    padding: float,
-    thumb_bbox: tuple[float, float, float, float] | None = None,
-) -> list[tuple[list[tuple[float, float]], int]]:
-    """Compute connector line paths without drawing them.
+class _RoutingLayoutAdapter:
+    """Adapter that exposes ``OverviewLayout`` to the connector router by QMK index.
 
-    Returns list of (points, target_layer) for each connector line.
-    Points start from the circle perimeter, not center.
-    UP/DOWN escapes clear the entire thumb cluster area so horizontal
-    segments don't cross any thumb keys.
+    ``route_thumb_connectors`` calls ``layer_row_bounding_box(target_layer)``
+    where ``target_layer`` is a key's QMK ``layer_switch`` value. The overview
+    renders rows in reverse order (top row = highest QMK index) and may use
+    non-sequential QMK indices (e.g. 0, 1, 3, 4, 8, ...), so a QMK index does
+    not equal a row index. This adapter translates QMK indices to row indices
+    using the caller's ``layer_to_row`` map and presents a ``layer_row_y_positions``
+    long enough that the router's bounds check accepts every mapped QMK index.
     """
-    lines = [
-        (cx, cy, r, tgt, kn, sd) for cx, cy, r, tgt, kn, sd in all_indicators if tgt in layer_to_row
-    ]
-    if not lines:
-        return []
 
-    # Lines end at cluster right edge + document padding
-    end_x = max_cluster_right + padding
+    def __init__(self, layout: OverviewLayout, layer_to_row: dict[int, int]) -> None:
+        self._layout = layout
+        self._layer_to_row = layer_to_row
+        # Build a virtual y-positions list indexed by QMK layer index, padded
+        # to ``max(qmk_idx) + 1`` so the router's
+        # ``target_layer < len(layer_row_y_positions)`` bounds check passes for
+        # every valid QMK index. Slots without a layer get 0.0 — they are never
+        # looked up because ``layer_row_bounding_box`` is the only consumer of
+        # the actual values, and it goes through ``_layer_to_row.get``.
+        size = max(layer_to_row.keys()) + 1 if layer_to_row else 0
+        positions = [0.0] * size
+        real = layout.layer_row_y_positions
+        for qmk_idx, row_idx in layer_to_row.items():
+            if 0 <= row_idx < len(real):
+                positions[qmk_idx] = real[row_idx]
+        self._y_positions = positions
 
-    # Thumb cluster top/bottom for clearance
-    if thumb_bbox:
-        _tb_x, tb_y, _tb_w, tb_h = thumb_bbox
-        thumb_top = tb_y
-        thumb_bottom = tb_y + tb_h
-    else:
-        # Fallback: use circle positions
-        all_cy = [cy for _, cy, _, _, _, _ in lines]
-        thumb_top = min(all_cy) - nk
-        thumb_bottom = max(all_cy) + nk
+    @property
+    def layer_row_y_positions(self) -> list[float]:
+        return self._y_positions
 
-    # Routing columns staggered to the right
-    target_layers_used = sorted({ln[3] for ln in lines})
-    base_routing_x = end_x + padding + nk
-    routing_x_by_layer = {
-        layer: base_routing_x + i * nk for i, layer in enumerate(target_layers_used)
-    }
+    def layer_row_bounding_box(self, target_layer: int) -> tuple[float, float, float, float]:
+        row_idx = self._layer_to_row.get(target_layer)
+        if row_idx is None:
+            # Fallback: caller passed an unmapped index. ``target_point_for``
+            # already guards via the y_positions length check, so this is
+            # purely defensive.
+            row_idx = target_layer
+        return self._layout.layer_row_bounding_box(row_idx)
 
-    # Y-stagger: group by escape direction, assign increasing multipliers
-    up_indices: list[tuple[int, float]] = []
-    down_indices: list[tuple[int, float]] = []
-    right_indices: list[tuple[int, float]] = []
-
-    for i, (cx, cy, _r, _tgt, key_name, side) in enumerate(lines):
-        escape = _THUMB_ESCAPE_DIRECTIONS.get((key_name, side), "RIGHT")
-        if escape == "UP":
-            up_indices.append((i, cy))
-        elif escape == "DOWN":
-            down_indices.append((i, cy))
-        else:
-            right_indices.append((i, cx))
-
-    # UP: highest circle (largest cy) = smallest rank (closest to thumb_top)
-    up_indices.sort(key=lambda t: t[1], reverse=True)
-    # DOWN: lowest circle (smallest cy) = smallest rank (closest to thumb_bottom)
-    down_indices.sort(key=lambda t: t[1])
-    # RIGHT: leftmost = smallest escape
-    right_indices.sort(key=lambda t: t[1])
-
-    escape_mult: dict[int, int] = {}
-    for rank, (idx, _) in enumerate(up_indices):
-        escape_mult[idx] = rank + 1
-    for rank, (idx, _) in enumerate(down_indices):
-        escape_mult[idx] = rank + 1
-    for rank, (idx, _) in enumerate(right_indices):
-        escape_mult[idx] = rank + 1
-
-    # Pre-compute all UP escape Y values so RIGHT lines can avoid them
-    up_escape_ys: set[int] = set()
-    for idx, _ in up_indices:
-        mult_val = escape_mult[idx]
-        up_escape_ys.add(round(thumb_top - mult_val * nk))
-
-    # Also pre-compute DOWN escape Y values
-    down_escape_ys: set[int] = set()
-    for idx, _ in down_indices:
-        mult_val = escape_mult[idx]
-        down_escape_ys.add(round(thumb_bottom + mult_val * nk))
-
-    # All reserved horizontal Y values (UP + DOWN escapes)
-    reserved_ys = up_escape_ys | down_escape_ys
-
-    result: list[tuple[list[tuple[float, float]], int]] = []
-
-    for line_idx, (cx, cy, radius, target_layer, key_name, side) in enumerate(lines):
-        target_row_idx = layer_to_row[target_layer]
-        _tgt_x, tgt_y, _tgt_w, _tgt_h = all_row_bounds[target_row_idx]
-        target_ew_center_y = tgt_y + ew_offset + nk / 2.0
-        routing_x = routing_x_by_layer[target_layer]
-        mult = escape_mult.get(line_idx, 1)
-
-        escape = _THUMB_ESCAPE_DIRECTIONS.get((key_name, side), "RIGHT")
-
-        if escape == "UP":
-            start_y = cy - radius - 4.0  # 4px gap from circle perimeter
-            escape_y = thumb_top - mult * nk
-            pts = [(cx, start_y), (cx, escape_y), (routing_x, escape_y)]
-            if abs(escape_y - target_ew_center_y) > 1.0:
-                pts.append((routing_x, target_ew_center_y))
-            pts.append((end_x, target_ew_center_y))
-
-        elif escape == "DOWN":
-            start_y = cy + radius + 4.0  # 4px gap from circle perimeter
-            escape_y = thumb_bottom + mult * nk
-            pts = [(cx, start_y), (cx, escape_y), (routing_x, escape_y)]
-            if abs(escape_y - target_ew_center_y) > 1.0:
-                pts.append((routing_x, target_ew_center_y))
-            pts.append((end_x, target_ew_center_y))
-
-        else:  # RIGHT
-            start_x = cx + radius + 4.0  # 4px gap from circle perimeter
-            escape_x = max(start_x + mult * nk, max_cluster_right + nk)
-
-            # Check if this line's horizontal Y (cy) collides with any
-            # reserved UP/DOWN escape Y. If so, the line's horizontal
-            # segment at the routing area would overlap — avoid by going
-            # UP to the next free slot above thumb_top.
-            rounded_cy = round(cy)
-            collides = any(abs(rounded_cy - ry) < nk for ry in reserved_ys)
-
-            if collides:
-                # Find the next free Y above thumb_top
-                slot = max(len(up_escape_ys), len(down_escape_ys)) + 1
-                escape_y = thumb_top - slot * nk
-                reserved_ys.add(round(escape_y))
-                pts = [(start_x, cy), (escape_x, cy), (escape_x, escape_y), (routing_x, escape_y)]
-                if abs(escape_y - target_ew_center_y) > 1.0:
-                    pts.append((routing_x, target_ew_center_y))
-                pts.append((end_x, target_ew_center_y))
-            else:
-                pts = [(start_x, cy), (escape_x, cy)]
-                if escape_x < routing_x:
-                    pts.append((routing_x, cy))
-                final_x = max(escape_x, routing_x)
-                if abs(cy - target_ew_center_y) > 1.0:
-                    pts.append((final_x, target_ew_center_y))
-                    pts.append((end_x, target_ew_center_y))
-
-        result.append((pts, target_layer))
-
-    return result
-
-
-def _draw_connector_paths(
-    d: draw.Drawing,
-    paths: list[tuple[list[tuple[float, float]], int]],
-    palette: "Palette",
-    qmk_index_to_position: "Callable[[int], int | None]",
-) -> None:
-    """Draw pre-computed connector line paths as dotted SVG paths."""
-    for pts, target_layer in paths:
-        pos = qmk_index_to_position(target_layer)
-        if pos is not None and 0 <= pos < len(palette.layers):
-            stroke_color = palette.layers[pos][4]
-        else:
-            stroke_color = "#808080"
-
-        path_d = f"M {pts[0][0]:.2f} {pts[0][1]:.2f}"
-        for px, py in pts[1:]:
-            path_d += f" L {px:.2f} {py:.2f}"
-
-        d.append(
-            draw.Raw(
-                f'<path d="{path_d}"'
-                f' stroke="{stroke_color}"'
-                f' stroke-width="2.5"'
-                f' stroke-dasharray="0.1 7"'
-                f' stroke-linecap="round"'
-                f' fill="none"'
-                f' opacity="0.7"'
-                f"/>"
-            )
-        )
+    def thumb_cluster_y_bounds(self) -> tuple[float, float]:
+        return self._layout.thumb_cluster_y_bounds()
 
 
 def _build_thumb_clusters(
@@ -448,7 +294,6 @@ def draw_overview(
     for pos, layer_cfg in enumerate(config.keyboard.layers):
         if layer_cfg.index in keymap.layers:
             render_layers.append((pos, layer_cfg.index))
-    render_layer_count = len(render_layers)
 
     use_system_fonts = config.output.style.use_system_fonts
     palette = config.output.style.palette
@@ -458,105 +303,70 @@ def draw_overview(
     prelim_badge = BadgeDimensions(width=200, height=40, border_radius=8)
     prelim_layout = OverviewLayout(config, prelim_badge)
     badge_dims = _compute_badge_dims(config, render_layers, prelim_layout.finger_cluster_width)
-    routing_column_count = render_layer_count  # worst case
-    layout = OverviewLayout(config, badge_dims, routing_column_count)
+    # Routing area width is allocated by route_thumb_connectors via extra_right_padding;
+    # pass 0 so the constructor doesn't pre-reserve duplicate space.
+    layout = OverviewLayout(config, badge_dims, routing_column_count=0)
 
     nk = layout.finger_cluster_width * _OUTER_KEY_WIDTH_PROPORTION
     ew_offset = layout.ew_key_y_offset
     row_to_layer = list(reversed(render_layers))  # list of (pos, qmk_idx) tuples
     layer_to_row = {qmk_idx: ri for ri, (_pos, qmk_idx) in enumerate(row_to_layer)}
 
-    # --- Phase 2: Build thumb clusters at preliminary position, collect indicators,
-    #     compute connector paths to find clearance needed ---
-    connector_paths: list[tuple[list[tuple[float, float]], int]] = []
+    # --- Phase 2: Route thumb-cluster connectors via the new algorithm ---
+    routing: ConnectorRouting | None = None
     if config.output.style.show_layer_indicators and keymap.layers:
-        left_thumb_prelim, right_thumb_prelim = _build_thumb_clusters(
-            config, keymap, layout, use_system_fonts
-        )
-        if left_thumb_prelim and right_thumb_prelim:
-            all_row_bounds = [layout.layer_row_bounding_box(i) for i in range(render_layer_count)]
-            max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
-            indicators = _collect_thumb_indicators(
-                left_thumb_prelim, right_thumb_prelim, keymap, config
+        first_qmk_idx = config.keyboard.layers[0].index if config.keyboard.layers else 0
+        if config.output.style.show_layer_connectors and first_qmk_idx in keymap.layers:
+            layer0 = keymap.layers[first_qmk_idx]
+            # ``route_thumb_connectors`` indexes the layout via
+            # ``layer_row_bounding_box(target_layer)`` / ``layer_row_y_positions``.
+            # In the overview, rows are reversed (top = highest QMK index) and
+            # ``target_layer`` is a QMK layer index (``key.layer_switch``). Wrap
+            # the layout so QMK indices resolve to the correct row.
+            routing_layout = _RoutingLayoutAdapter(layout, layer_to_row)
+
+            # Pass 1: discover ``extra_top_padding`` so we know how far to shift
+            # the thumb cluster before the final routing pass.
+            prelim_left, prelim_right = _build_thumb_clusters(
+                config, keymap, layout, use_system_fonts
             )
-
-            if config.output.style.show_layer_connectors:
-
-                def _thumb_bb(lt: ThumbClusterComponent, rt: ThumbClusterComponent):
-                    bx = lt.x
-                    by = min(lt.y, rt.y)
-                    br = rt.x + rt.width
-                    bb = max(lt.y + lt.height, rt.y + rt.height)
-                    return (bx, by, br - bx, bb - by)
-
-                tb = _thumb_bb(left_thumb_prelim, right_thumb_prelim)
-                connector_paths = _compute_connector_paths(
-                    indicators,
-                    all_row_bounds,
-                    layer_to_row,
-                    nk,
-                    ew_offset,
-                    max_cluster_right,
-                    layout.padding,
-                    tb,
+            if prelim_left and prelim_right:
+                prelim_rects = _compute_thumb_indicator_rects(
+                    prelim_left, prelim_right, keymap, config
                 )
+                prelim_routing = route_thumb_connectors(
+                    left=layer0.left.thumb,
+                    right=layer0.right.thumb,
+                    layout=routing_layout,
+                    source_layer=first_qmk_idx,
+                    keymap_spacing=nk,
+                    indicator_rects=prelim_rects,
+                )
+                if prelim_routing.extra_top_padding > 0:
+                    layout.shift_thumb_down(prelim_routing.extra_top_padding)
 
-                # Find clearance needed: only check the ESCAPE segment
-                # (first 2 points of each path, near the thumb cluster area).
-                # Don't include routing/target Y values which are at layer rows.
-                last_row_bottom = layout.layer_row_y_positions[-1] + layout.layer_row_heights[-1]
-                escape_ys: list[float] = []
-                for pts, _ in connector_paths:
-                    # Escape points are the first 2 (start + first turn)
-                    for _, py in pts[:2]:
-                        escape_ys.append(py)
-
-                min_escape_y = min(escape_ys) if escape_ys else layout.thumb_row_y
-                max_escape_y = max(escape_ys) if escape_ys else layout.thumb_row_y
-
-                if min_escape_y < last_row_bottom + nk:
-                    needed_shift = (last_row_bottom + nk) - min_escape_y
-                    min_thumb_y = layout.thumb_row_y + needed_shift
-                else:
-                    min_thumb_y = layout.thumb_row_y
-
-                layout.adjust_for_connectors(min_thumb_y, max_escape_y)
-
-                # Rebuild thumb clusters at adjusted position, recompute paths,
-                # and re-adjust canvas height for the new DOWN extents
-                left_thumb_final, right_thumb_final = _build_thumb_clusters(
+                # Pass 2: re-run routing against the shifted layout so the path
+                # coordinates align with where the thumb indicators will actually
+                # render.
+                final_left, final_right = _build_thumb_clusters(
                     config, keymap, layout, use_system_fonts
                 )
-                if left_thumb_final and right_thumb_final:
-                    all_row_bounds = [
-                        layout.layer_row_bounding_box(i) for i in range(render_layer_count)
-                    ]
-                    max_cluster_right = max(x + w for x, _y, w, _h in all_row_bounds)
-                    indicators = _collect_thumb_indicators(
-                        left_thumb_final, right_thumb_final, keymap, config
+                if final_left and final_right:
+                    final_rects = _compute_thumb_indicator_rects(
+                        final_left, final_right, keymap, config
                     )
-                    tb = _thumb_bb(left_thumb_final, right_thumb_final)
-                    connector_paths = _compute_connector_paths(
-                        indicators,
-                        all_row_bounds,
-                        layer_to_row,
-                        nk,
-                        ew_offset,
-                        max_cluster_right,
-                        layout.padding,
-                        tb,
+                    routing = route_thumb_connectors(
+                        left=layer0.left.thumb,
+                        right=layer0.right.thumb,
+                        layout=routing_layout,
+                        source_layer=first_qmk_idx,
+                        keymap_spacing=nk,
+                        indicator_rects=final_rects,
                     )
-                    # Re-adjust canvas for the final escape extents
-                    final_escape_ys = [py for pts, _ in connector_paths for _, py in pts[:2]]
-                    final_max_y = max(final_escape_ys) if final_escape_ys else layout.thumb_row_y
-                    layout.adjust_for_connectors(layout.thumb_row_y, final_max_y)
-
-                    # Adjust canvas width to fit actual routing columns (+ padding)
-                    max_path_x = max(
-                        (max(px for px, _ in pts) for pts, _ in connector_paths),
-                        default=layout.canvas_width,
-                    )
-                    layout.adjust_canvas_width(max_path_x + layout.padding)
+                    if routing.extra_right_padding > 0:
+                        layout.adjust_canvas_width(
+                            layout.canvas_width + routing.extra_right_padding
+                        )
 
     # --- Phase 3: Render everything at final positions ---
     # Extend canvas to fit copyright text below all content
@@ -568,6 +378,8 @@ def draw_overview(
 
     canvas_w = layout.canvas_width
     canvas_h = layout.canvas_height + copyright_extra
+    if routing is not None:
+        canvas_h += routing.extra_bottom_padding
     padding = layout.padding
     margin = base_metrics.margin
 
@@ -768,8 +580,19 @@ def draw_overview(
         d.append(right_thumb.build())
 
     # Connector lines
-    if connector_paths:
-        _draw_connector_paths(d, connector_paths, palette, config.keyboard.qmk_index_to_position)
+    if routing is not None:
+        for path, target_layer in routing.paths:
+            pos = config.keyboard.qmk_index_to_position(target_layer)
+            if pos is not None and 0 <= pos < len(palette.layers):
+                stroke_color = palette.layers[pos][4]
+            else:
+                stroke_color = "#808080"
+            path.args["stroke"] = stroke_color
+            path.args["stroke-width"] = 2.5
+            path.args["stroke-dasharray"] = "0.1 7"
+            path.args["stroke-linecap"] = "round"
+            path.args["opacity"] = 0.7
+            d.append(path)
 
     # Copyright
     if config.output.copyright:

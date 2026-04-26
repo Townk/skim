@@ -218,6 +218,19 @@ class TestOverviewLayout:
         expected = config.output.layout.spacing.inset
         assert bottom_inset == pytest.approx(expected)
 
+    def test_canvas_width_no_routing_when_zero_columns(self):
+        """When routing_column_count=0, _compute() should not reserve any
+        right-side routing space — extra_right_padding will carry that.
+
+        Regression for over-allocation in draw_overview where the constructor
+        pre-reserved routing width AND the connector router added it again
+        via adjust_canvas_width.
+        """
+        config = _make_config(3)
+        layout_with_routing = OverviewLayout(config, _DEFAULT_BADGE, routing_column_count=3)
+        layout_without_routing = OverviewLayout(config, _DEFAULT_BADGE, routing_column_count=0)
+        assert layout_without_routing.canvas_width < layout_with_routing.canvas_width
+
     def test_cluster_to_thumb_gap_matches_between_double_south_and_single_south(self):
         """The gap from finger cluster content bottom to thumb top must be the same in DS and NDS.
 

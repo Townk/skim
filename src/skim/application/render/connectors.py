@@ -14,12 +14,29 @@ for the full algorithm.
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Protocol
 
 import drawsvg as draw
 
-from skim.application.render.overview_layout import OverviewLayout
 from skim.data.keyboard import ThumbCluster
 from skim.domain import KeyboardSide, SvalboardTargetKey
+
+
+class RoutingLayout(Protocol):
+    """Minimal layout surface the connector router needs.
+
+    Implemented by ``OverviewLayout`` directly. The overview also wraps the
+    layout to translate QMK layer indices to row indices before delegating
+    to the underlying layout — that wrapper is structurally compatible with
+    this protocol.
+    """
+
+    @property
+    def layer_row_y_positions(self) -> list[float]: ...
+
+    def layer_row_bounding_box(self, target_layer: int) -> tuple[float, float, float, float]: ...
+
+    def thumb_cluster_y_bounds(self) -> tuple[float, float]: ...
 
 
 class Direction(Enum):
@@ -86,7 +103,7 @@ class ConnectorRouting:
 
 
 def target_point_for(
-    layout: OverviewLayout,
+    layout: RoutingLayout,
     target_layer: int,
     source_layer: int,
     keymap_spacing: float,
@@ -156,7 +173,7 @@ _THUMB_PRIORITY: list[tuple[KeyboardSide, str, Direction]] = [
 def build_thumb_path_list(
     left: ThumbCluster[SvalboardTargetKey],
     right: ThumbCluster[SvalboardTargetKey],
-    layout: OverviewLayout,
+    layout: RoutingLayout,
     source_layer: int,
     keymap_spacing: float,
 ) -> list[ConnectorStep]:
@@ -364,7 +381,7 @@ def phase2_route_to_targets(path_list: list[ConnectorStep]) -> None:
 def route_thumb_connectors(
     left: ThumbCluster[SvalboardTargetKey],
     right: ThumbCluster[SvalboardTargetKey],
-    layout: OverviewLayout,
+    layout: RoutingLayout,
     source_layer: int,
     keymap_spacing: float,
     indicator_rects: Mapping[SvalboardTargetKey, tuple[float, float, float, float]],

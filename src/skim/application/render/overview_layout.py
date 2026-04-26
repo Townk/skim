@@ -197,8 +197,8 @@ class OverviewLayout:
 
         # Thumb row below last layer row — same gap as between layer rows.
         # If a double_down key carries a layer indicator that overflows the
-        # cluster top, ``adjust_for_connectors`` later pushes the thumb down
-        # to clear it; we don't reserve that space speculatively.
+        # cluster top, ``shift_thumb_down`` later pushes the thumb down to
+        # clear it; we don't reserve that space speculatively.
         last_layer_y = y_positions[-1] if y_positions else top_y
         thumb_cluster_height = thumb_cluster_width * _THUMB_CLUSTER_ASPECT
         thumb_row_y = last_layer_y + row_height + row_gap
@@ -342,29 +342,15 @@ class OverviewLayout:
         """
         return (self._thumb_row_y, self._thumb_row_y + self._thumb_cluster_height)
 
-    def adjust_for_connectors(
-        self,
-        min_thumb_y: float,
-        max_line_y: float,
-    ) -> None:
-        """Push thumb cluster down and expand canvas to fit connector lines.
+    def shift_thumb_down(self, amount: float) -> None:
+        """Push the thumb cluster down by ``amount`` and grow the canvas accordingly.
 
-        Args:
-            min_thumb_y: The minimum Y that the thumb row must be at so
-                connector lines going UP don't overlap the last finger cluster.
-            max_line_y: The maximum Y reached by any connector line going DOWN.
+        Used by the connector router when ``extra_top_padding > 0``.
         """
-        if min_thumb_y > self._thumb_row_y:
-            delta = min_thumb_y - self._thumb_row_y
-            self._thumb_row_y = min_thumb_y
-            self._left_thumb_x = self._left_thumb_x  # X unchanged
-            self._right_thumb_x = self._right_thumb_x
-            self._canvas_height += delta
-
-        # Expand canvas height for lines going below thumb clusters
-        bottom_need = max_line_y + self._padding
-        if bottom_need > self._canvas_height:
-            self._canvas_height = bottom_need
+        if amount <= 0:
+            return
+        self._thumb_row_y += amount
+        self._canvas_height += amount
 
     def adjust_canvas_width(self, needed_width: float) -> None:
         """Set canvas width to fit routing columns, shrinking if over-allocated."""
