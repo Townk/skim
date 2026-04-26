@@ -107,6 +107,10 @@ class TestTargetPointFor:
             600,
             50,
         )
+        # Match the existing bbox-center landing Y (row_y + 25) so existing
+        # assertions still pass; tests that need a different value override
+        # this lambda explicitly.
+        layout.layer_row_target_y = lambda idx: layout.layer_row_y_positions[idx] + 25
         return layout
 
     def test_returns_point_for_valid_target(self):
@@ -126,6 +130,14 @@ class TestTargetPointFor:
         assert target_point_for(layout, target_layer=99, source_layer=0, keymap_spacing=18) is None
         assert target_point_for(layout, target_layer=-1, source_layer=0, keymap_spacing=18) is None
 
+    def test_target_y_uses_layer_row_target_y_not_bbox_center(self):
+        layout = self._layout()
+        # Override target_y to a sentinel that's NOT the bbox center.
+        layout.layer_row_target_y = lambda _idx: 999.0
+        point = target_point_for(layout, target_layer=1, source_layer=0, keymap_spacing=18)
+        assert point is not None
+        assert point[1] == 999.0
+
 
 class TestBuildThumbPathList:
     def _layout_target(self):
@@ -138,6 +150,7 @@ class TestBuildThumbPathList:
             600,
             50,
         )
+        layout.layer_row_target_y = lambda idx: layout.layer_row_y_positions[idx] + 25
         return layout
 
     def test_empty_when_no_triggers(self):
@@ -578,6 +591,7 @@ class TestRouteThumbConnectors:
         layout.layer_row_y_positions = [100, 200, 300]
         layout.layer_row_heights = [50, 50, 50]
         layout.layer_row_bounding_box = lambda i: (200, layout.layer_row_y_positions[i], 600, 50)
+        layout.layer_row_target_y = lambda i: layout.layer_row_y_positions[i] + 25
         layout.thumb_cluster_y_bounds = lambda: (300.0, 400.0)
         return layout
 

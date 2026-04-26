@@ -361,3 +361,13 @@ class OverviewLayout:
         x = self._col2_x
         w = self._col2_width
         return (x, row_y, w, self._row_height)
+
+    def layer_row_target_y(self, row_idx: int) -> float:
+        """Return the vertical center of the row's East key.
+
+        Connector paths terminate at this Y so they meet the E key on the layer
+        row's right edge — not the row bbox's vertical center, which falls
+        between S and DS (well below the E key) when Double-South is present.
+        """
+        row_y = self._layer_row_y_positions[row_idx]
+        return row_y + self.ew_key_y_offset + self.outer_key_size / 2.0

@@ -239,6 +239,12 @@ class _RoutingLayoutAdapter:
             row_idx = target_layer
         return self._layout.layer_row_bounding_box(row_idx)
 
+    def layer_row_target_y(self, target_layer: int) -> float:
+        row_idx = self._layer_to_row.get(target_layer)
+        if row_idx is None:
+            row_idx = target_layer
+        return self._layout.layer_row_target_y(row_idx)
+
     def thumb_cluster_y_bounds(self) -> tuple[float, float]:
         return self._layout.thumb_cluster_y_bounds()
 

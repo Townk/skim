@@ -36,6 +36,16 @@ class RoutingLayout(Protocol):
 
     def layer_row_bounding_box(self, target_layer: int) -> tuple[float, float, float, float]: ...
 
+    def layer_row_target_y(self, target_layer: int) -> float:
+        """Return the Y where connectors should land on this layer's row.
+
+        Should be the vertical center of the row's East key (R4 cluster's
+        E key center). Different from ``bbox.y + bbox.height / 2`` when the
+        row contains a Double-South key — in that case the bbox center
+        falls between S and DS, well below the East key.
+        """
+        ...
+
     def thumb_cluster_y_bounds(self) -> tuple[float, float]: ...
 
 
@@ -117,15 +127,19 @@ def target_point_for(
     - Self-referential triggers (source == target).
     - Target layer index out of range for the layout's rendered layer rows.
 
-    The target point is one ``keymap_spacing`` to the right of the layer row's
-    right edge, vertically centered on the row.
+    The target point's X is one ``keymap_spacing`` to the right of the
+    layer row's right edge. Its Y is the row's connector-landing Y
+    (``layer_row_target_y``), which corresponds to the East key's vertical
+    center — not the row bounding box's center, which can fall between S
+    and DS rows when Double-South is present.
     """
     if target_layer == source_layer:
         return None
     if target_layer < 0 or target_layer >= len(layout.layer_row_y_positions):
         return None
-    x, y, w, h = layout.layer_row_bounding_box(target_layer)
-    return (x + w + keymap_spacing, y + h / 2.0)
+    x, _y, w, _h = layout.layer_row_bounding_box(target_layer)
+    target_y = layout.layer_row_target_y(target_layer)
+    return (x + w + keymap_spacing, target_y)
 
 
 def set_initial_moveto(step: ConnectorStep) -> None:
