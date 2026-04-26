@@ -87,6 +87,10 @@ class ConnectorStep:
         key_origin_attr: The thumb-cluster attribute name that produced this
             step (e.g. ``"down_key"``, ``"up_key"``). Used by Phase 1 routing
             to identify partner paths (e.g. matching LT_Up to LT_Down).
+        source_cluster_attr: The source cluster identifier (e.g. ``"left.index"``,
+            ``"right.pinky"``). Empty for thumb steps. Used by
+            ``phase1_redirect_right_to_down`` to scope the S+DS partner search
+            to the same finger cluster.
         path: Accumulating SVG path; appended to during routing.
     """
 
@@ -98,6 +102,7 @@ class ConnectorStep:
     current_point: tuple[float, float] = (0.0, 0.0)
     indicator_rect: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
     key_origin_attr: str = ""
+    source_cluster_attr: str = ""
     path: draw.Path = field(default_factory=lambda: draw.Path(fill="none"))
 
 

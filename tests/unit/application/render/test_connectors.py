@@ -92,6 +92,15 @@ class TestConnectorStep:
         )
         assert step.col_x == 0
 
+    def test_default_source_cluster_attr_is_empty(self):
+        step = ConnectorStep(
+            key=None,
+            direction=Direction.UP,
+            target_point=(0.0, 0.0),
+            target_layer=0,
+        )
+        assert step.source_cluster_attr == ""
+
 
 class TestTargetPointFor:
     def _layout(self, layer_count=3):
