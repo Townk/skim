@@ -28,6 +28,15 @@ _OUTER_KEY_PROPORTION = 0.328
 _CENTER_KEY_PROPORTION = 0.309
 _KEY_INSET_PROPORTION = 0.018
 
+# KEYMAP_SPACING ratio: the connector router spaces lanes/columns at this
+# fraction of an outer key's width. Must match overview._CONNECTOR_SPACING_RATIO.
+_KEYMAP_SPACING_RATIO_OF_OUTER_KEY = 0.6
+
+# Gap between the layer-badge column (col 1) and the L4 finger cluster,
+# expressed in KEYMAP_SPACINGs. Fixed so the visual rhythm tracks the
+# connector router's lane spacing rather than canvas-relative inset units.
+_BADGE_TO_CLUSTER_GAP_KS = 4
+
 # Thumb cluster's inset proportion (between rows of thumb keys) — matches
 # ThumbClusterComponent.
 _THUMB_KEY_INSET_PROPORTION = 0.038
@@ -96,8 +105,23 @@ class OverviewLayout:
         # Column 1 width: badge width + left padding
         col1_width = padding + self._badge_dims.width
 
-        # Gap between col 1 and col 2 — at least as wide as the thumb cluster gap
-        col_gap = m.inset * 4  # generous gap, refined below
+        # Gap between col 1 (layer badges) and col 2 (L4 finger cluster) is
+        # 4 * KEYMAP_SPACING — where KEYMAP_SPACING is the connector router's
+        # lane/column spacing, equal to ``outer_key_width * 0.6``. Both
+        # finger_cluster_width and col_gap depend on each other, so solve the
+        # fixed point in closed form. Let
+        #   gap_ratio = _BADGE_TO_CLUSTER_GAP_KS * _OUTER_KEY_PROPORTION
+        #             * _KEYMAP_SPACING_RATIO_OF_OUTER_KEY
+        # Then col_gap = gap_ratio * fcw and
+        #   fcw = m.finger_cluster_width * (config_width - col1_width
+        #           - col_gap - padding) / (m.side_width * 2 + m.inset * 2)
+        # Combining gives the closed form below.
+        gap_ratio_of_fcw = (
+            _BADGE_TO_CLUSTER_GAP_KS * _OUTER_KEY_PROPORTION * _KEYMAP_SPACING_RATIO_OF_OUTER_KEY
+        )
+        denom = m.side_width * 2 + m.inset * 2
+        k = gap_ratio_of_fcw * m.finger_cluster_width / denom
+        col_gap = k * (config_width - col1_width - padding) / (1 + k)
 
         # Column 2 starts after col1 + gap.
         # Its width is based on the config width MINUS badge and routing areas.
@@ -105,25 +129,7 @@ class OverviewLayout:
         col2_width = config_width - col2_x - padding
 
         # Scale finger clusters to fit within col2.
-        scale = col2_width / (m.side_width * 2 + m.inset * 2)
-        finger_cluster_width = m.finger_cluster_width * scale
-        finger_key_size = m.finger_key_size * scale
-        thumb_cluster_width = m.thumb_cluster_width * scale
-        inset = m.inset * scale
-        side_width = m.side_width * scale
-
-        # Refine col_gap: ensure it's at least the thumb cluster gap
-        thumb_center_gap = (
-            col2_width - 2 * (side_width - thumb_cluster_width) - 2 * thumb_cluster_width
-        )
-        col_gap = max(col_gap, thumb_center_gap, m.inset * 3)
-
-        # Recompute col2 with refined gap
-        col2_x = col1_width + col_gap
-        col2_width = config_width - col2_x - padding
-
-        # Rescale with the final col2_width
-        scale = col2_width / (m.side_width * 2 + m.inset * 2)
+        scale = col2_width / denom
         finger_cluster_width = m.finger_cluster_width * scale
         finger_key_size = m.finger_key_size * scale
         thumb_cluster_width = m.thumb_cluster_width * scale

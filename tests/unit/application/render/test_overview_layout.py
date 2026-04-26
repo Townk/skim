@@ -231,6 +231,19 @@ class TestOverviewLayout:
         layout_without_routing = OverviewLayout(config, _DEFAULT_BADGE, routing_column_count=0)
         assert layout_without_routing.canvas_width < layout_with_routing.canvas_width
 
+    def test_col_gap_equals_4_keymap_spacings(self):
+        """The gap between col 1 (layer badges) and col 2 (L4 cluster) must be
+        exactly ``4 * KEYMAP_SPACING``, where ``KEYMAP_SPACING = outer_key_size * 0.6``.
+
+        Locks the closed-form fixed-point computation against accidental drift
+        back to the inset-based formula.
+        """
+        config = _make_config(3)
+        layout = OverviewLayout(config, _DEFAULT_BADGE)
+        actual_gap = layout.right_column_x - layout.left_column_width
+        expected = 4 * layout.outer_key_size * 0.6
+        assert actual_gap == pytest.approx(expected)
+
     def test_cluster_to_thumb_gap_matches_between_double_south_and_single_south(self):
         """The gap from finger cluster content bottom to thumb top must be the same in DS and NDS.
 
