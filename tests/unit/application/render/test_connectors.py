@@ -15,6 +15,7 @@ from skim.application.render.connectors import (
     phase1_down_to_right,
     phase1_redirect_left_to_down,
     phase1_up_to_right,
+    phase2_route_to_targets,
     set_initial_moveto,
     target_point_for,
 )
@@ -47,6 +48,12 @@ def _step_at(current_y, target_y):
     )
     s.current_point = (0.0, current_y)
     return s
+
+
+def set_initial_moveto_at(step, x, y):
+    """Test helper: place the step's initial moveTo at an explicit (x, y)."""
+    step.path.M(x, y)
+    step.current_point = (x, y)
 
 
 def _thumb(**overrides):
@@ -433,3 +440,92 @@ class TestAllocateColumns:
         assert b.col_x == 218.0  # col 1
         assert c.col_x == 200.0  # col 0 (greedy leftmost fits)
         assert used == 2
+
+
+class TestPhase2RouteToTargets:
+    def test_single_path_completes_to_target(self):
+        a = _step_at(50, 100)
+        set_initial_moveto_at(a, 10, 50)
+        a.col_x = 200
+        a.target_point = (200.0, 100.0)
+        a.target_layer = 1
+        phase2_route_to_targets([a])
+        # Path goes:
+        #   M 10 50 -> L 200 50 (east) -> L 200 100 (drop) -> L 200 100 (target, same point — implicit)
+        # current_point ends at target_point (200, 100).
+        assert a.current_point == (200.0, 100.0)
+        assert a.direction == Direction.LEFT
+
+    def test_two_paths_to_same_target_only_outermost_emits_final_segment(self):
+        a = _step_at(50, 100)
+        a.col_x = 200
+        a.target_point = (200.0, 100.0)
+        a.target_layer = 1
+        b = _step_at(60, 100)
+        b.col_x = 218
+        b.target_point = (200.0, 100.0)
+        b.target_layer = 1
+        phase2_route_to_targets([a, b])
+        # 'a' is innermost (col_x 200 = target.x). It ends at (200, 100).
+        # 'b' is outermost (col_x 218). It ends at target_point (200, 100) after a final LEFT segment.
+        assert a.current_point == (200.0, 100.0)
+        assert b.current_point == (200.0, 100.0)
+
+    def test_empty_path_list_is_noop(self):
+        # Should not raise; no observable side effects.
+        phase2_route_to_targets([])
+
+    def test_multiple_target_layers_pick_outermost_per_group(self):
+        # Layer 1 group: a (col_x=200), b (col_x=218). Outermost = b.
+        # Layer 2 group: c (col_x=200), d (col_x=236). Outermost = d.
+        a = _step_at(50, 100)
+        a.col_x = 200
+        a.target_point = (200.0, 100.0)
+        a.target_layer = 1
+        b = _step_at(60, 100)
+        b.col_x = 218
+        b.target_point = (200.0, 100.0)
+        b.target_layer = 1
+        c = _step_at(50, 300)
+        c.col_x = 200
+        c.target_point = (200.0, 300.0)
+        c.target_layer = 2
+        d = _step_at(70, 300)
+        d.col_x = 236
+        d.target_point = (200.0, 300.0)
+        d.target_layer = 2
+
+        phase2_route_to_targets([a, b, c, d])
+
+        # All steps reach their target_point Y after the drop.
+        # Outermost per group reaches the target X via the final LEFT segment.
+        assert b.current_point == (200.0, 100.0)
+        assert d.current_point == (200.0, 300.0)
+        # Non-outermost stay at their col_x after the drop (no final segment ran for them).
+        assert a.current_point == (200.0, 100.0)  # already at target_x because col_x == target_x
+        assert c.current_point == (200.0, 300.0)  # same
+
+    def test_outermost_wins_regardless_of_insertion_order(self):
+        # Three paths to the same target; the MIDDLE col_x is appended last.
+        # If the implementation used "last appended wins" instead of max(col_x),
+        # this test would assert the wrong path got the final segment.
+        inner = _step_at(50, 100)
+        inner.col_x = 150
+        inner.target_point = (100.0, 100.0)
+        inner.target_layer = 1
+        outer = _step_at(50, 100)
+        outer.col_x = 250
+        outer.target_point = (100.0, 100.0)
+        outer.target_layer = 1
+        middle = _step_at(50, 100)
+        middle.col_x = 200
+        middle.target_point = (100.0, 100.0)
+        middle.target_layer = 1
+
+        phase2_route_to_targets([inner, outer, middle])
+
+        # outer is outermost (col_x = 250). Its current_point should be the target_point.
+        assert outer.current_point == (100.0, 100.0)
+        # inner and middle are NOT outermost — they end at (their col_x, target_y), not target_point.
+        assert inner.current_point == (150.0, 100.0)
+        assert middle.current_point == (200.0, 100.0)

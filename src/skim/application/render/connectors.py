@@ -317,3 +317,35 @@ def allocate_columns(
             columns.append([(span_low, span_high)])
             step.col_x = first_column_x + (len(columns) - 1) * keymap_spacing
     return len(columns)
+
+
+def phase2_route_to_targets(path_list: list[ConnectorStep]) -> None:
+    """Phase 2 of the routing algorithm.
+
+    For each step:
+      1. Extend east to the assigned column (``col_x``).
+      2. Drop or rise to the target's Y.
+      3. Mark direction LEFT.
+
+    Then for each unique ``target_layer``, the outermost path (largest
+    ``col_x``) extends west to ``target_point`` so the final horizontal
+    segment is drawn exactly once per target.
+
+    Mutates each step's ``path``, ``current_point``, and ``direction`` in place.
+    """
+    # Step 1 + 2 — east, drop.
+    for step in path_list:
+        step.path.L(step.col_x, step.current_point[1])
+        step.current_point = (step.col_x, step.current_point[1])
+        step.path.L(step.col_x, step.target_point[1])
+        step.current_point = (step.col_x, step.target_point[1])
+        step.direction = Direction.LEFT
+
+    # Step 3 — multi-target merge: outermost step per target_layer emits the final LEFT segment.
+    by_target: dict[int, list[ConnectorStep]] = {}
+    for step in path_list:
+        by_target.setdefault(step.target_layer, []).append(step)
+    for steps in by_target.values():
+        outermost = max(steps, key=lambda s: s.col_x)
+        outermost.path.L(outermost.target_point[0], outermost.target_point[1])
+        outermost.current_point = outermost.target_point
