@@ -426,6 +426,45 @@ def phase1_redirect_left_to_down(
         step.direction = Direction.DOWN
 
 
+def phase1_redirect_right_to_down(
+    path_list: list[ConnectorStep],
+    keymap_spacing: float,
+) -> None:
+    """Redirect RIGHT-direction paths (S+DS special case) to DOWN.
+
+    For each RIGHT-direction step (which represents South in the S+DS
+    conflict), find its DS partner via ``key_origin_attr ==
+    "double_south_key"`` AND same ``source_cluster_attr``. Extend east one
+    keymap_spacing past the partner's current X (its drop column), then
+    mark direction DOWN so the regular DOWN->RIGHT sub-step picks it up.
+
+    No-op when no RIGHT-direction steps exist. Steps with no DS partner
+    (malformed input) are left unchanged.
+    """
+    right_steps = [s for s in path_list if s.direction == Direction.RIGHT]
+    if not right_steps:
+        return
+
+    for step in right_steps:
+        partner = next(
+            (
+                s
+                for s in path_list
+                if s.direction == Direction.DOWN
+                and s.key_origin_attr == "double_south_key"
+                and s.source_cluster_attr == step.source_cluster_attr
+            ),
+            None,
+        )
+        if partner is None:
+            continue  # malformed input; nothing to redirect against
+
+        new_x = partner.current_point[0] + keymap_spacing
+        step.path.L(new_x, step.current_point[1])
+        step.current_point = (new_x, step.current_point[1])
+        step.direction = Direction.DOWN
+
+
 def phase1_up_to_right(
     path_list: list[ConnectorStep],
     cluster_top: float,

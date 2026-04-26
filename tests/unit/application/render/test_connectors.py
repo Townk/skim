@@ -18,6 +18,7 @@ from skim.application.render.connectors import (
     build_thumb_path_list,
     phase1_down_to_right,
     phase1_redirect_left_to_down,
+    phase1_redirect_right_to_down,
     phase1_up_to_right,
     phase2_route_to_targets,
     route_thumb_connectors,
@@ -414,6 +415,109 @@ class TestPhase1RedirectLeftToDown:
         # If the fallback were used, knuckle's x = 200 + 8/2 = 204, new_x = 186.
         assert lt_up.current_point[0] == 86.0
         assert lt_up.direction == Direction.DOWN
+
+
+class TestPhase1RedirectRightToDown:
+    def test_south_extends_east_then_marks_down(self):
+        # S+DS pair in the same cluster.
+        # South: indicator at (100, 200, 8, 8), direction=RIGHT initially.
+        # DS:    indicator at (100, 220, 8, 8), direction=DOWN.
+        # After set_initial_moveto:
+        #   south.current_point = (rx + rw, ry + rh/2) — RIGHT moveTo edge.
+        #     For (100, 200, 8, 8): (108, 204).
+        #   ds.current_point = (rx + rw/2, ry + rh) — DOWN moveTo edge.
+        #     For (100, 220, 8, 8): (104, 228).
+        # Redirect: new_x = ds.current_point[0] + spacing = 104 + 18 = 122.
+        # South path extends to (122, south.current_point[1] = 204), direction = DOWN.
+        south = _step(Direction.RIGHT, (100, 200, 8, 8))
+        south.key_origin_attr = "south_key"
+        south.source_cluster_attr = "left.index"
+        ds = _step(Direction.DOWN, (100, 220, 8, 8))
+        ds.key_origin_attr = "double_south_key"
+        ds.source_cluster_attr = "left.index"
+        set_initial_moveto(south)
+        set_initial_moveto(ds)
+
+        phase1_redirect_right_to_down([south, ds], keymap_spacing=18)
+
+        assert south.current_point == (122.0, 204.0)
+        assert south.direction == Direction.DOWN
+        # DS unchanged.
+        assert ds.direction == Direction.DOWN
+        assert ds.current_point == (104.0, 228.0)
+
+    def test_no_op_when_no_right_paths(self):
+        a = _step(Direction.UP, (10, 100, 6, 8))
+        a.source_cluster_attr = "left.index"
+        b = _step(Direction.DOWN, (20, 110, 6, 8))
+        b.source_cluster_attr = "left.index"
+        b.key_origin_attr = "south_key"
+        set_initial_moveto(a)
+        set_initial_moveto(b)
+
+        phase1_redirect_right_to_down([a, b], keymap_spacing=18)
+
+        assert a.direction == Direction.UP
+        assert b.direction == Direction.DOWN
+
+    def test_partner_search_scoped_to_same_cluster(self):
+        # South in left.index has its DS partner in left.index, not left.middle.
+        south = _step(Direction.RIGHT, (100, 200, 8, 8))
+        south.key_origin_attr = "south_key"
+        south.source_cluster_attr = "left.index"
+        wrong_ds = _step(Direction.DOWN, (500, 220, 8, 8))
+        wrong_ds.key_origin_attr = "double_south_key"
+        wrong_ds.source_cluster_attr = "left.middle"
+        right_ds = _step(Direction.DOWN, (100, 220, 8, 8))
+        right_ds.key_origin_attr = "double_south_key"
+        right_ds.source_cluster_attr = "left.index"
+        set_initial_moveto(south)
+        set_initial_moveto(wrong_ds)
+        set_initial_moveto(right_ds)
+
+        phase1_redirect_right_to_down([south, wrong_ds, right_ds], keymap_spacing=18)
+
+        # Should redirect against right_ds.current_point[0] = 104, not wrong_ds.current_point[0] = 504.
+        assert south.current_point[0] == 122.0
+        assert south.direction == Direction.DOWN
+
+    def test_no_partner_leaves_step_unchanged(self):
+        # South is RIGHT, but no DS step exists in path_list (malformed input).
+        south = _step(Direction.RIGHT, (100, 200, 8, 8))
+        south.key_origin_attr = "south_key"
+        south.source_cluster_attr = "left.index"
+        set_initial_moveto(south)
+
+        phase1_redirect_right_to_down([south], keymap_spacing=18)
+
+        assert south.direction == Direction.RIGHT
+        # current_point unchanged from set_initial_moveto.
+        assert south.current_point == (108.0, 204.0)
+
+    def test_multiple_right_steps_in_different_clusters(self):
+        # Two S+DS pairs in two different clusters.
+        s1 = _step(Direction.RIGHT, (100, 200, 8, 8))
+        s1.key_origin_attr = "south_key"
+        s1.source_cluster_attr = "left.index"
+        ds1 = _step(Direction.DOWN, (100, 220, 8, 8))
+        ds1.key_origin_attr = "double_south_key"
+        ds1.source_cluster_attr = "left.index"
+        s2 = _step(Direction.RIGHT, (300, 200, 8, 8))
+        s2.key_origin_attr = "south_key"
+        s2.source_cluster_attr = "left.middle"
+        ds2 = _step(Direction.DOWN, (300, 220, 8, 8))
+        ds2.key_origin_attr = "double_south_key"
+        ds2.source_cluster_attr = "left.middle"
+        for s in (s1, ds1, s2, ds2):
+            set_initial_moveto(s)
+
+        phase1_redirect_right_to_down([s1, ds1, s2, ds2], keymap_spacing=18)
+
+        assert s1.direction == Direction.DOWN
+        assert s2.direction == Direction.DOWN
+        # Each redirected against its own cluster's DS.
+        assert s1.current_point[0] == ds1.current_point[0] + 18  # 104 + 18 = 122
+        assert s2.current_point[0] == ds2.current_point[0] + 18  # 304 + 18 = 322
 
 
 class TestPhase1UpToRight:
