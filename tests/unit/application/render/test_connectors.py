@@ -1,3 +1,8 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 """Unit tests for skim.application.render.connectors module."""
 
 from skim.application.render.connectors import (
@@ -13,11 +18,11 @@ class TestDirection:
 
 class TestConnectorStep:
     def test_default_col_x_is_zero(self):
-        # path is built lazily in Phase 2; col_X starts at 0 and is set during column allocation
+        # path is built lazily in Phase 2; col_x starts at 0 and is set during column allocation
         step = ConnectorStep(
             key=None,
             direction=Direction.UP,
             target_point=(0.0, 0.0),
             target_layer=0,
         )
-        assert step.col_X == 0
+        assert step.col_x == 0

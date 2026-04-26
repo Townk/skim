@@ -37,7 +37,7 @@ class ConnectorStep:
         direction: Current heading of the path's last segment.
         target_point: Where the path must terminate (one per target layer).
         target_layer: The destination layer index.
-        col_X: The routing column X coordinate, set during Phase 2 allocation.
+        col_x: The routing column X coordinate, set during Phase 2 allocation.
         path: Accumulating SVG path; appended to during routing.
     """
 
@@ -45,8 +45,8 @@ class ConnectorStep:
     direction: Direction
     target_point: tuple[float, float]
     target_layer: int
-    col_X: float = 0.0
-    path: draw.Path = field(default_factory=lambda: draw.Path(stroke="black", fill="none"))
+    col_x: float = 0.0
+    path: draw.Path = field(default_factory=lambda: draw.Path(fill="none"))
 
 
 @dataclass
