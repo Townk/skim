@@ -69,7 +69,9 @@ class ConnectorRouting:
     """Output of the routing algorithm.
 
     Attributes:
-        paths: All connector paths in render order.
+        paths: All connector paths in render order, paired with the
+            target_layer index of each path. The renderer uses the
+            target_layer to pick the per-path stroke color.
         extra_top_padding: Caller must shift the thumb cluster (and cluster
             paths already drawn above it) down by this amount before painting
             the routing paths. Applied via the layout's thumb-row offset.
@@ -77,7 +79,7 @@ class ConnectorRouting:
         extra_right_padding: Caller must extend canvas width by this amount.
     """
 
-    paths: list[draw.Path]
+    paths: list[tuple[draw.Path, int]]
     extra_top_padding: float
     extra_bottom_padding: float
     extra_right_padding: float
@@ -436,7 +438,7 @@ def route_thumb_connectors(
     phase2_route_to_targets(path_list)
 
     return ConnectorRouting(
-        paths=[s.path for s in path_list],
+        paths=[(s.path, s.target_layer) for s in path_list],
         extra_top_padding=extra_top,
         extra_bottom_padding=extra_bottom,
         extra_right_padding=cols_used * keymap_spacing,

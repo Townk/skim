@@ -659,6 +659,22 @@ class TestRouteThumbConnectors:
         # Two distinct target_layers, but they may share a column (depends on Y spans).
         # We don't assert exact column count — just that the algorithm produced output.
 
+    def test_paths_carry_target_layer(self):
+        rt_dd = _key(layer_switch=1)
+        right = _thumb(double_down_key=rt_dd)
+        indicator_rects = {rt_dd: (700.0, 350.0, 6.0, 6.0)}
+        result = route_thumb_connectors(
+            left=_thumb(),
+            right=right,
+            layout=self._layout(),
+            source_layer=0,
+            keymap_spacing=18,
+            indicator_rects=indicator_rects,
+        )
+        assert len(result.paths) == 1
+        path, target_layer = result.paths[0]
+        assert target_layer == 1
+
     def test_missing_indicator_rect_raises_clear_error(self):
         # Triggering key NOT included in indicator_rects map.
         rt_dd = _key(layer_switch=1)
