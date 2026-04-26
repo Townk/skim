@@ -11,6 +11,7 @@ their target layer's row. See
 for the full algorithm.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -69,11 +70,15 @@ class ConnectorRouting:
 
     Attributes:
         paths: All connector paths in render order.
+        extra_top_padding: Caller must shift the thumb cluster (and cluster
+            paths already drawn above it) down by this amount before painting
+            the routing paths. Applied via the layout's thumb-row offset.
         extra_bottom_padding: Caller must extend canvas height by this amount.
         extra_right_padding: Caller must extend canvas width by this amount.
     """
 
     paths: list[draw.Path]
+    extra_top_padding: float
     extra_bottom_padding: float
     extra_right_padding: float
 
@@ -352,3 +357,87 @@ def phase2_route_to_targets(path_list: list[ConnectorStep]) -> None:
         outermost = max(steps, key=lambda s: s.col_x)
         outermost.path.L(outermost.target_point[0], outermost.target_point[1])
         outermost.current_point = outermost.target_point
+
+
+def route_thumb_connectors(
+    left: ThumbCluster[SvalboardTargetKey],
+    right: ThumbCluster[SvalboardTargetKey],
+    layout: OverviewLayout,
+    source_layer: int,
+    keymap_spacing: float,
+    indicator_rects: Mapping[SvalboardTargetKey, tuple[float, float, float, float]],
+) -> ConnectorRouting:
+    """Top-level entry point for thumb cluster connector routing.
+
+    Orchestrates the full algorithm:
+      1. Build the priority-ordered ConnectorStep list.
+      2. Attach each step's indicator rect.
+      3. Set initial moveTo per direction.
+      4. Phase 1: LEFT->DOWN redirect, UP->RIGHT escape, DOWN->RIGHT escape.
+      5. Phase 2: greedy column allocation, drop to target Y, multi-target merge.
+
+    Args:
+        left, right: Thumb clusters for the source layer.
+        layout: The overview layout (used for ``layer_row_bounding_box`` and
+            ``thumb_cluster_y_bounds``).
+        source_layer: The layer whose triggers originate the connectors.
+        keymap_spacing: One outer-key width — used for lane spacing.
+        indicator_rects: Map of source-key -> indicator ``(x, y, w, h)``. Must
+            cover every key in ``left``/``right`` whose ``layer_switch``
+            could enter the priority list.
+
+    Returns:
+        ``ConnectorRouting`` with the SVG paths and the three padding values
+        the caller must apply (see ``ConnectorRouting`` docstring).
+    """
+    path_list = build_thumb_path_list(left, right, layout, source_layer, keymap_spacing)
+    if not path_list:
+        return ConnectorRouting(
+            paths=[],
+            extra_top_padding=0.0,
+            extra_bottom_padding=0.0,
+            extra_right_padding=0.0,
+        )
+
+    # Attach indicator rects to each step (key lookup is O(1)).
+    for step in path_list:
+        if step.key is None:
+            continue
+        try:
+            step.indicator_rect = indicator_rects[step.key]
+        except KeyError as e:
+            raise ValueError(
+                f"indicator_rects missing entry for thumb key "
+                f"{step.key_origin_attr!r} (target_layer={step.target_layer}); "
+                f"caller must populate every key whose layer_switch enters "
+                f"the priority list"
+            ) from e
+
+    # Set initial moveTo per direction.
+    for step in path_list:
+        set_initial_moveto(step)
+
+    # Track min/max Y across all step start points for Phase 1 lane math.
+    min_y = min(s.current_point[1] for s in path_list)
+    max_y = max(s.current_point[1] for s in path_list)
+
+    # Phase 1.
+    cluster_top, cluster_bottom = layout.thumb_cluster_y_bounds()
+    phase1_redirect_left_to_down(path_list, keymap_spacing)
+    extra_top = phase1_up_to_right(path_list, cluster_top, min_y, keymap_spacing)
+    extra_bottom = phase1_down_to_right(path_list, cluster_bottom, max_y, keymap_spacing)
+
+    # Phase 2.
+    # The first column lives one keymap_spacing east of the rightmost layer-row edge.
+    # All layer rows share the same right edge; use row 0.
+    row_x, _row_y, row_w, _row_h = layout.layer_row_bounding_box(0)
+    first_column_x = row_x + row_w + keymap_spacing
+    cols_used = allocate_columns(path_list, first_column_x, keymap_spacing)
+    phase2_route_to_targets(path_list)
+
+    return ConnectorRouting(
+        paths=[s.path for s in path_list],
+        extra_top_padding=extra_top,
+        extra_bottom_padding=extra_bottom,
+        extra_right_padding=cols_used * keymap_spacing,
+    )

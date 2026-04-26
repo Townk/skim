@@ -334,6 +334,14 @@ class OverviewLayout:
             Position(x=self._right_thumb_x, y=self._thumb_row_y),
         )
 
+    def thumb_cluster_y_bounds(self) -> tuple[float, float]:
+        """Return (top_y, bottom_y) of the thumb cluster row.
+
+        Bottom = top + cluster height. Used by connector routing to compute
+        Phase 1 escape-lane positions.
+        """
+        return (self._thumb_row_y, self._thumb_row_y + self._thumb_cluster_height)
+
     def adjust_for_connectors(
         self,
         min_thumb_y: float,

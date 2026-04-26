@@ -7,6 +7,8 @@
 
 from unittest.mock import MagicMock
 
+import pytest
+
 from skim.application.render.connectors import (
     ConnectorStep,
     Direction,
@@ -16,6 +18,7 @@ from skim.application.render.connectors import (
     phase1_redirect_left_to_down,
     phase1_up_to_right,
     phase2_route_to_targets,
+    route_thumb_connectors,
     set_initial_moveto,
     target_point_for,
 )
@@ -529,3 +532,143 @@ class TestPhase2RouteToTargets:
         # inner and middle are NOT outermost — they end at (their col_x, target_y), not target_point.
         assert inner.current_point == (150.0, 100.0)
         assert middle.current_point == (200.0, 100.0)
+
+
+class TestRouteThumbConnectors:
+    def _layout(self):
+        layout = MagicMock()
+        layout.layer_row_y_positions = [100, 200, 300]
+        layout.layer_row_heights = [50, 50, 50]
+        layout.layer_row_bounding_box = lambda i: (200, layout.layer_row_y_positions[i], 600, 50)
+        layout.thumb_cluster_y_bounds = lambda: (300.0, 400.0)
+        return layout
+
+    def test_empty_when_no_triggers(self):
+        result = route_thumb_connectors(
+            left=_thumb(),
+            right=_thumb(),
+            layout=self._layout(),
+            source_layer=0,
+            keymap_spacing=18,
+            indicator_rects={},
+        )
+        assert result.paths == []
+        assert result.extra_top_padding == 0
+        assert result.extra_bottom_padding == 0
+        assert result.extra_right_padding == 0
+
+    def test_single_right_trigger_produces_one_path(self):
+        # RT_DD triggers, target layer 1. Source layer 0.
+        # Direction RIGHT, no Phase 1 escape needed (already RIGHT).
+        # Phase 2 allocates one column.
+        rt_dd = _key(layer_switch=1)
+        right = _thumb(double_down_key=rt_dd)
+        # Indicator rect for RT_DD at (700, 350, 6, 6) — fictional but plausible.
+        indicator_rects = {rt_dd: (700.0, 350.0, 6.0, 6.0)}
+        result = route_thumb_connectors(
+            left=_thumb(),
+            right=right,
+            layout=self._layout(),
+            source_layer=0,
+            keymap_spacing=18,
+            indicator_rects=indicator_rects,
+        )
+        assert len(result.paths) == 1
+        # No UP/DOWN/LEFT redirects → no top/bottom padding.
+        assert result.extra_top_padding == 0
+        assert result.extra_bottom_padding == 0
+        # Phase 2 used one column → one keymap_spacing of right padding.
+        assert result.extra_right_padding == 18.0
+
+    def test_self_referential_trigger_skipped_returns_empty(self):
+        rt_dd = _key(layer_switch=0)  # source_layer=0, so self-ref
+        right = _thumb(double_down_key=rt_dd)
+        result = route_thumb_connectors(
+            left=_thumb(),
+            right=right,
+            layout=self._layout(),
+            source_layer=0,
+            keymap_spacing=18,
+            indicator_rects={rt_dd: (700.0, 350.0, 6.0, 6.0)},
+        )
+        assert result.paths == []
+
+    def test_up_direction_trigger_produces_top_padding(self):
+        # RT_Nail triggers (UP direction in _THUMB_PRIORITY).
+        rt_nail = _key(layer_switch=1)
+        right = _thumb(nail_key=rt_nail)
+        indicator_rects = {rt_nail: (700.0, 320.0, 6.0, 6.0)}
+        result = route_thumb_connectors(
+            left=_thumb(),
+            right=right,
+            layout=self._layout(),
+            source_layer=0,
+            keymap_spacing=18,
+            indicator_rects=indicator_rects,
+        )
+        assert len(result.paths) == 1
+        # 1 UP step → extra_top_padding = (1+1) * 18 = 36.
+        assert result.extra_top_padding == 36.0
+        assert result.extra_bottom_padding == 0
+        assert result.extra_right_padding == 18.0
+
+    def test_down_direction_trigger_produces_bottom_padding(self):
+        # RT_Knuckle triggers (DOWN direction in _THUMB_PRIORITY).
+        rt_knuckle = _key(layer_switch=1)
+        right = _thumb(knuckle_key=rt_knuckle)
+        indicator_rects = {rt_knuckle: (700.0, 380.0, 6.0, 6.0)}
+        result = route_thumb_connectors(
+            left=_thumb(),
+            right=right,
+            layout=self._layout(),
+            source_layer=0,
+            keymap_spacing=18,
+            indicator_rects=indicator_rects,
+        )
+        assert len(result.paths) == 1
+        assert result.extra_top_padding == 0
+        # 1 DOWN step → extra_bottom_padding = (1+1) * 18 = 36.
+        assert result.extra_bottom_padding == 36.0
+        assert result.extra_right_padding == 18.0
+
+    def test_lt_up_special_case_end_to_end(self):
+        # LT_Up + LT_Down both trigger → LT_Up gets LEFT direction,
+        # gets redirected to DOWN in Phase 1, then DOWN→RIGHT in Phase 1.
+        # LT_Down stays DOWN, also DOWN→RIGHT in Phase 1.
+        lt_up = _key(layer_switch=1)
+        lt_down = _key(layer_switch=2)
+        left = _thumb(up_key=lt_up, down_key=lt_down)
+        indicator_rects = {
+            lt_up: (200.0, 320.0, 6.0, 6.0),
+            lt_down: (220.0, 360.0, 6.0, 6.0),
+        }
+        result = route_thumb_connectors(
+            left=left,
+            right=_thumb(),
+            layout=self._layout(),
+            source_layer=0,
+            keymap_spacing=18,
+            indicator_rects=indicator_rects,
+        )
+        # Two paths produced; both end up DOWN→RIGHT after Phase 1.
+        assert len(result.paths) == 2
+        # Two DOWN steps after the LEFT→DOWN redirect → extra_bottom = (2+1)*18 = 54.
+        assert result.extra_bottom_padding == 54.0
+        # No UP steps → extra_top = 0.
+        assert result.extra_top_padding == 0
+        # Two distinct target_layers, but they may share a column (depends on Y spans).
+        # We don't assert exact column count — just that the algorithm produced output.
+
+    def test_missing_indicator_rect_raises_clear_error(self):
+        # Triggering key NOT included in indicator_rects map.
+        rt_dd = _key(layer_switch=1)
+        right = _thumb(double_down_key=rt_dd)
+        with pytest.raises(ValueError, match="indicator_rects missing entry"):
+            route_thumb_connectors(
+                left=_thumb(),
+                right=right,
+                layout=self._layout(),
+                source_layer=0,
+                keymap_spacing=18,
+                indicator_rects={},  # empty — RT_DD's rect is missing
+            )
