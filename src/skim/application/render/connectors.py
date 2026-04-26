@@ -103,6 +103,8 @@ class ConnectorRouting:
             paths already drawn above it) down by this amount before painting
             the routing paths. Applied via the layout's thumb-row offset.
         extra_bottom_padding: Caller must extend canvas height by this amount.
+            Includes 0.5 * keymap_spacing of buffer between the bottommost DOWN
+            lane and the canvas edge when DOWN lanes exist (zero otherwise).
         extra_right_padding: Caller must extend canvas width by this amount.
             Computed as ``(cols_used + 1) * keymap_spacing`` so the canvas
             covers the routing columns plus the keymap_spacing-long LEFT
@@ -323,10 +325,12 @@ def phase1_down_to_right(
     because the lane must clear whichever sits lower, so the clamp picks the
     larger (more positive-Y) of the two.
 
-    Returns ``extra_bottom_padding = N * keymap_spacing`` where ``N`` is the
-    number of DOWN steps processed — exactly the vertical extent the lanes
-    occupy below the cluster (lane 1 at ``cluster_bottom + keymap_spacing``,
-    lane N at ``cluster_bottom + N * keymap_spacing``).
+    Returns ``extra_bottom_padding = (N + 0.5) * keymap_spacing`` where ``N``
+    is the number of DOWN steps. The lanes themselves occupy
+    ``N * keymap_spacing`` (lane 1 at ``cluster_bottom + keymap_spacing``,
+    lane N at ``cluster_bottom + N * keymap_spacing``); the extra
+    ``0.5 * keymap_spacing`` buffers the bottommost lane from the canvas
+    edge so the border/copyright don't crowd the connector.
     """
     down_steps = [s for s in path_list if s.direction == Direction.DOWN]
     if not down_steps:
@@ -337,7 +341,9 @@ def phase1_down_to_right(
         step.current_point = (step.current_point[0], new_y)
         step.direction = Direction.RIGHT
         new_y += keymap_spacing
-    return len(down_steps) * keymap_spacing
+    # 0.5 * keymap_spacing of buffer between the bottommost lane and the canvas
+    # edge so the border/copyright don't crowd the connector.
+    return (len(down_steps) + 0.5) * keymap_spacing
 
 
 def allocate_columns(

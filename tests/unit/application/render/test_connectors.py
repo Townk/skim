@@ -433,8 +433,8 @@ class TestPhase1DownToRight:
         assert b.current_point == (23.0, 166.0)
         assert a.direction == Direction.RIGHT
         assert b.direction == Direction.RIGHT
-        # extra_bottom_padding = N * keymap_spacing = 2 * 18 = 36
-        assert extra == 36.0
+        # extra_bottom_padding = (N + 0.5) * keymap_spacing = 2.5 * 18 = 45
+        assert extra == 45.0
 
     def test_returns_zero_when_no_down_paths(self):
         assert phase1_down_to_right([], cluster_bottom=0, max_y=0, keymap_spacing=18) == 0.0
@@ -679,8 +679,8 @@ class TestRouteThumbConnectors:
         )
         assert len(result.paths) == 1
         assert result.extra_top_padding == 0
-        # 1 DOWN step → extra_bottom_padding = 1 * 18 = 18.
-        assert result.extra_bottom_padding == 18.0
+        # 1 DOWN step → extra_bottom_padding = (1 + 0.5) * 18 = 27.
+        assert result.extra_bottom_padding == 27.0
         assert result.extra_right_padding == 36.0
 
     def test_lt_up_special_case_end_to_end(self):
@@ -704,8 +704,8 @@ class TestRouteThumbConnectors:
         )
         # Two paths produced; both end up DOWN→RIGHT after Phase 1.
         assert len(result.paths) == 2
-        # Two DOWN steps after the LEFT→DOWN redirect → extra_bottom = 2*18 = 36.
-        assert result.extra_bottom_padding == 36.0
+        # Two DOWN steps after the LEFT→DOWN redirect → extra_bottom = (2 + 0.5)*18 = 45.
+        assert result.extra_bottom_padding == 45.0
         # No UP steps → extra_top = 0.
         assert result.extra_top_padding == 0
         # Two distinct target_layers, but they may share a column (depends on Y spans).
