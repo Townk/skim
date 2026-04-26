@@ -223,3 +223,67 @@ def phase1_redirect_left_to_down(
         step.path.L(new_x, step.current_point[1])
         step.current_point = (new_x, step.current_point[1])
         step.direction = Direction.DOWN
+
+
+def phase1_up_to_right(
+    path_list: list[ConnectorStep],
+    cluster_top: float,
+    min_y: float,
+    keymap_spacing: float,
+) -> float:
+    """Convert each UP-direction step's path into an east-bound escape lane.
+
+    Each successive UP step takes a lane one ``keymap_spacing`` higher than
+    the previous, starting from ``min(cluster_top - spacing, min_y - spacing)``.
+
+    ``cluster_top`` is the cluster's bounding-box top edge; ``min_y`` is the
+    running minimum Y across already-routed segments / current path-list entry
+    points. Both are needed because the lane must clear whichever sits higher,
+    so the clamp picks the smaller (more negative-Y) of the two.
+
+    Returns ``extra_top_padding = (N + 1) * keymap_spacing`` where ``N`` is
+    the number of UP steps processed. The ``+1`` reserves one extra
+    ``keymap_spacing`` of headroom between the outermost escape lane and the
+    padded canvas edge.
+    """
+    up_steps = [s for s in path_list if s.direction == Direction.UP]
+    if not up_steps:
+        return 0.0
+    new_y = min(cluster_top - keymap_spacing, min_y - keymap_spacing)
+    for step in up_steps:
+        step.path.L(step.current_point[0], new_y)
+        step.current_point = (step.current_point[0], new_y)
+        step.direction = Direction.RIGHT
+        new_y -= keymap_spacing
+    return (len(up_steps) + 1) * keymap_spacing
+
+
+def phase1_down_to_right(
+    path_list: list[ConnectorStep],
+    cluster_bottom: float,
+    max_y: float,
+    keymap_spacing: float,
+) -> float:
+    """Convert each DOWN-direction step's path into an east-bound escape lane below the cluster.
+
+    Mirror image of ``phase1_up_to_right``. ``cluster_bottom`` is the cluster's
+    bounding-box bottom edge; ``max_y`` is the running maximum Y across
+    already-routed segments / current path-list entry points. Both are needed
+    because the lane must clear whichever sits lower, so the clamp picks the
+    larger (more positive-Y) of the two.
+
+    Returns ``extra_bottom_padding = (N + 1) * keymap_spacing`` where ``N`` is
+    the number of DOWN steps processed. The ``+1`` reserves one extra
+    ``keymap_spacing`` of headroom between the outermost escape lane and the
+    padded canvas edge.
+    """
+    down_steps = [s for s in path_list if s.direction == Direction.DOWN]
+    if not down_steps:
+        return 0.0
+    new_y = max(cluster_bottom + keymap_spacing, max_y + keymap_spacing)
+    for step in down_steps:
+        step.path.L(step.current_point[0], new_y)
+        step.current_point = (step.current_point[0], new_y)
+        step.direction = Direction.RIGHT
+        new_y += keymap_spacing
+    return (len(down_steps) + 1) * keymap_spacing

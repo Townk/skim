@@ -11,7 +11,9 @@ from skim.application.render.connectors import (
     ConnectorStep,
     Direction,
     build_thumb_path_list,
+    phase1_down_to_right,
     phase1_redirect_left_to_down,
+    phase1_up_to_right,
     set_initial_moveto,
     target_point_for,
 )
@@ -300,3 +302,82 @@ class TestPhase1RedirectLeftToDown:
         # If the fallback were used, knuckle's x = 200 + 8/2 = 204, new_x = 186.
         assert lt_up.current_point[0] == 86.0
         assert lt_up.direction == Direction.DOWN
+
+
+class TestPhase1UpToRight:
+    def test_each_up_path_takes_progressively_higher_lane(self):
+        a = _step(Direction.UP, (10, 100, 6, 8))
+        set_initial_moveto(a)
+        b = _step(Direction.UP, (20, 110, 6, 8))
+        set_initial_moveto(b)
+        path_list = [a, b]
+        cluster_top = 90
+        extra = phase1_up_to_right(path_list, cluster_top=cluster_top, min_y=100, keymap_spacing=18)
+        # First UP lane: min(90 - 18, 100 - 18) = min(72, 82) = 72.
+        # Second UP lane: 72 - 18 = 54.
+        assert a.current_point == (13.0, 72.0)
+        assert b.current_point == (23.0, 54.0)
+        assert a.direction == Direction.RIGHT
+        assert b.direction == Direction.RIGHT
+        # extra_top_padding = (N + 1) * keymap_spacing = (2 + 1) * 18 = 54
+        assert extra == 54.0
+
+    def test_returns_zero_when_no_up_paths(self):
+        assert phase1_up_to_right([], cluster_top=0, min_y=0, keymap_spacing=18) == 0.0
+
+    def test_only_up_steps_are_processed(self):
+        up = _step(Direction.UP, (10, 100, 6, 8))
+        set_initial_moveto(up)
+        down = _step(Direction.DOWN, (20, 100, 6, 8))
+        set_initial_moveto(down)
+        right = _step(Direction.RIGHT, (30, 100, 6, 8))
+        set_initial_moveto(right)
+        # Snapshot non-UP state before the call
+        down_before = (down.current_point, down.direction)
+        right_before = (right.current_point, right.direction)
+
+        phase1_up_to_right([up, down, right], cluster_top=90, min_y=100, keymap_spacing=18)
+
+        assert up.direction == Direction.RIGHT
+        assert (down.current_point, down.direction) == down_before
+        assert (right.current_point, right.direction) == right_before
+
+
+class TestPhase1DownToRight:
+    def test_each_down_path_takes_progressively_lower_lane(self):
+        a = _step(Direction.DOWN, (10, 100, 6, 8))
+        set_initial_moveto(a)
+        b = _step(Direction.DOWN, (20, 110, 6, 8))
+        set_initial_moveto(b)
+        path_list = [a, b]
+        cluster_bottom = 130
+        extra = phase1_down_to_right(
+            path_list, cluster_bottom=cluster_bottom, max_y=118, keymap_spacing=18
+        )
+        # First DOWN lane: max(130 + 18, 118 + 18) = max(148, 136) = 148.
+        # Second DOWN lane: 148 + 18 = 166.
+        assert a.current_point == (13.0, 148.0)
+        assert b.current_point == (23.0, 166.0)
+        assert a.direction == Direction.RIGHT
+        assert b.direction == Direction.RIGHT
+        # extra_bottom_padding = (N + 1) * keymap_spacing = 54
+        assert extra == 54.0
+
+    def test_returns_zero_when_no_down_paths(self):
+        assert phase1_down_to_right([], cluster_bottom=0, max_y=0, keymap_spacing=18) == 0.0
+
+    def test_only_down_steps_are_processed(self):
+        up = _step(Direction.UP, (10, 100, 6, 8))
+        set_initial_moveto(up)
+        down = _step(Direction.DOWN, (20, 100, 6, 8))
+        set_initial_moveto(down)
+        right = _step(Direction.RIGHT, (30, 100, 6, 8))
+        set_initial_moveto(right)
+        up_before = (up.current_point, up.direction)
+        right_before = (right.current_point, right.direction)
+
+        phase1_down_to_right([up, down, right], cluster_bottom=130, max_y=118, keymap_spacing=18)
+
+        assert down.direction == Direction.RIGHT
+        assert (up.current_point, up.direction) == up_before
+        assert (right.current_point, right.direction) == right_before
