@@ -295,10 +295,16 @@ class OverviewLayout:
     def ew_key_y_offset(self) -> float:
         """Y offset from the top of the cluster row to the E/W key TOP.
 
-        E/W keys sit one inset below the north key, since the inset_width
-        gap between rows separates them.
+        E/W keys sit immediately below the north key (no inset gap) — see
+        ``FingerClusterLayout._compute_layout`` where their Y is
+        ``north_key.y + north_key.width`` exactly. The inset only separates
+        the C/S/DS row stack, not the N→E/W transition.
+
+        The layer-badge column uses this offset to align its top edge with
+        the W key's top, and ``layer_row_target_y`` uses it to land
+        connector paths at the East key's vertical center.
         """
-        return self._finger_cluster_width * (_OUTER_KEY_PROPORTION + _KEY_INSET_PROPORTION)
+        return self._finger_cluster_width * _OUTER_KEY_PROPORTION
 
     @property
     def outer_key_size(self) -> float:

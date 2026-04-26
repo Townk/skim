@@ -111,16 +111,19 @@ class TestOverviewLayout:
         layout = OverviewLayout(config, _DEFAULT_BADGE)
         assert layout.finger_key_size > 0
 
-    def test_ew_key_y_offset_includes_inset(self):
-        """ew_key_y_offset is the Y of the E/W key TOP, which sits one inset below the north key.
+    def test_ew_key_y_offset_matches_actual_west_key_top(self):
+        """ew_key_y_offset is the Y of the E/W key TOP — equal to outer_key_size.
 
-        Was previously returning just ``outer * cluster_width`` (= north_key bottom),
-        which is the inset shy of the actual E/W top.
+        FingerClusterLayout places E/W at ``y = north_key.y + north_key.width``
+        with no inset; the inset only separates the C/S/DS row stack. The
+        layer badge and the layer_row_target_y connector landing both depend
+        on this alignment.
         """
         config = _make_config(3)
         layout = OverviewLayout(config, _DEFAULT_BADGE)
         cw = layout.finger_cluster_width
-        assert layout.ew_key_y_offset == pytest.approx(cw * (0.328 + 0.018))
+        assert layout.ew_key_y_offset == pytest.approx(cw * 0.328)
+        assert layout.ew_key_y_offset == pytest.approx(layout.outer_key_size)
 
     def test_outer_key_size_property(self):
         """outer_key_size returns the side of an outer key (N/S/E/W)."""
@@ -230,6 +233,29 @@ class TestOverviewLayout:
         layout_with_routing = OverviewLayout(config, _DEFAULT_BADGE, routing_column_count=3)
         layout_without_routing = OverviewLayout(config, _DEFAULT_BADGE, routing_column_count=0)
         assert layout_without_routing.canvas_width < layout_with_routing.canvas_width
+
+    def test_layer_badge_y_and_height_match_west_key(self):
+        """The layer badge in col 1 must align with the W key in col 2:
+        same Y (top edge) and same height (= outer_key_size).
+
+        Regression for the off-by-one-inset in ``ew_key_y_offset`` that
+        used to push the badge below the W key by ``inset_width``.
+        """
+        config = _make_config(3)
+        layout = OverviewLayout(config, _DEFAULT_BADGE)
+
+        row_y = layout.layer_row_y_positions[0]
+        # FingerClusterLayout places W at row_y + outer_key_size.
+        west_key_y = row_y + layout.outer_key_size
+        west_key_height = layout.outer_key_size
+
+        # Badge Y is computed as row_y + ew_key_y_offset; height is
+        # outer_key_size in draw_overview.
+        badge_y = row_y + layout.ew_key_y_offset
+        badge_height = layout.outer_key_size
+
+        assert badge_y == pytest.approx(west_key_y)
+        assert badge_height == pytest.approx(west_key_height)
 
     def test_col_gap_equals_4_keymap_spacings(self):
         """The gap between col 1 (layer badges) and col 2 (L4 cluster) must be
