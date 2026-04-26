@@ -10,8 +10,32 @@ from unittest.mock import MagicMock
 from skim.application.render.connectors import (
     ConnectorStep,
     Direction,
+    build_thumb_path_list,
     target_point_for,
 )
+from skim.data.keyboard import ThumbCluster
+from skim.domain import SvalboardTargetKey
+
+
+def _key(label="K", layer_switch=None):
+    return SvalboardTargetKey(label=label, layer_switch=layer_switch)
+
+
+def _thumb(**overrides):
+    """Build a ThumbCluster with all keys defaulting to no layer_switch."""
+    base = {
+        name: _key()
+        for name in (
+            "down_key",
+            "pad_key",
+            "up_key",
+            "nail_key",
+            "knuckle_key",
+            "double_down_key",
+        )
+    }
+    base.update(overrides)
+    return ThumbCluster(**base)
 
 
 class TestDirection:
@@ -63,3 +87,87 @@ class TestTargetPointFor:
         layout = self._layout()
         assert target_point_for(layout, target_layer=99, source_layer=0, keymap_spacing=18) is None
         assert target_point_for(layout, target_layer=-1, source_layer=0, keymap_spacing=18) is None
+
+
+class TestBuildThumbPathList:
+    def _layout_target(self):
+        layout = MagicMock()
+        layout.layer_row_y_positions = [100, 200, 300]
+        layout.layer_row_heights = [50, 50, 50]
+        layout.layer_row_bounding_box = lambda idx: (
+            200,
+            layout.layer_row_y_positions[idx],
+            600,
+            50,
+        )
+        return layout
+
+    def test_empty_when_no_triggers(self):
+        layout = self._layout_target()
+        steps = build_thumb_path_list(
+            left=_thumb(),
+            right=_thumb(),
+            layout=layout,
+            source_layer=0,
+            keymap_spacing=18,
+        )
+        assert steps == []
+
+    def test_right_thumb_outward_keys_come_first_with_direction_right(self):
+        layout = self._layout_target()
+        right = _thumb(
+            double_down_key=_key(layer_switch=1),
+            pad_key=_key(layer_switch=2),
+        )
+        steps = build_thumb_path_list(
+            left=_thumb(),
+            right=right,
+            layout=layout,
+            source_layer=0,
+            keymap_spacing=18,
+        )
+        assert [s.key.layer_switch for s in steps] == [1, 2]
+        assert all(s.direction == Direction.RIGHT for s in steps)
+
+    def test_lt_up_goes_left_when_lt_down_also_triggers(self):
+        layout = self._layout_target()
+        left = _thumb(up_key=_key(layer_switch=1), down_key=_key(layer_switch=2))
+        steps = build_thumb_path_list(
+            left=left,
+            right=_thumb(),
+            layout=layout,
+            source_layer=0,
+            keymap_spacing=18,
+        )
+        # LT_Down is in the DOWN priority group; LT_Up is the special-case at the end with LEFT.
+        directions = [s.direction for s in steps]
+        assert Direction.DOWN in directions
+        assert Direction.LEFT in directions
+        # LT_Up (target_layer=1) is direction LEFT.
+        lt_up_step = next(s for s in steps if s.key.layer_switch == 1)
+        assert lt_up_step.direction == Direction.LEFT
+
+    def test_lt_up_goes_down_when_lt_down_does_not_trigger(self):
+        layout = self._layout_target()
+        left = _thumb(up_key=_key(layer_switch=1))
+        steps = build_thumb_path_list(
+            left=left,
+            right=_thumb(),
+            layout=layout,
+            source_layer=0,
+            keymap_spacing=18,
+        )
+        assert len(steps) == 1
+        assert steps[0].direction == Direction.DOWN
+
+    def test_self_referential_trigger_is_skipped(self):
+        layout = self._layout_target()
+        right = _thumb(pad_key=_key(layer_switch=0))  # source_layer=0, so this is self-ref
+        steps = build_thumb_path_list(
+            left=_thumb(),
+            right=right,
+            layout=layout,
+            source_layer=0,
+            keymap_spacing=18,
+        )
+        assert steps == []

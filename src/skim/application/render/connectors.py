@@ -17,7 +17,8 @@ from enum import Enum
 import drawsvg as draw
 
 from skim.application.render.overview_layout import OverviewLayout
-from skim.domain import SvalboardTargetKey
+from skim.data.keyboard import ThumbCluster
+from skim.domain import KeyboardSide, SvalboardTargetKey
 
 
 class Direction(Enum):
@@ -86,3 +87,72 @@ def target_point_for(
         return None
     x, y, w, h = layout.layer_row_bounding_box(target_layer)
     return (x + w + keymap_spacing, y + h / 2.0)
+
+
+# Priority groups for thumb cluster keys. Each entry is
+# (side, attribute_name, default_direction).
+_THUMB_PRIORITY: list[tuple[KeyboardSide, str, Direction]] = [
+    # Right thumb's outward keys
+    (KeyboardSide.RIGHT, "double_down_key", Direction.RIGHT),
+    (KeyboardSide.RIGHT, "pad_key", Direction.RIGHT),
+    (KeyboardSide.RIGHT, "up_key", Direction.RIGHT),
+    (KeyboardSide.RIGHT, "down_key", Direction.RIGHT),
+    # Inward-facing UP escapes
+    (KeyboardSide.RIGHT, "nail_key", Direction.UP),
+    (KeyboardSide.LEFT, "nail_key", Direction.UP),
+    (KeyboardSide.LEFT, "double_down_key", Direction.UP),
+    (KeyboardSide.LEFT, "pad_key", Direction.UP),
+    # Inward-facing DOWN escapes
+    (KeyboardSide.RIGHT, "knuckle_key", Direction.DOWN),
+    (KeyboardSide.LEFT, "knuckle_key", Direction.DOWN),
+    (KeyboardSide.LEFT, "down_key", Direction.DOWN),
+]
+
+
+def build_thumb_path_list(
+    left: ThumbCluster[SvalboardTargetKey],
+    right: ThumbCluster[SvalboardTargetKey],
+    layout: OverviewLayout,
+    source_layer: int,
+    keymap_spacing: float,
+) -> list[ConnectorStep]:
+    """Build the priority-ordered ConnectorStep list for the thumb cluster.
+
+    Includes the LT_Up special case: if both LT_Down and LT_Up have triggers,
+    LT_Up's initial direction is LEFT (to be redirected DOWN in Phase 1);
+    otherwise LT_Up takes DOWN directly.
+    """
+    steps: list[ConnectorStep] = []
+    for side, attr, direction in _THUMB_PRIORITY:
+        cluster = left if side == KeyboardSide.LEFT else right
+        key: SvalboardTargetKey = getattr(cluster, attr)
+        if key.layer_switch is None:
+            continue
+        target = target_point_for(layout, key.layer_switch, source_layer, keymap_spacing)
+        if target is None:
+            continue
+        steps.append(
+            ConnectorStep(
+                key=key,
+                direction=direction,
+                target_point=target,
+                target_layer=key.layer_switch,
+            )
+        )
+
+    # LT_Up special case (added last so its column allocation comes after
+    # any LT_Down DOWN-routed path in Phase 2).
+    if left.up_key.layer_switch is not None:
+        target = target_point_for(layout, left.up_key.layer_switch, source_layer, keymap_spacing)
+        if target is not None:
+            direction = Direction.LEFT if left.down_key.layer_switch is not None else Direction.DOWN
+            steps.append(
+                ConnectorStep(
+                    key=left.up_key,
+                    direction=direction,
+                    target_point=target,
+                    target_layer=left.up_key.layer_switch,
+                )
+            )
+
+    return steps
