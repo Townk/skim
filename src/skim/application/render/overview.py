@@ -12,6 +12,8 @@ Generates a table-like overview SVG showing all keymap layers:
 - Dotted connector lines from layer indicator circles to target layer rows
 """
 
+from collections.abc import Mapping
+
 import drawsvg as draw
 
 from skim.assets import ASSETS
@@ -19,7 +21,12 @@ from skim.data import SkimConfig, SvalboardKeymap, SvalboardLayout
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .components import FingerClusterComponent, ThumbClusterComponent
-from .connectors import ConnectorRouting, route_thumb_connectors
+from .connectors import (
+    ConnectorRouting,
+    OverviewLayerSource,
+    ThumbSource,
+    route_overview_connectors,
+)
 from .context import RenderContext
 from .geometry import AspectRatio
 from .indicators import (
@@ -47,6 +54,10 @@ _OUTER_KEY_WIDTH_PROPORTION = 0.328
 
 # Badge font size as a ratio of badge height
 _BADGE_FONT_SIZE_RATIO = 0.45
+
+# Connector spacing as a ratio of the outer key width. Tighter than 1.0
+# (the full N-key width) — settled visually during Phase 1.
+_CONNECTOR_SPACING_RATIO = 0.6
 
 
 def _compute_badge_dims(
@@ -96,23 +107,6 @@ def _compute_badge_dims(
         height=badge_height,
         border_radius=border_radius,
     )
-
-
-_IndicatorInfo = tuple[float, float, float, int, str, KeyboardSide]
-"""(abs_cx, abs_cy, circle_radius, target_layer_idx, key_name, side)"""
-
-
-def _collect_finger_indicators(
-    clusters: list[list[FingerClusterComponent]],
-    keymap: SvalboardKeymap[SvalboardTargetKey],
-    row_to_layer: list[tuple[int, int]],
-) -> list[_IndicatorInfo]:
-    """Collect indicator circle positions from finger clusters.
-
-    Currently returns an empty list — finger cluster connector routing
-    is not yet implemented (exception case requiring special handling).
-    """
-    return []
 
 
 def _compute_thumb_indicator_rects(
@@ -333,7 +327,7 @@ def _compute_all_indicator_rects(
 class _RoutingLayoutAdapter:
     """Adapter that exposes ``OverviewLayout`` to the connector router by QMK index.
 
-    ``route_thumb_connectors`` calls ``layer_row_bounding_box(target_layer)``
+    ``route_overview_connectors`` calls ``layer_row_bounding_box(target_layer)``
     where ``target_layer`` is a key's QMK ``layer_switch`` value. The overview
     renders rows in reverse order (top row = highest QMK index) and may use
     non-sequential QMK indices (e.g. 0, 1, 3, 4, 8, ...), so a QMK index does
@@ -513,7 +507,7 @@ def draw_overview(
     prelim_badge = BadgeDimensions(width=200, height=40, border_radius=8)
     prelim_layout = OverviewLayout(config, prelim_badge)
     badge_dims = _compute_badge_dims(config, render_layers, prelim_layout.finger_cluster_width)
-    # Routing area width is allocated by route_thumb_connectors via extra_right_padding;
+    # Routing area width is allocated by route_overview_connectors via extra_right_padding;
     # pass 0 so the constructor doesn't pre-reserve duplicate space.
     layout = OverviewLayout(config, badge_dims, routing_column_count=0)
 
@@ -522,63 +516,55 @@ def draw_overview(
     row_to_layer = list(reversed(render_layers))  # list of (pos, qmk_idx) tuples
     layer_to_row = {qmk_idx: ri for ri, (_pos, qmk_idx) in enumerate(row_to_layer)}
 
-    # --- Phase 2: Route thumb-cluster connectors via the new algorithm ---
+    # --- Phase 2: Route all connectors (per-layer fingers + thumb). ---
     routing: ConnectorRouting | None = None
     if config.output.style.show_layer_indicators and keymap.layers:
         first_qmk_idx = config.keyboard.layers[0].index if config.keyboard.layers else 0
         if config.output.style.show_layer_connectors and first_qmk_idx in keymap.layers:
-            layer0 = keymap.layers[first_qmk_idx]
-            # ``route_thumb_connectors`` indexes the layout via
-            # ``layer_row_bounding_box(target_layer)`` / ``layer_row_y_positions``.
-            # In the overview, rows are reversed (top = highest QMK index) and
-            # ``target_layer`` is a QMK layer index (``key.layer_switch``). Wrap
-            # the layout so QMK indices resolve to the correct row.
+            # Build per-layer sources and the thumb source.
+            layer_sources: list[OverviewLayerSource] = []
+            for _config_pos, qmk_idx in render_layers:
+                layer_data = keymap.layers.get(qmk_idx)
+                if layer_data is None:
+                    continue
+                layer_sources.append(
+                    OverviewLayerSource(
+                        source_layer=qmk_idx,
+                        left=layer_data.left,
+                        right=layer_data.right,
+                    )
+                )
+
+            thumb_layer = keymap.layers[first_qmk_idx]
+            thumb_source = ThumbSource(
+                source_layer=first_qmk_idx,
+                left=thumb_layer.left.thumb,
+                right=thumb_layer.right.thumb,
+            )
+
             routing_layout = _RoutingLayoutAdapter(layout, layer_to_row)
 
-            # Pass 1: discover ``extra_top_padding`` so we know how far to shift
-            # the thumb cluster before the final routing pass.
-            prelim_left, prelim_right = _build_thumb_clusters(
-                config, keymap, layout, use_system_fonts
-            )
-            if prelim_left and prelim_right:
-                prelim_rects = _compute_thumb_indicator_rects(
-                    prelim_left, prelim_right, keymap, config
+            # Closure that recomputes indicator rects against the current layout
+            # state. Called twice by route_overview_connectors (pass 1 + pass 2).
+            # The second call MUST reflect post-shift layout; rebuilding cluster
+            # components inside _compute_all_indicator_rects ensures that.
+            def compute_rects() -> Mapping[SvalboardTargetKey, tuple[float, float, float, float]]:
+                return _compute_all_indicator_rects(
+                    config, keymap, layout, use_system_fonts, row_to_layer
                 )
-                # 0.6 multiplier: tighter lane/column spacing reads better visually than
-                # the full N-key width. Tunable; revisit if a future keymap renders cramped.
-                prelim_routing = route_thumb_connectors(
-                    left=layer0.left.thumb,
-                    right=layer0.right.thumb,
-                    layout=routing_layout,
-                    source_layer=first_qmk_idx,
-                    keymap_spacing=nk * 0.6,
-                    indicator_rects=prelim_rects,
-                )
-                if prelim_routing.extra_top_padding > 0:
-                    layout.shift_thumb_down(prelim_routing.extra_top_padding)
 
-                # Pass 2: re-run routing against the shifted layout so the path
-                # coordinates align with where the thumb indicators will actually
-                # render.
-                final_left, final_right = _build_thumb_clusters(
-                    config, keymap, layout, use_system_fonts
-                )
-                if final_left and final_right:
-                    final_rects = _compute_thumb_indicator_rects(
-                        final_left, final_right, keymap, config
-                    )
-                    routing = route_thumb_connectors(
-                        left=layer0.left.thumb,
-                        right=layer0.right.thumb,
-                        layout=routing_layout,
-                        source_layer=first_qmk_idx,
-                        keymap_spacing=nk * 0.6,
-                        indicator_rects=final_rects,
-                    )
-                    if routing.extra_right_padding > 0:
-                        layout.adjust_canvas_width(
-                            layout.canvas_width + routing.extra_right_padding
-                        )
+            keymap_spacing = nk * _CONNECTOR_SPACING_RATIO
+
+            routing = route_overview_connectors(
+                layers=layer_sources,
+                thumb=thumb_source,
+                layout=routing_layout,
+                compute_indicator_rects=compute_rects,
+                keymap_spacing=keymap_spacing,
+            )
+
+            if routing.extra_right_padding > 0:
+                layout.adjust_canvas_width(layout.canvas_width + routing.extra_right_padding)
 
     # --- Phase 3: Render everything at final positions ---
     # Extend canvas to fit copyright text below all content
