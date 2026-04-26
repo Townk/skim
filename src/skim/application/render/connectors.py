@@ -18,7 +18,7 @@ from typing import Protocol
 
 import drawsvg as draw
 
-from skim.data.keyboard import FingerCluster, ThumbCluster
+from skim.data.keyboard import FingerCluster, SplitSide, ThumbCluster
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 
@@ -347,6 +347,51 @@ def build_finger_path_list_for_cluster(
             )
         )
 
+    return steps
+
+
+# Cluster iteration order for a finger layer:
+# L4, L3, L2, L1, R1, R2, R3, R4 — outer-to-inner on the left, then
+# inner-to-outer on the right. R4 is the only cluster that uses _R4_PRIORITY.
+_FINGER_CLUSTER_ITER_ORDER: list[tuple[str, str, bool]] = [
+    # (cluster_attr_for_step, side_attr_on_SplitSide, is_r4)
+    ("left.pinky", "pinky", False),
+    ("left.ring", "ring", False),
+    ("left.middle", "middle", False),
+    ("left.index", "index", False),
+    ("right.index", "index", False),
+    ("right.middle", "middle", False),
+    ("right.ring", "ring", False),
+    ("right.pinky", "pinky", True),
+]
+
+
+def build_finger_path_list_for_layer(
+    left: SplitSide[SvalboardTargetKey],
+    right: SplitSide[SvalboardTargetKey],
+    source_layer: int,
+    layout: RoutingLayout,
+    keymap_spacing: float,
+) -> list[ConnectorStep]:
+    """Build the path list for all 8 finger clusters in one layer.
+
+    Cluster iteration order: L4, L3, L2, L1, R1, R2, R3, R4. Within each
+    cluster, keys follow the R4 vs non-R4 priority table.
+    """
+    steps: list[ConnectorStep] = []
+    for cluster_attr, side_attr, is_r4 in _FINGER_CLUSTER_ITER_ORDER:
+        side = left if cluster_attr.startswith("left.") else right
+        cluster: FingerCluster[SvalboardTargetKey] = getattr(side, side_attr)
+        steps.extend(
+            build_finger_path_list_for_cluster(
+                cluster=cluster,
+                is_r4=is_r4,
+                cluster_attr=cluster_attr,
+                source_layer=source_layer,
+                layout=layout,
+                keymap_spacing=keymap_spacing,
+            )
+        )
     return steps
 
 

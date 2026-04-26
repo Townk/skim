@@ -14,6 +14,7 @@ from skim.application.render.connectors import (
     Direction,
     allocate_columns,
     build_finger_path_list_for_cluster,
+    build_finger_path_list_for_layer,
     build_thumb_path_list,
     phase1_down_to_right,
     phase1_redirect_left_to_down,
@@ -23,7 +24,7 @@ from skim.application.render.connectors import (
     set_initial_moveto,
     target_point_for,
 )
-from skim.data.keyboard import FingerCluster, ThumbCluster
+from skim.data.keyboard import FingerCluster, SplitSide, ThumbCluster
 from skim.domain import SvalboardTargetKey
 
 
@@ -92,6 +93,17 @@ def _finger(**overrides):
     }
     base.update(overrides)
     return FingerCluster(**base)
+
+
+def _side(*, index=None, middle=None, ring=None, pinky=None):
+    """Build a SplitSide with empty FingerClusters by default."""
+    return SplitSide(
+        index=index or _finger(),
+        middle=middle or _finger(),
+        ring=ring or _finger(),
+        pinky=pinky or _finger(),
+        thumb=_thumb(),  # not used by finger routing — placeholder
+    )
 
 
 class TestDirection:
@@ -998,3 +1010,80 @@ class TestBuildFingerPathListForCluster:
             keymap_spacing=18,
         )
         assert steps[0].source_cluster_attr == "left.index"
+
+
+class TestBuildFingerPathListForLayer:
+    def _layout_target(self):
+        layout = MagicMock()
+        layout.layer_row_y_positions = [100, 200, 300]
+        layout.layer_row_heights = [50, 50, 50]
+        layout.layer_row_bounding_box = lambda idx: (
+            200,
+            layout.layer_row_y_positions[idx],
+            600,
+            50,
+        )
+        layout.layer_row_target_y = lambda idx: layout.layer_row_y_positions[idx] + 25
+        return layout
+
+    def test_empty_layer_produces_no_steps(self):
+        layout = self._layout_target()
+        steps = build_finger_path_list_for_layer(
+            left=_side(),
+            right=_side(),
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        assert steps == []
+
+    def test_cluster_iteration_order_is_l4_l3_l2_l1_r1_r2_r3_r4(self):
+        # Trigger one key in each cluster so we can recover the order from
+        # the resulting source_cluster_attr sequence.
+        layout = self._layout_target()
+        l1 = _finger(north_key=_key(layer_switch=1))
+        l2 = _finger(north_key=_key(layer_switch=1))
+        l3 = _finger(north_key=_key(layer_switch=1))
+        l4 = _finger(north_key=_key(layer_switch=1))
+        r1 = _finger(north_key=_key(layer_switch=1))
+        r2 = _finger(north_key=_key(layer_switch=1))
+        r3 = _finger(north_key=_key(layer_switch=1))
+        r4 = _finger(north_key=_key(layer_switch=1))
+
+        steps = build_finger_path_list_for_layer(
+            left=_side(index=l1, middle=l2, ring=l3, pinky=l4),
+            right=_side(index=r1, middle=r2, ring=r3, pinky=r4),
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        cluster_order = [s.source_cluster_attr for s in steps]
+        assert cluster_order == [
+            "left.pinky",  # L4
+            "left.ring",  # L3
+            "left.middle",  # L2
+            "left.index",  # L1
+            "right.index",  # R1
+            "right.middle",  # R2
+            "right.ring",  # R3
+            "right.pinky",  # R4
+        ]
+
+    def test_only_r4_uses_r4_priority(self):
+        # Right-pinky north_key uses R4 priority → direction RIGHT.
+        # Left-pinky north_key uses non-R4 priority → direction UP.
+        layout = self._layout_target()
+        right = _side(pinky=_finger(north_key=_key(layer_switch=1)))
+        left = _side(pinky=_finger(north_key=_key(layer_switch=1)))
+
+        steps = build_finger_path_list_for_layer(
+            left=left,
+            right=right,
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        l4_step = next(s for s in steps if s.source_cluster_attr == "left.pinky")
+        r4_step = next(s for s in steps if s.source_cluster_attr == "right.pinky")
+        assert l4_step.direction == Direction.UP  # non-R4 priority
+        assert r4_step.direction == Direction.RIGHT  # R4 priority
