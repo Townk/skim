@@ -23,7 +23,16 @@ from skim.application.render.layout import (
     ThumbClusterKeyProportions,
     ThumbClusterLayout,
 )
-from skim.data.config import Border, Layout, Output, SkimConfig, Spacing, Style
+from skim.data.config import (
+    Border,
+    Keyboard,
+    KeyboardFeatures,
+    Layout,
+    Output,
+    SkimConfig,
+    Spacing,
+    Style,
+)
 from skim.data.keyboard import ThumbCluster
 from skim.domain.domain_types import Alignment, KeyboardSide
 
@@ -238,19 +247,189 @@ class TestKeymapLayout:
         assert isinstance(right_pos, Position)
 
     def test_thumb_positions_symmetric(self, layout):
-        """Thumb positions are at correct horizontal locations."""
+        """Thumb cluster inner edges are equidistant from the canvas center."""
         left_pos, right_pos = layout.thumb_positions(100.0)
         m = layout.metrics
-        expected_left_x = m.margin + m.inset * 2 + m.side_width - m.thumb_cluster_width
-        expected_right_x = m.width - (m.margin + m.inset * 2) - m.side_width
-        assert abs(left_pos.x - expected_left_x) < 0.01
-        assert abs(right_pos.x - expected_right_x) < 0.01
+        center = m.width / 2
+        left_inner_edge = left_pos.x + m.thumb_cluster_width
+        right_inner_edge = right_pos.x
+        assert center - left_inner_edge == pytest.approx(right_inner_edge - center)
 
     def test_canvas_height(self, layout):
         """canvas_height returns positive value."""
         height = layout.canvas_height(finger_cluster_height=100.0, thumb_cluster_height=80.0)
         assert height > 0
         assert height > 100.0 + 80.0
+
+    def test_thumb_y_anchors_to_finger_cluster_bottom_regardless_of_double_south(self):
+        """thumb_y leaves the same gap from the lowest finger cluster bottom in both DS/NDS.
+
+        The thumb row is anchored to where the finger clusters actually end, so a
+        keyboard with or without double_south sees the same vertical spacing between
+        the visible bottom of the fingers and the top of the thumbs.
+        """
+        config_ds = SkimConfig(keyboard=Keyboard(features=KeyboardFeatures(double_south=True)))
+        config_no_ds = SkimConfig(keyboard=Keyboard(features=KeyboardFeatures(double_south=False)))
+
+        layout_ds = KeymapLayout(config_ds)
+        layout_no_ds = KeymapLayout(config_no_ds)
+        cluster_w = layout_ds.metrics.finger_cluster_width
+        ds_cluster_height = cluster_w * 4.0 / 3.0
+        no_ds_cluster_height = cluster_w
+
+        _, ds_pos = layout_ds.thumb_positions(ds_cluster_height)
+        _, no_ds_pos = layout_no_ds.thumb_positions(no_ds_cluster_height)
+
+        ds_lowest_finger_bottom = (
+            layout_ds.metrics.margin
+            + layout_ds.metrics.inset
+            + layout_ds.metrics.finger_key_size
+            + ds_cluster_height
+        )
+        no_ds_lowest_finger_bottom = (
+            layout_no_ds.metrics.margin
+            + layout_no_ds.metrics.inset
+            + layout_no_ds.metrics.finger_key_size
+            + no_ds_cluster_height
+        )
+
+        assert ds_pos.y - ds_lowest_finger_bottom == pytest.approx(
+            no_ds_pos.y - no_ds_lowest_finger_bottom
+        )
+
+    def test_thumb_central_gap_matches_finger_central_gap(self):
+        """The center gap between thumbs equals the center gap between centermost fingers."""
+        layout = KeymapLayout(SkimConfig())
+        m = layout.metrics
+        left_pos, right_pos = layout.thumb_positions(finger_cluster_height=100.0)
+
+        thumb_center_gap = right_pos.x - (left_pos.x + m.thumb_cluster_width)
+
+        left_index = next(layout.left_finger_positions())  # first yielded = index (innermost)
+        right_index = next(layout.right_finger_positions())
+        finger_center_gap = right_index.x - (left_index.x + m.finger_cluster_width)
+
+        assert thumb_center_gap == pytest.approx(finger_center_gap)
+
+    def test_vertical_thumb_gap_is_one_inset(self):
+        """The gap between the lowest finger cluster bottom and the thumb top is one inset."""
+        layout = KeymapLayout(SkimConfig())
+        m = layout.metrics
+        cluster_height = 100.0
+        left_pos, _ = layout.thumb_positions(finger_cluster_height=cluster_height)
+
+        lowest_finger_bottom = m.margin + m.inset + m.finger_key_size + cluster_height
+        assert left_pos.y - lowest_finger_bottom == pytest.approx(m.inset)
+
+    def test_canvas_height_leaves_one_inset_below_thumb(self):
+        """Canvas extends one inset (plus margin) below the thumb cluster bottom."""
+        layout = KeymapLayout(SkimConfig())
+        m = layout.metrics
+        cluster_height = 100.0
+        thumb_height = 80.0
+        _, right_pos = layout.thumb_positions(finger_cluster_height=cluster_height)
+        thumb_bottom = right_pos.y + thumb_height
+        canvas_h = layout.canvas_height(cluster_height, thumb_height)
+
+        assert canvas_h - thumb_bottom == pytest.approx(m.inset + m.margin)
+
+    def test_vertical_indicator_offset_pushes_thumbs_down(self):
+        """A vertical_indicator_offset shifts thumb_y down by exactly that amount."""
+        layout = KeymapLayout(SkimConfig())
+        _, base_pos = layout.thumb_positions(finger_cluster_height=100.0)
+        _, shifted_pos = layout.thumb_positions(
+            finger_cluster_height=100.0, vertical_indicator_offset=12.5
+        )
+        assert shifted_pos.y - base_pos.y == pytest.approx(12.5)
+
+    def test_horizontal_indicator_offset_keeps_left_thumb_in_place(self):
+        """Left thumb stays at its base x — the canvas grows on the right edge instead."""
+        layout = KeymapLayout(SkimConfig())
+        base_left, _ = layout.thumb_positions(finger_cluster_height=100.0)
+        shifted_left, _ = layout.thumb_positions(
+            finger_cluster_height=100.0, horizontal_indicator_offset=7.5
+        )
+        assert shifted_left.x == pytest.approx(base_left.x)
+
+    def test_horizontal_indicator_offset_shifts_right_thumb_by_double_offset(self):
+        """Right thumb shifts by 2x the offset, mirroring the inter-side gap growth."""
+        layout = KeymapLayout(SkimConfig())
+        _, base_right = layout.thumb_positions(finger_cluster_height=100.0)
+        _, shifted_right = layout.thumb_positions(
+            finger_cluster_height=100.0, horizontal_indicator_offset=7.5
+        )
+        assert shifted_right.x - base_right.x == pytest.approx(15.0)
+
+    def test_horizontal_indicator_offset_keeps_left_fingers_in_place(self):
+        """Left side fingers stay at their base positions so they stay within the canvas."""
+        layout = KeymapLayout(SkimConfig())
+        base = list(layout.left_finger_positions())
+        shifted = list(layout.left_finger_positions(horizontal_indicator_offset=7.5))
+        for b, s in zip(base, shifted, strict=True):
+            assert s.x == pytest.approx(b.x)
+            assert s.y == pytest.approx(b.y)
+
+    def test_horizontal_indicator_offset_shifts_right_fingers_by_double_offset(self):
+        """Right side fingers shift by 2x the offset so they stay aligned with the right thumb."""
+        layout = KeymapLayout(SkimConfig())
+        base = list(layout.right_finger_positions())
+        shifted = list(layout.right_finger_positions(horizontal_indicator_offset=7.5))
+        for b, s in zip(base, shifted, strict=True):
+            assert s.x - b.x == pytest.approx(15.0)
+            assert s.y == pytest.approx(b.y)
+
+    def test_canvas_width_grows_with_horizontal_indicator_offset(self):
+        """canvas_width grows by 2x the offset to fit both sides shifting outward."""
+        layout = KeymapLayout(SkimConfig())
+        base = layout.canvas_width()
+        shifted = layout.canvas_width(horizontal_indicator_offset=7.5)
+        assert shifted - base == pytest.approx(15.0)
+
+    def test_canvas_height_grows_with_vertical_indicator_offset(self):
+        """canvas_height grows by the vertical offset so the thumb cluster fits."""
+        layout = KeymapLayout(SkimConfig())
+        base = layout.canvas_height(finger_cluster_height=100.0, thumb_cluster_height=80.0)
+        shifted = layout.canvas_height(
+            finger_cluster_height=100.0,
+            thumb_cluster_height=80.0,
+            vertical_indicator_offset=12.5,
+        )
+        assert shifted - base == pytest.approx(12.5)
+
+    def test_top_indicator_offset_shifts_finger_positions_down(self):
+        """top_indicator_offset reserves space above the finger clusters by shifting them down."""
+        layout = KeymapLayout(SkimConfig())
+        base_left = list(layout.left_finger_positions())
+        shifted_left = list(layout.left_finger_positions(top_indicator_offset=8.0))
+        for b, s in zip(base_left, shifted_left, strict=True):
+            assert s.y - b.y == pytest.approx(8.0)
+            assert s.x == pytest.approx(b.x)
+
+        base_right = list(layout.right_finger_positions())
+        shifted_right = list(layout.right_finger_positions(top_indicator_offset=8.0))
+        for b, s in zip(base_right, shifted_right, strict=True):
+            assert s.y - b.y == pytest.approx(8.0)
+            assert s.x == pytest.approx(b.x)
+
+    def test_top_indicator_offset_shifts_thumb_down(self):
+        """top_indicator_offset shifts thumb_y down too — fingers and thumb move together."""
+        layout = KeymapLayout(SkimConfig())
+        base_left, _ = layout.thumb_positions(finger_cluster_height=100.0)
+        shifted_left, _ = layout.thumb_positions(
+            finger_cluster_height=100.0, top_indicator_offset=8.0
+        )
+        assert shifted_left.y - base_left.y == pytest.approx(8.0)
+
+    def test_canvas_height_grows_with_top_indicator_offset(self):
+        """canvas_height grows by the top_indicator_offset to fit the shifted content."""
+        layout = KeymapLayout(SkimConfig())
+        base = layout.canvas_height(finger_cluster_height=100.0, thumb_cluster_height=80.0)
+        shifted = layout.canvas_height(
+            finger_cluster_height=100.0,
+            thumb_cluster_height=80.0,
+            top_indicator_offset=8.0,
+        )
+        assert shifted - base == pytest.approx(8.0)
 
 
 class TestFingerClusterLayout:

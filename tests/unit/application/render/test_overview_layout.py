@@ -8,6 +8,7 @@
 from skim.application.render.overview_layout import BadgeDimensions, OverviewLayout
 from skim.data.config import (
     Keyboard,
+    KeyboardFeatures,
     KeyboardLayer,
     LayerColor,
     Output,
@@ -17,13 +18,13 @@ from skim.data.config import (
 )
 
 
-def _make_config(num_layers: int, width: float = 1600) -> SkimConfig:
+def _make_config(num_layers: int, width: float = 1600, double_south: bool = False) -> SkimConfig:
     layers_cfg = tuple(KeyboardLayer(index=i, name=f"Layer {i}") for i in range(num_layers))
     layer_colors = tuple(
         LayerColor(base_color=f"#{i + 1:02x}{i + 1:02x}{i + 1:02x}") for i in range(num_layers)
     )
     return SkimConfig(
-        keyboard=Keyboard(layers=layers_cfg),
+        keyboard=Keyboard(layers=layers_cfg, features=KeyboardFeatures(double_south=double_south)),
         output=Output(
             style=Style(palette=Palette(layers=layer_colors)),
         ),
@@ -107,3 +108,29 @@ class TestOverviewLayout:
         config = _make_config(3)
         layout = OverviewLayout(config, _DEFAULT_BADGE)
         assert layout.finger_key_size > 0
+
+    def test_thumb_row_collapses_double_south_extension_when_absent(self):
+        """Without double_south, the thumb row sits closer to the south_key.
+
+        With double_south enabled the cluster extends ~1/3 of its width below the
+        south_key to fit the double_south_key, and the thumb row sits below that.
+        Without double_south, that extra space is empty — leaving the thumbs
+        visually disconnected from the layer rows. The layout collapses that
+        would-be extension so the gap to the thumb row is smaller than the gap
+        between consecutive layer rows.
+        """
+        config = _make_config(3)  # double_south=False by default
+        layout = OverviewLayout(config, _DEFAULT_BADGE)
+
+        inter_row_gap = (
+            layout.layer_row_y_positions[1]
+            - layout.layer_row_y_positions[0]
+            - layout.layer_row_heights[0]
+        )
+        cluster_bottom = layout.layer_row_y_positions[-1] + layout.layer_row_heights[-1]
+        thumb_gap = layout.thumb_row_y - cluster_bottom
+
+        assert thumb_gap < inter_row_gap, (
+            f"Expected thumb_gap ({thumb_gap}) < inter_row_gap ({inter_row_gap}) when "
+            "double_south is absent — the would-be double_south space should be collapsed."
+        )

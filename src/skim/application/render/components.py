@@ -399,6 +399,17 @@ class FingerClusterComponent(KeyCluster[FingerCluster[SvalboardTargetKey]]):
         self._layout = FingerClusterLayout(
             self._boundary, FingerClusterComponent._CLUSTER_WIDTH_PROPORTIONS
         )
+        # Use the actual content extent rather than the bbox aspect ratio. The
+        # cluster proportions (outer/center/inset) don't sum exactly to the 1:1
+        # or 4:3 bbox aspect, and the difference is much larger in double_south
+        # mode — without this override, the thumb cluster would sit closer to
+        # the visible bottom in DS than in NDS.
+        last_key = (
+            self._layout.metrics.double_south_key
+            if render_context.has_double_south
+            else self._layout.metrics.south_key
+        )
+        self._height = last_key.pos.y + last_key.width
         self._build_key_cluster()
 
     @property

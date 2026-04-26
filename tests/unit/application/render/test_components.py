@@ -154,6 +154,42 @@ class TestFingerClusterComponent:
         assert left_component.build() is not None
         assert right_component.build() is not None
 
+    def test_height_matches_south_key_bottom_without_double_south(
+        self, finger_cluster, render_context, boundary
+    ):
+        """Without double_south, ``height`` equals the south_key's actual bottom edge.
+
+        The bbox's 1:1 aspect ratio doesn't perfectly contain the keys (their
+        cumulative size + inset slightly overshoots the bbox), so using the
+        bbox height for layout would leave the thumb too close to the visible
+        cluster bottom. ``height`` reflects the actual content extent.
+        """
+        component = FingerClusterComponent(
+            finger_cluster, KeyboardSide.LEFT, boundary, render_context
+        )
+        south = component._layout.metrics.south_key
+        assert component.height == pytest.approx(south.pos.y + south.width)
+
+    def test_height_matches_double_south_key_bottom_with_double_south(
+        self, finger_cluster, sample_palette, boundary
+    ):
+        """With double_south, ``height`` equals the double_south_key's actual bottom edge.
+
+        Same reasoning as the no-double_south case — the 4:3 bbox aspect ratio
+        leaves about ~1.4% of the cluster width unaccounted for, which would
+        otherwise pull the thumb too close in DS-enabled keymaps.
+        """
+        ctx = RenderContext(
+            palette=sample_palette,
+            layer_index=0,
+            has_double_south=True,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+        )
+        component = FingerClusterComponent(finger_cluster, KeyboardSide.LEFT, boundary, ctx)
+        ds = component._layout.metrics.double_south_key
+        assert component.height == pytest.approx(ds.pos.y + ds.width)
+
 
 class TestThumbClusterComponent:
     """Tests for ThumbClusterComponent class."""

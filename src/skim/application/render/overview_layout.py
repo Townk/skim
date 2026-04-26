@@ -180,6 +180,12 @@ class OverviewLayout:
         thumb_cluster_height = thumb_cluster_width * _THUMB_CLUSTER_ASPECT
         thumb_indicator_clearance = thumb_cluster_width * 0.15
         thumb_row_y = last_layer_y + row_height + row_gap + thumb_indicator_clearance
+        if not self._has_double_south:
+            # Collapse the vertical space the double_south key would occupy so the
+            # thumb row anchors to the south_key instead of floating below empty space.
+            thumb_row_y -= finger_cluster_width * (
+                _FINGER_CLUSTER_ASPECT_DOUBLE_SOUTH - _FINGER_CLUSTER_ASPECT
+            )
 
         # Canvas height
         canvas_height = thumb_row_y + thumb_cluster_height + padding

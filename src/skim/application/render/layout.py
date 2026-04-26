@@ -18,7 +18,12 @@ from skim.domain import Alignment, KeyboardSide
 _FINGER_CLUSTER_COUNT = 4
 _FINGER_CLUSTER_HORIZONTAL_KEY_COUNT = 3
 _THUMB_CLUSTER_WIDTH_PROPORTION_PER_SIDE = 0.42
-_SIDE_SPACING_INSET_COUNT = 8
+_CENTER_GAP_INSET_COUNT = 2.0
+"""Central gap between the left and right cluster columns, in units of ``inset``.
+
+Applies to both the gap between the centermost finger clusters across sides and
+the gap between the two thumb clusters — see ``KeymapLayout.thumb_positions``.
+"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,7 +116,8 @@ class KeymapLayoutMetrics:
         width = config.output.layout.width
         # Each keyboard side should have a left **and** right padding to
         # make them visually more separated in the keymap
-        side_width = (width / 2.0) - (margin + inset * _SIDE_SPACING_INSET_COUNT / 2.0)
+        center_gap = _CENTER_GAP_INSET_COUNT * inset
+        side_width = (width - 2 * margin - 2 * inset - center_gap) / 2.0
         # We always have 4 finger clusters and 3 padding spaces between them
         finger_cluster_width = (
             side_width - inset * (_FINGER_CLUSTER_COUNT - 1)
@@ -154,15 +160,28 @@ class KeymapLayout:
         """
         self.metrics = KeymapLayoutMetrics.from_config(config)
 
-    def left_finger_positions(self):
+    def left_finger_positions(
+        self, horizontal_indicator_offset: float = 0, top_indicator_offset: float = 0
+    ):
         """Generate positions for left hand finger clusters (index to pinky).
+
+        The left side is anchored to the canvas's left edge, so positions don't
+        depend on ``horizontal_indicator_offset`` — only the right side moves
+        when the canvas grows for indicators (see ``right_finger_positions``).
+        The parameter is accepted so the call site can pass it symmetrically.
+
+        Args:
+            horizontal_indicator_offset: Accepted for symmetry; ignored.
+            top_indicator_offset: Extra space reserved above the clusters when
+                a finger key with an above-extending layer indicator is present.
 
         Yields:
             Position objects for each finger cluster from index to pinky.
         """
+        del horizontal_indicator_offset  # left side stays anchored to canvas left edge
         m = self.metrics
         base_x = m.margin + m.inset + m.side_width
-        base_y = m.margin + m.inset
+        base_y = m.margin + m.inset + top_indicator_offset
 
         # 1. Index (inner finger, different y-offset)
         # 2. Middle
@@ -175,11 +194,22 @@ class KeymapLayout:
                 y=base_y + m.finger_key_size * vertical_offset[idx],
             )
 
-    def right_finger_positions(self):
-        """Calculate positions for right hand finger clusters (index to pinky)."""
+    def right_finger_positions(
+        self, horizontal_indicator_offset: float = 0, top_indicator_offset: float = 0
+    ):
+        """Calculate positions for right hand finger clusters (index to pinky).
+
+        Args:
+            horizontal_indicator_offset: When non-zero, the canvas grows by 2x this
+                value (one offset of clearance on each side of the center). The right
+                side stays anchored to the new canvas right edge, so positions shift
+                right by ``2 * horizontal_indicator_offset`` to follow the edge.
+            top_indicator_offset: Extra space reserved above the clusters when
+                a finger key with an above-extending layer indicator is present.
+        """
         m = self.metrics
-        base_x = m.width - (m.margin + m.inset) - m.side_width
-        base_y = m.margin + self.metrics.inset
+        base_x = m.width - (m.margin + m.inset) - m.side_width + 2 * horizontal_indicator_offset
+        base_y = m.margin + self.metrics.inset + top_indicator_offset
 
         # 1. Index (inner finger, different y-offset)
         # 2. Middle
@@ -193,47 +223,89 @@ class KeymapLayout:
             )
 
     def thumb_positions(
-        self, finger_cluster_height: float, indicator_padding: float = 0
+        self,
+        finger_cluster_height: float,
+        vertical_indicator_offset: float = 0,
+        horizontal_indicator_offset: float = 0,
+        top_indicator_offset: float = 0,
     ) -> tuple[Position, Position]:
         """Calculate positions for thumb clusters.
 
+        The thumb cluster anchors to the bottom of the lowest finger cluster
+        (index/pinky) so vertical spacing is consistent regardless of whether
+        the keyboard has a double_south key. The right edge of the left thumb
+        sits at the right edge of the left side's finger area; the right thumb
+        mirrors that on the other side.
+
         Args:
             finger_cluster_height: Height of the finger clusters (varies with double_south).
-            indicator_padding: Extra horizontal padding to shift the left cluster further
-                left and the right cluster further right. Used to prevent layer indicator
-                circles on inward-facing thumb keys from overlapping in the center.
+            vertical_indicator_offset: Extra Y space to add when a layer indicator
+                will appear above one of the double_down keys.
+            horizontal_indicator_offset: Extra X space added on each side to clear
+                indicators on inward-facing thumb keys (nail/knuckle).
 
         Returns:
             Tuple of (left_thumb_position, right_thumb_position).
         """
         m = self.metrics
-        thumb_y = finger_cluster_height + m.finger_key_size + m.margin + m.inset * 5
+        # The lowest visible finger key is the bottom of the index/pinky cluster,
+        # which is offset down by one finger_key_size from the middle/ring clusters.
+        lowest_finger_bottom = (
+            m.margin + m.inset + top_indicator_offset + m.finger_key_size + finger_cluster_height
+        )
+        thumb_y = lowest_finger_bottom + m.inset + vertical_indicator_offset
 
-        left_x = m.margin + m.inset * 2 + m.side_width - m.thumb_cluster_width
-        right_x = m.width - (m.margin + m.inset * 2) - m.side_width
+        # Horizontal center gap between the two thumb clusters matches the
+        # central gap between the two innermost finger clusters across sides.
+        # When horizontal_indicator_offset is set, the canvas grows by 2x the
+        # offset on the right edge — the right thumb shifts to follow it while
+        # the left thumb stays anchored to the canvas left edge.
+        center = m.width / 2.0
+        center_gap = _CENTER_GAP_INSET_COUNT * m.inset
+        left_x = center - center_gap / 2.0 - m.thumb_cluster_width
+        right_x = center + center_gap / 2.0 + 2 * horizontal_indicator_offset
 
         return (
-            Position(x=left_x - indicator_padding, y=thumb_y),
-            Position(x=right_x + indicator_padding, y=thumb_y),
+            Position(x=left_x, y=thumb_y),
+            Position(x=right_x, y=thumb_y),
         )
 
-    def canvas_height(self, finger_cluster_height: float, thumb_cluster_height: float) -> float:
+    def canvas_width(self, horizontal_indicator_offset: float = 0) -> float:
+        """Calculate the total canvas width, growing to fit any indicator-driven shifts."""
+        return self.metrics.width + 2 * horizontal_indicator_offset
+
+    def canvas_height(
+        self,
+        finger_cluster_height: float,
+        thumb_cluster_height: float,
+        vertical_indicator_offset: float = 0,
+        top_indicator_offset: float = 0,
+    ) -> float:
         """Calculate the total canvas height.
 
         Args:
             finger_cluster_height: The height of the finger clusters.
             thumb_cluster_height: The height of the thumb clusters.
+            vertical_indicator_offset: Extra space pushed down to clear an indicator
+                rendered above one of the double_down keys.
+            top_indicator_offset: Extra space reserved above the finger clusters
+                when above-extending indicators are present on finger keys.
 
         Returns:
             The total canvas height including margins and spacing.
         """
         m = self.metrics
+        # Layout from top to bottom: margin, inset, finger_key_size offset
+        # for the lowest finger row, finger cluster, inset gap (+ optional indicator
+        # offset), thumb cluster, inset bottom padding, margin.
         return (
-            finger_cluster_height
+            2 * m.margin
+            + 3 * m.inset
             + m.finger_key_size
+            + finger_cluster_height
             + thumb_cluster_height
-            + m.inset * 6
-            + m.margin * 2
+            + vertical_indicator_offset
+            + top_indicator_offset
         )
 
 

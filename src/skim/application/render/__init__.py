@@ -55,9 +55,49 @@ def _draw_layer(
     layer_layout = KeymapLayout(config)
     m = layer_layout.metrics
 
+    # Reserve extra space only when a key with a layer_switch will actually render
+    # an indicator that overflows the cluster bounds. The indicator dimensions
+    # (circle diameter + gap) are derived from each cluster's outer-key width —
+    # see ThumbClusterComponent / FingerClusterComponent for the source proportions.
+    # When the horizontal offset kicks in, both finger clusters and the thumb on
+    # each side shift outward together so the keyboard reads as one unit per side.
+    vertical_indicator_offset = 0.0
+    horizontal_indicator_offset = 0.0
+    top_indicator_offset = 0.0
+    if config.output.style.show_layer_indicators:
+        thumb_indicator_offset = m.thumb_cluster_width * 0.25 * (0.4 + 0.18)
+        finger_indicator_offset = m.finger_cluster_width * 0.328 * (0.55 + 0.18)
+        if (
+            layer.left.thumb.double_down_key.layer_switch is not None
+            or layer.right.thumb.double_down_key.layer_switch is not None
+        ):
+            vertical_indicator_offset = thumb_indicator_offset
+        if any(
+            getattr(side.thumb, key).layer_switch is not None
+            for side in (layer.left, layer.right)
+            for key in ("nail_key", "knuckle_key")
+        ):
+            horizontal_indicator_offset = thumb_indicator_offset
+        # Only the middle and ring clusters sit at the unshifted top — their
+        # north_key indicators are the only ones that extend above the canvas
+        # margin. Index and pinky clusters are offset down by one key, and
+        # east/west indicators sit above their key (mid-cluster), not above
+        # the cluster top.
+        if any(
+            getattr(side, finger).north_key.layer_switch is not None
+            for side in (layer.left, layer.right)
+            for finger in ("middle", "ring")
+        ):
+            top_indicator_offset = finger_indicator_offset
+
     finger_clusters: list[FingerClusterComponent] = []
 
-    for i, pos in enumerate(layer_layout.left_finger_positions()):
+    for i, pos in enumerate(
+        layer_layout.left_finger_positions(
+            horizontal_indicator_offset=horizontal_indicator_offset,
+            top_indicator_offset=top_indicator_offset,
+        )
+    ):
         cluster = FingerClusterComponent(
             keymap_cluster=layer.left.fingers[i],
             side=KeyboardSide.LEFT,
@@ -66,7 +106,12 @@ def _draw_layer(
         )
         finger_clusters.append(cluster)
 
-    for i, pos in enumerate(layer_layout.right_finger_positions()):
+    for i, pos in enumerate(
+        layer_layout.right_finger_positions(
+            horizontal_indicator_offset=horizontal_indicator_offset,
+            top_indicator_offset=top_indicator_offset,
+        )
+    ):
         cluster = FingerClusterComponent(
             keymap_cluster=layer.right.fingers[i],
             side=KeyboardSide.RIGHT,
@@ -79,14 +124,12 @@ def _draw_layer(
     # all have the same height)
     cluster_height = finger_clusters[0].height
 
-    # Add padding for indicator circles on inward thumb keys
-    indicator_padding = 0.0
-    if config.output.style.show_layer_indicators:
-        indicator_padding = m.thumb_cluster_width * 0.1
-
     # Create thumb clusters
     left_thumb_pos, right_thumb_pos = layer_layout.thumb_positions(
-        cluster_height, indicator_padding=indicator_padding
+        cluster_height,
+        vertical_indicator_offset=vertical_indicator_offset,
+        horizontal_indicator_offset=horizontal_indicator_offset,
+        top_indicator_offset=top_indicator_offset,
     )
 
     left_thumb = ThumbClusterComponent(
@@ -103,10 +146,18 @@ def _draw_layer(
         render_context=render_context,
     )
 
-    canvas_height = layer_layout.canvas_height(cluster_height, left_thumb.height)
+    canvas_width = layer_layout.canvas_width(
+        horizontal_indicator_offset=horizontal_indicator_offset
+    )
+    canvas_height = layer_layout.canvas_height(
+        cluster_height,
+        left_thumb.height,
+        vertical_indicator_offset=vertical_indicator_offset,
+        top_indicator_offset=top_indicator_offset,
+    )
 
     # Create drawing
-    d = draw.Drawing(m.width, canvas_height)
+    d = draw.Drawing(canvas_width, canvas_height)
 
     # Layer title
     layer_title = (
@@ -153,7 +204,7 @@ def _draw_layer(
         draw.Rectangle(
             x=m.margin,
             y=m.margin,
-            width=m.width - m.margin * 2.0,
+            width=canvas_width - m.margin * 2.0,
             height=canvas_height - m.margin * 2.0,
             rx=border.radius if border else None,
             ry=border.radius if border else None,
@@ -188,7 +239,7 @@ def _draw_layer(
     logo_width = m.width * 0.14
     logo_height = logo_ar.height_from_width(logo_width)
     logo_svg = draw.Image(
-        x=m.end - logo_width,
+        x=m.end - logo_width + 2 * horizontal_indicator_offset,
         y=(right_thumb.y + right_thumb.height) - logo_height,
         width=logo_width,
         height=logo_height,
