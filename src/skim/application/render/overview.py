@@ -340,12 +340,14 @@ def draw_overview(
                 prelim_rects = _compute_thumb_indicator_rects(
                     prelim_left, prelim_right, keymap, config
                 )
+                # 0.6 multiplier: tighter lane/column spacing reads better visually than
+                # the full N-key width. Tunable; revisit if a future keymap renders cramped.
                 prelim_routing = route_thumb_connectors(
                     left=layer0.left.thumb,
                     right=layer0.right.thumb,
                     layout=routing_layout,
                     source_layer=first_qmk_idx,
-                    keymap_spacing=nk,
+                    keymap_spacing=nk * 0.6,
                     indicator_rects=prelim_rects,
                 )
                 if prelim_routing.extra_top_padding > 0:
@@ -366,7 +368,7 @@ def draw_overview(
                         right=layer0.right.thumb,
                         layout=routing_layout,
                         source_layer=first_qmk_idx,
-                        keymap_spacing=nk,
+                        keymap_spacing=nk * 0.6,
                         indicator_rects=final_rects,
                     )
                     if routing.extra_right_padding > 0:
