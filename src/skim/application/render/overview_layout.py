@@ -17,20 +17,29 @@ from skim.data import SkimConfig
 
 from .layout import KeymapLayoutMetrics, Position
 
-# Finger cluster aspect ratio is 1:1 (square), or 3:4 with double_south
-_FINGER_CLUSTER_ASPECT = 1.0
-_FINGER_CLUSTER_ASPECT_DOUBLE_SOUTH = 4.0 / 3.0
 # Thumb cluster aspect ratio is 1.5:1 (width:height), so height = width / 1.5
 _THUMB_CLUSTER_ASPECT = 1.0 / 1.5
 
 _FINGER_CLUSTERS_PER_SIDE = 4
 
-# Outer key width proportion (N/S/E/W keys) — same as FingerClusterComponent
+# Finger cluster key proportions — must match FingerClusterComponent so the
+# overview reserves the same content extent the cluster actually renders.
 _OUTER_KEY_PROPORTION = 0.328
+_CENTER_KEY_PROPORTION = 0.309
+_KEY_INSET_PROPORTION = 0.018
+
+# Thumb cluster's inset proportion (between rows of thumb keys) — matches
+# ThumbClusterComponent.
+_THUMB_KEY_INSET_PROPORTION = 0.038
 
 # Badge internal padding (SVG units)
 _BADGE_PADDING_LEFT = 15.0
 _BADGE_PADDING_RIGHT = 30.0
+
+# Logo dimensions used for header — must mirror what overview.py renders so
+# the layout reserves the right amount of header space.
+_LOGO_WIDTH_TO_BADGE_WIDTH = 1.06
+_LOGO_HEIGHT_TO_WIDTH = 458.333 / 2333.333
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,11 +147,17 @@ class OverviewLayout:
         # Total canvas width = clusters area + routing area
         total_width = config_width + routing_area_width
 
-        # Finger cluster height: 1:1 normally, 3:4 with double_south
-        if self._has_double_south:
-            finger_cluster_height = finger_cluster_width * _FINGER_CLUSTER_ASPECT_DOUBLE_SOUTH
-        else:
-            finger_cluster_height = finger_cluster_width * _FINGER_CLUSTER_ASPECT
+        # Finger cluster content height — outer keys (N, S, [DS]) stacked
+        # around the center key with insets between each row. This matches
+        # FingerClusterComponent.height (the content extent, not the bbox
+        # aspect ratio). Without this, the bbox overshoot in DS (~1.4% of
+        # cluster width) would tighten the gap to the thumb row.
+        outer_rows = 3 if self._has_double_south else 2
+        finger_cluster_height = finger_cluster_width * (
+            outer_rows * _OUTER_KEY_PROPORTION
+            + _CENTER_KEY_PROPORTION
+            + outer_rows * _KEY_INSET_PROPORTION
+        )
 
         # Row height = cluster height (no vertical offset — all clusters top-aligned)
         row_height = finger_cluster_height
@@ -161,12 +176,18 @@ class OverviewLayout:
             x = right_base_x + (inset + finger_cluster_width) * idx
             right_xs.append(x)
 
-        # Row gap = same as the center gap between left and right finger clusters
-        center_gap = right_base_x - left_base_x
-        row_gap = center_gap
+        # Row gap = south_key height (one key of breathing room). Keeps the
+        # rhythm consistent regardless of canvas size or DS state — both badge
+        # height and the gap track the same key dimension.
+        row_gap = finger_cluster_width * _OUTER_KEY_PROPORTION
 
-        # Header row height (logo + title)
-        header_height = max(self._badge_dims.height * 2, 50.0)
+        # Header row height — equal to the actual content (logo dominates by
+        # default; title text is centered on it). Must NOT include extra slack
+        # past the content, otherwise the title-to-row-1 gap balloons beyond
+        # the inter-row gap.
+        logo_width = self._badge_dims.width * _LOGO_WIDTH_TO_BADGE_WIDTH
+        logo_height = logo_width * _LOGO_HEIGHT_TO_WIDTH
+        header_height = logo_height
 
         # Y positions for layer rows (after header)
         top_y = padding + header_height + row_gap
@@ -174,21 +195,17 @@ class OverviewLayout:
         for i in range(self._num_layers):
             y_positions.append(top_y + i * (row_height + row_gap))
 
-        # Thumb row below last layer row — account for indicator circles
-        # that may appear above the thumb cluster keys
+        # Thumb row below last layer row — same gap as between layer rows.
+        # If a double_down key carries a layer indicator that overflows the
+        # cluster top, ``adjust_for_connectors`` later pushes the thumb down
+        # to clear it; we don't reserve that space speculatively.
         last_layer_y = y_positions[-1] if y_positions else top_y
         thumb_cluster_height = thumb_cluster_width * _THUMB_CLUSTER_ASPECT
-        thumb_indicator_clearance = thumb_cluster_width * 0.15
-        thumb_row_y = last_layer_y + row_height + row_gap + thumb_indicator_clearance
-        if not self._has_double_south:
-            # Collapse the vertical space the double_south key would occupy so the
-            # thumb row anchors to the south_key instead of floating below empty space.
-            thumb_row_y -= finger_cluster_width * (
-                _FINGER_CLUSTER_ASPECT_DOUBLE_SOUTH - _FINGER_CLUSTER_ASPECT
-            )
+        thumb_row_y = last_layer_y + row_height + row_gap
 
-        # Canvas height
-        canvas_height = thumb_row_y + thumb_cluster_height + padding
+        # Canvas height — bottom uses one inset of breathing room (matches the
+        # per-layer canvas rule), not the larger outer padding the sides use.
+        canvas_height = thumb_row_y + thumb_cluster_height + m.inset
 
         # Thumb cluster X positions with indicator padding.
         # The inward-facing thumb keys (nail, knuckle) have circles that extend
@@ -270,12 +287,26 @@ class OverviewLayout:
 
     @property
     def ew_key_y_offset(self) -> float:
-        """Y offset from the top of the cluster row to the E/W keys.
+        """Y offset from the top of the cluster row to the E/W key TOP.
 
-        E/W keys sit below the north key: their Y = north_key_height
-        (north key is square, so height = outer_key_width_proportion * cluster_width).
+        E/W keys sit one inset below the north key, since the inset_width
+        gap between rows separates them.
         """
+        return self._finger_cluster_width * (_OUTER_KEY_PROPORTION + _KEY_INSET_PROPORTION)
+
+    @property
+    def outer_key_size(self) -> float:
+        """Side length of an outer (N/S/E/W) finger key."""
         return self._finger_cluster_width * _OUTER_KEY_PROPORTION
+
+    @property
+    def thumb_pad_key_y_offset(self) -> float:
+        """Y offset from the thumb cluster top to the pad key TOP.
+
+        Pad key sits one thumb-cluster inset below the down key (which is at
+        cluster top). Used to align the THUMBS badge with the pad key row.
+        """
+        return self._thumb_cluster_width * _THUMB_KEY_INSET_PROPORTION
 
     @property
     def thumb_cluster_width(self) -> float:

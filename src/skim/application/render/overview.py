@@ -597,9 +597,12 @@ def draw_overview(
     )
     title_font = Font.TITLE.get_system_font_family() if use_system_fonts else Font.TITLE.value
 
+    # Use the FINAL layout's outer_key_size for badge height so the badge top
+    # and bottom line up exactly with the E/W key edges. badge_dims.height was
+    # computed from the preliminary cluster_width and is stale.
     badge_w = badge_dims.width
-    badge_h = badge_dims.height
-    badge_r = badge_dims.border_radius
+    badge_h = layout.outer_key_size
+    badge_r = badge_h * 0.2
     badge_font_size = badge_h * _BADGE_FONT_SIZE_RATIO
     badge_x = padding
 
@@ -698,11 +701,13 @@ def draw_overview(
                 )
             )
 
-    # THUMBS badge
+    # THUMBS badge — align with the pad key TOP, which sits one thumb-cluster
+    # inset below the down key (cluster top).
+    thumbs_badge_y = layout.thumb_row_y + layout.thumb_pad_key_y_offset
     d.append(
         draw.Rectangle(
             x=badge_x,
-            y=layout.thumb_row_y,
+            y=thumbs_badge_y,
             width=badge_w,
             height=badge_h,
             rx=badge_r,
@@ -715,7 +720,7 @@ def draw_overview(
             "THUMBS",
             font_size=badge_font_size,
             x=badge_x + _BADGE_PADDING_LEFT,
-            y=layout.thumb_row_y + badge_h / 2.0,
+            y=thumbs_badge_y + badge_h / 2.0,
             text_anchor="start",
             dominant_baseline="central",
             font_family=label_font,
