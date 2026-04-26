@@ -360,16 +360,18 @@ class _RoutingLayoutAdapter:
     def layer_row_bounding_box(self, target_layer: int) -> tuple[float, float, float, float]:
         row_idx = self._layer_to_row.get(target_layer)
         if row_idx is None:
-            # Fallback: caller passed an unmapped index. ``target_point_for``
-            # already guards via the y_positions length check, so this is
-            # purely defensive.
-            row_idx = target_layer
+            # target_layer is a QMK index that isn't rendered. target_point_for
+            # SHOULD filter this out via its bounds check, but the bounds check
+            # uses len(_y_positions) which is padded to max(qmk_idx) + 1; gaps
+            # in the QMK index space pass the check. Raise rather than silently
+            # returning the wrong row.
+            raise KeyError(f"target_layer={target_layer} is not a rendered QMK layer")
         return self._layout.layer_row_bounding_box(row_idx)
 
     def layer_row_target_y(self, target_layer: int) -> float:
         row_idx = self._layer_to_row.get(target_layer)
         if row_idx is None:
-            row_idx = target_layer
+            raise KeyError(f"target_layer={target_layer} is not a rendered QMK layer")
         return self._layout.layer_row_target_y(row_idx)
 
     def thumb_cluster_y_bounds(self) -> tuple[float, float]:

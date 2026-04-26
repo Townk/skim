@@ -114,9 +114,6 @@ class ConnectorRouting:
         paths: All connector paths in render order, paired with the
             target_layer index of each path. The renderer uses the
             target_layer to pick the per-path stroke color.
-        extra_top_padding: Caller must shift the thumb cluster (and cluster
-            paths already drawn above it) down by this amount before painting
-            the routing paths. Applied via the layout's thumb-row offset.
         extra_bottom_padding: Caller must extend canvas height by this amount.
             Includes 0.5 * keymap_spacing of buffer between the bottommost DOWN
             lane and the canvas edge when DOWN lanes exist (zero otherwise).
@@ -127,7 +124,6 @@ class ConnectorRouting:
     """
 
     paths: list[tuple[draw.Path, int]]
-    extra_top_padding: float
     extra_bottom_padding: float
     extra_right_padding: float
 
@@ -185,8 +181,13 @@ def target_point_for(
         return None
     if target_layer < 0 or target_layer >= len(layout.layer_row_y_positions):
         return None
-    x, _y, w, _h = layout.layer_row_bounding_box(target_layer)
-    target_y = layout.layer_row_target_y(target_layer)
+    try:
+        x, _y, w, _h = layout.layer_row_bounding_box(target_layer)
+        target_y = layout.layer_row_target_y(target_layer)
+    except KeyError:
+        # Unmapped QMK index — target layer isn't rendered. Same as
+        # out-of-range: skip.
+        return None
     return (x + w + keymap_spacing, target_y)
 
 
@@ -435,6 +436,13 @@ def phase1_redirect_left_to_down(
     The path is extended west far enough to clear the conflicting DOWN path's
     drop column (LT_Down), then its direction is flipped to DOWN so the regular
     DOWN->RIGHT sub-step picks it up.
+
+    LT_Up's LEFT direction is only assigned by ``build_thumb_path_list`` when
+    LT_Down actually entered the priority list (i.e., its target survived the
+    skip rules). With that guard upstream, LEFT-direction steps always have an
+    annotated ``key_origin_attr=='down_key'`` partner — there is no fallback
+    if the partner is missing, matching ``phase1_redirect_right_to_down``'s
+    contract.
     """
     left_steps = [s for s in path_list if s.direction == Direction.LEFT]
     if not left_steps:
@@ -444,9 +452,6 @@ def phase1_redirect_left_to_down(
         (s for s in path_list if s.direction == Direction.DOWN and s.key_origin_attr == "down_key"),
         None,
     )
-    # Fallback: use the first DOWN step in path_list if no annotated partner is found.
-    if partner is None:
-        partner = next((s for s in path_list if s.direction == Direction.DOWN), None)
     if partner is None:
         return  # malformed input; nothing to redirect against
 
@@ -664,9 +669,9 @@ def route_overview_connectors(
 
     Returns:
         ConnectorRouting with paths and the residual paddings the caller
-        must apply. ``extra_top_padding`` is always 0 (consumed via shifts);
-        ``extra_bottom_padding`` is the thumb cluster's bottom padding;
-        ``extra_right_padding`` is ``(cols_used + 1) * keymap_spacing``.
+        must apply. ``extra_bottom_padding`` is the thumb cluster's bottom
+        padding; ``extra_right_padding`` is ``(cols_used + 1) * keymap_spacing``.
+        Top padding is consumed via cascading layout shifts during pass 1.
     """
     # --- Pass 1: discover paddings, apply cascading layout shifts. ---
     rects_pass1 = compute_indicator_rects()
@@ -681,7 +686,6 @@ def route_overview_connectors(
     if not all_paths:
         return ConnectorRouting(
             paths=[],
-            extra_top_padding=0.0,
             extra_bottom_padding=0.0,
             extra_right_padding=0.0,
         )
@@ -695,7 +699,6 @@ def route_overview_connectors(
 
     return ConnectorRouting(
         paths=[(s.path, s.target_layer) for s in all_paths],
-        extra_top_padding=0.0,
         extra_bottom_padding=thumb_extra_bottom,
         extra_right_padding=(cols_used + 1) * keymap_spacing,
     )

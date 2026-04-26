@@ -356,6 +356,7 @@ class TestPhase1RedirectLeftToDown:
     def test_lt_up_extends_west_then_marks_down(self):
         # LT_Down indicator at x=100, y=200; LT_Up indicator at x=80, y=180.
         lt_down = _step(Direction.DOWN, (100, 200, 8, 8))
+        lt_down.key_origin_attr = "down_key"
         lt_up = _step(Direction.LEFT, (80, 180, 8, 8))
         set_initial_moveto(lt_down)
         set_initial_moveto(lt_up)
@@ -1030,7 +1031,6 @@ class TestRouteOverviewConnectors:
             keymap_spacing=18,
         )
         assert result.paths == []
-        assert result.extra_top_padding == 0.0
         assert result.extra_bottom_padding == 0.0
         assert result.extra_right_padding == 0.0
 
