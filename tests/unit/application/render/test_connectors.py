@@ -13,6 +13,7 @@ from skim.application.render.connectors import (
     ConnectorStep,
     Direction,
     allocate_columns,
+    build_finger_path_list_for_cluster,
     build_thumb_path_list,
     phase1_down_to_right,
     phase1_redirect_left_to_down,
@@ -22,7 +23,7 @@ from skim.application.render.connectors import (
     set_initial_moveto,
     target_point_for,
 )
-from skim.data.keyboard import ThumbCluster
+from skim.data.keyboard import FingerCluster, ThumbCluster
 from skim.domain import SvalboardTargetKey
 
 
@@ -74,6 +75,23 @@ def _thumb(**overrides):
     }
     base.update(overrides)
     return ThumbCluster(**base)
+
+
+def _finger(**overrides):
+    """Build a FingerCluster with all keys defaulting to no layer_switch."""
+    base = {
+        name: _key()
+        for name in (
+            "center_key",
+            "north_key",
+            "east_key",
+            "south_key",
+            "west_key",
+            "double_south_key",
+        )
+    }
+    base.update(overrides)
+    return FingerCluster(**base)
 
 
 class TestDirection:
@@ -779,3 +797,204 @@ class TestRouteThumbConnectors:
                 keymap_spacing=18,
                 indicator_rects={},  # empty — RT_DD's rect is missing
             )
+
+
+class TestBuildFingerPathListForCluster:
+    def _layout_target(self):
+        layout = MagicMock()
+        layout.layer_row_y_positions = [100, 200, 300]
+        layout.layer_row_heights = [50, 50, 50]
+        layout.layer_row_bounding_box = lambda idx: (
+            200,
+            layout.layer_row_y_positions[idx],
+            600,
+            50,
+        )
+        layout.layer_row_target_y = lambda idx: layout.layer_row_y_positions[idx] + 25
+        return layout
+
+    def test_empty_cluster_produces_no_steps(self):
+        layout = self._layout_target()
+        steps = build_finger_path_list_for_cluster(
+            cluster=_finger(),
+            is_r4=False,
+            cluster_attr="left.index",
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        assert steps == []
+
+    def test_r4_priority_order_and_directions(self):
+        # R4: N, W, S, DS, E, C → RIGHT, RIGHT, RIGHT, RIGHT, UP, DOWN
+        layout = self._layout_target()
+        cluster = _finger(
+            north_key=_key(layer_switch=1),
+            west_key=_key(layer_switch=2),
+            south_key=_key(layer_switch=1),
+            double_south_key=_key(layer_switch=2),
+            east_key=_key(layer_switch=1),
+            center_key=_key(layer_switch=2),
+        )
+        steps = build_finger_path_list_for_cluster(
+            cluster=cluster,
+            is_r4=True,
+            cluster_attr="right.pinky",
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        attrs = [s.key_origin_attr for s in steps]
+        directions = [s.direction for s in steps]
+        assert attrs == [
+            "north_key",
+            "west_key",
+            "south_key",
+            "double_south_key",
+            "east_key",
+            "center_key",
+        ]
+        assert directions == [
+            Direction.RIGHT,
+            Direction.RIGHT,
+            Direction.RIGHT,
+            Direction.RIGHT,
+            Direction.UP,
+            Direction.DOWN,
+        ]
+
+    def test_non_r4_priority_order_and_directions(self):
+        # Non-R4 base table: W, N, E → UP; S, DS, C → DOWN.
+        # When both S and DS trigger (as below), the S+DS special case overrides
+        # south's direction to RIGHT (Phase 1 sub-step 2.1 redirects it past DS's
+        # drop column). This test exercises both the priority order AND that
+        # interaction in one go.
+        layout = self._layout_target()
+        cluster = _finger(
+            west_key=_key(layer_switch=1),
+            north_key=_key(layer_switch=2),
+            east_key=_key(layer_switch=1),
+            south_key=_key(layer_switch=2),
+            double_south_key=_key(layer_switch=1),
+            center_key=_key(layer_switch=2),
+        )
+        steps = build_finger_path_list_for_cluster(
+            cluster=cluster,
+            is_r4=False,
+            cluster_attr="left.index",
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        attrs = [s.key_origin_attr for s in steps]
+        directions = [s.direction for s in steps]
+        assert attrs == [
+            "west_key",
+            "north_key",
+            "east_key",
+            "south_key",
+            "double_south_key",
+            "center_key",
+        ]
+        assert directions == [
+            Direction.UP,
+            Direction.UP,
+            Direction.UP,
+            Direction.RIGHT,  # S+DS special case overrides south's DOWN → RIGHT
+            Direction.DOWN,
+            Direction.DOWN,
+        ]
+
+    def test_s_and_ds_double_trigger_in_non_r4_makes_south_right(self):
+        # When both south and DS trigger in a non-R4 cluster, south's initial
+        # direction is RIGHT (S+DS special case).
+        layout = self._layout_target()
+        cluster = _finger(
+            south_key=_key(layer_switch=1),
+            double_south_key=_key(layer_switch=2),
+        )
+        steps = build_finger_path_list_for_cluster(
+            cluster=cluster,
+            is_r4=False,
+            cluster_attr="left.index",
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        south_step = next(s for s in steps if s.key_origin_attr == "south_key")
+        ds_step = next(s for s in steps if s.key_origin_attr == "double_south_key")
+        assert south_step.direction == Direction.RIGHT
+        assert ds_step.direction == Direction.DOWN
+
+    def test_only_south_triggers_in_non_r4_keeps_south_down(self):
+        layout = self._layout_target()
+        cluster = _finger(south_key=_key(layer_switch=1))
+        steps = build_finger_path_list_for_cluster(
+            cluster=cluster,
+            is_r4=False,
+            cluster_attr="left.index",
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        assert len(steps) == 1
+        assert steps[0].direction == Direction.DOWN
+
+    def test_only_ds_triggers_in_non_r4_keeps_ds_down(self):
+        layout = self._layout_target()
+        cluster = _finger(double_south_key=_key(layer_switch=1))
+        steps = build_finger_path_list_for_cluster(
+            cluster=cluster,
+            is_r4=False,
+            cluster_attr="left.index",
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        assert len(steps) == 1
+        assert steps[0].direction == Direction.DOWN
+
+    def test_r4_with_s_and_ds_double_trigger_keeps_both_right(self):
+        # R4's table already has S/DS as RIGHT — no special case applies.
+        layout = self._layout_target()
+        cluster = _finger(
+            south_key=_key(layer_switch=1),
+            double_south_key=_key(layer_switch=2),
+        )
+        steps = build_finger_path_list_for_cluster(
+            cluster=cluster,
+            is_r4=True,
+            cluster_attr="right.pinky",
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        directions = {s.key_origin_attr: s.direction for s in steps}
+        assert directions["south_key"] == Direction.RIGHT
+        assert directions["double_south_key"] == Direction.RIGHT
+
+    def test_self_referential_trigger_skipped(self):
+        layout = self._layout_target()
+        cluster = _finger(north_key=_key(layer_switch=0))  # source=0, target=0
+        steps = build_finger_path_list_for_cluster(
+            cluster=cluster,
+            is_r4=False,
+            cluster_attr="left.index",
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        assert steps == []
+
+    def test_steps_carry_source_cluster_attr(self):
+        layout = self._layout_target()
+        cluster = _finger(north_key=_key(layer_switch=1))
+        steps = build_finger_path_list_for_cluster(
+            cluster=cluster,
+            is_r4=False,
+            cluster_attr="left.index",
+            source_layer=0,
+            layout=layout,
+            keymap_spacing=18,
+        )
+        assert steps[0].source_cluster_attr == "left.index"

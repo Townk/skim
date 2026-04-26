@@ -18,7 +18,7 @@ from typing import Protocol
 
 import drawsvg as draw
 
-from skim.data.keyboard import ThumbCluster
+from skim.data.keyboard import FingerCluster, ThumbCluster
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 
@@ -184,6 +184,31 @@ def set_initial_moveto(step: ConnectorStep) -> None:
     step.current_point = (x, y)
 
 
+# Priority for the right-pinky (R4) finger cluster. Most keys exit RIGHT
+# directly because R4 sits closest to the routing columns. The E key would
+# cross itself going RIGHT so it escapes UP; C is buried in the middle so
+# it exits DOWN.
+_R4_PRIORITY: list[tuple[str, Direction]] = [
+    ("north_key", Direction.RIGHT),
+    ("west_key", Direction.RIGHT),
+    ("south_key", Direction.RIGHT),
+    ("double_south_key", Direction.RIGHT),
+    ("east_key", Direction.UP),
+    ("center_key", Direction.DOWN),
+]
+
+# Priority for every other finger cluster. N/W/E exit UP over the cluster
+# top; S/DS/C exit DOWN under it.
+_NON_R4_PRIORITY: list[tuple[str, Direction]] = [
+    ("west_key", Direction.UP),
+    ("north_key", Direction.UP),
+    ("east_key", Direction.UP),
+    ("south_key", Direction.DOWN),
+    ("double_south_key", Direction.DOWN),
+    ("center_key", Direction.DOWN),
+]
+
+
 # Priority groups for thumb cluster keys. Each entry is
 # (side, attribute_name, default_direction).
 _THUMB_PRIORITY: list[tuple[KeyboardSide, str, Direction]] = [
@@ -258,6 +283,69 @@ def build_thumb_path_list(
                     key_origin_attr="up_key",
                 )
             )
+
+    return steps
+
+
+def build_finger_path_list_for_cluster(
+    cluster: FingerCluster[SvalboardTargetKey],
+    is_r4: bool,
+    cluster_attr: str,
+    source_layer: int,
+    layout: RoutingLayout,
+    keymap_spacing: float,
+) -> list[ConnectorStep]:
+    """Build the priority-ordered ConnectorStep list for one finger cluster.
+
+    Applies the R4 vs non-R4 priority table. For non-R4 clusters: when both
+    south_key and double_south_key trigger, south's initial direction is
+    overridden to RIGHT (the S+DS special case — phase1_redirect_right_to_down
+    redirects it to DOWN one keymap_spacing east of DS's drop column).
+    Otherwise south takes its table direction (DOWN).
+
+    Args:
+        cluster: The finger cluster to scan for layer-switch triggers.
+        is_r4: True if this is the right-pinky cluster (uses _R4_PRIORITY).
+        cluster_attr: A stable identifier for this cluster, e.g. ``"left.index"``
+            or ``"right.pinky"``. Stored on each step's ``source_cluster_attr``
+            so phase1_redirect_right_to_down can scope its partner search.
+        source_layer: The QMK layer index where the cluster lives (the source
+            of the path).
+        layout: The routing layout (provides target geometry).
+        keymap_spacing: Spacing constant.
+
+    Returns:
+        ConnectorSteps in priority order, skipping keys whose target_point is
+        None (self-ref or out-of-range).
+    """
+    priority = _R4_PRIORITY if is_r4 else _NON_R4_PRIORITY
+    south_ds_special = (
+        not is_r4
+        and cluster.south_key.layer_switch is not None
+        and cluster.double_south_key.layer_switch is not None
+    )
+
+    steps: list[ConnectorStep] = []
+    for attr, direction in priority:
+        key: SvalboardTargetKey = getattr(cluster, attr)
+        if key.layer_switch is None:
+            continue
+        target = target_point_for(layout, key.layer_switch, source_layer, keymap_spacing)
+        if target is None:
+            continue
+        actual_direction = direction
+        if south_ds_special and attr == "south_key":
+            actual_direction = Direction.RIGHT
+        steps.append(
+            ConnectorStep(
+                key=key,
+                direction=actual_direction,
+                target_point=target,
+                target_layer=key.layer_switch,
+                key_origin_attr=attr,
+                source_cluster_attr=cluster_attr,
+            )
+        )
 
     return steps
 
