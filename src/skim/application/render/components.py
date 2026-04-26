@@ -426,6 +426,16 @@ class FingerClusterComponent(KeyCluster[FingerCluster[SvalboardTargetKey]]):
     def cluster(self):
         return self._cluster
 
+    @property
+    def layout_metrics(self) -> FingerCluster[Boundary]:
+        """Read-only access to per-key metrics (positions and sizes)."""
+        return self._layout.metrics
+
+    @property
+    def palette(self) -> Palette:
+        """The palette this cluster was rendered with."""
+        return self._render_context.palette
+
     @override
     def override_args(self, side: KeyboardSide, layout: Boundary, kwargs: dict) -> dict:
         """Override SVG group arguments for finger cluster positioning.

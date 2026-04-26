@@ -15,7 +15,7 @@ Generates a table-like overview SVG showing all keymap layers:
 import drawsvg as draw
 
 from skim.assets import ASSETS
-from skim.data import SkimConfig, SvalboardKeymap
+from skim.data import SkimConfig, SvalboardKeymap, SvalboardLayout
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .components import FingerClusterComponent, ThumbClusterComponent
@@ -23,9 +23,11 @@ from .connectors import ConnectorRouting, route_thumb_connectors
 from .context import RenderContext
 from .geometry import AspectRatio
 from .indicators import (
+    _FINGER_KEY_NAMES,
     _THUMB_KEY_HEIGHT_RATIOS,
     _THUMB_KEY_NAMES,
     LayerIndicator,
+    _finger_cluster_offset,
     _thumb_cluster_offset,
 )
 from .layout import Boundary, KeymapLayoutMetrics
@@ -193,6 +195,88 @@ def _compute_thumb_indicator_rects(
                 circle_diameter,
                 circle_diameter,
             )
+
+    return results
+
+
+def _compute_finger_indicator_rects(
+    finger_clusters_left: list[FingerClusterComponent],
+    finger_clusters_right: list[FingerClusterComponent],
+    layer_data: SvalboardLayout[SvalboardTargetKey],
+    has_double_south: bool,
+) -> dict[SvalboardTargetKey, tuple[float, float, float, float]]:
+    """Return ``{triggering_key: (rect_x, rect_y, rect_w, rect_h)}`` for one
+    layer's finger-cluster indicators.
+
+    Mirrors ``_compute_thumb_indicator_rects`` for finger keys: walks every
+    finger cluster on both sides, builds a ``LayerIndicator`` using the
+    same parameters as the rendered output, and converts the indicator's
+    circle to a bounding rect in absolute SVG coordinates:
+    ``(cx - r, cy - r, 2r, 2r)``.
+
+    Args:
+        finger_clusters_left: The 4 left-side ``FingerClusterComponent`` instances
+            in the same order ``draw_overview`` builds them.
+        finger_clusters_right: The 4 right-side components, same order.
+        layer_data: The keymap layer that the components were rendered for.
+        has_double_south: Whether ``double_south_key`` is present (matches
+            ``LayerIndicatorOverlay.for_finger_cluster``).
+    """
+    results: dict[SvalboardTargetKey, tuple[float, float, float, float]] = {}
+
+    # ``draw_overview`` builds finger clusters in the order
+    # ``layer_data.<side>.fingers[i]`` for i in 0..3 — that's
+    # index, middle, ring, pinky on both sides.
+    for components, side_iter, side in [
+        (finger_clusters_left, layer_data.left.fingers, KeyboardSide.LEFT),
+        (finger_clusters_right, layer_data.right.fingers, KeyboardSide.RIGHT),
+    ]:
+        for finger_comp, cluster_data in zip(components, side_iter, strict=True):
+            metrics = finger_comp.layout_metrics
+            palette = finger_comp.palette
+            # Match LayerIndicatorOverlay.for_finger_cluster's circle sizing
+            # as actually invoked by FingerClusterComponent.build():
+            # circle_diameter = north_key.width * 0.55,
+            # gap            = north_key.width * 0.18.
+            outer_key_width = metrics.north_key.width
+            circle_diameter = outer_key_width * 0.55
+            gap = outer_key_width * 0.18
+
+            for key_name in _FINGER_KEY_NAMES:
+                if key_name == "double_south_key" and not has_double_south:
+                    continue
+                key: SvalboardTargetKey = getattr(cluster_data, key_name)
+                if key.layer_switch is None:
+                    continue
+
+                layout_b = getattr(metrics, key_name)
+                offset_dir, conn_type = _finger_cluster_offset(key_name, side)
+                # Center key needs a larger gap so the diagonal circle clears
+                # adjacent keys (matches for_finger_cluster).
+                key_gap = gap * 3 if key_name == "center_key" else gap
+
+                indicator = LayerIndicator(
+                    key_x=layout_b.pos.x,
+                    key_y=layout_b.pos.y,
+                    key_width=layout_b.width,
+                    key_height=layout_b.width,  # finger keys are square
+                    target_layer=key.layer_switch,
+                    palette=palette,
+                    circle_diameter=circle_diameter,
+                    gap=key_gap,
+                    offset_direction=offset_dir,
+                    connector_type=conn_type,
+                )
+
+                radius = circle_diameter / 2.0
+                abs_cx = finger_comp.x + indicator.circle_center_x
+                abs_cy = finger_comp.y + indicator.circle_center_y
+                results[key] = (
+                    abs_cx - radius,
+                    abs_cy - radius,
+                    circle_diameter,
+                    circle_diameter,
+                )
 
     return results
 
