@@ -94,6 +94,9 @@ class ConnectorRouting:
             the routing paths. Applied via the layout's thumb-row offset.
         extra_bottom_padding: Caller must extend canvas height by this amount.
         extra_right_padding: Caller must extend canvas width by this amount.
+            Computed as ``(cols_used + 1) * keymap_spacing`` so the canvas
+            covers the routing columns plus the keymap_spacing-long LEFT
+            segment from the innermost column to ``target_point.x``.
     """
 
     paths: list[tuple[draw.Path, int]]
@@ -454,10 +457,12 @@ def route_thumb_connectors(
     extra_bottom = phase1_down_to_right(path_list, cluster_bottom, max_y, keymap_spacing)
 
     # Phase 2.
-    # The first column lives one keymap_spacing east of the rightmost layer-row edge.
-    # All layer rows share the same right edge; use row 0.
+    # The first column sits one keymap_spacing east of target_point.x so the
+    # innermost path has a real (keymap_spacing-long) final LEFT segment to
+    # the target. With first_column_x == target_point.x the multi-target merge's
+    # final L would be degenerate.
     row_x, _row_y, row_w, _row_h = layout.layer_row_bounding_box(0)
-    first_column_x = row_x + row_w + keymap_spacing
+    first_column_x = row_x + row_w + 2 * keymap_spacing
     cols_used = allocate_columns(path_list, first_column_x, keymap_spacing)
     phase2_route_to_targets(path_list)
 
@@ -465,5 +470,5 @@ def route_thumb_connectors(
         paths=[(s.path, s.target_layer) for s in path_list],
         extra_top_padding=extra_top,
         extra_bottom_padding=extra_bottom,
-        extra_right_padding=cols_used * keymap_spacing,
+        extra_right_padding=(cols_used + 1) * keymap_spacing,
     )

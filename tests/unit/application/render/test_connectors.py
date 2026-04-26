@@ -615,8 +615,8 @@ class TestRouteThumbConnectors:
         # No UP/DOWN/LEFT redirects → no top/bottom padding.
         assert result.extra_top_padding == 0
         assert result.extra_bottom_padding == 0
-        # Phase 2 used one column → one keymap_spacing of right padding.
-        assert result.extra_right_padding == 18.0
+        # Phase 2 used one column → (cols_used + 1) * keymap_spacing of right padding.
+        assert result.extra_right_padding == 36.0
 
     def test_self_referential_trigger_skipped_returns_empty(self):
         rt_dd = _key(layer_switch=0)  # source_layer=0, so self-ref
@@ -648,7 +648,7 @@ class TestRouteThumbConnectors:
         # 1 UP step → extra_top_padding = (1+1) * 18 = 36.
         assert result.extra_top_padding == 36.0
         assert result.extra_bottom_padding == 0
-        assert result.extra_right_padding == 18.0
+        assert result.extra_right_padding == 36.0
 
     def test_down_direction_trigger_produces_bottom_padding(self):
         # RT_Knuckle triggers (DOWN direction in _THUMB_PRIORITY).
@@ -667,7 +667,7 @@ class TestRouteThumbConnectors:
         assert result.extra_top_padding == 0
         # 1 DOWN step → extra_bottom_padding = (1+1) * 18 = 36.
         assert result.extra_bottom_padding == 36.0
-        assert result.extra_right_padding == 18.0
+        assert result.extra_right_padding == 36.0
 
     def test_lt_up_special_case_end_to_end(self):
         # LT_Up + LT_Down both trigger → LT_Up gets LEFT direction,
@@ -712,6 +712,36 @@ class TestRouteThumbConnectors:
         assert len(result.paths) == 1
         path, target_layer = result.paths[0]
         assert target_layer == 1
+
+    def test_innermost_path_has_keymap_spacing_left_segment_to_target(self):
+        # A single RIGHT-direction trigger lands its drop at first_column_x =
+        # target_point.x + keymap_spacing. The multi-target merge then emits
+        # a final LEFT to target_point, giving a real keymap_spacing-long
+        # final segment instead of a degenerate (zero-length) one.
+        rt_dd = _key(layer_switch=1)
+        right = _thumb(double_down_key=rt_dd)
+        indicator_rects = {rt_dd: (700.0, 350.0, 6.0, 6.0)}
+        result = route_thumb_connectors(
+            left=_thumb(),
+            right=right,
+            layout=self._layout(),
+            source_layer=0,
+            keymap_spacing=18,
+            indicator_rects=indicator_rects,
+        )
+        assert len(result.paths) == 1
+        path, _target_layer = result.paths[0]
+        # path.args["d"] is a string: "M{x},{y} L{x},{y} L{x},{y} ...".
+        # Parse the last command's coordinates and confirm they match
+        # target_point: (200 + 600 + 18, 225) = (818, 225).
+        d_str = path.args["d"]
+        last_cmd = d_str.split(" ")[-1]
+        # Each command is "L{x},{y}" or "M{x},{y}".
+        coords = last_cmd[1:].split(",")
+        last_x = float(coords[0])
+        last_y = float(coords[1])
+        assert last_x == 818.0
+        assert last_y == 225.0
 
     def test_missing_indicator_rect_raises_clear_error(self):
         # Triggering key NOT included in indicator_rects map.
