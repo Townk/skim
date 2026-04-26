@@ -72,7 +72,7 @@ This section controls the visual appearance of the generated images.
       keymap_title: "My Svalboard Layout"  # Optional title for overview image
       copyright: "© 2026 Your Name"        # Optional copyright notice
       layout:
-        width: 800
+        width: 1600
         spacing:
           margin: 0
           inset: 20

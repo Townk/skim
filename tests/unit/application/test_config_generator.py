@@ -39,7 +39,7 @@ class TestGenerateDefault:
         generator = ConfigGenerator()
         result = generator.generate_default()
         parsed = yaml.safe_load(result)
-        assert parsed["output"]["layout"]["width"] == 800
+        assert parsed["output"]["layout"]["width"] == 1600
         assert parsed["output"]["style"]["palette"]["neutral_color"] == "#6F768B"
         assert parsed["keyboard"]["features"]["double_south"] is False
 
@@ -51,7 +51,7 @@ class TestGenerateDefault:
         result = generator.generate_default()
         parsed = yaml.safe_load(result)
         config = SkimConfig.model_validate(parsed)
-        assert config.output.layout.width == 800
+        assert config.output.layout.width == 1600
 
 
 class TestGenerateFromKeybard:

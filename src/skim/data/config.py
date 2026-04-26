@@ -374,7 +374,7 @@ class Layout(BaseModel):
 
     Attributes:
         width: Total width of the generated image in SVG units (typically
-            pixels at default scale). Defaults to 800.
+            pixels at default scale). Defaults to 1600.
         spacing: Spacing configuration for margins and padding. Defaults
             to a Spacing instance with default values.
 
@@ -386,7 +386,7 @@ class Layout(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    width: float = 800
+    width: float = 1600
     spacing: Spacing = Field(default_factory=Spacing)
 
 

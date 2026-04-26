@@ -60,7 +60,7 @@ class TestOutputTab:
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
             width_input = app.query_one("#layout-width", Input)
-            assert width_input.value == "800.0"
+            assert width_input.value == "1600.0"
 
     @pytest.mark.asyncio()
     async def test_shows_style_toggles(self, config_with_output):

@@ -181,7 +181,7 @@ class TestKeymapLayoutMetrics:
         default_metrics = KeymapLayoutMetrics.from_config(default_config)
         custom_metrics = KeymapLayoutMetrics.from_config(custom_config)
 
-        assert default_metrics.width == 800  # Default width
+        assert default_metrics.width == 1600  # Default width
         assert custom_metrics.width == 1200  # Custom width
 
     def test_cluster_widths_positive(self, default_config):

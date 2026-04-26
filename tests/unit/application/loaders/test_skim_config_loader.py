@@ -40,7 +40,7 @@ class TestLoadSkimConfigDefault:
     def test_default_config_has_expected_values(self):
         """Default config has expected default values."""
         config = load_skim_config(None)
-        assert config.output.layout.width == 800
+        assert config.output.layout.width == 1600
         assert config.keyboard.features.double_south is False
         assert config.output.style.use_layer_colors_on_keys is True
 
@@ -218,4 +218,4 @@ class TestLoadSkimConfigPathTypes:
         # tmp_path is a directory
         config = load_skim_config(tmp_path)
         assert isinstance(config, SkimConfig)
-        assert config.output.layout.width == 800  # Default value
+        assert config.output.layout.width == 1600  # Default value
