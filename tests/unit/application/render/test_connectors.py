@@ -234,6 +234,44 @@ class TestBuildThumbPathList:
         )
         assert steps[0].key_origin_attr == "up_key"
 
+    def test_lt_up_falls_back_to_down_when_lt_down_target_is_self_referential(self):
+        # Source layer 0; LT_Down targets layer 0 (self-ref → skipped);
+        # LT_Up targets layer 1 (valid). LT_Up should route DOWN, not LEFT,
+        # because LT_Down is not actually in the priority list.
+        layout = self._layout_target()
+        left = _thumb(
+            up_key=_key(layer_switch=1),
+            down_key=_key(layer_switch=0),  # self-ref
+        )
+        steps = build_thumb_path_list(
+            left=left,
+            right=_thumb(),
+            layout=layout,
+            source_layer=0,
+            keymap_spacing=18,
+        )
+        assert len(steps) == 1
+        assert steps[0].direction == Direction.DOWN  # not LEFT
+        assert steps[0].key_origin_attr == "up_key"
+
+    def test_lt_up_falls_back_to_down_when_lt_down_target_out_of_range(self):
+        # LT_Down's layer_switch is out of range (no such row); skipped.
+        # LT_Up must default to DOWN.
+        layout = self._layout_target()  # 3 layers
+        left = _thumb(
+            up_key=_key(layer_switch=1),
+            down_key=_key(layer_switch=99),  # out of range
+        )
+        steps = build_thumb_path_list(
+            left=left,
+            right=_thumb(),
+            layout=layout,
+            source_layer=0,
+            keymap_spacing=18,
+        )
+        assert len(steps) == 1
+        assert steps[0].direction == Direction.DOWN
+
 
 class TestSetInitialMoveTo:
     def test_up_starts_at_indicator_top_center(self):

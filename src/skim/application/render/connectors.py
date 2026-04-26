@@ -207,7 +207,14 @@ def build_thumb_path_list(
     if left.up_key.layer_switch is not None:
         target = target_point_for(layout, left.up_key.layer_switch, source_layer, keymap_spacing)
         if target is not None:
-            direction = Direction.LEFT if left.down_key.layer_switch is not None else Direction.DOWN
+            # Use LEFT direction only if LT_Down actually entered the priority
+            # list (i.e., its target survived the skip rules). Without this guard,
+            # phase1_redirect_left_to_down would fall back to the wrong DOWN step.
+            lt_down_step = next(
+                (s for s in steps if s.key_origin_attr == "down_key" and s.key is left.down_key),
+                None,
+            )
+            direction = Direction.LEFT if lt_down_step is not None else Direction.DOWN
             steps.append(
                 ConnectorStep(
                     key=left.up_key,

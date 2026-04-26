@@ -134,8 +134,8 @@ def _compute_thumb_indicator_rects(
         (left_thumb, layer0.left.thumb, KeyboardSide.LEFT),
         (right_thumb, layer0.right.thumb, KeyboardSide.RIGHT),
     ]:
-        metrics = thumb_comp._layout.metrics
-        palette = thumb_comp._render_context.palette
+        metrics = thumb_comp.layout_metrics
+        palette = thumb_comp.palette
         down_metrics = metrics.down_key
         circle_diameter = down_metrics.width * 0.4
         gap = down_metrics.width * 0.18

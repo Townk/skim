@@ -17,7 +17,7 @@ import drawsvg as draw
 from drawsvg import DrawingElement
 from typing_extensions import override
 
-from skim.data import ClusterT, FingerCluster, SplitSidePosition, ThumbCluster
+from skim.data import ClusterT, FingerCluster, Palette, SplitSidePosition, ThumbCluster
 from skim.domain import (
     NBSP_CHAR,
     SEPARATOR_CHAR,
@@ -232,6 +232,16 @@ class ThumbClusterComponent(KeyCluster[ThumbCluster[SvalboardTargetKey]]):
     @property
     def cluster(self):
         return self._cluster
+
+    @property
+    def layout_metrics(self) -> ThumbCluster[Boundary]:
+        """Read-only access to per-key metrics (positions and sizes)."""
+        return self._layout.metrics
+
+    @property
+    def palette(self) -> Palette:
+        """The palette this cluster was rendered with."""
+        return self._render_context.palette
 
     @override
     def override_args(self, side: KeyboardSide, layout: Boundary, kwargs: dict) -> dict:
