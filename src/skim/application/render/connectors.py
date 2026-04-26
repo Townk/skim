@@ -40,6 +40,8 @@ class ConnectorStep:
         target_point: Where the path must terminate (one per target layer).
         target_layer: The destination layer index.
         col_x: The routing column X coordinate, set during Phase 2 allocation.
+        current_point: The path's current end point; updated on each move/line
+            so subsequent routing phases can reason about where the pen sits.
         path: Accumulating SVG path; appended to during routing.
     """
 
@@ -48,6 +50,7 @@ class ConnectorStep:
     target_point: tuple[float, float]
     target_layer: int
     col_x: float = 0.0
+    current_point: tuple[float, float] = (0.0, 0.0)
     path: draw.Path = field(default_factory=lambda: draw.Path(fill="none"))
 
 
@@ -87,6 +90,33 @@ def target_point_for(
         return None
     x, y, w, h = layout.layer_row_bounding_box(target_layer)
     return (x + w + keymap_spacing, y + h / 2.0)
+
+
+def set_initial_moveto(step: ConnectorStep) -> None:
+    """Place the path's first moveTo on the indicator's bounding rect edge.
+
+    The starting edge depends on the path's initial direction:
+    - UP    -> top edge, horizontally centered
+    - RIGHT -> right edge, vertically centered
+    - DOWN  -> bottom edge, horizontally centered
+    - LEFT  -> left edge, vertically centered
+
+    The step's key is expected to carry a ``layer_indicator`` attribute with a
+    ``bounding_rect`` of the form ``(x, y, width, height)``. This attribute is
+    attached to the key by the renderer (see Task 9 in the connector-routing
+    foundation plan); it is not part of ``SvalboardTargetKey``'s static schema.
+    """
+    rx, ry, rw, rh = step.key.layer_indicator.bounding_rect  # pyright: ignore[reportAttributeAccessIssue, reportOptionalMemberAccess]
+    if step.direction == Direction.UP:
+        x, y = rx + rw / 2.0, ry
+    elif step.direction == Direction.RIGHT:
+        x, y = rx + rw, ry + rh / 2.0
+    elif step.direction == Direction.DOWN:
+        x, y = rx + rw / 2.0, ry + rh
+    else:  # LEFT
+        x, y = rx, ry + rh / 2.0
+    step.path.M(x, y)
+    step.current_point = (x, y)
 
 
 # Priority groups for thumb cluster keys. Each entry is

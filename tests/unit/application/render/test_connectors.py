@@ -11,6 +11,7 @@ from skim.application.render.connectors import (
     ConnectorStep,
     Direction,
     build_thumb_path_list,
+    set_initial_moveto,
     target_point_for,
 )
 from skim.data.keyboard import ThumbCluster
@@ -19,6 +20,18 @@ from skim.domain import SvalboardTargetKey
 
 def _key(label="K", layer_switch=None):
     return SvalboardTargetKey(label=label, layer_switch=layer_switch)
+
+
+def _step(direction, indicator_rect):
+    """Make a step with a stub key whose indicator has the given rect."""
+    step = ConnectorStep(
+        key=MagicMock(),
+        direction=direction,
+        target_point=(0.0, 0.0),
+        target_layer=0,
+    )
+    step.key.layer_indicator.bounding_rect = indicator_rect  # (x, y, w, h)
+    return step
 
 
 def _thumb(**overrides):
@@ -171,3 +184,29 @@ class TestBuildThumbPathList:
             keymap_spacing=18,
         )
         assert steps == []
+
+
+class TestSetInitialMoveTo:
+    def test_up_starts_at_indicator_top_center(self):
+        step = _step(Direction.UP, (10, 20, 6, 8))
+        set_initial_moveto(step)
+        # current_point = (x + w/2, y) = (13, 20)
+        assert step.current_point == (13.0, 20.0)
+
+    def test_right_starts_at_indicator_right_middle(self):
+        step = _step(Direction.RIGHT, (10, 20, 6, 8))
+        set_initial_moveto(step)
+        # current_point = (x + w, y + h/2) = (16, 24)
+        assert step.current_point == (16.0, 24.0)
+
+    def test_down_starts_at_indicator_bottom_center(self):
+        step = _step(Direction.DOWN, (10, 20, 6, 8))
+        set_initial_moveto(step)
+        # current_point = (x + w/2, y + h) = (13, 28)
+        assert step.current_point == (13.0, 28.0)
+
+    def test_left_starts_at_indicator_left_middle(self):
+        step = _step(Direction.LEFT, (10, 20, 6, 8))
+        set_initial_moveto(step)
+        # current_point = (x, y + h/2) = (10, 24)
+        assert step.current_point == (10.0, 24.0)
