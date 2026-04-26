@@ -287,3 +287,33 @@ def phase1_down_to_right(
         step.direction = Direction.RIGHT
         new_y += keymap_spacing
     return (len(down_steps) + 1) * keymap_spacing
+
+
+def allocate_columns(
+    path_list: list[ConnectorStep],
+    first_column_x: float,
+    keymap_spacing: float,
+) -> int:
+    """Assign each step a routing column, sharing columns where Y-spans don't overlap.
+
+    Assigns each step's ``col_x`` in place. Greedy left-most fit: for each
+    step, find the leftmost column whose occupied Y-spans don't overlap this
+    step's span; if none fits, allocate a new column. Column ``i`` sits at
+    ``first_column_x + i * keymap_spacing``, so every assigned ``col_x`` is
+    ``>= first_column_x``. Returns the number of columns used.
+    """
+    columns: list[list[tuple[float, float]]] = []  # per column: list of (y_min, y_max)
+    for step in path_list:
+        span_low = min(step.current_point[1], step.target_point[1])
+        span_high = max(step.current_point[1], step.target_point[1])
+        placed = False
+        for idx, occupied in enumerate(columns):
+            if all(span_high < y_lo or span_low > y_hi for y_lo, y_hi in occupied):
+                occupied.append((span_low, span_high))
+                step.col_x = first_column_x + idx * keymap_spacing
+                placed = True
+                break
+        if not placed:
+            columns.append([(span_low, span_high)])
+            step.col_x = first_column_x + (len(columns) - 1) * keymap_spacing
+    return len(columns)

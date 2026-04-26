@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 from skim.application.render.connectors import (
     ConnectorStep,
     Direction,
+    allocate_columns,
     build_thumb_path_list,
     phase1_down_to_right,
     phase1_redirect_left_to_down,
@@ -35,6 +36,17 @@ def _step(direction, indicator_rect):
     )
     step.key.layer_indicator.bounding_rect = indicator_rect  # (x, y, w, h)
     return step
+
+
+def _step_at(current_y, target_y):
+    s = ConnectorStep(
+        key=MagicMock(),
+        direction=Direction.RIGHT,
+        target_point=(0.0, target_y),
+        target_layer=0,
+    )
+    s.current_point = (0.0, current_y)
+    return s
 
 
 def _thumb(**overrides):
@@ -381,3 +393,43 @@ class TestPhase1DownToRight:
         assert down.direction == Direction.RIGHT
         assert (up.current_point, up.direction) == up_before
         assert (right.current_point, right.direction) == right_before
+
+
+class TestAllocateColumns:
+    def test_non_overlapping_spans_share_a_column(self):
+        # Span [10, 50] and span [60, 100] don't overlap; both go in column 0.
+        a = _step_at(50, 10)  # span 10..50
+        b = _step_at(60, 100)  # span 60..100
+        used = allocate_columns([a, b], first_column_x=200, keymap_spacing=18)
+        assert a.col_x == 200.0
+        assert b.col_x == 200.0
+        assert used == 1  # one column used
+
+    def test_overlapping_spans_take_separate_columns(self):
+        a = _step_at(50, 10)  # span 10..50
+        b = _step_at(40, 80)  # span 40..80; overlaps with a (40..50)
+        used = allocate_columns([a, b], first_column_x=200, keymap_spacing=18)
+        assert a.col_x == 200.0
+        assert b.col_x == 218.0
+        assert used == 2
+
+    def test_first_path_always_at_first_column_x(self):
+        a = _step_at(10, 50)
+        used = allocate_columns([a], first_column_x=200, keymap_spacing=18)
+        assert a.col_x == 200.0
+        assert used == 1
+
+    def test_empty_path_list_returns_zero(self):
+        assert allocate_columns([], first_column_x=200, keymap_spacing=18) == 0
+
+    def test_three_paths_with_mixed_overlap_use_leftmost_fit(self):
+        # A spans 10..50; B spans 40..80 (overlaps A so B -> col 1);
+        # C spans 60..100 (overlaps B in col 1 but NOT A in col 0; so C -> col 0).
+        a = _step_at(50, 10)
+        b = _step_at(40, 80)
+        c = _step_at(60, 100)
+        used = allocate_columns([a, b, c], first_column_x=200, keymap_spacing=18)
+        assert a.col_x == 200.0  # col 0
+        assert b.col_x == 218.0  # col 1
+        assert c.col_x == 200.0  # col 0 (greedy leftmost fits)
+        assert used == 2
