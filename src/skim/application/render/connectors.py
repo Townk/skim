@@ -292,10 +292,10 @@ def phase1_up_to_right(
     points. Both are needed because the lane must clear whichever sits higher,
     so the clamp picks the smaller (more negative-Y) of the two.
 
-    Returns ``extra_top_padding = (N + 1) * keymap_spacing`` where ``N`` is
-    the number of UP steps processed. The ``+1`` reserves one extra
-    ``keymap_spacing`` of headroom between the outermost escape lane and the
-    padded canvas edge.
+    Returns ``extra_top_padding = N * keymap_spacing`` where ``N`` is the
+    number of UP steps processed — exactly the vertical extent the lanes
+    occupy above the cluster (lane 1 at ``cluster_top - keymap_spacing``,
+    lane N at ``cluster_top - N * keymap_spacing``).
     """
     up_steps = [s for s in path_list if s.direction == Direction.UP]
     if not up_steps:
@@ -306,7 +306,7 @@ def phase1_up_to_right(
         step.current_point = (step.current_point[0], new_y)
         step.direction = Direction.RIGHT
         new_y -= keymap_spacing
-    return (len(up_steps) + 1) * keymap_spacing
+    return len(up_steps) * keymap_spacing
 
 
 def phase1_down_to_right(
@@ -323,10 +323,10 @@ def phase1_down_to_right(
     because the lane must clear whichever sits lower, so the clamp picks the
     larger (more positive-Y) of the two.
 
-    Returns ``extra_bottom_padding = (N + 1) * keymap_spacing`` where ``N`` is
-    the number of DOWN steps processed. The ``+1`` reserves one extra
-    ``keymap_spacing`` of headroom between the outermost escape lane and the
-    padded canvas edge.
+    Returns ``extra_bottom_padding = N * keymap_spacing`` where ``N`` is the
+    number of DOWN steps processed — exactly the vertical extent the lanes
+    occupy below the cluster (lane 1 at ``cluster_bottom + keymap_spacing``,
+    lane N at ``cluster_bottom + N * keymap_spacing``).
     """
     down_steps = [s for s in path_list if s.direction == Direction.DOWN]
     if not down_steps:
@@ -337,7 +337,7 @@ def phase1_down_to_right(
         step.current_point = (step.current_point[0], new_y)
         step.direction = Direction.RIGHT
         new_y += keymap_spacing
-    return (len(down_steps) + 1) * keymap_spacing
+    return len(down_steps) * keymap_spacing
 
 
 def allocate_columns(
