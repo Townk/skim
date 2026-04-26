@@ -28,14 +28,14 @@ def _key(label="K", layer_switch=None):
 
 
 def _step(direction, indicator_rect):
-    """Make a step with a stub key whose indicator has the given rect."""
+    """Make a step carrying the given indicator rect."""
     step = ConnectorStep(
         key=MagicMock(),
         direction=direction,
         target_point=(0.0, 0.0),
         target_layer=0,
+        indicator_rect=indicator_rect,
     )
-    step.key.layer_indicator.bounding_rect = indicator_rect  # (x, y, w, h)
     return step
 
 

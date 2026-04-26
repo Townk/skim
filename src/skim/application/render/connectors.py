@@ -42,6 +42,10 @@ class ConnectorStep:
         col_x: The routing column X coordinate, set during Phase 2 allocation.
         current_point: The path's current end point; updated on each move/line
             so subsequent routing phases can reason about where the pen sits.
+        indicator_rect: The source key's layer-indicator bounding rect as
+            ``(x, y, width, height)``. Populated by the orchestrator before
+            ``set_initial_moveto`` runs; the renderer (not the dataclass)
+            owns the rect geometry.
         key_origin_attr: The thumb-cluster attribute name that produced this
             step (e.g. ``"down_key"``, ``"up_key"``). Used by Phase 1 routing
             to identify partner paths (e.g. matching LT_Up to LT_Down).
@@ -54,6 +58,7 @@ class ConnectorStep:
     target_layer: int
     col_x: float = 0.0
     current_point: tuple[float, float] = (0.0, 0.0)
+    indicator_rect: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
     key_origin_attr: str = ""
     path: draw.Path = field(default_factory=lambda: draw.Path(fill="none"))
 
@@ -105,12 +110,10 @@ def set_initial_moveto(step: ConnectorStep) -> None:
     - DOWN  -> bottom edge, horizontally centered
     - LEFT  -> left edge, vertically centered
 
-    The step's key is expected to carry a ``layer_indicator`` attribute with a
-    ``bounding_rect`` of the form ``(x, y, width, height)``. This attribute is
-    attached to the key by the renderer (see Task 9 in the connector-routing
-    foundation plan); it is not part of ``SvalboardTargetKey``'s static schema.
+    Reads ``step.indicator_rect``; the orchestrator is responsible for
+    populating it before this function runs.
     """
-    rx, ry, rw, rh = step.key.layer_indicator.bounding_rect  # pyright: ignore[reportAttributeAccessIssue, reportOptionalMemberAccess]
+    rx, ry, rw, rh = step.indicator_rect
     if step.direction == Direction.UP:
         x, y = rx + rw / 2.0, ry
     elif step.direction == Direction.RIGHT:
