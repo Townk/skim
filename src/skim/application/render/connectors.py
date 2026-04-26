@@ -132,6 +132,37 @@ class ConnectorRouting:
     extra_right_padding: float
 
 
+@dataclass(frozen=True, slots=True)
+class OverviewLayerSource:
+    """One layer's finger clusters as a routing source.
+
+    Attributes:
+        source_layer: The QMK layer index whose finger keys originate the paths.
+        left: Left-side SplitSide containing four finger clusters (and a
+            placeholder thumb that the finger router ignores).
+        right: Right-side SplitSide containing four finger clusters.
+    """
+
+    source_layer: int
+    left: SplitSide[SvalboardTargetKey]
+    right: SplitSide[SvalboardTargetKey]
+
+
+@dataclass(frozen=True, slots=True)
+class ThumbSource:
+    """The thumb cluster as a routing source.
+
+    Attributes:
+        source_layer: The QMK layer index the thumb cluster is rendered for.
+        left: Left thumb cluster.
+        right: Right thumb cluster.
+    """
+
+    source_layer: int
+    left: ThumbCluster[SvalboardTargetKey]
+    right: ThumbCluster[SvalboardTargetKey]
+
+
 def target_point_for(
     layout: RoutingLayout,
     target_layer: int,

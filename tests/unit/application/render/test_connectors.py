@@ -12,6 +12,8 @@ import pytest
 from skim.application.render.connectors import (
     ConnectorStep,
     Direction,
+    OverviewLayerSource,
+    ThumbSource,
     allocate_columns,
     build_finger_path_list_for_cluster,
     build_finger_path_list_for_layer,
@@ -1191,3 +1193,21 @@ class TestBuildFingerPathListForLayer:
         r4_step = next(s for s in steps if s.source_cluster_attr == "right.pinky")
         assert l4_step.direction == Direction.UP  # non-R4 priority
         assert r4_step.direction == Direction.RIGHT  # R4 priority
+
+
+class TestSourceDataclasses:
+    def test_overview_layer_source_field_access(self):
+        left = _side()
+        right = _side()
+        src = OverviewLayerSource(source_layer=3, left=left, right=right)
+        assert src.source_layer == 3
+        assert src.left is left
+        assert src.right is right
+
+    def test_thumb_source_field_access(self):
+        left = _thumb()
+        right = _thumb()
+        src = ThumbSource(source_layer=0, left=left, right=right)
+        assert src.source_layer == 0
+        assert src.left is left
+        assert src.right is right
