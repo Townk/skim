@@ -352,6 +352,34 @@ class OverviewLayout:
         self._thumb_row_y += amount
         self._canvas_height += amount
 
+    def shift_layer_row_and_below(self, row_idx: int, amount: float) -> None:
+        """Shift layer row ``row_idx`` and every row below it (plus thumb) down.
+
+        Used to apply a layer's ``extra_top_padding`` during connector routing.
+        Grows the canvas accordingly. No-op when ``amount <= 0``.
+        """
+        if amount <= 0:
+            return
+        for i in range(row_idx, len(self._layer_row_y_positions)):
+            self._layer_row_y_positions[i] += amount
+        self._thumb_row_y += amount
+        self._canvas_height += amount
+
+    def shift_below_layer_row(self, row_idx: int, amount: float) -> None:
+        """Shift every row strictly below ``row_idx`` (plus thumb) down.
+
+        Used to apply a layer's ``extra_bottom_padding`` — the lanes occupy
+        the gap reserved between this layer's row and the next thing below.
+        The row at ``row_idx`` itself does NOT move. Grows the canvas
+        accordingly. No-op when ``amount <= 0``.
+        """
+        if amount <= 0:
+            return
+        for i in range(row_idx + 1, len(self._layer_row_y_positions)):
+            self._layer_row_y_positions[i] += amount
+        self._thumb_row_y += amount
+        self._canvas_height += amount
+
     def adjust_canvas_width(self, needed_width: float) -> None:
         """Set canvas width to fit routing columns, shrinking if over-allocated."""
         self._canvas_width = max(needed_width, self._col2_x + self._col2_width + self._padding)

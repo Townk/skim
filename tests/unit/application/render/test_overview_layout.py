@@ -257,3 +257,61 @@ class TestOverviewLayout:
         ds_gap = layout_ds.thumb_row_y - ds_last_row_content_bottom
 
         assert nds_gap == pytest.approx(ds_gap)
+
+
+class TestShiftLayerRowAndBelow:
+    def test_shifts_target_row_and_every_row_below(self):
+        config = _make_config(3)
+        layout = OverviewLayout(config, _DEFAULT_BADGE, routing_column_count=0)
+        ys_before = list(layout.layer_row_y_positions)
+        thumb_before = layout.thumb_row_y
+        canvas_before = layout.canvas_height
+
+        layout.shift_layer_row_and_below(row_idx=1, amount=20.0)
+
+        assert layout.layer_row_y_positions[0] == ys_before[0]
+        assert layout.layer_row_y_positions[1] == ys_before[1] + 20.0
+        assert layout.layer_row_y_positions[2] == ys_before[2] + 20.0
+        assert layout.thumb_row_y == thumb_before + 20.0
+        assert layout.canvas_height == canvas_before + 20.0
+
+    def test_noop_on_non_positive_amount(self):
+        config = _make_config(3)
+        layout = OverviewLayout(config, _DEFAULT_BADGE, routing_column_count=0)
+        ys_before = list(layout.layer_row_y_positions)
+        canvas_before = layout.canvas_height
+
+        layout.shift_layer_row_and_below(row_idx=1, amount=0.0)
+        layout.shift_layer_row_and_below(row_idx=1, amount=-5.0)
+
+        assert layout.layer_row_y_positions == ys_before
+        assert layout.canvas_height == canvas_before
+
+
+class TestShiftBelowLayerRow:
+    def test_shifts_rows_strictly_below_target(self):
+        config = _make_config(3)
+        layout = OverviewLayout(config, _DEFAULT_BADGE, routing_column_count=0)
+        ys_before = list(layout.layer_row_y_positions)
+        thumb_before = layout.thumb_row_y
+        canvas_before = layout.canvas_height
+
+        layout.shift_below_layer_row(row_idx=1, amount=20.0)
+
+        assert layout.layer_row_y_positions[0] == ys_before[0]
+        assert layout.layer_row_y_positions[1] == ys_before[1]  # NOT shifted
+        assert layout.layer_row_y_positions[2] == ys_before[2] + 20.0
+        assert layout.thumb_row_y == thumb_before + 20.0
+        assert layout.canvas_height == canvas_before + 20.0
+
+    def test_noop_on_non_positive_amount(self):
+        config = _make_config(3)
+        layout = OverviewLayout(config, _DEFAULT_BADGE, routing_column_count=0)
+        ys_before = list(layout.layer_row_y_positions)
+        canvas_before = layout.canvas_height
+
+        layout.shift_below_layer_row(row_idx=1, amount=0.0)
+        layout.shift_below_layer_row(row_idx=1, amount=-5.0)
+
+        assert layout.layer_row_y_positions == ys_before
+        assert layout.canvas_height == canvas_before

@@ -48,6 +48,16 @@ class RoutingLayout(Protocol):
 
     def thumb_cluster_y_bounds(self) -> tuple[float, float]: ...
 
+    def shift_layer_row_and_below(self, row_idx: int, amount: float) -> None:
+        """Apply a layer's extra_top_padding."""
+        ...
+
+    def shift_below_layer_row(self, row_idx: int, amount: float) -> None:
+        """Apply a layer's extra_bottom_padding."""
+        ...
+
+    def shift_thumb_down(self, amount: float) -> None: ...
+
 
 class Direction(Enum):
     """The current heading of a connector path's last segment."""

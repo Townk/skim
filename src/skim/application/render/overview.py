@@ -248,6 +248,24 @@ class _RoutingLayoutAdapter:
     def thumb_cluster_y_bounds(self) -> tuple[float, float]:
         return self._layout.thumb_cluster_y_bounds()
 
+    def shift_layer_row_and_below(self, row_idx: int, amount: float) -> None:
+        # ``row_idx`` here is a QMK layer index — the adapter translates to
+        # the underlying layout's row index via ``_layer_to_row`` before
+        # delegating, so the parameter name matches the Protocol.
+        translated = self._layer_to_row.get(row_idx)
+        if translated is None:
+            return  # caller passed an unmapped index; nothing to shift
+        self._layout.shift_layer_row_and_below(translated, amount)
+
+    def shift_below_layer_row(self, row_idx: int, amount: float) -> None:
+        translated = self._layer_to_row.get(row_idx)
+        if translated is None:
+            return
+        self._layout.shift_below_layer_row(translated, amount)
+
+    def shift_thumb_down(self, amount: float) -> None:
+        self._layout.shift_thumb_down(amount)
+
 
 def _build_thumb_clusters(
     config: SkimConfig,
