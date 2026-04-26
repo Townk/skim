@@ -281,6 +281,55 @@ def _compute_finger_indicator_rects(
     return results
 
 
+def _compute_all_indicator_rects(
+    config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+    layout: OverviewLayout,
+    use_system_fonts: bool,
+    row_to_layer: list[tuple[int, int]],
+) -> dict[SvalboardTargetKey, tuple[float, float, float, float]]:
+    """Walk every rendered layer + the thumb cluster and collect indicator rects.
+
+    Builds cluster components against the current layout state, computes
+    each cluster's indicator bounding rects, and merges everything into a
+    single map keyed by the source ``SvalboardTargetKey``.
+
+    Called by ``draw_overview`` as the closure passed to
+    ``route_overview_connectors`` — invoked twice (once before pass 1, once
+    between passes) so rects stay in sync with layout shifts.
+
+    Args:
+        row_to_layer: ``list[(config_position, qmk_index)]`` in render order
+            (top-down). Used to derive each layer's row index for finger-
+            cluster positioning.
+    """
+    rects: dict[SvalboardTargetKey, tuple[float, float, float, float]] = {}
+
+    # Per-layer finger clusters.
+    for row_idx, (config_pos, qmk_idx) in enumerate(row_to_layer):
+        layer_data = keymap.layers.get(qmk_idx)
+        if layer_data is None:
+            continue
+        left_clusters, right_clusters = _build_finger_clusters_for_layer(
+            config, layer_data, config_pos, row_idx, layout, use_system_fonts
+        )
+        rects.update(
+            _compute_finger_indicator_rects(
+                left_clusters,
+                right_clusters,
+                layer_data,
+                has_double_south=config.keyboard.features.double_south,
+            )
+        )
+
+    # Thumb cluster (one source layer — first in keymap.layers).
+    left_thumb, right_thumb = _build_thumb_clusters(config, keymap, layout, use_system_fonts)
+    if left_thumb is not None and right_thumb is not None:
+        rects.update(_compute_thumb_indicator_rects(left_thumb, right_thumb, keymap, config))
+
+    return rects
+
+
 class _RoutingLayoutAdapter:
     """Adapter that exposes ``OverviewLayout`` to the connector router by QMK index.
 
@@ -349,6 +398,59 @@ class _RoutingLayoutAdapter:
 
     def shift_thumb_down(self, amount: float) -> None:
         self._layout.shift_thumb_down(amount)
+
+
+def _build_finger_clusters_for_layer(
+    config: SkimConfig,
+    layer_data: SvalboardLayout[SvalboardTargetKey],
+    config_position: int,
+    row_idx: int,
+    layout: OverviewLayout,
+    use_system_fonts: bool,
+) -> tuple[list[FingerClusterComponent], list[FingerClusterComponent]]:
+    """Build the 4 left + 4 right finger-cluster components for one layer.
+
+    Returns ``(left_components, right_components)`` in the same order
+    ``layer_data.left.fingers`` / ``layer_data.right.fingers`` produces them
+    (index, middle, ring, pinky for both sides).
+    """
+    palette = config.output.style.palette
+    ctx = RenderContext(
+        palette=palette,
+        layer_index=config_position,
+        has_double_south=config.keyboard.features.double_south,
+        use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
+        hold_symbol_position=config.output.style.hold_symbol_position,
+        use_system_fonts=use_system_fonts,
+        show_layer_indicators=config.output.style.show_layer_indicators,
+        qmk_index_to_position=config.keyboard.qmk_index_to_position,
+    )
+    cluster_width = layout.finger_cluster_width
+    positions = layout.finger_cluster_positions(row_idx)
+
+    left: list[FingerClusterComponent] = []
+    for i in range(_FINGER_CLUSTERS_PER_SIDE):
+        left.append(
+            FingerClusterComponent(
+                keymap_cluster=layer_data.left.fingers[i],
+                side=KeyboardSide.LEFT,
+                layout=Boundary(width=cluster_width, pos=positions[i]),
+                render_context=ctx,
+            )
+        )
+
+    right: list[FingerClusterComponent] = []
+    for i in range(_FINGER_CLUSTERS_PER_SIDE):
+        right.append(
+            FingerClusterComponent(
+                keymap_cluster=layer_data.right.fingers[i],
+                side=KeyboardSide.RIGHT,
+                layout=Boundary(width=cluster_width, pos=positions[_FINGER_CLUSTERS_PER_SIDE + i]),
+                render_context=ctx,
+            )
+        )
+
+    return (left, right)
 
 
 def _build_thumb_clusters(
@@ -651,35 +753,14 @@ def draw_overview(
     )
 
     # Finger clusters
-    cluster_width = layout.finger_cluster_width
     for row_idx, (pos, qmk_idx) in enumerate(row_to_layer):
         layer_data = keymap.layers[qmk_idx]
-        ctx = RenderContext(
-            palette=palette,
-            layer_index=pos,
-            has_double_south=config.keyboard.features.double_south,
-            use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
-            hold_symbol_position=config.output.style.hold_symbol_position,
-            use_system_fonts=use_system_fonts,
-            show_layer_indicators=config.output.style.show_layer_indicators,
-            qmk_index_to_position=config.keyboard.qmk_index_to_position,
+        left_clusters, right_clusters = _build_finger_clusters_for_layer(
+            config, layer_data, pos, row_idx, layout, use_system_fonts
         )
-        positions = layout.finger_cluster_positions(row_idx)
-        for i in range(_FINGER_CLUSTERS_PER_SIDE):
-            c = FingerClusterComponent(
-                keymap_cluster=layer_data.left.fingers[i],
-                side=KeyboardSide.LEFT,
-                layout=Boundary(width=cluster_width, pos=positions[i]),
-                render_context=ctx,
-            )
+        for c in left_clusters:
             d.append(c.build())
-        for i in range(_FINGER_CLUSTERS_PER_SIDE):
-            c = FingerClusterComponent(
-                keymap_cluster=layer_data.right.fingers[i],
-                side=KeyboardSide.RIGHT,
-                layout=Boundary(width=cluster_width, pos=positions[_FINGER_CLUSTERS_PER_SIDE + i]),
-                render_context=ctx,
-            )
+        for c in right_clusters:
             d.append(c.build())
 
     # Thumb clusters at final position
