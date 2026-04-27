@@ -353,7 +353,7 @@ class KeyboardTab(Widget):
         self.post_message(LayerRemoved(event.index, "keyboard"))
 
     def on_list_detail_pane_entry_updated(self, event: ListDetailPane.EntryUpdated) -> None:
-        self.post_message(LayerUpdated())
+        self.post_message(LayerUpdated(source_tab="keyboard"))
 
     # -- Sync methods called from app.py --
 

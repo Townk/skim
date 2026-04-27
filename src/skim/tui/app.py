@@ -57,6 +57,10 @@ class LayerRemoved(Message):
 class LayerUpdated(Message):
     """Posted when a layer's metadata (name, label, etc.) is changed."""
 
+    def __init__(self, source_tab: str) -> None:
+        super().__init__()
+        self.source_tab = source_tab
+
 
 class QuitConfirmScreen(ModalScreen[str]):
     """Modal dialog for save-on-quit with unsaved changes.
@@ -650,8 +654,13 @@ class SkimConfigApp(App):
         from skim.tui.keyboard_tab import KeyboardTab
         from skim.tui.output_tab import OutputTab
 
-        self.query_one(KeyboardTab)._rebuild_layer_list()
-        self.query_one(OutputTab)._rebuild_layer_colors_list()
+        # Only rebuild the *other* tab's list. The source tab already holds
+        # the post-commit state — rebuilding it would clear list_view.index
+        # and snap the cursor back to the top.
+        if event.source_tab != "keyboard":
+            self.query_one(KeyboardTab)._rebuild_layer_list()
+        if event.source_tab != "style":
+            self.query_one(OutputTab)._rebuild_layer_colors_list()
 
     def on_layer_removed(self, event: LayerRemoved) -> None:
         from skim.tui.keyboard_tab import KeyboardTab

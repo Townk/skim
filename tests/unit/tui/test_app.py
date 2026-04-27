@@ -49,6 +49,42 @@ class TestSkimConfigApp:
             await pilot.press("ctrl+q")
             assert app.return_code is not None or not app.is_running
 
+    @pytest.mark.asyncio()
+    async def test_layer_commit_keeps_selection_on_source_tab(self, default_config_data):
+        """Committing a layer edit must not snap the source tab's list back to 0."""
+        from skim.tui.keyboard_tab import LayerListPane
+        from skim.tui.widgets import SkimListView
+
+        default_config_data["keyboard"]["layers"] = [
+            {"index": 0, "name": "Letters", "id": "_BASE", "variant": "COLEMAK"},
+            {"index": 1, "name": "Navigation", "id": "_NAV", "variant": None},
+            {"index": 2, "name": "Numbers", "id": "_NUM", "variant": None},
+        ]
+        # Palette must match the layer count so the OutputTab loads cleanly.
+        default_config_data["output"]["style"]["palette"]["layers"] = [
+            {"base_color": "#ff0000", "color_index": 2, "gradient": None},
+            {"base_color": "#00ff00", "color_index": 2, "gradient": None},
+            {"base_color": "#0000ff", "color_index": 2, "gradient": None},
+        ]
+        app = SkimConfigApp(config_data=default_config_data)
+        async with app.run_test(size=(140, 50)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(LayerListPane)
+            list_view = app.query_one("#layer-list", SkimListView)
+            list_view.focus()
+            await pilot.pause()
+            list_view.index = 2
+            await pilot.pause()
+            await pilot.press("enter")  # enter edit mode
+            await pilot.pause()
+            await pilot.press("enter")  # commit (no edits)
+            # Two pauses so the EntryUpdated → LayerUpdated round-trip
+            # finishes before assertions.
+            await pilot.pause()
+            await pilot.pause()
+            assert pane._selected == 2
+            assert list_view.index == 2
+
 
 class TestHelpScreen:
     """Tests for the HelpScreen modal."""
