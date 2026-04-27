@@ -32,6 +32,18 @@ from skim.data import SvalboardKeymap, SvalboardLayout
 from skim.domain import KeymapType
 from skim.domain.adapters import KeymapJsonAdapter
 
+EMPTY_LAYER_KEYCODES = frozenset({"KC_NO", "KC_TRNS"})
+"""Keycodes that mark a key as inactive on a layer.
+
+A layer made up entirely of these is considered empty and is filtered out
+before pairing source layers with the indices declared in the skim config.
+"""
+
+
+def is_empty_layer(layer: list[str]) -> bool:
+    """Return True if every key on the layer is empty (KC_NO/KC_TRNS)."""
+    return all(keycode in EMPTY_LAYER_KEYCODES for keycode in layer)
+
 
 def _detect_keymap_from_json(data: Any) -> KeymapType:
     """Detect the keymap format from parsed JSON structure.
@@ -229,11 +241,12 @@ def load_keymap(
 
     Args:
         file_path: Path to the keymap file, or None to read from stdin.
-        layer_indices: Optional list of layer indices to select from the
-            source file. Each index identifies the position of a layer in
-            the source ``layout``/``keymap`` array; out-of-range indices
-            are skipped. If None, every layer is loaded with sequential
-            indices (0, 1, 2, ...).
+        layer_indices: Optional list of layer indices used to label the
+            non-empty source layers in source order. Empty layers (all
+            ``KC_NO``/``KC_TRNS``) are filtered out first, then each
+            remaining layer is paired with the next index. Extra indices
+            past the end of the filtered layers are dropped. If None,
+            sequential indices (0, 1, 2, ...) are assigned.
 
     Returns:
         A SvalboardKeymap containing raw keycode strings for all layers.
@@ -248,12 +261,12 @@ def load_keymap(
         keymap_json = load_keymap_file(file_path)
 
     if keymap_json is not None:
-        indices = layer_indices or list(range(len(keymap_json)))
+        non_empty = [layer for layer in keymap_json if not is_empty_layer(layer)]
+        indices = layer_indices or list(range(len(non_empty)))
         return SvalboardKeymap(
             {
-                idx: SvalboardLayout[str].from_sequence(keymap_json[idx])
-                for idx in indices
-                if 0 <= idx < len(keymap_json)
+                idx: SvalboardLayout[str].from_sequence(layer)
+                for idx, layer in zip(indices, non_empty, strict=False)
             }
         )
 

@@ -269,6 +269,7 @@ class ConfigGenerator:
         """
         from skim.application.loaders.keymap_loader import (
             _detect_keymap_from_json,
+            is_empty_layer,
         )
         from skim.domain import KeymapType
 
@@ -290,10 +291,7 @@ class ConfigGenerator:
 
         # Flatten and filter out empty layers (all KC_NO/KC_TRNS)
         flat_layers = self._flatten_keymap_layers(raw_layers, keymap_type)
-        _EMPTY_KEYCODES = {"KC_NO", "KC_TRNS"}
-        active_indices = [
-            i for i, layer in enumerate(flat_layers) if not all(k in _EMPTY_KEYCODES for k in layer)
-        ]
+        active_indices = [i for i, layer in enumerate(flat_layers) if not is_empty_layer(layer)]
 
         # Build layers and palette only for non-empty indices
         keyboard_layers = [

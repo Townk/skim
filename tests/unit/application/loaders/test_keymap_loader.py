@@ -278,11 +278,13 @@ class TestLoadKeymap:
         assert isinstance(keymap.layers, dict)
         assert set(keymap.layers.keys()) == {0, 1, 2}
 
-    def test_layer_indices_select_source_layers(self, tmp_path):
-        """layer_indices selects layers by their position in the source file."""
-        # Build 16 layers where only layers 0 and 15 carry distinguishable content;
-        # the rest are empty (KC_NO) so we can assert the selection picks the
-        # correct source layer rather than zipping positionally.
+    def test_layer_indices_pair_with_non_empty_source_layers(self, tmp_path):
+        """layer_indices label the non-empty source layers in source order.
+
+        Empty source layers (all KC_NO/KC_TRNS) are filtered before pairing,
+        so a sparse vial-style file pads out to 16 layers but only the two
+        populated ones are paired with the two config indices.
+        """
         layers = [["KC_NO"] * 60 for _ in range(16)]
         layers[0] = ["KC_A"] * 60
         layers[15] = ["KC_B"] * 60
@@ -293,12 +295,38 @@ class TestLoadKeymap:
 
         assert isinstance(keymap.layers, dict)
         assert set(keymap.layers.keys()) == {0, 15}
-        # Layer 15 must contain the content from source layout[15], not layout[1].
-        assert keymap.layers[15].right.index.center_key == "KC_B"
         assert keymap.layers[0].right.index.center_key == "KC_A"
+        assert keymap.layers[15].right.index.center_key == "KC_B"
 
-    def test_layer_indices_skip_out_of_bounds(self, tmp_path):
-        """Indices beyond the source layer count are ignored."""
+    def test_layer_indices_zip_compact_c2json_with_sparse_indices(self, tmp_path):
+        """Compact c2json layers pair positionally with sparse config indices.
+
+        c2json files only list the layers actually defined in the user's
+        keymaps[] array, so a config with sparse indices like [0, 1, 14, 15]
+        against a 4-layer compact c2json must label them in source order.
+        """
+        keymap_data = {
+            "layers": [
+                ["KC_A"] * 60,
+                ["KC_B"] * 60,
+                ["KC_C"] * 60,
+                ["KC_D"] * 60,
+            ]
+        }
+        path = tmp_path / "test.json"
+        path.write_text(json.dumps(keymap_data))
+
+        keymap = load_keymap(path, layer_indices=[0, 1, 14, 15])
+
+        assert isinstance(keymap.layers, dict)
+        assert set(keymap.layers.keys()) == {0, 1, 14, 15}
+        assert keymap.layers[0].right.index.center_key == "KC_A"
+        assert keymap.layers[1].right.index.center_key == "KC_B"
+        assert keymap.layers[14].right.index.center_key == "KC_C"
+        assert keymap.layers[15].right.index.center_key == "KC_D"
+
+    def test_layer_indices_label_layers_in_source_order(self, tmp_path):
+        """All populated source layers receive labels from layer_indices."""
         keymap_data = {"keymap": [["KC_A"] * 60, ["KC_B"] * 60, ["KC_C"] * 60]}
         path = tmp_path / "test.kbi"
         path.write_text(json.dumps(keymap_data))
@@ -306,7 +334,10 @@ class TestLoadKeymap:
         keymap = load_keymap(path, layer_indices=[0, 5, 10])
 
         assert isinstance(keymap.layers, dict)
-        assert set(keymap.layers.keys()) == {0}
+        assert set(keymap.layers.keys()) == {0, 5, 10}
+        assert keymap.layers[0].right.index.center_key == "KC_A"
+        assert keymap.layers[5].right.index.center_key == "KC_B"
+        assert keymap.layers[10].right.index.center_key == "KC_C"
 
     def test_svalboard_layout_created_correctly(self, tmp_path):
         """SvalboardKeymap contains SvalboardLayout objects with correct hierarchy."""
