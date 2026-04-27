@@ -1,6 +1,6 @@
 [project]
 name = "qmk-skim"
-version = "0.5.5.dev"
+version = "0.5.5"
 description = "Svalboard Keymap Image Maker"
 readme = "README.md"
 authors = [

@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-04-26
+
+### Added
+
+- Multi-source overview connector routing — dotted lines from each layer-trigger key (in finger and thumb clusters) to its target layer's row.
+  - Per-layer finger-cluster routing across every rendered layer; `MO()` / `LT()` / equivalent layer-switch keys produce a connector regardless of which layer they live on.
+  - Thumb-cluster routing with the LT_Up + LT_Down LEFT-DOWN special case (the LT_Up path detours west of LT_Down's drop column when both trigger).
+  - Non-R4 finger clusters with both `south_key` and `double_south_key` triggering produce a RIGHT-DOWN-RIGHT South path that clears the DS drop column.
+  - Global Phase 2 column allocation: paths from all sources share routing columns when their vertical Y-spans don't overlap, so column count tracks Y-overlap instead of total path count.
+  - Multi-target merge: paths targeting the same layer share a final horizontal segment, so a single visible LEFT segment connects all sources to that layer's row.
+- Macro (`M1`–`M50`) and tap-dance keycode mappings, rendered with distinct nf-md icon glyphs in the overview.
+- Synthetic Vial fixture (`tests/integration/fixtures/connector-routing-coverage.vil`) plus structured-assertion integration tests covering R4 / non-R4 / S+DS / multi-layer routing.
+
+### Changed
+
+- Connector spacing pinned at `0.6 × outer_key_width` for tighter, more readable lane/column placement.
+- Layer-badge column gap pinned at `4 × KEYMAP_SPACING` so the visual rhythm tracks the connector router instead of canvas-relative inset units.
+- Layer badges now align exactly with the West finger key in their row — same Y (top edge) and same height (`outer_key_size`).
+- Default canvas width bumped from 800 to 1600 SVG units for better legibility.
+- Inter-row spacing rhythm in the overview is now consistent regardless of Double-South presence.
+- Layer-row spacing is now indicator-aware — canvas extents account for layer-switch indicator circles that overflow cluster bounds.
+- `skim` derives a default config from the input keymap when `--config` isn't provided.
+
+### Fixed
+
+- `skim` now prompts for overwrite confirmation via `/dev/tty` when stdin is a pipe (previously silently overwrote or hung).
+- F-keys in the `c2json-sample.json` Function Keys layer were mirrored across the right cluster's E↔W axis (F1↔F4 and F2↔F3); now positioned correctly.
+
 ## [0.5.4] - 2026-04-24
 
 ### Fixed
