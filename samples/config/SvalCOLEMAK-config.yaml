@@ -1,0 +1,88 @@
+keyboard:
+  features:
+    double_south: false
+  layers:
+  - index: 0
+    id: null
+    name: Letters
+    variant: COLEMAK
+  - index: 1
+    id: null
+    name: Numbers / Symbols
+    variant: null
+  - index: 2
+    id: null
+    name: Function / Navigation
+    variant: null
+  - index: 14
+    id: null
+    name: Auto Mouse
+    variant: null
+keycodes:
+  pre_process: []
+  overrides: []
+output:
+  layout:
+    width: 1600.0
+    spacing:
+      margin: 0.0
+      inset: 20.0
+  style:
+    use_layer_colors_on_keys: false
+    hold_symbol_position: outward
+    border:
+      width: 2.0
+      radius: 10.0
+    palette:
+      overrides: {}
+      neutral_color: '#6F768B'
+      text_color: black
+      key_label_color: white
+      background_color: white
+      border_color: black
+      layers:
+      - base_color: '#037065'
+        color_index: 2
+        gradient:
+        - '#023833'
+        - '#053F3A'
+        - '#037065'
+        - '#079E7C'
+        - '#86BE81'
+        - '#BDDCA7'
+      - base_color: '#0E7695'
+        color_index: 2
+        gradient:
+        - '#132138'
+        - '#1D3052'
+        - '#0E7695'
+        - '#05A1B0'
+        - '#7AC0C6'
+        - '#A6D7DE'
+      - base_color: '#8673B5'
+        color_index: 3
+        gradient:
+        - '#230F38'
+        - '#31164F'
+        - '#605181'
+        - '#8673B5'
+        - '#A69DC6'
+        - '#CDC5EA'
+      - base_color: '#D96702'
+        color_index: 2
+        gradient:
+        - '#2E1601'
+        - '#462101'
+        - '#D96702'
+        - '#F99805'
+        - '#F7B660'
+        - '#FCD78C'
+      - base_color: '#9B2926'
+        color_index: 2
+        gradient: null
+    use_system_fonts: false
+    show_layer_indicators: true
+    show_layer_connectors: true
+    show_transparent_fallthrough: true
+  keymap_title: Colemak Layers Layout
+  copyright: "\xA9 2024, SVALBOARD.COM"
