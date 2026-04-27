@@ -527,7 +527,20 @@ class LayerColorListPane(ListDetailPane):
         return base_color, color_index
 
     def _on_gradient_type_changed(self, value: str) -> None:
-        """Handle switching between Dynamic and Manual gradient modes."""
+        """Handle switching between Dynamic and Manual gradient modes.
+
+        The conversion logic (regenerate the gradient from base_color, or
+        snap base_color to the gradient's selected step) only makes sense
+        when the user explicitly picks a different mode while editing —
+        not for the spurious ``Changed`` event Textual fires during the
+        Select's mount or for programmatic ``Select.value`` writes done
+        by ``refresh_fields`` to mirror the loaded entry. Gating on
+        ``self._editing`` keeps the conversion locked to user intent and
+        prevents a saved manual gradient on layer 0 from being silently
+        flipped to dynamic when the config is reopened.
+        """
+        if not self._editing:
+            return
         entries = self.get_entries()
         if self._selected >= len(entries):
             return
@@ -565,6 +578,14 @@ class LayerColorListPane(ListDetailPane):
                 self._safe_set_color(s, color)
 
     def on_input_changed(self, event: Input.Changed) -> None:
+        # Only respond to user typing while editing. ``refresh_fields`` writes
+        # ``Input.value`` programmatically when loading or reselecting an
+        # entry; without this guard, those writes fire ``Input.Changed`` and
+        # the lc-step branch silently overwrites ``entry["base_color"]`` with
+        # the gradient step at ``color_index`` — corrupting saved data on
+        # every reload.
+        if not self._editing:
+            return
         input_id = event.input.id or ""
         if input_id == "lc-base-color":
             layer_colors = self.get_entries()

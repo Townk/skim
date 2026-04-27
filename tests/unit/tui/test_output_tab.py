@@ -192,3 +192,39 @@ class TestOutputTab:
         col0_w, _ = tab._lc_column_widths()
         # "Sym (15)" is 8 chars, "Base (0)" is 8 chars — col0_w should be at least 8
         assert col0_w >= len("Sym (15)")
+
+    @pytest.mark.asyncio()
+    async def test_manual_gradient_survives_load(self, config_with_output):
+        """Loading a config with a manual gradient must not flip layer 0 to dynamic.
+
+        Regression: a Select.Changed event fired during the gradient-type
+        Select's mount used to run the manual→dynamic conversion before
+        ``refresh_fields`` could mirror the loaded entry — wiping the
+        saved gradient on layer 0.
+        """
+        config_with_output["output"]["style"]["palette"]["layers"][0] = {
+            "base_color": "#FF0000",
+            "color_index": 2,
+            "gradient": [
+                "#FF1111",
+                "#EE2222",
+                "#DD3333",
+                "#CC4444",
+                "#BB5555",
+                "#AA6666",
+            ],
+        }
+        app = OutputTabTestApp(config_data=config_with_output)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await pilot.pause()
+            layer0 = app.config_data["output"]["style"]["palette"]["layers"][0]
+            assert layer0["gradient"] == [
+                "#FF1111",
+                "#EE2222",
+                "#DD3333",
+                "#CC4444",
+                "#BB5555",
+                "#AA6666",
+            ]
+            assert layer0["base_color"] == "#FF0000"
