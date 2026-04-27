@@ -280,13 +280,13 @@ def make_gradient(base_color: str, base_index: int = 2) -> tuple[str, str, str, 
     for i in range(num_colors):
         if i < base_index:
             progress = i / base_index if base_index > 0 else 0
-            target_l = lightness * (0.15 + 0.85 * progress)
+            target_l = lightness * (0.5 + 0.5 * progress)
         elif i == base_index:
             target_l = lightness
         else:
             remaining = num_colors - 1 - base_index
             progress = (i - base_index) / remaining if remaining > 0 else 0
-            max_lightness = min(0.95, lightness * 2.3)
+            max_lightness = min(0.85, lightness * 1.9)
             target_l = lightness + (max_lightness - lightness) * progress
 
         lightness_values.append(min(1.0, target_l))
