@@ -741,7 +741,7 @@ class TestWithSampleC2json:
         result = generator.generate_from_keymap(sample_c2json)
         parsed = yaml.safe_load(result)
         config = SkimConfig.model_validate(parsed)
-        assert len(config.keyboard.layers) == 10
+        assert len(config.keyboard.layers) == 11
 
     def test_sample_detects_custom_keycodes(self, sample_c2json):
         """Real c2json sample has non-standard keycodes detected."""

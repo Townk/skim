@@ -11,26 +11,30 @@ keyboard:
     name: Letters
     variant: QWERTY
   - index: 2
-    id: _GAME
+    id: _GAM1
     name: Gaming
-    variant: null
+    variant: WASD
   - index: 3
+    id: _GAM2
+    name: Gaming
+    variant: NUMBERS
+  - index: 4
     id: _NAV
     name: Navigation
     variant: null
-  - index: 4
+  - index: 5
     id: _NUM
     name: Numbers
     variant: null
-  - index: 5
+  - index: 6
     id: _SYM
     name: Symbols
     variant: null
-  - index: 6
+  - index: 7
     id: _FUN
     name: Function Keys
     variant: null
-  - index: 7
+  - index: 8
     id: _MED
     name: Multimedia
     variant: null
@@ -149,10 +153,13 @@ output:
       - base_color: '#347156'
         color_index: 2
         gradient: null
-      - base_color: '#393980'
+      - base_color: '#2F898B'
         color_index: 2
         gradient: null
-      - base_color: '#3E605C'
+      - base_color: '#355A93'
+        color_index: 2
+        gradient: null
+      - base_color: '#0C7595'
         color_index: 2
         gradient: null
       - base_color: '#89511C'
