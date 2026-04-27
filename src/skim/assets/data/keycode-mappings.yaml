@@ -203,6 +203,7 @@ keycodes:
   KC_SLASH: "/"
   KC_SLSH: "@@KC_SLASH;"
   KC_NONUS_BACKSLASH: "\\"
+  KC_NONUS_BSLASH: "@@KC_NONUS_BACKSLASH;"
   KC_NUBS: "@@KC_NONUS_BACKSLASH;"
 
   # Lock keys
@@ -476,7 +477,7 @@ keycodes:
   USER04: "@@SV_LEFT_SCROLL_TOGGLE;"
   SV_RIGHT_SCROLL_TOGGLE: "R %%nf-md-mouse_move_vertical;%%nf-md-toggle_switch_off_outline;"
   USER05: "@@SV_RIGHT_SCROLL_TOGGLE;"
-  SV_RECALIBRATE_POINTER: "%%nf-md-tune_vertical;%%nf-fa-arrow_pointer;"
+  SV_RECALIBRATE_POINTER: "%%nf-md-tune_vertical; %%nf-fa-arrow_pointer;"
   USER06: "@@SV_RECALIBRATE_POINTER;"
   SV_MH_CHANGE_TIMEOUTS: "%%nf-md-mouse;%%nf-weather-time_9;"
   USER07: "@@SV_MH_CHANGE_TIMEOUTS;"
