@@ -7,26 +7,30 @@ keyboard:
     name: Letters
     variant: COLEMAK
   - index: 1
+    id: _QWT
+    name: Letters
+    variant: QWERTY
+  - index: 2
     id: _GAME
     name: Gaming
     variant: null
-  - index: 2
+  - index: 3
     id: _NAV
     name: Navigation
     variant: null
-  - index: 3
+  - index: 4
     id: _NUM
     name: Numbers
     variant: null
-  - index: 4
+  - index: 5
     id: _SYM
     name: Symbols
     variant: null
-  - index: 5
+  - index: 6
     id: _FUN
     name: Function Keys
     variant: null
-  - index: 6
+  - index: 7
     id: _MED
     name: Multimedia
     variant: null
@@ -145,6 +149,9 @@ output:
       - base_color: '#347156'
         color_index: 2
         gradient: null
+      - base_color: '#393980'
+        color_index: 2
+        gradient: null
       - base_color: '#3E605C'
         color_index: 2
         gradient: null
@@ -172,5 +179,6 @@ output:
     use_system_fonts: false
     show_layer_indicators: true
     show_layer_connectors: true
+    show_transparent_fallthrough: true
   keymap_title: Miryoku-inspired Layout
   copyright: "\xA9 2025, Thiago Alves"
