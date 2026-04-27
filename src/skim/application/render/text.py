@@ -501,6 +501,7 @@ class FontUsageAnalyzer:
         self,
         layout: SvalboardLayout[LabelT],
         layer_name: str | None = None,
+        copyright_text: str | None = None,
     ) -> None:
         """Analyze a Svalboard Layout (layer) to collect character usage for
         each font.
@@ -508,8 +509,10 @@ class FontUsageAnalyzer:
         Args:
             layout: The layout (a.k.a. layer) to analyze containing Label
                 objects for each key.
-            layer_names: Optional layer name to collect characters for the
+            layer_name: Optional layer name to collect characters for the
                 TITLE font.
+            copyright_text: Optional copyright string to collect characters for
+                the FINGER_KEY font (used by the footer).
         """
         for side in (layout.left, layout.right):
             for finger_cluster in side.fingers:
@@ -520,6 +523,8 @@ class FontUsageAnalyzer:
 
         if layer_name:
             self._collect_from_label(Label(layer_name, Font.TITLE, text_color="#000"))
+        if copyright_text:
+            self._collect_from_label(Label(copyright_text, Font.FINGER_KEY, text_color="#000"))
 
     def get_used_chars(self, font: Font) -> set[str]:
         """Get the set of characters used from a specific font."""

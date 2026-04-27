@@ -112,10 +112,10 @@ def _compute_badge_dims(
 
 @dataclass(frozen=True, slots=True)
 class HeaderDims:
-    """Title and logo sizes for the overview header.
+    """Shared typography and spacing between overview and per-layer images.
 
-    Per-layer keymap images reuse these so their header typography matches
-    the overview verbatim.
+    Per-layer keymap images reuse these so their header (and now footer)
+    typography matches the overview verbatim.
 
     Attributes:
         title_font_size: Font size in SVG units for the layer/keymap title.
@@ -126,6 +126,8 @@ class HeaderDims:
         gap_below_header: Vertical gap between the header bottom and the top of
             the cluster content — equals the overview's row_gap so per-layer
             images breathe the same way after the header.
+        copyright_font_size: Font size in SVG units for the copyright footer
+            line, sized like the overview's badge text.
     """
 
     title_font_size: float
@@ -133,6 +135,7 @@ class HeaderDims:
     logo_height: float
     outer_padding: float
     gap_below_header: float
+    copyright_font_size: float
 
 
 def compute_header_dims(
@@ -171,6 +174,7 @@ def compute_header_dims(
         logo_height=logo_height,
         outer_padding=outer_padding,
         gap_below_header=gap_below_header,
+        copyright_font_size=badge_font_size,
     )
 
 

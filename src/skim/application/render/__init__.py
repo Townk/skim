@@ -175,6 +175,9 @@ def _draw_layer(
         top_indicator_offset=top_indicator_offset,
         header_offset=header_offset,
     )
+    copyright_font_size = header_dims.copyright_font_size
+    copyright_extra = copyright_font_size + outer_padding if config.output.copyright else 0.0
+    canvas_height += copyright_extra
 
     # Create drawing
     d = draw.Drawing(canvas_width, canvas_height)
@@ -209,7 +212,7 @@ def _draw_layer(
 
     if not use_system_fonts:
         font_analyzer = FontUsageAnalyzer()
-        font_analyzer.analyze_keymap(labels_keymap, layer_title)
+        font_analyzer.analyze_keymap(labels_keymap, layer_title, config.output.copyright)
 
         font_subsetter = FontSubsetter(font_analyzer)
         subsetted_css = font_subsetter.generate_subsetted_css()
@@ -262,6 +265,24 @@ def _draw_layer(
         embed=True,
     )
     d.append(logo_svg)
+
+    if config.output.copyright:
+        label_font = (
+            Font.FINGER_KEY.get_system_font_family() if use_system_fonts else Font.FINGER_KEY.value
+        )
+        d.append(
+            draw.Text(
+                config.output.copyright,
+                font_size=copyright_font_size,
+                x=canvas_width - outer_padding,
+                y=canvas_height - outer_padding,
+                text_anchor="end",
+                dominant_baseline="text-after-edge",
+                font_family=label_font,
+                fill=config.output.style.palette.text_color,
+                opacity=0.6,
+            )
+        )
 
     return d
 
