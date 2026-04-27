@@ -278,15 +278,35 @@ class TestLoadKeymap:
         assert isinstance(keymap.layers, dict)
         assert set(keymap.layers.keys()) == {0, 1, 2}
 
-    def test_multiple_layers_with_custom_indices(self, tmp_path):
-        """Loads keymap with custom layer indices."""
+    def test_layer_indices_select_source_layers(self, tmp_path):
+        """layer_indices selects layers by their position in the source file."""
+        # Build 16 layers where only layers 0 and 15 carry distinguishable content;
+        # the rest are empty (KC_NO) so we can assert the selection picks the
+        # correct source layer rather than zipping positionally.
+        layers = [["KC_NO"] * 60 for _ in range(16)]
+        layers[0] = ["KC_A"] * 60
+        layers[15] = ["KC_B"] * 60
+        path = tmp_path / "test.kbi"
+        path.write_text(json.dumps({"keymap": layers}))
+
+        keymap = load_keymap(path, layer_indices=[0, 15])
+
+        assert isinstance(keymap.layers, dict)
+        assert set(keymap.layers.keys()) == {0, 15}
+        # Layer 15 must contain the content from source layout[15], not layout[1].
+        assert keymap.layers[15].right.index.center_key == "KC_B"
+        assert keymap.layers[0].right.index.center_key == "KC_A"
+
+    def test_layer_indices_skip_out_of_bounds(self, tmp_path):
+        """Indices beyond the source layer count are ignored."""
         keymap_data = {"keymap": [["KC_A"] * 60, ["KC_B"] * 60, ["KC_C"] * 60]}
         path = tmp_path / "test.kbi"
         path.write_text(json.dumps(keymap_data))
 
         keymap = load_keymap(path, layer_indices=[0, 5, 10])
+
         assert isinstance(keymap.layers, dict)
-        assert set(keymap.layers.keys()) == {0, 5, 10}
+        assert set(keymap.layers.keys()) == {0}
 
     def test_svalboard_layout_created_correctly(self, tmp_path):
         """SvalboardKeymap contains SvalboardLayout objects with correct hierarchy."""

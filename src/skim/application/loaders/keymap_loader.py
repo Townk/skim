@@ -229,9 +229,11 @@ def load_keymap(
 
     Args:
         file_path: Path to the keymap file, or None to read from stdin.
-        layer_indices: Optional list of QMK layer indices to map each
-            positional layer to. If None, sequential indices (0, 1, 2, ...)
-            are used.
+        layer_indices: Optional list of layer indices to select from the
+            source file. Each index identifies the position of a layer in
+            the source ``layout``/``keymap`` array; out-of-range indices
+            are skipped. If None, every layer is loaded with sequential
+            indices (0, 1, 2, ...).
 
     Returns:
         A SvalboardKeymap containing raw keycode strings for all layers.
@@ -249,8 +251,9 @@ def load_keymap(
         indices = layer_indices or list(range(len(keymap_json)))
         return SvalboardKeymap(
             {
-                idx: SvalboardLayout[str].from_sequence(layer)
-                for idx, layer in zip(indices, keymap_json, strict=False)
+                idx: SvalboardLayout[str].from_sequence(keymap_json[idx])
+                for idx in indices
+                if 0 <= idx < len(keymap_json)
             }
         )
 
