@@ -387,14 +387,22 @@ def configure(
             else:
                 content = generator.generate_from_keymap(raw_content)
 
-            if interactive:
-                # Feed generated config into the TUI
-                config_data = _yaml.safe_load(content)
-            else:
+            config_data = _yaml.safe_load(content)
+
+            # If -c is also provided, treat the keymap-derived config as a
+            # scaffold and override it with the user's saved config so reloads
+            # keep their edits (colors, titles, etc.).
+            if config and config.is_file():
+                loaded = _yaml.safe_load(config.read_text())
+                if loaded:
+                    config_data = _deep_merge(config_data, loaded)
+
+            if not interactive:
+                merged = _yaml.dump(config_data, sort_keys=False, default_flow_style=False)
                 if output:
-                    _write_config(output, content, force)
+                    _write_config(output, merged, force)
                 else:
-                    click.echo(content)
+                    click.echo(merged)
                 return
 
         # Interactive mode
@@ -428,6 +436,24 @@ def configure(
     except (ValueError, OSError) as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
+
+
+def _deep_merge(base: dict, override: dict) -> dict:
+    """Deep-merge ``override`` onto ``base``; ``override`` wins on conflicts.
+
+    Nested dicts merge recursively. Lists and scalars from ``override``
+    replace the corresponding value in ``base`` wholesale — list elements
+    are not merged, since lists like ``keyboard.layers`` and
+    ``palette.layers`` are positionally coupled and partial merges would
+    corrupt them.
+    """
+    result = dict(base)
+    for key, val in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(val, dict):
+            result[key] = _deep_merge(result[key], val)
+        else:
+            result[key] = val
+    return result
 
 
 def _load_initial_config(config_path: Path | None) -> dict:

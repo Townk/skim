@@ -639,6 +639,138 @@ class TestConfigureCommand:
         assert config_data["output"]["copyright"] == "© Me"
         assert len(config_data["keyboard"]["layers"]) == 2
 
+    @patch("skim.cli.setup_logging")
+    @patch("skim.tui.launch_tui")
+    def test_interactive_keymap_with_config_merges_overrides(
+        self, mock_tui, mock_setup, tmp_path
+    ):
+        """-i -k -c: -c overrides keymap-derived values fed to the TUI."""
+        import json
+
+        kbi = tmp_path / "test.kbi"
+        kbi.write_text(
+            json.dumps(
+                {
+                    "layers": 2,
+                    "keymap": [["KC_A"] * 60, ["KC_B"] * 60],
+                    "layer_colors": [
+                        {"hue": 85, "sat": 255, "val": 255},
+                        {"hue": 0, "sat": 255, "val": 255},
+                    ],
+                    "cosmetic": {"layer": {"0": "Base", "1": "Sym"}},
+                    "custom_keycodes": [],
+                }
+            )
+        )
+        cfg = tmp_path / "saved.yaml"
+        cfg.write_text(
+            yaml.dump(
+                {
+                    "output": {
+                        "keymap_title": "My Saved Title",
+                        "style": {
+                            "palette": {
+                                "layers": [
+                                    {
+                                        "base_color": "#123456",
+                                        "color_index": 2,
+                                        "gradient": None,
+                                    },
+                                    {
+                                        "base_color": "#abcdef",
+                                        "color_index": 2,
+                                        "gradient": None,
+                                    },
+                                ]
+                            }
+                        },
+                    }
+                }
+            )
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["configure", "-i", "-k", str(kbi), "-c", str(cfg)])
+        assert result.exit_code == 0
+        config_data = mock_tui.call_args[1]["config_data"]
+
+        # Keymap-derived structure preserved (layer names from .kbi)
+        assert config_data["keyboard"]["layers"][0]["name"] == "Base"
+        assert config_data["keyboard"]["layers"][1]["name"] == "Sym"
+
+        # Saved config overrides applied
+        assert config_data["output"]["keymap_title"] == "My Saved Title"
+        palette_layers = config_data["output"]["style"]["palette"]["layers"]
+        assert palette_layers[0]["base_color"] == "#123456"
+        assert palette_layers[1]["base_color"] == "#abcdef"
+
+    @patch("skim.cli.setup_logging")
+    def test_non_interactive_keymap_with_config_merges_overrides(
+        self, mock_setup, tmp_path
+    ):
+        """-k -c (no -i): -c overrides keymap-derived values in written output."""
+        import json
+
+        kbi = tmp_path / "test.kbi"
+        kbi.write_text(
+            json.dumps(
+                {
+                    "layers": 2,
+                    "keymap": [["KC_A"] * 60, ["KC_B"] * 60],
+                    "layer_colors": [
+                        {"hue": 85, "sat": 255, "val": 255},
+                        {"hue": 0, "sat": 255, "val": 255},
+                    ],
+                    "cosmetic": {"layer": {"0": "Base", "1": "Sym"}},
+                    "custom_keycodes": [],
+                }
+            )
+        )
+        cfg = tmp_path / "saved.yaml"
+        cfg.write_text(
+            yaml.dump(
+                {
+                    "output": {
+                        "keymap_title": "My Saved Title",
+                        "style": {
+                            "palette": {
+                                "layers": [
+                                    {
+                                        "base_color": "#123456",
+                                        "color_index": 2,
+                                        "gradient": None,
+                                    },
+                                    {
+                                        "base_color": "#abcdef",
+                                        "color_index": 2,
+                                        "gradient": None,
+                                    },
+                                ]
+                            }
+                        },
+                    }
+                }
+            )
+        )
+        out = tmp_path / "merged.yaml"
+
+        runner = CliRunner()
+        result = runner.invoke(
+            main, ["configure", "-k", str(kbi), "-c", str(cfg), "-o", str(out)]
+        )
+        assert result.exit_code == 0
+        parsed = yaml.safe_load(out.read_text())
+
+        # Keymap-derived structure preserved
+        assert parsed["keyboard"]["layers"][0]["name"] == "Base"
+        assert parsed["keyboard"]["layers"][1]["name"] == "Sym"
+
+        # Saved config overrides applied
+        assert parsed["output"]["keymap_title"] == "My Saved Title"
+        palette_layers = parsed["output"]["style"]["palette"]["layers"]
+        assert palette_layers[0]["base_color"] == "#123456"
+        assert palette_layers[1]["base_color"] == "#abcdef"
+
 
 class TestDoctorCommand:
     """Tests for doctor subcommand."""
