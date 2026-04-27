@@ -340,18 +340,22 @@ class ThumbClusterComponent(KeyCluster[ThumbCluster[SvalboardTargetKey]]):
             pad_key=SvalboardTargetKey(
                 _adjust_hold_symbol_label(hold_pos, pad_side, keys.pad_key.label),
                 keys.pad_key.layer_switch,
+                keys.pad_key.is_transparent,
             ),
             up_key=SvalboardTargetKey(
                 _adjust_hold_symbol_label(hold_pos, up_side, keys.up_key.label),
                 keys.up_key.layer_switch,
+                keys.up_key.is_transparent,
             ),
             nail_key=SvalboardTargetKey(
                 _adjust_hold_symbol_label(hold_pos, nail_side, keys.nail_key.label),
                 keys.nail_key.layer_switch,
+                keys.nail_key.is_transparent,
             ),
             knuckle_key=SvalboardTargetKey(
                 _adjust_hold_symbol_label(hold_pos, knuckle_side, keys.knuckle_key.label),
                 keys.knuckle_key.layer_switch,
+                keys.knuckle_key.is_transparent,
             ),
             double_down_key=keys.double_down_key,
         )
@@ -528,11 +532,13 @@ class FingerClusterComponent(KeyCluster[FingerCluster[SvalboardTargetKey]]):
             east_key=SvalboardTargetKey(
                 _adjust_hold_symbol_label(hold_pos, KeyboardSide.LEFT, keys.east_key.label),
                 keys.east_key.layer_switch,
+                keys.east_key.is_transparent,
             ),
             south_key=keys.south_key,
             west_key=SvalboardTargetKey(
                 _adjust_hold_symbol_label(hold_pos, KeyboardSide.RIGHT, keys.west_key.label),
                 keys.west_key.layer_switch,
+                keys.west_key.is_transparent,
             ),
             double_south_key=keys.double_south_key,
         )

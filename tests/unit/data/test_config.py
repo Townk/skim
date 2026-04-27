@@ -247,3 +247,15 @@ class TestStyleShowLayerConnectors:
         """show_layer_connectors can be set to False."""
         style = Style(show_layer_connectors=False)
         assert style.show_layer_connectors is False
+
+
+class TestStyleShowTransparentFallthrough:
+    """Tests for Style.show_transparent_fallthrough field."""
+
+    def test_default_is_true(self):
+        """show_transparent_fallthrough defaults to True (opt-out)."""
+        assert Style().show_transparent_fallthrough is True
+
+    def test_can_set_to_false(self):
+        """show_transparent_fallthrough can be set to False."""
+        assert Style(show_transparent_fallthrough=False).show_transparent_fallthrough is False

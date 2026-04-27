@@ -162,9 +162,38 @@ class TestResolveKeymap:
 
         mock_load_mappings.assert_called_once_with(config.keycodes)
         mock_label_adapter_cls.assert_called_once_with(config.keyboard, mock_mappings)
-        mock_target_adapter_cls.assert_called_once_with(mock_label_adapter)
+        mock_target_adapter_cls.assert_called_once_with(
+            mock_label_adapter,
+            fallthrough_to_layer_zero=True,
+        )
         mock_target_adapter.transform.assert_called_once_with(input_keymap)
         assert result is mock_transformed_keymap
+
+    @patch("skim.application.keymap_generator.KeymapTargetAdapter")
+    @patch("skim.application.keymap_generator.KeycodeLabelAdapter")
+    @patch("skim.application.keymap_generator.load_keycode_mappings")
+    def test_passes_fallthrough_flag_from_style(
+        self, mock_load_mappings, mock_label_adapter_cls, mock_target_adapter_cls
+    ):
+        """The fallthrough flag is sourced from style.show_transparent_fallthrough."""
+        mock_load_mappings.return_value = {"keycodes": {}}
+        mock_label_adapter = MagicMock()
+        mock_label_adapter_cls.return_value = mock_label_adapter
+        mock_target_adapter = MagicMock()
+        mock_target_adapter_cls.return_value = mock_target_adapter
+
+        new_style = SkimConfig().output.style.model_copy(
+            update={"show_transparent_fallthrough": False}
+        )
+        new_output = SkimConfig().output.model_copy(update={"style": new_style})
+        config = SkimConfig().model_copy(update={"output": new_output})
+
+        _resolve_keymap(config, MagicMock(spec=SvalboardKeymap))
+
+        mock_target_adapter_cls.assert_called_once_with(
+            mock_label_adapter,
+            fallthrough_to_layer_zero=False,
+        )
 
 
 class TestGenerateKeymap:

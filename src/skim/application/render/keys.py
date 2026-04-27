@@ -69,7 +69,8 @@ class Key(draw.Group, metaclass=ABCMeta):
         font_height_multi: Multiplier for font size relative to key height.
         font: The font to use for the label.
         fill_color: The fill color of the key.
-        stroke_color: The stroke/text color of the key.
+        stroke_color: The stroke color of the key shape.
+        label_color: The text color used to render the label.
     """
 
     x: float
@@ -81,6 +82,7 @@ class Key(draw.Group, metaclass=ABCMeta):
     font: Font
     fill_color: str
     stroke_color: str | None
+    label_color: str
 
     def __init__(
         self,
@@ -94,6 +96,7 @@ class Key(draw.Group, metaclass=ABCMeta):
         letter_spacing: float | None = None,
         fill_color: str = "#666",
         stroke_color: str = "#FFF",
+        label_color: str | None = None,
         use_system_fonts: bool = False,
         **kwargs,
     ):
@@ -109,7 +112,9 @@ class Key(draw.Group, metaclass=ABCMeta):
             font: The font to use. Default: FINGER_KEY.
             letter_spacing: Optional letter spacing in SVG units.
             fill_color: The fill color. Default: "#666".
-            stroke_color: The stroke/text color. Default: "#FFF".
+            stroke_color: The shape stroke color. Default: "#FFF".
+            label_color: Optional override for the label text color. Defaults
+                to ``stroke_color``.
             use_system_fonts: Whether to use system font families. Default: False.
             **kwargs: Additional arguments passed to the parent Group.
         """
@@ -117,10 +122,11 @@ class Key(draw.Group, metaclass=ABCMeta):
         self.x = x
         self.y = y
         self.width, self.height = dimensions_from_ratio(self.aspect_ratio, width, height)
+        resolved_label_color = label_color if label_color is not None else stroke_color
         self.label = Label(
             label,
             font=font,
-            text_color=stroke_color,
+            text_color=resolved_label_color,
             background_color=fill_color,
             text_anchor=self.text_anchor,
             dominant_baseline=self.dominant_baseline,
@@ -130,6 +136,7 @@ class Key(draw.Group, metaclass=ABCMeta):
         self.font = font
         self.fill_color = fill_color
         self.stroke_color = stroke_color
+        self.label_color = resolved_label_color
         self._use_system_fonts = use_system_fonts
         self.build()
 
@@ -221,6 +228,7 @@ class DownKey(Key):
             layout: The layout boundary for this key.
             **kwargs: Additional arguments passed to the parent Key.
         """
+        fill_color = ctx.key_fill_color(key, ctx.layer_colors.base_color)
         super().__init__(
             label=key.label,
             x=layout.pos.x,
@@ -228,8 +236,9 @@ class DownKey(Key):
             width=layout.width,
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
-            fill_color=ctx.key_fill_color(key, ctx.layer_colors.base_color),
+            fill_color=fill_color,
             stroke_color=ctx.palette.key_label_color,
+            label_color=ctx.key_label_color(key, fill_color),
             use_system_fonts=ctx.use_system_fonts,
             **kwargs,
         )
@@ -295,13 +304,15 @@ class DoubleDownKey(Key):
             layout: The layout boundary for this key.
             **kwargs: Additional arguments passed to the parent Key.
         """
+        fill_color = ctx.key_fill_color(key, ctx.layer_colors.dark_accent_color)
         super().__init__(
             label=key.label,
             x=layout.pos.x,
             y=layout.pos.y,
             width=layout.width,
-            fill_color=ctx.key_fill_color(key, ctx.layer_colors.dark_accent_color),
+            fill_color=fill_color,
             stroke_color=ctx.palette.key_label_color,
+            label_color=ctx.key_label_color(key, fill_color),
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
@@ -372,13 +383,15 @@ class UpKey(Key):
             **kwargs: Additional arguments passed to the parent Key.
         """
         self.side = ctx.side
+        fill_color = ctx.key_fill_color(key, ctx.layer_colors.dark_accent_color)
         super().__init__(
             label=key.label,
             x=layout.pos.x,
             y=layout.pos.y,
             width=layout.width,
-            fill_color=ctx.key_fill_color(key, ctx.layer_colors.dark_accent_color),
+            fill_color=fill_color,
             stroke_color=ctx.palette.key_label_color,
+            label_color=ctx.key_label_color(key, fill_color),
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
@@ -484,13 +497,15 @@ class PadKey(Key):
             **kwargs: Additional arguments passed to the parent Key.
         """
         self.side = ctx.side
+        fill_color = ctx.key_fill_color(key, ctx.palette.neutral_color)
         super().__init__(
             label=key.label,
             x=layout.pos.x,
             y=layout.pos.y,
             width=layout.width,
-            fill_color=ctx.key_fill_color(key, ctx.palette.neutral_color),
+            fill_color=fill_color,
             stroke_color=ctx.palette.key_label_color,
+            label_color=ctx.key_label_color(key, fill_color),
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
@@ -567,13 +582,15 @@ class NailKey(Key):
             **kwargs: Additional arguments passed to the parent Key.
         """
         self.side = ctx.side
+        fill_color = ctx.key_fill_color(key, ctx.palette.neutral_color)
         super().__init__(
             label=key.label,
             x=layout.pos.x,
             y=layout.pos.y,
             width=layout.width,
-            fill_color=ctx.key_fill_color(key, ctx.palette.neutral_color),
+            fill_color=fill_color,
             stroke_color=ctx.palette.key_label_color,
+            label_color=ctx.key_label_color(key, fill_color),
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
@@ -650,13 +667,15 @@ class KnuckleKey(Key):
             **kwargs: Additional arguments passed to the parent Key.
         """
         self.side = ctx.side
+        fill_color = ctx.key_fill_color(key, ctx.palette.neutral_color)
         super().__init__(
             label=key.label,
             x=layout.pos.x,
             y=layout.pos.y,
             width=layout.width,
-            fill_color=ctx.key_fill_color(key, ctx.palette.neutral_color),
+            fill_color=fill_color,
             stroke_color=ctx.palette.key_label_color,
+            label_color=ctx.key_label_color(key, fill_color),
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
@@ -727,14 +746,16 @@ class CenterKey(Key):
             layout: The layout boundary for this key.
             **kwargs: Additional arguments passed to the parent Key.
         """
+        fill_color = ctx.key_fill_color(key, colors.primary)
         super().__init__(
             label=key.label,
             x=layout.pos.x,
             y=layout.pos.y,
             width=layout.width,
             height=layout.width,
-            fill_color=ctx.key_fill_color(key, colors.primary),
+            fill_color=fill_color,
             stroke_color=ctx.palette.key_label_color,
+            label_color=ctx.key_label_color(key, fill_color),
             font=Font.FINGER_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
@@ -801,14 +822,16 @@ class DoubleSouthKey(Key):
             **kwargs: Additional arguments passed to the parent Key.
         """
         self._accent_color = ctx.key_fill_color(key, colors.accent, True)
+        fill_color = ctx.key_fill_color(key, colors.primary)
         super().__init__(
             label=key.label,
             x=layout.pos.x,
             y=layout.pos.y,
             width=layout.width,
             height=layout.width,
-            fill_color=ctx.key_fill_color(key, colors.primary),
+            fill_color=fill_color,
             stroke_color=ctx.palette.key_label_color,
+            label_color=ctx.key_label_color(key, fill_color),
             font=Font.FINGER_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
@@ -902,6 +925,7 @@ class DirectionalKey(Key):
         """
         self._direction = direction
         self._accent_color = ctx.key_fill_color(key, colors.accent, True)
+        fill_color = ctx.key_fill_color(key, colors.primary)
         super().__init__(
             label=key.label,
             x=layout.pos.x,
@@ -910,8 +934,9 @@ class DirectionalKey(Key):
             height=layout.width,
             font=Font.FINGER_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
-            fill_color=ctx.key_fill_color(key, colors.primary),
+            fill_color=fill_color,
             stroke_color=ctx.palette.key_label_color,
+            label_color=ctx.key_label_color(key, fill_color),
             use_system_fonts=ctx.use_system_fonts,
             **kwargs,
         )

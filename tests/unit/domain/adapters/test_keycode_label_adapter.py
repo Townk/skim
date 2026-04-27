@@ -343,3 +343,54 @@ class TestLTWithSingleArgument:
         adapter = make_adapter(loader, keyboard)
         result = adapter.transform("LT0(KC_A)")
         assert result.layer_switch == 0
+
+
+class TestKeycodeLabelAdapterTransparentDetection:
+    """Tests that the transparent QMK keycode family sets is_transparent=True."""
+
+    def _adapter(self) -> KeycodeLabelAdapter:
+        return make_adapter(
+            make_mappings(
+                keycodes={
+                    "KC_A": "A",
+                    "KC_NO": "",
+                    "KC_TRANSPARENT": "",
+                    "KC_TRNS": "@@KC_TRANSPARENT;",
+                    "_______": "@@KC_TRANSPARENT;",
+                    "XXXXXXX": "@@KC_NO;",
+                },
+                macro_functions={"MO": "L#0;"},
+            )
+        )
+
+    def test_kc_transparent_sets_flag(self):
+        result = self._adapter().transform("KC_TRANSPARENT")
+        assert result.label == ""
+        assert result.is_transparent is True
+
+    def test_kc_trns_sets_flag(self):
+        result = self._adapter().transform("KC_TRNS")
+        assert result.is_transparent is True
+
+    def test_underscores_set_flag(self):
+        result = self._adapter().transform("_______")
+        assert result.is_transparent is True
+
+    def test_kc_no_does_not_set_flag(self):
+        """KC_NO is empty but not transparent."""
+        result = self._adapter().transform("KC_NO")
+        assert result.label == ""
+        assert result.is_transparent is False
+
+    def test_xxxxxxx_does_not_set_flag(self):
+        """XXXXXXX is the alias for KC_NO; not transparent."""
+        result = self._adapter().transform("XXXXXXX")
+        assert result.is_transparent is False
+
+    def test_normal_keycode_does_not_set_flag(self):
+        result = self._adapter().transform("KC_A")
+        assert result.is_transparent is False
+
+    def test_macro_does_not_set_flag(self):
+        result = self._adapter().transform("MO(0)")
+        assert result.is_transparent is False

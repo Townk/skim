@@ -9,7 +9,12 @@ Tests for the .opposite property implementations which are not exercised
 by other tests in the suite.
 """
 
-from skim.domain.domain_types import Alignment, KeyboardSide, KeyDirection
+from skim.domain.domain_types import (
+    Alignment,
+    KeyboardSide,
+    KeyDirection,
+    SvalboardTargetKey,
+)
 
 
 class TestAlignmentOpposite:
@@ -49,3 +54,18 @@ class TestKeyDirectionOpposite:
 
     def test_opposite_west_returns_east(self):
         assert KeyDirection.WEST.opposite == KeyDirection.EAST
+
+
+class TestSvalboardTargetKey:
+    """Tests for SvalboardTargetKey domain type."""
+
+    def test_default_is_transparent_is_false(self):
+        """is_transparent defaults to False."""
+        key = SvalboardTargetKey()
+        assert key.is_transparent is False
+
+    def test_is_transparent_can_be_set(self):
+        """is_transparent accepts True."""
+        key = SvalboardTargetKey(label="A", is_transparent=True)
+        assert key.is_transparent is True
+        assert key.label == "A"

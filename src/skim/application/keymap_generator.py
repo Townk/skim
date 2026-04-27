@@ -139,7 +139,10 @@ def _resolve_keymap(
     """
     mappings = load_keycode_mappings(config.keycodes)
     label_adapter: KeycodeLabelAdapter = KeycodeLabelAdapter(config.keyboard, mappings)
-    keymap_adapter = KeymapTargetAdapter(label_adapter)
+    keymap_adapter = KeymapTargetAdapter(
+        label_adapter,
+        fallthrough_to_layer_zero=config.output.style.show_transparent_fallthrough,
+    )
 
     keymap: SvalboardKeymap[SvalboardTargetKey] = keymap_adapter.transform(input_keymap)
     return keymap

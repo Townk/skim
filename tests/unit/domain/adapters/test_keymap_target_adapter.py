@@ -94,6 +94,100 @@ class TestKeymapTargetAdapterTransform:
         assert first_key.layer_switch == 1
 
 
+class TestKeymapTargetAdapterTransparentFallthrough:
+    """Tests that transparent keys borrow labels from layer 0."""
+
+    def _label_map(self) -> dict[str, SvalboardTargetKey]:
+        # Names follow make_split_side: "<L#>_<L|R>_<finger>"
+        # We override only the keys we care about.
+        return {
+            "L0_L_I": SvalboardTargetKey(label="A"),
+            "L0_L_M": SvalboardTargetKey(label="B"),
+            "L1_L_I": SvalboardTargetKey(label="", is_transparent=True),
+            "L1_L_M": SvalboardTargetKey(label="C"),
+            "L1_L_R": SvalboardTargetKey(label="", is_transparent=True),
+            # L0_L_R unset on layer 0 → MockLabelAdapter returns generic label
+        }
+
+    def _adapter(self) -> KeymapTargetAdapter:
+        label_adapter = MockLabelAdapter(self._label_map())
+        return KeymapTargetAdapter(label_adapter)  # type: ignore[arg-type]
+
+    def test_transparent_borrows_layer_zero_label(self):
+        keymap = make_keymap(2)
+        result = self._adapter().transform(keymap)
+        ghost = result.layers[1].left.index.center_key
+        assert ghost.label == "A"
+        assert ghost.is_transparent is True
+
+    def test_non_transparent_unchanged(self):
+        keymap = make_keymap(2)
+        result = self._adapter().transform(keymap)
+        regular = result.layers[1].left.middle.center_key
+        assert regular.label == "C"
+        assert regular.is_transparent is False
+
+    def test_layer_zero_itself_untouched(self):
+        keymap = make_keymap(2)
+        result = self._adapter().transform(keymap)
+        layer_zero_key = result.layers[0].left.index.center_key
+        assert layer_zero_key.label == "A"
+        assert layer_zero_key.is_transparent is False
+
+    def test_substitution_disabled_leaves_label_blank(self):
+        label_adapter = MockLabelAdapter(self._label_map())
+        adapter = KeymapTargetAdapter(label_adapter, fallthrough_to_layer_zero=False)  # type: ignore[arg-type]
+        result = adapter.transform(make_keymap(2))
+        ghost = result.layers[1].left.index.center_key
+        assert ghost.label == ""
+        assert ghost.is_transparent is True
+
+    def test_no_layer_zero_skips_substitution(self):
+        keymap = SvalboardKeymap({1: make_layout("L1"), 2: make_layout("L2")})
+        result = self._adapter().transform(keymap)
+        ghost = result.layers[1].left.index.center_key
+        # Layer 0 missing → label stays empty.
+        assert ghost.label == ""
+        assert ghost.is_transparent is True
+
+    def test_inherits_layer_switch_from_layer_zero(self):
+        """A transparent key inherits the layer_switch of its layer-0 source."""
+        label_map = {
+            "L0_L_I": SvalboardTargetKey(label="L2", layer_switch=2),
+            "L1_L_I": SvalboardTargetKey(label="", is_transparent=True),
+        }
+        adapter = KeymapTargetAdapter(MockLabelAdapter(label_map))  # type: ignore[arg-type]
+        result = adapter.transform(make_keymap(2))
+        ghost = result.layers[1].left.index.center_key
+        assert ghost.label == "L2"
+        assert ghost.layer_switch == 2
+        assert ghost.is_transparent is True
+
+    def test_does_not_inherit_layer_switch_when_disabled(self):
+        """Fallthrough disabled → ghost keeps its original (None) layer_switch."""
+        label_map = {
+            "L0_L_I": SvalboardTargetKey(label="L2", layer_switch=2),
+            "L1_L_I": SvalboardTargetKey(label="", is_transparent=True),
+        }
+        adapter = KeymapTargetAdapter(MockLabelAdapter(label_map), fallthrough_to_layer_zero=False)  # type: ignore[arg-type]
+        result = adapter.transform(make_keymap(2))
+        ghost = result.layers[1].left.index.center_key
+        assert ghost.layer_switch is None
+
+    def test_layer_zero_empty_at_position_keeps_blank(self):
+        # L0_L_R is not in the label_map, so MockLabelAdapter returns the
+        # generic label "L0 L R" — but here we explicitly set layer 0 to empty
+        # to simulate KC_NO/KC_TRNS at base position.
+        label_map = self._label_map()
+        label_map["L0_L_R"] = SvalboardTargetKey(label="")
+        adapter = KeymapTargetAdapter(MockLabelAdapter(label_map))  # type: ignore[arg-type]
+        keymap = make_keymap(2)
+        result = adapter.transform(keymap)
+        ghost = result.layers[1].left.ring.center_key
+        assert ghost.label == ""
+        assert ghost.is_transparent is True
+
+
 class TestTransformLayer:
     def test_transforms_all_keys_in_layer(self):
         label_adapter = MockLabelAdapter()

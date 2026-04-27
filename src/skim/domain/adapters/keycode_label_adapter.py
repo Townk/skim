@@ -62,6 +62,9 @@ These functions activate their layer on hold rather than immediately.
 LT and LM both require holding the key to activate the layer.
 """
 
+_TRANSPARENT_KEYCODES = frozenset({"KC_TRANSPARENT", "KC_TRNS", "_______"})
+"""QMK keycodes that mark a key as falling through to a lower layer."""
+
 
 class KeycodeLabelAdapter:
     """Transforms QMK keycodes into human-readable display labels.
@@ -157,7 +160,11 @@ class KeycodeLabelAdapter:
         if macro_result is not None:
             return SvalboardTargetKey(label=macro_result, layer_switch=target_layer)
 
-        return SvalboardTargetKey(label=self._resolve_keycode(keycode))
+        is_transparent = keycode in _TRANSPARENT_KEYCODES
+        return SvalboardTargetKey(
+            label=self._resolve_keycode(keycode),
+            is_transparent=is_transparent,
+        )
 
     def _apply_pre_processing(self, keycode: str) -> str:
         """Apply pre-processing transformations to normalize keycodes.

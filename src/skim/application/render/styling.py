@@ -123,6 +123,23 @@ def adjust_luminance(color: str, adjustment_multiplier: float) -> str:
     return rgb_to_hex(*colorsys.hls_to_rgb(hue, lum, sat))
 
 
+def lighten(color: str, amount: float) -> str:
+    """Shift a color's HSL lightness by an additive amount.
+
+    Args:
+        color: Hexadecimal color string.
+        amount: Value added to the lightness component in HSL space. Positive
+            values lighten, negative values darken. The result is clamped to
+            ``[0.0, 1.0]``.
+
+    Returns:
+        Adjusted color as a hexadecimal string.
+    """
+    hue, lum, sat = colorsys.rgb_to_hls(*str_to_rgb(color))
+    lum = clip(lum + amount, 0.0, 1.0)
+    return rgb_to_hex(*colorsys.hls_to_rgb(hue, lum, sat))
+
+
 def adjust_saturation(color: str, adjustment_multiplier: float) -> str:
     """Adjust the saturation of a color.
 

@@ -10,6 +10,7 @@ shared across components, reducing parameter passing and centralizing
 configuration for keyboard cluster rendering.
 """
 
+import colorsys
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
@@ -17,6 +18,13 @@ from typing_extensions import Self
 
 from skim.data import LayerColor, Palette, SplitSidePosition
 from skim.domain import KeyboardSide, SvalboardTargetKey
+
+from .styling import lighten, str_to_rgb
+
+GHOST_LABEL_LIGHTNESS_DELTA = 0.12
+"""Magnitude of the HSL lightness shift applied to a transparent key's fill
+color to produce its faded "ghost" label color. The shift lightens fills
+that sit at or below the layer's base color and darkens fills above it."""
 
 
 @dataclass(frozen=True)
@@ -68,6 +76,32 @@ class RenderContext:
             return lc[lc.color_index - (1 if use_accent else 0)]
 
         return default
+
+    def key_label_color(self, key: SvalboardTargetKey, fill_color: str) -> str:
+        """Get the text color for a key's label.
+
+        For transparent keys with a non-empty (substituted) label, returns a
+        faded "ghost" color derived from the key's fill color. For all other
+        keys, returns the palette's standard key label color.
+
+        Args:
+            key: The target key whose label is being rendered.
+            fill_color: The key's resolved fill color, used as the source for
+                the ghost color when the key is transparent.
+
+        Returns:
+            The CSS color string to use for the label text.
+        """
+        if key.is_transparent and key.label:
+            fill_lightness = colorsys.rgb_to_hls(*str_to_rgb(fill_color))[1]
+            base_lightness = colorsys.rgb_to_hls(*str_to_rgb(self.layer_colors.base_color))[1]
+            delta = (
+                GHOST_LABEL_LIGHTNESS_DELTA
+                if fill_lightness <= base_lightness
+                else -GHOST_LABEL_LIGHTNESS_DELTA
+            )
+            return lighten(fill_color, delta)
+        return self.palette.key_label_color
 
 
 @dataclass(frozen=True)

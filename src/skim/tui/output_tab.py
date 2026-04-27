@@ -747,6 +747,14 @@ class OutputTab(Widget):
                         id="show-layer-connectors",
                         help_key="output-style-show-layer-connectors",
                     )
+                with Horizontal(classes="field-row"):
+                    yield Label("Show transparent fall-through:", classes="field-label")
+                    yield Static(" ", classes="swatch-spacer")
+                    yield SkimSwitch(
+                        value=style.get("show_transparent_fallthrough", True),
+                        id="show-transparent-fallthrough",
+                        help_key="output-style-show-transparent-fallthrough",
+                    )
 
             # --- Palette section ---
             with Vertical(classes="section"):
@@ -945,6 +953,8 @@ class OutputTab(Widget):
             self.config_data["output"]["style"]["show_layer_indicators"] = value
         elif switch_id == "show-layer-connectors":
             self.config_data["output"]["style"]["show_layer_connectors"] = value
+        elif switch_id == "show-transparent-fallthrough":
+            self.config_data["output"]["style"]["show_transparent_fallthrough"] = value
         elif switch_id == "use-system-fonts":
             self.config_data["output"]["style"]["use_system_fonts"] = value
         elif switch_id == "border-enabled":

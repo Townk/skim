@@ -170,6 +170,21 @@ class TestFingerClusterComponent:
         south = component._layout.metrics.south_key
         assert component.height == pytest.approx(south.pos.y + south.width)
 
+    def test_hold_symbol_adjustment_preserves_is_transparent(self, render_context, boundary):
+        """East/West reordering for hold symbols must keep the is_transparent flag."""
+        cluster = FingerCluster(
+            center_key=SvalboardTargetKey(label="C"),
+            north_key=SvalboardTargetKey(label="N"),
+            east_key=SvalboardTargetKey(label="E", is_transparent=True),
+            south_key=SvalboardTargetKey(label="S"),
+            west_key=SvalboardTargetKey(label="W", is_transparent=True),
+            double_south_key=SvalboardTargetKey(label="DS"),
+        )
+        component = FingerClusterComponent(cluster, KeyboardSide.LEFT, boundary, render_context)
+        adjusted = component._adjust_hold_symbol_positions(cluster)
+        assert adjusted.east_key.is_transparent is True
+        assert adjusted.west_key.is_transparent is True
+
     def test_height_matches_double_south_key_bottom_with_double_south(
         self, finger_cluster, sample_palette, boundary
     ):
@@ -255,6 +270,23 @@ class TestThumbClusterComponent:
         # Thumb cluster aspect ratio is typically 1.5:1
         ratio = component.width / component.height
         assert 1.3 < ratio < 1.7  # Allow some tolerance
+
+    def test_hold_symbol_adjustment_preserves_is_transparent(self, render_context, boundary):
+        """Hold-symbol re-positioning must keep the is_transparent flag."""
+        cluster = ThumbCluster(
+            down_key=SvalboardTargetKey(label="D"),
+            pad_key=SvalboardTargetKey(label="P", is_transparent=True),
+            up_key=SvalboardTargetKey(label="U", is_transparent=True),
+            nail_key=SvalboardTargetKey(label="N", is_transparent=True),
+            knuckle_key=SvalboardTargetKey(label="K", is_transparent=True),
+            double_down_key=SvalboardTargetKey(label="DD"),
+        )
+        component = ThumbClusterComponent(cluster, KeyboardSide.LEFT, boundary, render_context)
+        adjusted = component._adjust_hold_symbol_positions(cluster)
+        assert adjusted.pad_key.is_transparent is True
+        assert adjusted.up_key.is_transparent is True
+        assert adjusted.nail_key.is_transparent is True
+        assert adjusted.knuckle_key.is_transparent is True
 
 
 class TestFingerClusterIndicators:

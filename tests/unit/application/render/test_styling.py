@@ -9,12 +9,15 @@ Tests cover color conversion functions, luminance/saturation adjustments,
 and gradient generation for layer colors.
 """
 
+import colorsys
+
 from skim.application.render.styling import (
     adjust_color,
     adjust_hls,
     adjust_luminance,
     adjust_saturation,
     hex_str,
+    lighten,
     make_gradient,
     rgb_to_hex,
     str_to_rgb,
@@ -279,6 +282,46 @@ class TestAdjustColor:
         # Gray should remain gray (equal RGB components)
         assert abs(result_rgb[0] - result_rgb[1]) < 0.02
         assert abs(result_rgb[1] - result_rgb[2]) < 0.02
+
+
+class TestLighten:
+    """Tests for the lighten function (additive HSL lightness)."""
+
+    def test_zero_amount_preserves_color(self):
+        """Adding zero lightness returns the same color."""
+        original = "#2F5E3E"
+        result = lighten(original, 0.0)
+        assert str_to_rgb(result) == str_to_rgb(original)
+
+    def test_positive_amount_increases_lightness(self):
+        """Adding a positive amount increases HSL lightness by that amount."""
+        original_l = colorsys.rgb_to_hls(*str_to_rgb("#2F5E3E"))[1]
+        result_l = colorsys.rgb_to_hls(*str_to_rgb(lighten("#2F5E3E", 0.25)))[1]
+        assert abs(result_l - (original_l + 0.25)) < 0.01
+
+    def test_clamps_at_one(self):
+        """Lightness is clamped to 1.0 (white)."""
+        result = lighten("#888888", 1.0)
+        r, g, b = str_to_rgb(result)
+        assert r > 0.99 and g > 0.99 and b > 0.99
+
+    def test_negative_amount_darkens(self):
+        """Negative amount reduces lightness."""
+        original_l = colorsys.rgb_to_hls(*str_to_rgb("#888888"))[1]
+        result_l = colorsys.rgb_to_hls(*str_to_rgb(lighten("#888888", -0.2)))[1]
+        assert result_l < original_l
+
+    def test_clamps_at_zero(self):
+        """Lightness is clamped to 0.0 (black) for large negative amounts."""
+        result = lighten("#222222", -1.0)
+        r, g, b = str_to_rgb(result)
+        assert r < 0.01 and g < 0.01 and b < 0.01
+
+    def test_preserves_hue(self):
+        """Lighten preserves hue (chromatic colors stay the same hue)."""
+        original_h = colorsys.rgb_to_hls(*str_to_rgb("#2F5E3E"))[0]
+        result_h = colorsys.rgb_to_hls(*str_to_rgb(lighten("#2F5E3E", 0.25)))[0]
+        assert abs(result_h - original_h) < 0.01
 
 
 class TestMakeGradient:

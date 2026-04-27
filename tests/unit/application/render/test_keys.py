@@ -331,3 +331,38 @@ class TestKeyLabels:
         colors = FingerClusterKeyColors(primary="#FF0000", accent="#AA0000")
         key = CenterKey(cluster_context, target, colors, key_layout)
         assert key is not None
+
+
+class TestKeyGhostLabelColor:
+    """Tests for ghost label color on transparent keys."""
+
+    def test_regular_key_uses_palette_label_color(self, cluster_context, key_layout):
+        target = SvalboardTargetKey(label="A")
+        colors = FingerClusterKeyColors(primary="#FF0000", accent="#AA0000")
+        key = CenterKey(cluster_context, target, colors, key_layout)
+        # palette.key_label_color is "#FFFFFF" in the fixture
+        assert key.label_color == "#FFFFFF"
+
+    def test_transparent_key_with_label_uses_ghost_color(self, cluster_context, key_layout):
+        from skim.application.render.context import GHOST_LABEL_LIGHTNESS_DELTA
+        from skim.application.render.styling import lighten
+
+        target = SvalboardTargetKey(label="A", is_transparent=True)
+        colors = FingerClusterKeyColors(primary="#2F5E3E", accent="#AA0000")
+        key = CenterKey(cluster_context, target, colors, key_layout)
+        # CenterKey fills with colors.primary when use_layer_colors_on_keys but
+        # the key has no layer_switch → falls back to default (colors.primary).
+        assert key.label_color.lower() == lighten("#2F5E3E", GHOST_LABEL_LIGHTNESS_DELTA).lower()
+
+    def test_transparent_key_with_empty_label_uses_palette_color(self, cluster_context, key_layout):
+        target = SvalboardTargetKey(label="", is_transparent=True)
+        colors = FingerClusterKeyColors(primary="#2F5E3E", accent="#AA0000")
+        key = CenterKey(cluster_context, target, colors, key_layout)
+        assert key.label_color == "#FFFFFF"
+
+    def test_stroke_color_unchanged_for_transparent_key(self, cluster_context, key_layout):
+        """Shape stroke (used by DoubleDownKey/UpKey) stays at palette color."""
+        target = SvalboardTargetKey(label="A", is_transparent=True)
+        colors = FingerClusterKeyColors(primary="#2F5E3E", accent="#AA0000")
+        key = CenterKey(cluster_context, target, colors, key_layout)
+        assert key.stroke_color == "#FFFFFF"

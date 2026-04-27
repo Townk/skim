@@ -11,6 +11,7 @@ Tests cover RenderContext, ClusterRenderContext, and FingerClusterKeyColors.
 import pytest
 
 from skim.application.render.context import (
+    GHOST_LABEL_LIGHTNESS_DELTA,
     ClusterRenderContext,
     FingerClusterKeyColors,
     RenderContext,
@@ -302,6 +303,100 @@ class TestRenderContextShowLayerIndicators:
         )
         cluster_ctx = ClusterRenderContext.from_render_context(base, KeyboardSide.LEFT)
         assert cluster_ctx.show_layer_indicators is True
+
+
+class TestRenderContextKeyLabelColor:
+    """Tests for RenderContext.key_label_color method."""
+
+    def test_returns_palette_label_color_for_regular_key(self, sample_palette):
+        ctx = RenderContext(
+            palette=sample_palette,
+            layer_index=1,
+            has_double_south=False,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+        )
+        key = SvalboardTargetKey(label="A")
+        assert ctx.key_label_color(key, fill_color="#003300") == "#FFFFFF"
+
+    def test_returns_palette_label_color_for_transparent_with_empty_label(self, sample_palette):
+        """Empty ghost label → no need to ghost-color it; return default."""
+        ctx = RenderContext(
+            palette=sample_palette,
+            layer_index=1,
+            has_double_south=False,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+        )
+        key = SvalboardTargetKey(label="", is_transparent=True)
+        assert ctx.key_label_color(key, fill_color="#003300") == "#FFFFFF"
+
+    def test_lightens_when_fill_is_darker_than_layer_base(self, sample_palette):
+        """Fill darker than the layer's base color → lighten the ghost text."""
+        from skim.application.render.styling import lighten
+
+        # Layer 1 base_color is "#00FF00" (very light); fill is dark green.
+        ctx = RenderContext(
+            palette=sample_palette,
+            layer_index=1,
+            has_double_south=False,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+        )
+        key = SvalboardTargetKey(label="A", is_transparent=True)
+        result = ctx.key_label_color(key, fill_color="#2F5E3E")
+        assert result.lower() == lighten("#2F5E3E", GHOST_LABEL_LIGHTNESS_DELTA).lower()
+
+    def test_darkens_when_fill_is_lighter_than_layer_base(self):
+        """Fill lighter than the layer's base color → darken the ghost text."""
+        from skim.application.render.styling import lighten
+
+        dark_layer_palette = Palette(
+            layers=[
+                LayerColor(
+                    base_color="#222222",
+                    color_index=2,
+                    gradient=("#000000", "#111111", "#222222", "#444444", "#888888", "#CCCCCC"),
+                ),
+            ],
+            key_label_color="#FFFFFF",
+        )
+        ctx = RenderContext(
+            palette=dark_layer_palette,
+            layer_index=0,
+            has_double_south=False,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+        )
+        key = SvalboardTargetKey(label="A", is_transparent=True)
+        # Fill #888888 is much lighter than base #222222 → darken.
+        result = ctx.key_label_color(key, fill_color="#888888")
+        assert result.lower() == lighten("#888888", -GHOST_LABEL_LIGHTNESS_DELTA).lower()
+
+    def test_lightens_when_fill_equals_layer_base(self):
+        """Fill equal to the layer's base color → lighten ('equal or less')."""
+        from skim.application.render.styling import lighten
+
+        palette = Palette(
+            layers=[
+                LayerColor(
+                    base_color="#555555",
+                    color_index=2,
+                    gradient=("#111111", "#333333", "#555555", "#777777", "#999999", "#BBBBBB"),
+                ),
+            ],
+            key_label_color="#FFFFFF",
+        )
+        ctx = RenderContext(
+            palette=palette,
+            layer_index=0,
+            has_double_south=False,
+            use_layer_colors_on_keys=True,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+        )
+        key = SvalboardTargetKey(label="A", is_transparent=True)
+        result = ctx.key_label_color(key, fill_color="#555555")
+        assert result.lower() == lighten("#555555", GHOST_LABEL_LIGHTNESS_DELTA).lower()
 
 
 class TestFingerClusterKeyColors:

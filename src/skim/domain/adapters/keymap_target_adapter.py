@@ -55,22 +55,34 @@ class KeymapTargetAdapter:
     """
 
     _label_adapter: KeycodeLabelAdapter
+    _fallthrough_to_layer_zero: bool
 
-    def __init__(self, label_adapter: KeycodeLabelAdapter) -> None:
+    def __init__(
+        self,
+        label_adapter: KeycodeLabelAdapter,
+        fallthrough_to_layer_zero: bool = True,
+    ) -> None:
         """Initialize the adapter with configuration and label transformer.
 
         Args:
             label_adapter: The adapter for transforming individual keycodes
                 to labels.
+            fallthrough_to_layer_zero: When True (default), transparent keys
+                on layers above 0 borrow their display label from the same
+                key position on layer 0. Set False to leave transparent keys
+                blank.
         """
         self._label_adapter = label_adapter
+        self._fallthrough_to_layer_zero = fallthrough_to_layer_zero
 
     def transform(self, keymap: SvalboardKeymap[str]) -> SvalboardKeymap[SvalboardTargetKey]:
         """Transform an entire keymap from strings to target keys.
 
         Processes each layer in the keymap, converting raw keycode strings
         to SvalboardTargetKey objects containing display labels and layer
-        metadata.
+        metadata. When fallthrough is enabled and layer 0 is present, any
+        transparent key on a higher layer is rewritten to display the
+        layer-0 label at the same position.
 
         Args:
             keymap: A keymap containing raw QMK keycode strings at each
@@ -80,8 +92,40 @@ class KeymapTargetAdapter:
             A new keymap containing SvalboardTargetKey objects at each
             position, ready for rendering.
         """
-        return SvalboardKeymap(
-            {idx: self._transform_layer(layer) for idx, layer in keymap.layers.items()}
+        layers = {idx: self._transform_layer(layer) for idx, layer in keymap.layers.items()}
+
+        base = layers.get(0)
+        if self._fallthrough_to_layer_zero and base is not None:
+            layers = {
+                idx: self._apply_fallthrough(layer, base) if idx != 0 else layer
+                for idx, layer in layers.items()
+            }
+
+        return SvalboardKeymap(layers)
+
+    @staticmethod
+    def _apply_fallthrough(
+        layer: SvalboardLayout[SvalboardTargetKey],
+        base: SvalboardLayout[SvalboardTargetKey],
+    ) -> SvalboardLayout[SvalboardTargetKey]:
+        """Substitute layer-0 labels into transparent positions of ``layer``.
+
+        Transparent keys inherit both the label and the ``layer_switch`` from
+        the corresponding layer-0 key, so a fall-through key whose base maps
+        to a layer change is treated as a layer-changing key during
+        rendering (layer-coloured background, layer indicator, connector).
+        """
+        return SvalboardLayout.from_sequence(
+            [
+                SvalboardTargetKey(
+                    label=base_key.label,
+                    layer_switch=base_key.layer_switch,
+                    is_transparent=True,
+                )
+                if key.is_transparent
+                else key
+                for key, base_key in zip(layer, base, strict=True)
+            ]
         )
 
     def _transform_layer(self, layer: SvalboardLayout[str]) -> SvalboardLayout[SvalboardTargetKey]:

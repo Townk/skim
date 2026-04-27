@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Transparent fall-through rendering — `KC_TRANSPARENT` / `KC_TRNS` / `_______` keys on layers above 0 borrow the layer-0 label and are drawn as a faded "ghost".
+  - Ghost text colour is the key's fill colour with HSL lightness shifted by 0.12 — lighter when the fill sits at or below the layer's base colour in the gradient, darker when it sits above.
+  - When the layer-0 source maps to a layer change (`MO()`, `LT()`, etc.), the ghost key inherits that `layer_switch` and is treated as a layer-triggering key — getting the destination layer's background colour, indicator badge, and overview connector.
+  - New `style.show_transparent_fallthrough` option (default `true`) lets users opt out and revert to blank transparent keys.
+  - TUI configurator gets a matching toggle and contextual help blurb.
+
 ## [0.5.5] - 2026-04-26
 
 ### Added

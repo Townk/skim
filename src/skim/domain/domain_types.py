@@ -211,6 +211,10 @@ class SvalboardTargetKey:
         layer_switch: The target layer index if this key switches layers
             (e.g., MO(1), LT(2, KC_A)), or None if the key doesn't switch
             layers. Layer indices are 0-based. Defaults to None.
+        is_transparent: True when the source keycode belongs to QMK's
+            transparent family (KC_TRANSPARENT, KC_TRNS, _______). Downstream
+            stages may use this to render the key as a faded fall-through of
+            the base-layer label. Defaults to False.
 
     Example:
         >>> # Simple key with just a label
@@ -226,6 +230,7 @@ class SvalboardTargetKey:
 
     label: str = ""
     layer_switch: int | None = None
+    is_transparent: bool = False
 
 
 SEPARATOR_CHAR = "│"

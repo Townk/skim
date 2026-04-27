@@ -627,6 +627,10 @@ class Style(BaseModel):
             Defaults to a Border instance with default values.
         palette: Color palette configuration for the entire keyboard.
             Defaults to a Palette instance with default values.
+        show_transparent_fallthrough: When True (default), transparent
+            keycodes (KC_TRNS / _______) on layers above 0 render the
+            same label as layer 0 in a faded "ghost" color. Set False to
+            leave transparent keys blank.
 
     Example:
         >>> style = Style(
@@ -646,6 +650,7 @@ class Style(BaseModel):
     use_system_fonts: bool = False
     show_layer_indicators: bool = True
     show_layer_connectors: bool = True
+    show_transparent_fallthrough: bool = True
 
 
 class Output(BaseModel):
