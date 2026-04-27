@@ -133,6 +133,45 @@ class TestLoadSkimConfigFromFile:
         assert config.output.style.palette.layers[0].base_color == "#FF0000"
         assert config.output.style.palette.layers[1].color_index == 3
 
+    def test_load_with_list_form_gradient(self, tmp_path):
+        """YAML-loaded gradients (lists) coerce to tuples without errors.
+
+        YAML serializes sequences as lists, but ``LayerColor.gradient`` is
+        a ``tuple``. Without coercion, ``model_validate(strict=True)``
+        rejects loaded configs whose layers were edited and saved through
+        the TUI (which writes gradients as YAML lists).
+        """
+        config_data = {
+            "output": {
+                "style": {
+                    "palette": {
+                        "layers": [
+                            {
+                                "base_color": "#0E7695",
+                                "color_index": 2,
+                                "gradient": [
+                                    "#132138",
+                                    "#1D3052",
+                                    "#0E7695",
+                                    "#05A1B0",
+                                    "#7AC0C6",
+                                    "#A6D7DE",
+                                ],
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+        path = tmp_path / "config.yaml"
+        path.write_text(yaml.dump(config_data))
+
+        config = load_skim_config(path)
+        gradient = config.output.style.palette.layers[0].gradient
+        assert isinstance(gradient, tuple)
+        assert gradient[0] == "#132138"
+        assert gradient[5] == "#A6D7DE"
+
     def test_load_with_border_settings(self, tmp_path):
         """Load configuration with border settings."""
         config_data = {"output": {"style": {"border": {"width": 5, "radius": 15}}}}

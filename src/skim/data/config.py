@@ -454,7 +454,12 @@ class LayerColor(BaseModel):
 
     base_color: str
     color_index: int = 2
-    gradient: tuple[str, str, str, str, str, str] | None = None
+    gradient: (
+        Annotated[
+            tuple[str, str, str, str, str, str], BeforeValidator(_coerce_to_tuple)
+        ]
+        | None
+    ) = None
 
     def __getitem__(self, index: int) -> str:
         """Get the color for a specific cluster position.
