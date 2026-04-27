@@ -47,7 +47,7 @@ _BADGE_PADDING_RIGHT = 30.0
 
 # Logo dimensions used for header — must mirror what overview.py renders so
 # the layout reserves the right amount of header space.
-_LOGO_WIDTH_TO_BADGE_WIDTH = 1.06
+_LOGO_WIDTH_TO_BADGE_WIDTH = 0.795
 _LOGO_HEIGHT_TO_WIDTH = 458.333 / 2333.333
 
 

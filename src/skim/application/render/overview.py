@@ -42,6 +42,7 @@ from .layout import Boundary, KeymapLayoutMetrics
 from .overview_layout import (
     _BADGE_PADDING_LEFT,
     _BADGE_PADDING_RIGHT,
+    _LOGO_WIDTH_TO_BADGE_WIDTH,
     BadgeDimensions,
     OverviewLayout,
 )
@@ -160,7 +161,7 @@ def compute_header_dims(
     badge_h = layout.outer_key_size
     badge_font_size = badge_h * _BADGE_FONT_SIZE_RATIO
     title_font_size = badge_font_size * 1.8
-    logo_width = badge_dims.width * 1.06
+    logo_width = badge_dims.width * _LOGO_WIDTH_TO_BADGE_WIDTH
     logo_height = _LOGO_ASPECT_RATIO.height_from_width(logo_width)
     base_metrics = KeymapLayoutMetrics.from_config(config)
     outer_padding = max(base_metrics.inset * 2, 40.0)
@@ -698,7 +699,7 @@ def draw_overview(
     badge_x = padding
 
     # Header: logo + title
-    logo_width = badge_w * 1.06
+    logo_width = badge_w * _LOGO_WIDTH_TO_BADGE_WIDTH
     logo_height = _LOGO_ASPECT_RATIO.height_from_width(logo_width)
     d.append(
         draw.Image(

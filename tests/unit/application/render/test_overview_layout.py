@@ -188,9 +188,9 @@ class TestOverviewLayout:
         config = _make_config(3)
         layout = OverviewLayout(config, _DEFAULT_BADGE)
 
-        # Logo dimensions mirror what overview.py renders: width = badge.width * 1.06
+        # Logo dimensions mirror what overview.py renders: width = badge.width * 0.795
         # with the Svalboard logo aspect ratio (458.333:2333.333).
-        logo_width = _DEFAULT_BADGE.width * 1.06
+        logo_width = _DEFAULT_BADGE.width * 0.795
         logo_height = logo_width * (458.333 / 2333.333)
         header_content_bottom = layout.padding + logo_height
 
