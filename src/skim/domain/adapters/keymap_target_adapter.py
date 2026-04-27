@@ -30,6 +30,23 @@ from skim.domain import SvalboardTargetKey
 from .keycode_label_adapter import KeycodeLabelAdapter
 
 
+def _substitute(
+    key: SvalboardTargetKey,
+    base_key: SvalboardTargetKey,
+    current_layer_index: int,
+) -> SvalboardTargetKey:
+    """Resolve one transparent position against its layer-0 source."""
+    if not key.is_transparent:
+        return key
+    if base_key.layer_switch == current_layer_index:
+        return key
+    return SvalboardTargetKey(
+        label=base_key.label,
+        layer_switch=base_key.layer_switch,
+        is_transparent=True,
+    )
+
+
 class KeymapTargetAdapter:
     """Transforms keymaps from raw keycode strings to renderable target keys.
 
@@ -97,7 +114,7 @@ class KeymapTargetAdapter:
         base = layers.get(0)
         if self._fallthrough_to_layer_zero and base is not None:
             layers = {
-                idx: self._apply_fallthrough(layer, base) if idx != 0 else layer
+                idx: self._apply_fallthrough(layer, base, idx) if idx != 0 else layer
                 for idx, layer in layers.items()
             }
 
@@ -107,6 +124,7 @@ class KeymapTargetAdapter:
     def _apply_fallthrough(
         layer: SvalboardLayout[SvalboardTargetKey],
         base: SvalboardLayout[SvalboardTargetKey],
+        current_layer_index: int,
     ) -> SvalboardLayout[SvalboardTargetKey]:
         """Substitute layer-0 labels into transparent positions of ``layer``.
 
@@ -114,16 +132,15 @@ class KeymapTargetAdapter:
         the corresponding layer-0 key, so a fall-through key whose base maps
         to a layer change is treated as a layer-changing key during
         rendering (layer-coloured background, layer indicator, connector).
+
+        Self-referential cases — where the layer-0 source maps to
+        ``current_layer_index`` (e.g. ``MO(1)`` viewed on layer 1) — are
+        suppressed: the substitution is skipped and the position renders as
+        a blank transparent key (no label, no layer indicator, no connector).
         """
         return SvalboardLayout.from_sequence(
             [
-                SvalboardTargetKey(
-                    label=base_key.label,
-                    layer_switch=base_key.layer_switch,
-                    is_transparent=True,
-                )
-                if key.is_transparent
-                else key
+                _substitute(key, base_key, current_layer_index)
                 for key, base_key in zip(layer, base, strict=True)
             ]
         )

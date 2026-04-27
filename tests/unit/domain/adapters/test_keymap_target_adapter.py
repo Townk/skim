@@ -163,6 +163,18 @@ class TestKeymapTargetAdapterTransparentFallthrough:
         assert ghost.layer_switch == 2
         assert ghost.is_transparent is True
 
+    def test_suppresses_self_referential_ghost(self):
+        """Layer-0 source pointing at the layer being rendered → blank ghost."""
+        label_map = {
+            "L0_L_I": SvalboardTargetKey(label="L1", layer_switch=1),
+            "L1_L_I": SvalboardTargetKey(label="", is_transparent=True),
+        }
+        adapter = KeymapTargetAdapter(MockLabelAdapter(label_map))  # type: ignore[arg-type]
+        result = adapter.transform(make_keymap(2))
+        ghost = result.layers[1].left.index.center_key
+        assert ghost.label == ""
+        assert ghost.layer_switch is None
+
     def test_does_not_inherit_layer_switch_when_disabled(self):
         """Fallthrough disabled → ghost keeps its original (None) layer_switch."""
         label_map = {
