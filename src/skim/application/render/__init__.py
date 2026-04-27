@@ -177,13 +177,12 @@ def _draw_layer(
     )
     copyright_font_size = header_dims.copyright_font_size
     # The layout's canvas_height already reserves ``inset + margin`` below the
-    # thumb cluster. With a copyright, expand the bottom so the gap above the
-    # text matches gap_below_header (mirroring the gap above the cluster top),
-    # the text fits, and there's outer_padding below it.
+    # thumb cluster — that's the bottom inset for the no-copyright case. When a
+    # copyright is present, keep that same inset below the text and reuse it as
+    # the gap between the thumb cluster and the text.
+    bottom_inset = m.inset + m.margin
     copyright_extra = (
-        gap_below_header + copyright_font_size + outer_padding - m.inset - m.margin
-        if config.output.copyright
-        else 0.0
+        copyright_font_size + bottom_inset if config.output.copyright else 0.0
     )
     canvas_height += copyright_extra
 
@@ -283,7 +282,7 @@ def _draw_layer(
                 config.output.copyright,
                 font_size=copyright_font_size,
                 x=canvas_width - outer_padding,
-                y=canvas_height - outer_padding,
+                y=canvas_height - bottom_inset,
                 text_anchor="end",
                 dominant_baseline="text-after-edge",
                 font_family=label_font,
