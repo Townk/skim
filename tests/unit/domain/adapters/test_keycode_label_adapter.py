@@ -143,6 +143,30 @@ class TestKeycodeLabelAdapterMacroFunctions:
         assert SEPARATOR_CHAR in result.label
         assert result.layer_switch == 1
 
+    def test_lt_with_kc_no_collapses_to_single_label(self):
+        """LT(layer, KC_NO) should render like MO(layer): no separator."""
+        loader = make_mappings(
+            keycodes={"KC_NO": ""},
+            macro_functions={"LT": "L#0;|;@1;"},
+        )
+        keyboard = make_keyboard_with_layers(15)
+        adapter = make_adapter(loader, keyboard)
+        result = adapter.transform("LT(14, KC_NO)")
+        assert SEPARATOR_CHAR not in result.label
+        assert result.label == "L14"
+        assert result.layer_switch == 14
+
+    def test_dual_label_with_empty_hold_collapses_to_tap(self):
+        """If the hold side resolves to empty, render only the tap label."""
+        loader = make_mappings(
+            keycodes={"KC_NO": "", "KC_A": "A"},
+            macro_functions={"FOO": "@0;|;@1;"},
+        )
+        adapter = make_adapter(loader)
+        result = adapter.transform("FOO(KC_NO, KC_A)")
+        assert result.label == "A"
+        assert SEPARATOR_CHAR not in result.label
+
     def test_macro_function_not_in_config(self):
         loader = make_mappings(keycodes={}, macro_functions={})
         adapter = make_adapter(loader)

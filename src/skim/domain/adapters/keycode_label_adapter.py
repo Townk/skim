@@ -222,8 +222,26 @@ class KeycodeLabelAdapter:
                 target_layer = self._keyboard_config.layer_index(target_layer_str)
 
         resolved = self._resolve_template_placeholders(template, args)
+        label = self._resolve_label_reference(resolved, set())
+        label = self._collapse_empty_dual_label(label)
+        return label, target_layer
 
-        return self._resolve_label_reference(resolved, set()), target_layer
+    def _collapse_empty_dual_label(self, label: str) -> str:
+        """Drop the tap/hold separator when one side resolves to empty.
+
+        Dual-purpose macros like ``LT(layer, KC_NO)`` produce labels of the
+        form ``"<icon>│"`` because ``KC_NO`` resolves to an empty string.
+        Rendering that as-is leaves the separator with nothing on one side.
+        Treat those keys as single-label keys so they look like ``MO(layer)``.
+        """
+        if self._label_separator not in label:
+            return label
+        hold, _, tap = label.partition(self._label_separator)
+        if not hold:
+            return tap
+        if not tap:
+            return hold
+        return label
 
     def _resolve_template_placeholders(self, template: str, args: list[str]) -> str:
         """Resolve placeholder tokens in a macro function template.
