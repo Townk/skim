@@ -13,6 +13,7 @@ Generates a table-like overview SVG showing all keymap layers:
 """
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 
 import drawsvg as draw
 
@@ -106,6 +107,70 @@ def _compute_badge_dims(
         width=badge_width,
         height=badge_height,
         border_radius=border_radius,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class HeaderDims:
+    """Title and logo sizes for the overview header.
+
+    Per-layer keymap images reuse these so their header typography matches
+    the overview verbatim.
+
+    Attributes:
+        title_font_size: Font size in SVG units for the layer/keymap title.
+        logo_width: Rendered logo width in SVG units.
+        logo_height: Rendered logo height in SVG units.
+        outer_padding: Gap from the canvas edge to the header content, matching
+            the overview's outer padding so both images breathe alike.
+        gap_below_header: Vertical gap between the header bottom and the top of
+            the cluster content — equals the overview's row_gap so per-layer
+            images breathe the same way after the header.
+    """
+
+    title_font_size: float
+    logo_width: float
+    logo_height: float
+    outer_padding: float
+    gap_below_header: float
+
+
+def compute_header_dims(
+    config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+) -> HeaderDims:
+    """Compute the title font size and logo dimensions used by the overview.
+
+    The values mirror what ``draw_overview`` renders so callers (e.g. per-layer
+    keymap rendering) can match the overview's header typography exactly.
+    """
+    render_layers: list[tuple[int, int]] = [
+        (pos, layer_cfg.index)
+        for pos, layer_cfg in enumerate(config.keyboard.layers)
+        if layer_cfg.index in keymap.layers
+    ]
+    prelim_badge = BadgeDimensions(width=200, height=40, border_radius=8)
+    prelim_layout = OverviewLayout(config, prelim_badge)
+    badge_dims = _compute_badge_dims(config, render_layers, prelim_layout.finger_cluster_width)
+    layout = OverviewLayout(config, badge_dims, routing_column_count=0)
+
+    badge_h = layout.outer_key_size
+    badge_font_size = badge_h * _BADGE_FONT_SIZE_RATIO
+    title_font_size = badge_font_size * 1.8
+    logo_width = badge_dims.width * 1.06
+    logo_height = _LOGO_ASPECT_RATIO.height_from_width(logo_width)
+    base_metrics = KeymapLayoutMetrics.from_config(config)
+    outer_padding = max(base_metrics.inset * 2, 40.0)
+    # Overview uses ``row_gap = finger_cluster_width * outer_key_proportion`` —
+    # one N-key width — for the gap below the header and between rows. Reuse it
+    # here so per-layer images have the same breathing room after the header.
+    gap_below_header = layout.finger_cluster_width * _OUTER_KEY_WIDTH_PROPORTION
+    return HeaderDims(
+        title_font_size=title_font_size,
+        logo_width=logo_width,
+        logo_height=logo_height,
+        outer_padding=outer_padding,
+        gap_below_header=gap_below_header,
     )
 
 

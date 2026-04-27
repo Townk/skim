@@ -28,9 +28,8 @@ from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .components import FingerClusterComponent, ThumbClusterComponent
 from .context import RenderContext
-from .geometry import AspectRatio
 from .layout import Boundary, KeymapLayout
-from .overview import draw_overview
+from .overview import HeaderDims, compute_header_dims, draw_overview
 from .styling import make_gradient
 from .text import Font, FontSubsetter, FontUsageAnalyzer, Label
 
@@ -40,6 +39,7 @@ def _draw_layer(
     layer: SvalboardLayout[SvalboardTargetKey],
     config_position: int,
     qmk_index: int,
+    header_dims: HeaderDims,
 ) -> draw.Drawing:
     use_system_fonts = config.output.style.use_system_fonts
     render_context = RenderContext(
@@ -54,6 +54,22 @@ def _draw_layer(
     )
     layer_layout = KeymapLayout(config)
     m = layer_layout.metrics
+
+    # Header strip (title + logo) sits at the top of the canvas. Sizes, outer
+    # padding, and the gap below the header all come from the overview (see
+    # compute_header_dims) so typography and spacing match it verbatim. The
+    # header zone reserves the height of the taller element, plus the
+    # overview's row_gap before the clusters start.
+    title_font_size = header_dims.title_font_size
+    logo_width = header_dims.logo_width
+    logo_height = header_dims.logo_height
+    outer_padding = header_dims.outer_padding
+    gap_below_header = header_dims.gap_below_header
+    header_height = max(title_font_size, logo_height)
+    # The cluster top is conventionally at margin + inset + top_indicator_offset.
+    # We want it at outer_padding + header_height + gap_below_header, so add the
+    # difference as header_offset.
+    header_offset = outer_padding - m.margin - m.inset + header_height + gap_below_header
 
     # Reserve extra space only when a key with a layer_switch will actually render
     # an indicator that overflows the cluster bounds. The indicator dimensions
@@ -96,6 +112,7 @@ def _draw_layer(
         layer_layout.left_finger_positions(
             horizontal_indicator_offset=horizontal_indicator_offset,
             top_indicator_offset=top_indicator_offset,
+            header_offset=header_offset,
         )
     ):
         cluster = FingerClusterComponent(
@@ -110,6 +127,7 @@ def _draw_layer(
         layer_layout.right_finger_positions(
             horizontal_indicator_offset=horizontal_indicator_offset,
             top_indicator_offset=top_indicator_offset,
+            header_offset=header_offset,
         )
     ):
         cluster = FingerClusterComponent(
@@ -130,6 +148,7 @@ def _draw_layer(
         vertical_indicator_offset=vertical_indicator_offset,
         horizontal_indicator_offset=horizontal_indicator_offset,
         top_indicator_offset=top_indicator_offset,
+        header_offset=header_offset,
     )
 
     left_thumb = ThumbClusterComponent(
@@ -154,6 +173,7 @@ def _draw_layer(
         left_thumb.height,
         vertical_indicator_offset=vertical_indicator_offset,
         top_indicator_offset=top_indicator_offset,
+        header_offset=header_offset,
     )
 
     # Create drawing
@@ -224,26 +244,21 @@ def _draw_layer(
     d.append(
         draw.Text(
             layer_title,
-            font_size=canvas_height * 0.08,
-            x=m.start,
-            y=right_thumb.y + right_thumb.height,
+            font_size=title_font_size,
+            x=outer_padding,
+            y=outer_padding,
             text_anchor="start",
-            dominant_baseline="text-after-edge",
+            dominant_baseline="hanging",
             font_family=title_font,
         )
     )
 
-    # Logo
-    logo_ar = AspectRatio.from_dimensions(width=2333.333, height=458.333, precision=2)
-    logo_path = ASSETS.logo_svalboard
-    logo_width = m.width * 0.14
-    logo_height = logo_ar.height_from_width(logo_width)
     logo_svg = draw.Image(
-        x=m.end - logo_width + 2 * horizontal_indicator_offset,
-        y=(right_thumb.y + right_thumb.height) - logo_height,
+        x=canvas_width - outer_padding - logo_width,
+        y=outer_padding,
         width=logo_width,
         height=logo_height,
-        path=logo_path,
+        path=ASSETS.logo_svalboard,
         embed=True,
     )
     d.append(logo_svg)
@@ -274,8 +289,11 @@ def draw_keymap(
     targets: KeymapGeneratorTargets,
 ) -> dict[str, draw.Drawing]:
     keymap_images: dict[str, draw.Drawing] = {}
+    header_dims = compute_header_dims(config, keymap)
     for qmk_idx, pos, layer in _selected_layers(keymap, targets, config):
-        keymap_images[f"keymap-layer-{qmk_idx}"] = _draw_layer(config, layer, pos, qmk_idx)
+        keymap_images[f"keymap-layer-{qmk_idx}"] = _draw_layer(
+            config, layer, pos, qmk_idx, header_dims
+        )
 
     if targets.overview:
         keymap_images["keymap-overview"] = draw_overview(config, keymap)

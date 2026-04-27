@@ -161,7 +161,10 @@ class KeymapLayout:
         self.metrics = KeymapLayoutMetrics.from_config(config)
 
     def left_finger_positions(
-        self, horizontal_indicator_offset: float = 0, top_indicator_offset: float = 0
+        self,
+        horizontal_indicator_offset: float = 0,
+        top_indicator_offset: float = 0,
+        header_offset: float = 0,
     ):
         """Generate positions for left hand finger clusters (index to pinky).
 
@@ -174,6 +177,8 @@ class KeymapLayout:
             horizontal_indicator_offset: Accepted for symmetry; ignored.
             top_indicator_offset: Extra space reserved above the clusters when
                 a finger key with an above-extending layer indicator is present.
+            header_offset: Extra space reserved at the top of the canvas for the
+                title/logo header strip (header height + the gap below it).
 
         Yields:
             Position objects for each finger cluster from index to pinky.
@@ -181,7 +186,7 @@ class KeymapLayout:
         del horizontal_indicator_offset  # left side stays anchored to canvas left edge
         m = self.metrics
         base_x = m.margin + m.inset + m.side_width
-        base_y = m.margin + m.inset + top_indicator_offset
+        base_y = m.margin + m.inset + header_offset + top_indicator_offset
 
         # 1. Index (inner finger, different y-offset)
         # 2. Middle
@@ -195,7 +200,10 @@ class KeymapLayout:
             )
 
     def right_finger_positions(
-        self, horizontal_indicator_offset: float = 0, top_indicator_offset: float = 0
+        self,
+        horizontal_indicator_offset: float = 0,
+        top_indicator_offset: float = 0,
+        header_offset: float = 0,
     ):
         """Calculate positions for right hand finger clusters (index to pinky).
 
@@ -206,10 +214,12 @@ class KeymapLayout:
                 right by ``2 * horizontal_indicator_offset`` to follow the edge.
             top_indicator_offset: Extra space reserved above the clusters when
                 a finger key with an above-extending layer indicator is present.
+            header_offset: Extra space reserved at the top of the canvas for the
+                title/logo header strip (header height + the gap below it).
         """
         m = self.metrics
         base_x = m.width - (m.margin + m.inset) - m.side_width + 2 * horizontal_indicator_offset
-        base_y = m.margin + self.metrics.inset + top_indicator_offset
+        base_y = m.margin + self.metrics.inset + header_offset + top_indicator_offset
 
         # 1. Index (inner finger, different y-offset)
         # 2. Middle
@@ -228,6 +238,7 @@ class KeymapLayout:
         vertical_indicator_offset: float = 0,
         horizontal_indicator_offset: float = 0,
         top_indicator_offset: float = 0,
+        header_offset: float = 0,
     ) -> tuple[Position, Position]:
         """Calculate positions for thumb clusters.
 
@@ -243,6 +254,8 @@ class KeymapLayout:
                 will appear above one of the double_down keys.
             horizontal_indicator_offset: Extra X space added on each side to clear
                 indicators on inward-facing thumb keys (nail/knuckle).
+            header_offset: Extra space reserved at the top of the canvas for the
+                title/logo header strip (header height + the gap below it).
 
         Returns:
             Tuple of (left_thumb_position, right_thumb_position).
@@ -251,7 +264,12 @@ class KeymapLayout:
         # The lowest visible finger key is the bottom of the index/pinky cluster,
         # which is offset down by one finger_key_size from the middle/ring clusters.
         lowest_finger_bottom = (
-            m.margin + m.inset + top_indicator_offset + m.finger_key_size + finger_cluster_height
+            m.margin
+            + m.inset
+            + header_offset
+            + top_indicator_offset
+            + m.finger_key_size
+            + finger_cluster_height
         )
         thumb_y = lowest_finger_bottom + m.inset + vertical_indicator_offset
 
@@ -280,6 +298,7 @@ class KeymapLayout:
         thumb_cluster_height: float,
         vertical_indicator_offset: float = 0,
         top_indicator_offset: float = 0,
+        header_offset: float = 0,
     ) -> float:
         """Calculate the total canvas height.
 
@@ -290,12 +309,15 @@ class KeymapLayout:
                 rendered above one of the double_down keys.
             top_indicator_offset: Extra space reserved above the finger clusters
                 when above-extending indicators are present on finger keys.
+            header_offset: Extra space reserved at the top of the canvas for the
+                title/logo header strip (header height + the gap below it).
 
         Returns:
             The total canvas height including margins and spacing.
         """
         m = self.metrics
-        # Layout from top to bottom: margin, inset, finger_key_size offset
+        # Layout from top to bottom: margin, inset, optional header strip
+        # (header_offset includes the gap below it), finger_key_size offset
         # for the lowest finger row, finger cluster, inset gap (+ optional indicator
         # offset), thumb cluster, inset bottom padding, margin.
         return (
@@ -306,6 +328,7 @@ class KeymapLayout:
             + thumb_cluster_height
             + vertical_indicator_offset
             + top_indicator_offset
+            + header_offset
         )
 
 
