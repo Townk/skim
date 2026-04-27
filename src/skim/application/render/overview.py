@@ -437,6 +437,10 @@ class _RoutingLayoutAdapter:
     def row_gap(self) -> float:
         return self._layout.row_gap
 
+    @property
+    def has_double_south(self) -> bool:
+        return self._layout.has_double_south
+
     def layer_row_bounding_box(self, target_layer: int) -> tuple[float, float, float, float]:
         row_idx = self._layer_to_row.get(target_layer)
         if row_idx is None:

@@ -65,17 +65,17 @@ def _render_fixture(tmp_path: Path) -> str:
 def test_path_count_matches_baseline(tmp_path):
     """The fixture produces a known number of dashed connector paths.
 
-    Baseline measured at Task 12 implementation time: rendering
-    ``connector-routing-coverage.vil`` produces 8 dashed paths. The fixture
-    declares 11 layer-switch triggers, but the working-tree config only
-    renders 3 layers, so triggers targeting out-of-range layers are
-    filtered by the orchestrator. This locks the path count against
-    accidental routing changes that drop or add paths.
+    Rendering ``connector-routing-coverage.vil`` produces 7 dashed paths.
+    The fixture declares 11 layer-switch triggers, but the working-tree
+    config only renders 3 layers and has ``double_south=False``, so
+    triggers targeting out-of-range layers and triggers parked at the
+    non-rendered double-south slot are filtered by the orchestrator.
+    This locks the path count against accidental routing changes that
+    drop or add paths.
     """
     content = _render_fixture(tmp_path)
     paths = re.findall(r"<path[^>]+stroke-dasharray=\"0\.1 7\"", content)
-    # Calibrated from a real render at implementation time.
-    EXPECTED_PATH_COUNT = 8
+    EXPECTED_PATH_COUNT = 7
     assert len(paths) == EXPECTED_PATH_COUNT
 
 

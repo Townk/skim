@@ -35,6 +35,17 @@ class RoutingLayout(Protocol):
     def layer_row_y_positions(self) -> list[float]: ...
 
     @property
+    def has_double_south(self) -> bool:
+        """Whether the keyboard renders a double-south key per finger cluster.
+
+        When False, ``double_south_key`` slots are not drawn and so cannot
+        originate a connector — even if the keymap places a layer-switching
+        macro at that position. The router uses this to keep its trigger
+        list aligned with what the indicator pass actually rendered.
+        """
+        ...
+
+    @property
     def row_gap(self) -> float:
         """Default gap between adjacent layer rows when no lanes occupy it.
 
@@ -361,14 +372,18 @@ def build_finger_path_list_for_cluster(
         None (self-ref or out-of-range).
     """
     priority = _R4_PRIORITY if is_r4 else _NON_R4_PRIORITY
+    has_ds = layout.has_double_south
     south_ds_special = (
         not is_r4
+        and has_ds
         and cluster.south_key.layer_switch is not None
         and cluster.double_south_key.layer_switch is not None
     )
 
     steps: list[ConnectorStep] = []
     for attr, direction in priority:
+        if attr == "double_south_key" and not has_ds:
+            continue
         key: SvalboardTargetKey = getattr(cluster, attr)
         if key.layer_switch is None:
             continue

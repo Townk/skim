@@ -272,6 +272,10 @@ class OverviewLayout:
         return self._row_gap
 
     @property
+    def has_double_south(self) -> bool:
+        return self._has_double_south
+
+    @property
     def thumb_row_y(self) -> float:
         return self._thumb_row_y
 
