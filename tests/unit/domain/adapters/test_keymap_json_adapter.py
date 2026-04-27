@@ -72,6 +72,17 @@ class TestKeymapJsonAdapterVial:
         result = KeymapJsonAdapter.transform(layers, KeymapType.VIAL)
         assert len(result) == 2
 
+    def test_vial_normalizes_unassigned_int_sentinel(self):
+        """Vial encodes unassigned positions as ``-1``; normalize to KC_NO."""
+        cluster = ["KC_A", "KC_B", "KC_C", "KC_D", "KC_E", -1]
+        layer = [cluster] * 10
+        result = KeymapJsonAdapter.transform([layer], KeymapType.VIAL)
+        assert len(result) == 1
+        assert len(result[0]) == 60
+        assert all(isinstance(label, str) for label in result[0])
+        assert "KC_NO" in result[0]
+        assert -1 not in result[0]
+
 
 class TestSingleLayerAdaptor:
     def test_output_has_60_keys(self):

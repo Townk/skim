@@ -455,10 +455,7 @@ class LayerColor(BaseModel):
     base_color: str
     color_index: int = 2
     gradient: (
-        Annotated[
-            tuple[str, str, str, str, str, str], BeforeValidator(_coerce_to_tuple)
-        ]
-        | None
+        Annotated[tuple[str, str, str, str, str, str], BeforeValidator(_coerce_to_tuple)] | None
     ) = None
 
     def __getitem__(self, index: int) -> str:

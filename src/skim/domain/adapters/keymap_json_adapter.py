@@ -128,7 +128,11 @@ class KeymapJsonAdapter:
         """Transform Vial format layers to QMK ordering.
 
         Vial exports layers as nested lists (clusters within layers), so
-        this first flattens the structure before reordering.
+        this first flattens the structure before reordering. Vial uses the
+        integer ``-1`` to mark positions that aren't assigned to any key
+        (e.g. the south key on clusters that don't have one); those are
+        normalized to ``"KC_NO"`` so the rest of the pipeline can treat
+        them like any other empty slot.
 
         Args:
             layers: List of layers, each containing cluster sublists,
@@ -139,7 +143,11 @@ class KeymapJsonAdapter:
         """
         return [
             KeymapJsonAdapter._single_layer_adaptor(
-                [label for cluster in layer for label in cluster]
+                [
+                    label if isinstance(label, str) else "KC_NO"
+                    for cluster in layer
+                    for label in cluster
+                ]
             )
             for layer in layers
         ]

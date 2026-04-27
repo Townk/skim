@@ -253,6 +253,12 @@ class ConfigGenerator:
         For Vial, each layer is a list of clusters (list of lists).
         For c2json, each layer is already a flat list of strings.
 
+        Vial encodes unassigned positions as the integer ``-1`` (e.g. the
+        south key on clusters that don't have one). Those entries are
+        normalized to ``"KC_NO"`` so they're treated as empty slots and
+        don't leak into ``_find_non_standard_keycodes`` as bogus
+        overrides.
+
         Args:
             raw_layers: Raw layer data from the keymap file.
             keymap_type: The detected KeymapType enum value.
@@ -268,9 +274,11 @@ class ConfigGenerator:
                 keys: list[str] = []
                 for cluster in layer:
                     if isinstance(cluster, list):
-                        keys.extend(cluster)
+                        keys.extend(item if isinstance(item, str) else "KC_NO" for item in cluster)
+                    elif isinstance(cluster, str):
+                        keys.append(cluster)
                     else:
-                        keys.append(str(cluster))
+                        keys.append("KC_NO")
                 flat.append(keys)
             else:
                 flat.append(layer)

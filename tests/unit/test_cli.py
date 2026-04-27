@@ -641,9 +641,7 @@ class TestConfigureCommand:
 
     @patch("skim.cli.setup_logging")
     @patch("skim.tui.launch_tui")
-    def test_interactive_keymap_with_config_merges_overrides(
-        self, mock_tui, mock_setup, tmp_path
-    ):
+    def test_interactive_keymap_with_config_merges_overrides(self, mock_tui, mock_setup, tmp_path):
         """-i -k -c: -c overrides keymap-derived values fed to the TUI."""
         import json
 
@@ -705,9 +703,7 @@ class TestConfigureCommand:
         assert palette_layers[1]["base_color"] == "#abcdef"
 
     @patch("skim.cli.setup_logging")
-    def test_non_interactive_keymap_with_config_merges_overrides(
-        self, mock_setup, tmp_path
-    ):
+    def test_non_interactive_keymap_with_config_merges_overrides(self, mock_setup, tmp_path):
         """-k -c (no -i): -c overrides keymap-derived values in written output."""
         import json
 
@@ -755,9 +751,7 @@ class TestConfigureCommand:
         out = tmp_path / "merged.yaml"
 
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["configure", "-k", str(kbi), "-c", str(cfg), "-o", str(out)]
-        )
+        result = runner.invoke(main, ["configure", "-k", str(kbi), "-c", str(cfg), "-o", str(out)])
         assert result.exit_code == 0
         parsed = yaml.safe_load(out.read_text())
 

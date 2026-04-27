@@ -503,6 +503,25 @@ class TestGenerateFromKeymap:
         keycode_names = [o["keycode"] for o in overrides]
         assert "MY_VIL_KEY" in keycode_names
 
+    def test_vial_handles_unassigned_int_sentinel(self):
+        """Vial encodes unassigned positions as int -1; do not crash."""
+        content = json.dumps(
+            {
+                "version": 1,
+                "uid": 12345,
+                "layout": [
+                    [["KC_A", "KC_B", "KC_C", "KC_D", "KC_E", -1]] + [["KC_NO"] * 6] * 9,
+                ],
+            }
+        )
+        generator = ConfigGenerator()
+        result = generator.generate_from_keymap(content)
+        parsed = yaml.safe_load(result)
+        # The -1 sentinel must not appear as a custom keycode override
+        keycode_names = [o["keycode"] for o in parsed["keycodes"]["overrides"]]
+        assert "-1" not in keycode_names
+        assert -1 not in keycode_names
+
     def test_keybard_delegates_to_generate_from_keybard(self):
         """Keybard format delegates to generate_from_keybard."""
         content = json.dumps(
