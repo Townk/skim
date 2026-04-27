@@ -231,6 +231,7 @@ class OverviewLayout:
         self._header_height = header_height
         self._layer_row_y_positions = y_positions
         self._row_height = row_height
+        self._row_gap = row_gap
         self._thumb_row_y = thumb_row_y
         self._finger_cluster_width = finger_cluster_width
         self._finger_cluster_height = finger_cluster_height
@@ -261,6 +262,14 @@ class OverviewLayout:
     @property
     def layer_row_heights(self) -> list[float]:
         return [self._row_height] * self._num_layers
+
+    @property
+    def row_gap(self) -> float:
+        """Default vertical gap between adjacent layer rows (and between the
+        bottommost layer and the thumb row) when no connector lanes occupy
+        the gap. The connector router replaces this gap with a lane-sized
+        bank when it routes connectors across an inter-layer gap."""
+        return self._row_gap
 
     @property
     def thumb_row_y(self) -> float:

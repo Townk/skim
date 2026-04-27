@@ -5,7 +5,7 @@
 
 """Unit tests for skim.application.render.connectors module."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 from skim.application.render.connectors import (
     ConnectorStep,
@@ -542,6 +542,22 @@ class TestPhase1UpToRight:
     def test_returns_zero_when_no_up_paths(self):
         assert phase1_up_to_right([], cluster_top=0, min_y=0, keymap_spacing=18) == 0.0
 
+    def test_padding_grows_when_min_y_overhangs_cluster_top(self):
+        # When an indicator pokes ABOVE cluster_top (min_y < cluster_top), the
+        # first lane starts at min_y - spacing, not cluster_top - spacing — so
+        # the topmost lane sits ``cluster_top - min_y`` higher than the simple
+        # N*spacing formula assumes. The padding must grow by that overhang
+        # or the lane falls outside the reserved space.
+        a = _step(Direction.UP, (10, 50, 6, 8))
+        set_initial_moveto(a)  # current_y = 50 (top of rect)
+        cluster_top = 100
+        min_y = 50  # overhangs cluster_top by 50
+        extra = phase1_up_to_right([a], cluster_top=cluster_top, min_y=min_y, keymap_spacing=18)
+        # First lane: min(100-18, 50-18) = 32; topmost lane at 32.
+        # Padding above cluster_top: 100 - 32 = 68 = N*18 + (100-50) = 18 + 50.
+        assert a.current_point[1] == 32.0
+        assert extra == 68.0
+
     def test_only_up_steps_are_processed(self):
         up = _step(Direction.UP, (10, 100, 6, 8))
         set_initial_moveto(up)
@@ -582,6 +598,26 @@ class TestPhase1DownToRight:
 
     def test_returns_zero_when_no_down_paths(self):
         assert phase1_down_to_right([], cluster_bottom=0, max_y=0, keymap_spacing=18) == 0.0
+
+    def test_padding_grows_when_max_y_overhangs_cluster_bottom(self):
+        # When an indicator extends BELOW cluster_bottom (max_y > cluster_bottom),
+        # the first lane starts at max_y + spacing, not cluster_bottom + spacing —
+        # so the bottommost lane sits ``max_y - cluster_bottom`` lower than the
+        # simple (N+0.5)*spacing formula assumes. The padding must grow by that
+        # overhang or the lane falls outside the reserved space (this is the
+        # bug that surfaced as Layer 8 connectors overshooting on the vial
+        # sample, where stale rects inflated max_y past cluster_bottom).
+        a = _step(Direction.DOWN, (10, 200, 6, 8))
+        set_initial_moveto(a)  # current_y = 208 (bottom of rect)
+        cluster_bottom = 150
+        max_y = 208  # overhangs cluster_bottom by 58
+        extra = phase1_down_to_right(
+            [a], cluster_bottom=cluster_bottom, max_y=max_y, keymap_spacing=18
+        )
+        # First lane: max(150+18, 208+18) = 226; bottommost lane at 226.
+        # Padding below cluster_bottom: (1+0.5)*18 + (208-150) = 27 + 58 = 85.
+        assert a.current_point[1] == 226.0
+        assert extra == 85.0
 
     def test_only_down_steps_are_processed(self):
         up = _step(Direction.UP, (10, 100, 6, 8))
@@ -1015,6 +1051,10 @@ class TestRouteOverviewConnectors:
         layout.layer_row_bounding_box = lambda i: (200, layout.layer_row_y_positions[i], 600, 50)
         layout.layer_row_target_y = lambda i: layout.layer_row_y_positions[i] + 25
         layout.thumb_cluster_y_bounds = lambda: (400.0, 500.0)
+        # Default row gap = 50, matching the gap implied by y_positions/heights
+        # (cluster_top_1 - cluster_bottom_0 = 200 - 150 = 50). The router uses
+        # this to size inter-layer gaps that carry connectors.
+        layout.row_gap = 50.0
         # Mutating methods recorded but no-op for the test layout.
         layout.shift_layer_row_and_below = MagicMock()
         layout.shift_below_layer_row = MagicMock()
@@ -1039,7 +1079,7 @@ class TestRouteOverviewConnectors:
         # Right-pinky north_key on layer 0 targets layer 1.
         rp_n = _key(layer_switch=1)
         right = _side(pinky=_finger(north_key=rp_n))
-        rects = {rp_n: (700.0, 110.0, 6.0, 6.0)}
+        rects = {id(rp_n): (700.0, 110.0, 6.0, 6.0)}
         result = route_overview_connectors(
             layers=[OverviewLayerSource(source_layer=0, left=_side(), right=right)],
             thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
@@ -1058,7 +1098,7 @@ class TestRouteOverviewConnectors:
         layout = self._layout()
         l1_n = _key(layer_switch=1)  # left.index north_key
         left = _side(index=_finger(north_key=l1_n))
-        rects = {l1_n: (300.0, 110.0, 6.0, 6.0)}
+        rects = {id(l1_n): (300.0, 110.0, 6.0, 6.0)}
         route_overview_connectors(
             layers=[OverviewLayerSource(source_layer=0, left=left, right=_side())],
             thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
@@ -1074,7 +1114,7 @@ class TestRouteOverviewConnectors:
         layout = self._layout()
         rt_knuckle = _key(layer_switch=1)
         right_thumb = _thumb(knuckle_key=rt_knuckle)
-        rects = {rt_knuckle: (700.0, 450.0, 6.0, 6.0)}
+        rects = {id(rt_knuckle): (700.0, 450.0, 6.0, 6.0)}
         result = route_overview_connectors(
             layers=[],
             thumb=ThumbSource(source_layer=0, left=_thumb(), right=right_thumb),
@@ -1091,7 +1131,7 @@ class TestRouteOverviewConnectors:
         layout = self._layout()
         rp_n = _key(layer_switch=1)
         right = _side(pinky=_finger(north_key=rp_n))
-        rects = {rp_n: (700.0, 110.0, 6.0, 6.0)}
+        rects = {id(rp_n): (700.0, 110.0, 6.0, 6.0)}
         compute_calls = [0]
 
         def compute_rects():
@@ -1112,7 +1152,7 @@ class TestRouteOverviewConnectors:
         layout = self._layout()
         rp_n = _key(layer_switch=1)
         right = _side(pinky=_finger(north_key=rp_n))
-        rects = {rp_n: (700.0, 110.0, 6.0, 6.0)}
+        rects = {id(rp_n): (700.0, 110.0, 6.0, 6.0)}
         result = route_overview_connectors(
             layers=[OverviewLayerSource(source_layer=0, left=_side(), right=right)],
             thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
@@ -1122,20 +1162,157 @@ class TestRouteOverviewConnectors:
         )
         assert result.extra_right_padding == 36.0
 
-    def test_multi_layer_cascading_calls_shift_per_layer(self):
-        # Two non-empty layers, each with a single UP trigger in left.index.
-        # Each layer should produce extra_top=18 and call shift_layer_row_and_below
-        # with its own source_layer.
+    def test_topmost_layer_up_padding_uses_per_layer_formula(self):
+        # The topmost layer's UP padding sits between the header strip and
+        # the first cluster — there's no upper layer to merge a gap with, so
+        # the router falls back to the per-layer N_u*sp formula and applies
+        # it via shift_layer_row_and_below(topmost_qmk).
         layout = self._layout()
         l0_n = _key(layer_switch=2)
-        l1_n = _key(layer_switch=2)
         layer0_left = _side(index=_finger(north_key=l0_n))
-        layer1_left = _side(index=_finger(north_key=l1_n))
+        rects = {id(l0_n): (300.0, 110.0, 6.0, 6.0)}
+        route_overview_connectors(
+            layers=[OverviewLayerSource(source_layer=0, left=layer0_left, right=_side())],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
+            layout=layout,
+            compute_indicator_rects=lambda: rects,
+            keymap_spacing=18,
+        )
+        # 1 UP step on the topmost layer → shift_layer_row_and_below(0, 18.0).
+        calls = layout.shift_layer_row_and_below.call_args_list
+        assert calls == [call(0, 18.0)]
+
+    def test_inter_layer_gap_merges_upper_down_and_lower_up(self):
+        # Upper layer (row 0, source_layer=0) has 2 DOWN paths from a non-R4
+        # cluster (left.middle's center_key + south_key, both DOWN per the
+        # non-R4 priority table — south_key has no DS partner here so it
+        # stays DOWN). Lower layer (row 1, source_layer=1) has 1 UP path
+        # in left.index. The inter-layer gap collapses into one lane bank:
+        # gap_target = (N_d + N_u + 1) * sp = 4 * 18 = 72. With row_gap = 50,
+        # the shift below the upper layer is 72 - 50 = 22, applied via a
+        # single shift_below_layer_row(upper_qmk).
+        layout = self._layout()
+        upper_c = _key(layer_switch=2)
+        upper_s = _key(layer_switch=2)
+        upper_left = _side(middle=_finger(center_key=upper_c, south_key=upper_s))
+        lower_n = _key(layer_switch=2)
+        lower_left = _side(index=_finger(north_key=lower_n))
+        # Rects sit inside the upper cluster bounds (100..150) and below the
+        # lower cluster top (200) so neither layer contributes overhang.
         rects = {
-            l0_n: (300.0, 110.0, 6.0, 6.0),
-            l1_n: (300.0, 210.0, 6.0, 6.0),
+            id(upper_c): (300.0, 130.0, 6.0, 6.0),
+            id(upper_s): (300.0, 140.0, 6.0, 6.0),
+            id(lower_n): (300.0, 210.0, 6.0, 6.0),
         }
         route_overview_connectors(
+            layers=[
+                OverviewLayerSource(source_layer=0, left=upper_left, right=_side()),
+                OverviewLayerSource(source_layer=1, left=lower_left, right=_side()),
+            ],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
+            layout=layout,
+            compute_indicator_rects=lambda: rects,
+            keymap_spacing=18,
+        )
+        # Topmost layer (0) has no UP paths → no shift_layer_row_and_below.
+        assert layout.shift_layer_row_and_below.call_args_list == []
+        # Inter-layer gap shift: (2 + 1 + 1)*18 - 50 = 22, applied to upper_qmk=0.
+        assert layout.shift_below_layer_row.call_args_list == [call(0, 22.0)]
+
+    def test_inter_layer_gap_with_only_lower_up_still_collapses_row_gap(self):
+        # Upper layer has no DOWN paths; lower layer has 2 UP paths. The lane
+        # bank still replaces the row_gap: gap_target = (0 + 2 + 1) * 18 = 54;
+        # with row_gap = 50, the shift below the upper layer is 54 - 50 = 4.
+        # The topmost layer's own UP padding (none here) is independent.
+        layout = self._layout()
+        l1_n = _key(layer_switch=2)
+        l1_e = _key(layer_switch=0)
+        lower_left = _side(index=_finger(north_key=l1_n, east_key=l1_e))
+        rects = {
+            id(l1_n): (300.0, 210.0, 6.0, 6.0),
+            id(l1_e): (320.0, 220.0, 6.0, 6.0),
+        }
+        route_overview_connectors(
+            layers=[
+                OverviewLayerSource(source_layer=0, left=_side(), right=_side()),
+                OverviewLayerSource(source_layer=1, left=lower_left, right=_side()),
+            ],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
+            layout=layout,
+            compute_indicator_rects=lambda: rects,
+            keymap_spacing=18,
+        )
+        assert layout.shift_layer_row_and_below.call_args_list == []
+        assert layout.shift_below_layer_row.call_args_list == [call(0, 4.0)]
+
+    def test_inter_layer_gap_with_no_lanes_uses_default_row_gap(self):
+        # Neither upper nor lower contributes lanes to the gap → no shift.
+        layout = self._layout()
+        route_overview_connectors(
+            layers=[
+                OverviewLayerSource(source_layer=0, left=_side(), right=_side()),
+                OverviewLayerSource(source_layer=1, left=_side(), right=_side()),
+            ],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
+            layout=layout,
+            compute_indicator_rects=lambda: {},
+            keymap_spacing=18,
+        )
+        assert layout.shift_layer_row_and_below.call_args_list == []
+        assert layout.shift_below_layer_row.call_args_list == []
+
+    def test_bottom_layer_to_thumb_gap_collapses_with_lane_bank(self):
+        # Bottom layer (only layer here, source_layer=0) has 1 DOWN path
+        # (left.middle center_key); thumb has 1 UP path (right nail_key,
+        # which routes UP per _THUMB_PRIORITY). The bottommost-layer ↔
+        # thumb gap follows the same lane-bank rule as inter-layer gaps:
+        # gap_target = (1 + 1 + 1)*18 = 54; row_gap = 50; shift = 4 applied
+        # via shift_below_layer_row(bottom_layer_qmk).
+        layout = self._layout()
+        layer_c = _key(layer_switch=2)
+        layer_left = _side(middle=_finger(center_key=layer_c))
+        thumb_n = _key(layer_switch=2)
+        right_thumb = _thumb(nail_key=thumb_n)
+        rects = {
+            id(layer_c): (300.0, 130.0, 6.0, 6.0),
+            # Thumb cluster spans 400..500; rect inside avoids overhang.
+            id(thumb_n): (700.0, 410.0, 6.0, 6.0),
+        }
+        route_overview_connectors(
+            layers=[OverviewLayerSource(source_layer=0, left=layer_left, right=_side())],
+            thumb=ThumbSource(source_layer=0, left=_thumb(), right=right_thumb),
+            layout=layout,
+            compute_indicator_rects=lambda: rects,
+            keymap_spacing=18,
+        )
+        # No UP from the topmost (only) layer → no shift_layer_row_and_below.
+        assert layout.shift_layer_row_and_below.call_args_list == []
+        # Bottommost-layer ↔ thumb gap collapsed: shift_below_layer_row(0, 4.0).
+        assert layout.shift_below_layer_row.call_args_list == [call(0, 4.0)]
+
+    def test_value_equal_keys_across_layers_do_not_collide(self):
+        # Two physical keys on different layers can produce equal-valued
+        # SvalboardTargetKey instances (e.g. ``TO(2)`` on both layers
+        # resolves to ``SvalboardTargetKey(label='X', layer_switch=2)``).
+        # The router must look those up by identity, not value, so each
+        # path picks up the rect of its own physical key — not a
+        # cross-layer twin's rect.
+        layout = self._layout()
+        # Both layers' left.index north_key targets layer 2 with the same
+        # label, producing dataclass-equal but distinct instances.
+        l0_n = _key(label="L2", layer_switch=2)
+        l1_n = _key(label="L2", layer_switch=2)
+        assert l0_n == l1_n  # value-equal
+        assert l0_n is not l1_n  # but distinct instances
+        layer0_left = _side(index=_finger(north_key=l0_n))
+        layer1_left = _side(index=_finger(north_key=l1_n))
+        # Distinct rects, keyed by identity. If the router collapsed them
+        # under value equality, one rect would silently win and the other
+        # path would inherit the wrong coordinates.
+        rect0 = (300.0, 110.0, 6.0, 6.0)
+        rect1 = (300.0, 210.0, 6.0, 6.0)
+        rects = {id(l0_n): rect0, id(l1_n): rect1}
+        result = route_overview_connectors(
             layers=[
                 OverviewLayerSource(source_layer=0, left=layer0_left, right=_side()),
                 OverviewLayerSource(source_layer=1, left=layer1_left, right=_side()),
@@ -1145,12 +1322,9 @@ class TestRouteOverviewConnectors:
             compute_indicator_rects=lambda: rects,
             keymap_spacing=18,
         )
-        # Each layer triggers one UP step → extra_top = 1*18 = 18.
-        # Calls happen per-layer in the order layers were passed.
-        calls = layout.shift_layer_row_and_below.call_args_list
-        assert len(calls) == 2
-        assert calls[0].args == (0, 18.0)
-        assert calls[1].args == (1, 18.0)
+        # Both paths produced; both target layer 2; no rect-lookup error.
+        assert len(result.paths) == 2
+        assert {target for _, target in result.paths} == {2}
 
 
 class TestSourceDataclasses:

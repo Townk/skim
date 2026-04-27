@@ -75,23 +75,38 @@ class ConfigGenerator:
         Raises:
             ValueError: If keybard_content is not valid JSON.
         """
+        from skim.application.loaders.keymap_loader import is_empty_layer
+        from skim.domain import KeymapType
+        from skim.domain.adapters import KeymapJsonAdapter
+
         try:
             data = json.loads(keybard_content)
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in Keybard file: {e}") from e
 
-        num_layers = data.get("layers", 0)
         layer_colors_raw = data.get("layer_colors", [])
         layer_names = data.get("cosmetic", {}).get("layer", {})
         custom_keycodes = data.get("custom_keycodes", [])
+
+        # Drop empty layers (all KC_NO/KC_TRNS) the same way the vial/c2json
+        # path does in ``generate_from_keymap``. Without this, every empty
+        # slot still gets a config entry and load_keymap's zip(indices,
+        # non_empty) silently shifts every layer past the first empty one
+        # — so e.g. ``MO(14)`` resolves to the wrong rendered layer because
+        # skim's index 14 was paired with a layer that came from kbi[N>14].
+        keymap_raw = data.get("keymap", [])
+        normalized = KeymapJsonAdapter.transform(keymap_raw, KeymapType.KEYBARD)
+        active_indices = [i for i, layer in enumerate(normalized) if not is_empty_layer(layer)]
 
         def apply_adjustment(hex_c: str) -> str:
             if adjust_lightness is not None or adjust_saturation is not None:
                 return adjust_color(hex_c, adjust_lightness, adjust_saturation)
             return hex_c
 
-        keyboard_layers = self._build_layers(num_layers, layer_names)
-        palette_layers = self._build_palette_layers(num_layers, layer_colors_raw, apply_adjustment)
+        keyboard_layers = self._build_layers_for_indices(active_indices, layer_names)
+        palette_layers = self._build_palette_layers_for_indices(
+            active_indices, layer_colors_raw, apply_adjustment
+        )
         keycode_overrides = self._build_keycode_overrides(custom_keycodes)
 
         palette_overrides: dict[str, str] = {}
@@ -106,25 +121,38 @@ class ConfigGenerator:
 
         return yaml.dump(config_dict, sort_keys=False, default_flow_style=False)
 
-    def _build_layers(
-        self, num_layers: int, layer_names: dict[str, str]
+    def _build_layers_for_indices(
+        self, active_indices: list[int], layer_names: dict[str, str]
     ) -> list[dict[str, str | None]]:
-        """Build keyboard.layers list from layer count and cosmetic names."""
+        """Build keyboard.layers list for a sparse set of source-layer indices.
+
+        Each index keeps its original kbi position so QMK layer-switch
+        keycodes (``MO(N)``, ``TO(N)``, …) resolve to the right rendered
+        layer downstream — empty layers don't shift later ones into wrong
+        slots.
+        """
         layers = []
-        for idx in range(num_layers):
+        for idx in active_indices:
             name = layer_names.get(str(idx), f"Layer {idx}")
             layers.append({"index": idx, "name": name, "id": None, "variant": None})
         return layers
 
-    def _build_palette_layers(
+    def _build_palette_layers_for_indices(
         self,
-        num_layers: int,
+        active_indices: list[int],
         layer_colors_raw: list[dict[str, int]],
         apply_adjustment: Callable[[str], str],
     ) -> list[dict[str, Any]]:
-        """Convert HSV layer colors to hex palette entries."""
+        """Convert HSV layer colors to hex palette entries for a sparse set.
+
+        ``palette.layers[pos]`` is indexed by *config position* (not QMK
+        index), so this list mirrors ``active_indices`` in order: the
+        layer at ``active_indices[i]`` gets the color sampled from
+        ``layer_colors_raw[active_indices[i]]`` (or a neutral fallback if
+        the kbi file omits that slot).
+        """
         palette_layers = []
-        for idx in range(num_layers):
+        for idx in active_indices:
             if idx < len(layer_colors_raw):
                 color_data = layer_colors_raw[idx]
                 h = color_data.get("hue", 0) / 255.0

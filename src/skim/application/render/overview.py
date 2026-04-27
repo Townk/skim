@@ -183,13 +183,16 @@ def _compute_thumb_indicator_rects(
     right_thumb: ThumbClusterComponent,
     keymap: SvalboardKeymap[SvalboardTargetKey],
     config: SkimConfig,
-) -> dict[SvalboardTargetKey, tuple[float, float, float, float]]:
-    """Return ``{triggering_key: (rect_x, rect_y, rect_w, rect_h)}`` for thumb indicators.
+) -> dict[int, tuple[float, float, float, float]]:
+    """Return ``{id(triggering_key): (rect_x, rect_y, rect_w, rect_h)}`` for thumb indicators.
 
     Each rect is the bounding box of the indicator circle:
-    ``(cx - r, cy - r, 2r, 2r)`` in absolute SVG coordinates.
+    ``(cx - r, cy - r, 2r, 2r)`` in absolute SVG coordinates. Keys are
+    ``id(SvalboardTargetKey)`` so two layers carrying the same layer-switching
+    macro (e.g. ``MO(14)``) — which produce equal-valued but distinct
+    ``SvalboardTargetKey`` instances — do not collide in the dict.
     """
-    results: dict[SvalboardTargetKey, tuple[float, float, float, float]] = {}
+    results: dict[int, tuple[float, float, float, float]] = {}
     first_qmk_idx = config.keyboard.layers[0].index if config.keyboard.layers else 0
     if first_qmk_idx not in keymap.layers:
         return results
@@ -252,7 +255,7 @@ def _compute_thumb_indicator_rects(
             radius = circle_diameter / 2.0
             abs_cx = thumb_comp.x + indicator.circle_center_x
             abs_cy = thumb_comp.y + indicator.circle_center_y
-            results[key] = (
+            results[id(key)] = (
                 abs_cx - radius,
                 abs_cy - radius,
                 circle_diameter,
@@ -267,8 +270,8 @@ def _compute_finger_indicator_rects(
     finger_clusters_right: list[FingerClusterComponent],
     layer_data: SvalboardLayout[SvalboardTargetKey],
     has_double_south: bool,
-) -> dict[SvalboardTargetKey, tuple[float, float, float, float]]:
-    """Return ``{triggering_key: (rect_x, rect_y, rect_w, rect_h)}`` for one
+) -> dict[int, tuple[float, float, float, float]]:
+    """Return ``{id(triggering_key): (rect_x, rect_y, rect_w, rect_h)}`` for one
     layer's finger-cluster indicators.
 
     Mirrors ``_compute_thumb_indicator_rects`` for finger keys: walks every
@@ -285,7 +288,7 @@ def _compute_finger_indicator_rects(
         has_double_south: Whether ``double_south_key`` is present (matches
             ``LayerIndicatorOverlay.for_finger_cluster``).
     """
-    results: dict[SvalboardTargetKey, tuple[float, float, float, float]] = {}
+    results: dict[int, tuple[float, float, float, float]] = {}
 
     # ``draw_overview`` builds finger clusters in the order
     # ``layer_data.<side>.fingers[i]`` for i in 0..3 — that's
@@ -334,7 +337,7 @@ def _compute_finger_indicator_rects(
                 radius = circle_diameter / 2.0
                 abs_cx = finger_comp.x + indicator.circle_center_x
                 abs_cy = finger_comp.y + indicator.circle_center_y
-                results[key] = (
+                results[id(key)] = (
                     abs_cx - radius,
                     abs_cy - radius,
                     circle_diameter,
@@ -350,12 +353,15 @@ def _compute_all_indicator_rects(
     layout: OverviewLayout,
     use_system_fonts: bool,
     row_to_layer: list[tuple[int, int]],
-) -> dict[SvalboardTargetKey, tuple[float, float, float, float]]:
+) -> dict[int, tuple[float, float, float, float]]:
     """Walk every rendered layer + the thumb cluster and collect indicator rects.
 
     Builds cluster components against the current layout state, computes
     each cluster's indicator bounding rects, and merges everything into a
-    single map keyed by the source ``SvalboardTargetKey``.
+    single map keyed by ``id(SvalboardTargetKey)``. Identity is required
+    because layer-switching macros with the same argument (``MO``, ``TO``,
+    ``DF``, ``TG``) produce equal-valued ``SvalboardTargetKey`` instances
+    across layers — value-keyed dicts would silently collide.
 
     Called by ``draw_overview`` as the closure passed to
     ``route_overview_connectors`` — invoked twice (once before pass 1, once
@@ -366,7 +372,7 @@ def _compute_all_indicator_rects(
             (top-down). Used to derive each layer's row index for finger-
             cluster positioning.
     """
-    rects: dict[SvalboardTargetKey, tuple[float, float, float, float]] = {}
+    rects: dict[int, tuple[float, float, float, float]] = {}
 
     # Per-layer finger clusters.
     for row_idx, (config_pos, qmk_idx) in enumerate(row_to_layer):
@@ -425,6 +431,10 @@ class _RoutingLayoutAdapter:
     @property
     def layer_row_y_positions(self) -> list[float]:
         return self._y_positions
+
+    @property
+    def row_gap(self) -> float:
+        return self._layout.row_gap
 
     def layer_row_bounding_box(self, target_layer: int) -> tuple[float, float, float, float]:
         row_idx = self._layer_to_row.get(target_layer)
@@ -619,7 +629,7 @@ def draw_overview(
             # state. Called twice by route_overview_connectors (pass 1 + pass 2).
             # The second call MUST reflect post-shift layout; rebuilding cluster
             # components inside _compute_all_indicator_rects ensures that.
-            def compute_rects() -> Mapping[SvalboardTargetKey, tuple[float, float, float, float]]:
+            def compute_rects() -> Mapping[int, tuple[float, float, float, float]]:
                 return _compute_all_indicator_rects(
                     config, keymap, layout, use_system_fonts, row_to_layer
                 )

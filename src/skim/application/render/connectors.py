@@ -34,6 +34,16 @@ class RoutingLayout(Protocol):
     @property
     def layer_row_y_positions(self) -> list[float]: ...
 
+    @property
+    def row_gap(self) -> float:
+        """Default gap between adjacent layer rows when no lanes occupy it.
+
+        Pass 1 replaces this with a lane-sized bank (one ``keymap_spacing``
+        of clearance at each end plus the lane width) whenever the upper
+        layer has DOWN connectors and/or the lower layer has UP connectors.
+        """
+        ...
+
     def layer_row_bounding_box(self, target_layer: int) -> tuple[float, float, float, float]: ...
 
     def layer_row_target_y(self, target_layer: int) -> float:
@@ -517,10 +527,14 @@ def phase1_up_to_right(
     points. Both are needed because the lane must clear whichever sits higher,
     so the clamp picks the smaller (more negative-Y) of the two.
 
-    Returns ``extra_top_padding = N * keymap_spacing`` where ``N`` is the
-    number of UP steps processed — exactly the vertical extent the lanes
-    occupy above the cluster (lane 1 at ``cluster_top - keymap_spacing``,
-    lane N at ``cluster_top - N * keymap_spacing``).
+    Returns the vertical extent the lanes occupy above ``cluster_top``. When
+    ``min_y >= cluster_top`` (typical: indicators sit inside or below the
+    cluster top), this is exactly ``N * keymap_spacing`` — N lanes spaced
+    one ``keymap_spacing`` apart starting at ``cluster_top - keymap_spacing``.
+    When ``min_y < cluster_top`` (e.g. a north_key indicator overhangs the
+    cluster), lanes start higher to clear the indicator and the padding grows
+    by ``cluster_top - min_y`` so the topmost lane still fits within the
+    reserved space.
     """
     up_steps = [s for s in path_list if s.direction == Direction.UP]
     if not up_steps:
@@ -531,7 +545,7 @@ def phase1_up_to_right(
         step.current_point = (step.current_point[0], new_y)
         step.direction = Direction.RIGHT
         new_y -= keymap_spacing
-    return len(up_steps) * keymap_spacing
+    return len(up_steps) * keymap_spacing + max(0.0, cluster_top - min_y)
 
 
 def phase1_down_to_right(
@@ -548,12 +562,15 @@ def phase1_down_to_right(
     because the lane must clear whichever sits lower, so the clamp picks the
     larger (more positive-Y) of the two.
 
-    Returns ``extra_bottom_padding = (N + 0.5) * keymap_spacing`` where ``N``
-    is the number of DOWN steps. The lanes themselves occupy
-    ``N * keymap_spacing`` (lane 1 at ``cluster_bottom + keymap_spacing``,
-    lane N at ``cluster_bottom + N * keymap_spacing``); the extra
-    ``0.5 * keymap_spacing`` buffers the bottommost lane from the canvas
-    edge so the border/copyright don't crowd the connector.
+    Returns the vertical extent the lanes plus buffer occupy below
+    ``cluster_bottom``. When ``max_y <= cluster_bottom`` (typical), this is
+    ``(N + 0.5) * keymap_spacing`` — lane 1 at ``cluster_bottom + spacing``,
+    lane N at ``cluster_bottom + N * spacing``, plus ``0.5 * spacing`` of
+    buffer. When ``max_y > cluster_bottom`` (e.g. an indicator below the
+    cluster bottom), lanes start lower to clear it and the padding grows by
+    ``max_y - cluster_bottom`` so the bottommost lane still fits within the
+    reserved space. The trailing ``0.5 * keymap_spacing`` keeps the
+    border/copyright from crowding the bottommost connector.
     """
     down_steps = [s for s in path_list if s.direction == Direction.DOWN]
     if not down_steps:
@@ -564,9 +581,7 @@ def phase1_down_to_right(
         step.current_point = (step.current_point[0], new_y)
         step.direction = Direction.RIGHT
         new_y += keymap_spacing
-    # 0.5 * keymap_spacing of buffer between the bottommost lane and the canvas
-    # edge so the border/copyright don't crowd the connector.
-    return (len(down_steps) + 0.5) * keymap_spacing
+    return (len(down_steps) + 0.5) * keymap_spacing + max(0.0, max_y - cluster_bottom)
 
 
 def allocate_columns(
@@ -641,9 +656,7 @@ def route_overview_connectors(
     layers: Sequence[OverviewLayerSource],
     thumb: ThumbSource,
     layout: RoutingLayout,
-    compute_indicator_rects: Callable[
-        [], Mapping[SvalboardTargetKey, tuple[float, float, float, float]]
-    ],
+    compute_indicator_rects: Callable[[], Mapping[int, tuple[float, float, float, float]]],
     keymap_spacing: float,
 ) -> ConnectorRouting:
     """Top-level orchestrator for overview connector routing.
@@ -663,7 +676,12 @@ def route_overview_connectors(
             layout state — typically the caller rebuilds cluster components
             on the second invocation, after pass 1's shifts have mutated the
             layout. Passing a memoized closure that returns the same rects
-            twice will produce stale path coordinates in pass 2.
+            twice will produce stale path coordinates in pass 2. Keys MUST
+            be ``id(SvalboardTargetKey)`` of the same Python instance the
+            router will encounter via ``getattr(cluster, attr)`` — value
+            equality is unsafe because layer-switching macros (``MO``,
+            ``TO``, ``DF``, ``TG``) with identical layer arguments produce
+            equal-valued ``SvalboardTargetKey`` instances across layers.
         keymap_spacing: Spacing constant for routing geometry (typically
             ``0.6 * outer_key_size``).
 
@@ -708,55 +726,213 @@ def _pass1_discover_and_shift(
     layers: Sequence[OverviewLayerSource],
     thumb: ThumbSource,
     layout: RoutingLayout,
-    indicator_rects: Mapping[SvalboardTargetKey, tuple[float, float, float, float]],
+    indicator_rects: Mapping[int, tuple[float, float, float, float]],
     keymap_spacing: float,
 ) -> float:
-    """Pass 1: route each source, discover paddings, apply cascading shifts.
+    """Pass 1: route each source, discover paddings, apply gap-aware shifts.
+
+    Walks layer sources top-to-bottom in render order, carrying running state
+    for the layer immediately above the current one (``prev_n_d``,
+    ``prev_overhang_b``, ``prev_qmk``). For each *inter-layer* gap, the
+    upper layer's DOWN connectors and the lower layer's UP connectors share
+    a single contiguous lane bank: ``(N_d + N_u + 1) * keymap_spacing`` of
+    space, plus any indicator overhang from either side, replaces the
+    layout's default ``row_gap`` entirely. The same formula applies to the
+    bottommost-layer/thumb gap.
+
+    The topmost layer's UP padding (gap above it, abutting the header) and
+    the thumb's DOWN padding (gap below it, abutting the canvas edge /
+    copyright) are kept on their per-source formulas — neither has a layer
+    on the other side of the gap to merge with.
+
+    Initial cluster bounds are snapshotted up front so each layer's
+    ``overhang_top``/``overhang_bottom`` stays referenced to its
+    pre-shift cluster_top/cluster_bottom (otherwise shifts applied to
+    earlier layers would corrupt the overhang of later ones).
 
     Returns the thumb's extra_bottom_padding (the only padding NOT applied
     via layout shifts; it grows the canvas at the bottom).
     """
+    # Snapshot pre-shift cluster bounds. ``layout.layer_row_bounding_box``
+    # always returns the *current* row position, so as soon as the first
+    # shift fires the bounds for downstream layers move with it. We compute
+    # overhangs against the snapshot so each layer's overhang represents
+    # "indicator extent beyond the cluster's own edge" — not "indicator
+    # extent vs. wherever the cluster has been pushed by another layer".
+    initial_layer_bounds: dict[int, tuple[float, float]] = {}
     for layer in layers:
-        paths = build_finger_path_list_for_layer(
-            layer.left, layer.right, layer.source_layer, layout, keymap_spacing
-        )
-        if not paths:
-            continue
-        _attach_rects_and_set_initial_moveto(paths, indicator_rects)
-        cluster_top, cluster_bottom = _layer_cluster_y_bounds(layout, layer.source_layer)
-        min_y = min(s.current_point[1] for s in paths)
-        max_y = max(s.current_point[1] for s in paths)
-        phase1_redirect_right_to_down(paths, keymap_spacing)
-        phase1_redirect_left_to_down(paths, keymap_spacing)
-        extra_top = phase1_up_to_right(paths, cluster_top, min_y, keymap_spacing)
-        extra_bottom = phase1_down_to_right(paths, cluster_bottom, max_y, keymap_spacing)
-        if extra_top > 0:
-            layout.shift_layer_row_and_below(layer.source_layer, extra_top)
-        if extra_bottom > 0:
-            layout.shift_below_layer_row(layer.source_layer, extra_bottom)
+        _, top, _, height = layout.layer_row_bounding_box(layer.source_layer)
+        initial_layer_bounds[layer.source_layer] = (top, top + height)
+    initial_thumb_top, initial_thumb_bottom = layout.thumb_cluster_y_bounds()
+    row_gap = layout.row_gap
 
+    # Iterate in render order: top row first (smallest initial cluster_top).
+    # The router otherwise has no need to know which row a layer sits on,
+    # but the gap-merging logic does — the "upper" layer is whichever sits
+    # immediately above in the rendered grid, regardless of QMK index.
+    sorted_layers = sorted(layers, key=lambda layer: initial_layer_bounds[layer.source_layer][0])
+
+    # State carried from the previous (upper) iteration.
+    prev_n_d = 0
+    prev_overhang_b = 0.0
+    prev_qmk: int | None = None
+
+    for layer in sorted_layers:
+        n_u, n_d, overhang_t, overhang_b = _route_finger_layer_phase1(
+            layer, layout, indicator_rects, initial_layer_bounds, keymap_spacing
+        )
+
+        if prev_qmk is None:
+            # Topmost layer: gap above it abuts the header strip, not another
+            # cluster. Keep the existing per-layer formula so the header zone's
+            # row_gap of breathing room remains untouched.
+            top_pad = n_u * keymap_spacing + overhang_t
+            if top_pad > 0:
+                layout.shift_layer_row_and_below(layer.source_layer, top_pad)
+        else:
+            # Inter-layer gap: upper.DOWN + this.UP share one lane bank.
+            _apply_gap_shift(
+                layout,
+                prev_qmk,
+                n_d_upper=prev_n_d,
+                n_u_lower=n_u,
+                overhang_b_upper=prev_overhang_b,
+                overhang_t_lower=overhang_t,
+                row_gap=row_gap,
+                keymap_spacing=keymap_spacing,
+            )
+
+        prev_n_d = n_d
+        prev_overhang_b = overhang_b
+        prev_qmk = layer.source_layer
+
+    # Thumb cluster: same shape as a finger layer for routing purposes.
+    thumb_n_u, thumb_n_d, thumb_overhang_t, thumb_overhang_b = _route_thumb_phase1(
+        thumb,
+        layout,
+        indicator_rects,
+        initial_top=initial_thumb_top,
+        initial_bottom=initial_thumb_bottom,
+        keymap_spacing=keymap_spacing,
+    )
+
+    # Bottommost-layer ↔ thumb gap: same lane-bank rule as inter-layer gaps.
+    if prev_qmk is not None:
+        _apply_gap_shift(
+            layout,
+            prev_qmk,
+            n_d_upper=prev_n_d,
+            n_u_lower=thumb_n_u,
+            overhang_b_upper=prev_overhang_b,
+            overhang_t_lower=thumb_overhang_t,
+            row_gap=row_gap,
+            keymap_spacing=keymap_spacing,
+        )
+    elif thumb_n_u > 0 or thumb_overhang_t > 0:
+        # No layers — thumb stands alone. Treat its UP padding the same way
+        # the topmost layer's UP padding is treated: per-source N*sp + overhang.
+        layout.shift_thumb_down(thumb_n_u * keymap_spacing + thumb_overhang_t)
+
+    # Thumb DOWN padding to canvas bottom: 0.5*sp buffer keeps the bottommost
+    # lane from crowding the border / copyright.
+    if thumb_n_d > 0:
+        return (thumb_n_d + 0.5) * keymap_spacing + thumb_overhang_b
+    return thumb_overhang_b
+
+
+def _route_finger_layer_phase1(
+    layer: OverviewLayerSource,
+    layout: RoutingLayout,
+    indicator_rects: Mapping[int, tuple[float, float, float, float]],
+    initial_layer_bounds: Mapping[int, tuple[float, float]],
+    keymap_spacing: float,
+) -> tuple[int, int, float, float]:
+    """Build paths for one finger layer and run phase1 redirects.
+
+    Returns ``(n_up, n_down, overhang_top, overhang_bottom)`` — the four
+    quantities ``_pass1_discover_and_shift`` needs to size the gaps above
+    and below this layer. Empty layers (no triggers) return all zeros.
+    """
+    paths = build_finger_path_list_for_layer(
+        layer.left, layer.right, layer.source_layer, layout, keymap_spacing
+    )
+    if not paths:
+        return 0, 0, 0.0, 0.0
+    _attach_rects_and_set_initial_moveto(paths, indicator_rects)
+    cluster_top, cluster_bottom = initial_layer_bounds[layer.source_layer]
+    min_y = min(s.current_point[1] for s in paths)
+    max_y = max(s.current_point[1] for s in paths)
+    phase1_redirect_right_to_down(paths, keymap_spacing)
+    phase1_redirect_left_to_down(paths, keymap_spacing)
+    n_u = sum(1 for s in paths if s.direction == Direction.UP)
+    n_d = sum(1 for s in paths if s.direction == Direction.DOWN)
+    overhang_t = max(0.0, cluster_top - min_y)
+    overhang_b = max(0.0, max_y - cluster_bottom)
+    return n_u, n_d, overhang_t, overhang_b
+
+
+def _route_thumb_phase1(
+    thumb: ThumbSource,
+    layout: RoutingLayout,
+    indicator_rects: Mapping[int, tuple[float, float, float, float]],
+    initial_top: float,
+    initial_bottom: float,
+    keymap_spacing: float,
+) -> tuple[int, int, float, float]:
+    """Build paths for the thumb cluster and run phase1 redirects."""
     thumb_paths = build_thumb_path_list(
         thumb.left, thumb.right, layout, thumb.source_layer, keymap_spacing
     )
     if not thumb_paths:
-        return 0.0
+        return 0, 0, 0.0, 0.0
     _attach_rects_and_set_initial_moveto(thumb_paths, indicator_rects)
-    cluster_top, cluster_bottom = layout.thumb_cluster_y_bounds()
     min_y = min(s.current_point[1] for s in thumb_paths)
     max_y = max(s.current_point[1] for s in thumb_paths)
     phase1_redirect_left_to_down(thumb_paths, keymap_spacing)
-    extra_top = phase1_up_to_right(thumb_paths, cluster_top, min_y, keymap_spacing)
-    extra_bottom = phase1_down_to_right(thumb_paths, cluster_bottom, max_y, keymap_spacing)
-    if extra_top > 0:
-        layout.shift_thumb_down(extra_top)
-    return extra_bottom
+    n_u = sum(1 for s in thumb_paths if s.direction == Direction.UP)
+    n_d = sum(1 for s in thumb_paths if s.direction == Direction.DOWN)
+    overhang_t = max(0.0, initial_top - min_y)
+    overhang_b = max(0.0, max_y - initial_bottom)
+    return n_u, n_d, overhang_t, overhang_b
+
+
+def _apply_gap_shift(
+    layout: RoutingLayout,
+    upper_qmk: int,
+    *,
+    n_d_upper: int,
+    n_u_lower: int,
+    overhang_b_upper: float,
+    overhang_t_lower: float,
+    row_gap: float,
+    keymap_spacing: float,
+) -> None:
+    """Apply the gap-merging shift between an upper layer and the next-down
+    cluster (either another layer or the thumb).
+
+    When connectors cross the gap, the lane bank — ``(N_d + N_u + 1)*sp``
+    plus combined indicator overhang — replaces the layout's default
+    ``row_gap`` entirely. ``shift_below_layer_row(upper_qmk, delta)``
+    pushes everything below the upper cluster down by ``gap_target -
+    row_gap``, which is always positive because ``2 * keymap_spacing >
+    row_gap`` by construction (``row_gap = 0.328 * fcw`` and
+    ``keymap_spacing = 0.6 * 0.328 * fcw``).
+    """
+    n_lanes = n_d_upper + n_u_lower
+    if n_lanes == 0:
+        return
+    overhang = overhang_b_upper + overhang_t_lower
+    gap_target = (n_lanes + 1) * keymap_spacing + overhang
+    shift = gap_target - row_gap
+    if shift > 0:
+        layout.shift_below_layer_row(upper_qmk, shift)
 
 
 def _pass2_build_paths(
     layers: Sequence[OverviewLayerSource],
     thumb: ThumbSource,
     layout: RoutingLayout,
-    indicator_rects: Mapping[SvalboardTargetKey, tuple[float, float, float, float]],
+    indicator_rects: Mapping[int, tuple[float, float, float, float]],
     keymap_spacing: float,
 ) -> list[ConnectorStep]:
     """Pass 2: rebuild paths against the post-shift layout for final geometry.
@@ -798,9 +974,15 @@ def _pass2_build_paths(
 
 def _attach_rects_and_set_initial_moveto(
     paths: list[ConnectorStep],
-    indicator_rects: Mapping[SvalboardTargetKey, tuple[float, float, float, float]],
+    indicator_rects: Mapping[int, tuple[float, float, float, float]],
 ) -> None:
     """Populate each step's indicator_rect from the map and set its initial moveTo.
+
+    The map is keyed by ``id(SvalboardTargetKey)`` rather than the key value
+    itself: the router accesses each key through the same ``cluster.<attr>``
+    path the producer used, so identity is stable, while value equality
+    collides whenever two layers contain layer-switching macros with the
+    same argument (e.g. ``TO(11)`` on different layers).
 
     Raises ``ValueError`` with a clear message if a step's key is missing
     from the map (programmer error — the caller must populate every key
@@ -810,7 +992,7 @@ def _attach_rects_and_set_initial_moveto(
         if step.key is None:
             continue
         try:
-            step.indicator_rect = indicator_rects[step.key]
+            step.indicator_rect = indicator_rects[id(step.key)]
         except KeyError as e:
             raise ValueError(
                 f"indicator_rects missing entry for key "

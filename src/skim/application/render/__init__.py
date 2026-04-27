@@ -181,9 +181,7 @@ def _draw_layer(
     # copyright is present, keep that same inset below the text and reuse it as
     # the gap between the thumb cluster and the text.
     bottom_inset = m.inset + m.margin
-    copyright_extra = (
-        copyright_font_size + bottom_inset if config.output.copyright else 0.0
-    )
+    copyright_extra = copyright_font_size + bottom_inset if config.output.copyright else 0.0
     canvas_height += copyright_extra
 
     # Create drawing

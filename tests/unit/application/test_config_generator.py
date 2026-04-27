@@ -138,6 +138,43 @@ class TestGenerateFromKeybard:
         overrides = {o["keycode"]: o["target"] for o in parsed["keycodes"]["overrides"]}
         assert overrides["USER00"] == "@@MY_KEY;"
 
+    def test_empty_layers_drop_from_config_preserving_qmk_indices(self):
+        """Empty layers are dropped, but the remaining layers keep their slot.
+
+        The original kbi sample has 16 declared layers but layers 4, 6, and 7
+        are empty (all KC_NO/KC_TRNS). Without this filtering the loader's
+        ``zip(indices, non_empty)`` silently shifted every layer past slot 4
+        — so a key with ``MO(14)`` ended up resolving to whatever happened
+        to land in skim's slot 14 after repacking, not the user's "Sys"
+        layer (kbi[14]). Layers must keep their original kbi index.
+        """
+        keybard = json.dumps(
+            {
+                "layers": 8,
+                "keymap": [
+                    ["KC_A"] * 60,  # 0 — active
+                    ["KC_B"] * 60,  # 1 — active
+                    ["KC_NO"] * 60,  # 2 — empty
+                    ["KC_C"] * 60,  # 3 — active
+                    ["KC_TRNS"] * 60,  # 4 — empty
+                    ["KC_NO"] * 60,  # 5 — empty
+                    ["KC_D"] * 60,  # 6 — active
+                    ["KC_E"] * 60,  # 7 — active
+                ],
+                "layer_colors": [{"hue": h, "sat": 255, "val": 255} for h in range(0, 8 * 32, 32)],
+                "cosmetic": {"layer": {}},
+                "custom_keycodes": [],
+            }
+        )
+        generator = ConfigGenerator()
+        result = generator.generate_from_keybard(keybard)
+        parsed = yaml.safe_load(result)
+        layer_indices = [layer["index"] for layer in parsed["keyboard"]["layers"]]
+        assert layer_indices == [0, 1, 3, 6, 7]
+        # Palette mirrors the active layers in order — entry i corresponds
+        # to ``parsed["keyboard"]["layers"][i]``, not to QMK index i.
+        assert len(parsed["output"]["style"]["palette"]["layers"]) == 5
+
     def test_layers_without_cosmetic_names_get_defaults(self):
         """Layers missing from cosmetic.layer get 'Layer N' names."""
         keybard = json.dumps(
@@ -578,14 +615,23 @@ class TestWithSampleKeybard:
         return sample_path.read_text()
 
     def test_sample_produces_valid_config(self, sample_keybard):
-        """Real sample file produces a valid SkimConfig."""
+        """Real sample file produces a valid SkimConfig.
+
+        The sample defines 16 slots, but layers 4, 6, and 7 are empty
+        (all KC_NO/KC_TRNS). The generator drops them so the resulting
+        config carries the 13 active QMK indices — keeping each layer at
+        its original slot so that ``MO(N)``/``TO(N)``/``DF(N)`` keycodes
+        resolve to the rendered layer ``N`` rather than to whichever
+        layer happened to land in slot ``N`` after sequential repacking.
+        """
         from skim.data.config import SkimConfig
 
         generator = ConfigGenerator()
         result = generator.generate_from_keybard(sample_keybard)
         parsed = yaml.safe_load(result)
         config = SkimConfig.model_validate(parsed)
-        assert len(config.keyboard.layers) == 16
+        layer_indices = [layer.index for layer in config.keyboard.layers]
+        assert layer_indices == [0, 1, 2, 3, 5, 8, 9, 10, 11, 12, 13, 14, 15]
 
     def test_sample_extracts_known_layer_names(self, sample_keybard):
         """Known layer names from sample file are extracted."""
@@ -615,7 +661,9 @@ class TestWithSampleKeybard:
         from skim.data.config import SkimConfig
 
         config = SkimConfig.model_validate(parsed)
-        assert len(config.output.style.palette.layers) == 16
+        # Palette mirrors the active layers — empty slots (4, 6, 7) are
+        # dropped from both ``keyboard.layers`` and ``palette.layers``.
+        assert len(config.output.style.palette.layers) == 13
 
 
 class TestWithSampleVial:
