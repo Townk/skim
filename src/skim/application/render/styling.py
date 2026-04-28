@@ -249,6 +249,41 @@ def adjust_color(
     return hex_str(r_new, g_new, b_new)
 
 
+def nudge_color_hsl(
+    hex_color: str,
+    *,
+    saturation_delta: float = 0.0,
+    lightness_delta: float = 0.0,
+) -> str:
+    """Nudge a hex color's saturation and/or lightness by additive deltas.
+
+    Both ``saturation_delta`` and ``lightness_delta`` are added to the
+    current channel value and clamped into ``[0.0, 1.0]``. The hue is
+    preserved. Use ``adjust_color`` instead when you want to *set* a
+    target value rather than nudge by a delta.
+
+    Args:
+        hex_color: Input color in hexadecimal format.
+        saturation_delta: Amount added to the current saturation. Use a
+            negative value to decrease.
+        lightness_delta: Amount added to the current lightness. Use a
+            negative value to decrease.
+
+    Returns:
+        Adjusted color as a ``#RRGGBB`` hexadecimal string.
+
+    Examples:
+        >>> nudge_color_hsl("#7F7F7F", lightness_delta=0.05)
+        '#8C8C8C'
+    """
+    red, green, blue = str_to_rgb(hex_color)
+    hue, lightness, saturation = colorsys.rgb_to_hls(red, green, blue)
+    new_saturation = max(0.0, min(1.0, saturation + saturation_delta))
+    new_lightness = max(0.0, min(1.0, lightness + lightness_delta))
+    r_new, g_new, b_new = colorsys.hls_to_rgb(hue, new_lightness, new_saturation)
+    return hex_str(r_new, g_new, b_new)
+
+
 def make_gradient(base_color: str, base_index: int = 2) -> tuple[str, str, str, str, str, str]:
     """Generate a 6-color gradient with base color at specified index.
 

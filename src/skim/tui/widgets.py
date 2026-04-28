@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from textual import events
@@ -165,6 +166,55 @@ class SkimStandaloneInput(Input):
     def __init__(self, *args: Any, help_key: str | None = None, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.help_key = help_key
+
+
+class ColorInput(SkimStandaloneInput):
+    """SkimStandaloneInput with shortcuts to nudge the color's HSL channels.
+
+    ``alt+s`` / ``alt+shift+s`` decrease / increase saturation; ``alt+l``
+    / ``alt+shift+l`` decrease / increase lightness. Each press applies
+    a 0.05 delta clamped into ``[0, 1]``. Non-hex values (empty input,
+    named CSS colors, malformed strings) are silently ignored — the
+    binding is a no-op.
+    """
+
+    BINDINGS = [
+        Binding("alt+s", "nudge_saturation_down", "Saturation -", show=False),
+        Binding("alt+shift+s", "nudge_saturation_up", "Saturation +", show=False),
+        Binding("alt+l", "nudge_lightness_down", "Lightness -", show=False),
+        Binding("alt+shift+l", "nudge_lightness_up", "Lightness +", show=False),
+    ]
+
+    _HSL_STEP = 0.05
+    _HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
+    def _nudge(self, *, saturation_delta: float = 0.0, lightness_delta: float = 0.0) -> None:
+        from skim.application.render.styling import nudge_color_hsl
+
+        current = (self.value or "").strip()
+        if not self._HEX_RE.match(current):
+            return
+        try:
+            self.value = nudge_color_hsl(
+                current,
+                saturation_delta=saturation_delta,
+                lightness_delta=lightness_delta,
+            )
+        except Exception:
+            # Defensive: if the styling helper rejects the value we leave the input alone.
+            return
+
+    def action_nudge_saturation_down(self) -> None:
+        self._nudge(saturation_delta=-self._HSL_STEP)
+
+    def action_nudge_saturation_up(self) -> None:
+        self._nudge(saturation_delta=self._HSL_STEP)
+
+    def action_nudge_lightness_down(self) -> None:
+        self._nudge(lightness_delta=-self._HSL_STEP)
+
+    def action_nudge_lightness_up(self) -> None:
+        self._nudge(lightness_delta=self._HSL_STEP)
 
 
 class SkimInput(Input):
