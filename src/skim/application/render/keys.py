@@ -295,6 +295,22 @@ class DownKey(Key):
         label_x = self.x + self.width / 2
         return label_x, label_y
 
+    def _append_macro_tap_dance_mark(self) -> None:
+        if self.target_key is None or self.render_context is None:
+            return
+        accent = self.render_context.accent_fill(self.target_key)
+        if accent is None:
+            return
+        from skim.application.render.marks import MacroTapDanceCorner
+
+        radius = self.width * self.CONFIG.corner_radius_width_multiplier
+        self.append(
+            MacroTapDanceCorner(
+                x=self.x, y=self.y, w=self.width, h=self.height,
+                r=radius, corner="bl", fill=accent,
+            )
+        )
+
 
 class DoubleDownKey(Key):
     """The double-down key in a thumb cluster.
@@ -370,6 +386,22 @@ class DoubleDownKey(Key):
         label_y = self.y + self.height / 2
         label_x = self.x + self.width / 2
         return label_x, label_y
+
+    def _append_macro_tap_dance_mark(self) -> None:
+        if self.target_key is None or self.render_context is None:
+            return
+        accent = self.render_context.accent_fill(self.target_key)
+        if accent is None:
+            return
+        from skim.application.render.marks import MacroTapDanceCorner
+
+        radius = self.width * self.CONFIG.corner_radius_width_multiplier
+        self.append(
+            MacroTapDanceCorner(
+                x=self.x, y=self.y, w=self.width, h=self.height,
+                r=radius, corner="tl", fill=accent,
+            )
+        )
 
 
 class UpKey(Key):
@@ -487,6 +519,23 @@ class UpKey(Key):
             label_x = self.x + self.width * self.CONFIG.label_margin_size_multiplier
         return label_x, label_y
 
+    def _append_macro_tap_dance_mark(self) -> None:
+        if self.target_key is None or self.render_context is None:
+            return
+        accent = self.render_context.accent_fill(self.target_key)
+        if accent is None:
+            return
+        from skim.application.render.marks import MacroTapDanceCorner
+
+        radius = self.width * self.CONFIG.corner_radius_width_multiplier
+        corner = "bl" if self.side == KeyboardSide.LEFT else "br"
+        self.append(
+            MacroTapDanceCorner(
+                x=self.x, y=self.y, w=self.width, h=self.height,
+                r=radius, corner=corner, fill=accent,
+            )
+        )
+
 
 class PadKey(Key):
     """The pad key in a thumb cluster.
@@ -573,6 +622,23 @@ class PadKey(Key):
         else:
             label_x = self.x + self.width * self.CONFIG.label_margin_size_multiplier
         return label_x, label_y
+
+    def _append_macro_tap_dance_mark(self) -> None:
+        if self.target_key is None or self.render_context is None:
+            return
+        accent = self.render_context.accent_fill(self.target_key)
+        if accent is None:
+            return
+        from skim.application.render.marks import MacroTapDanceCorner
+
+        radius = self.width * self.CONFIG.corner_radius_width_multiplier
+        corner = "tl" if self.side == KeyboardSide.LEFT else "tr"
+        self.append(
+            MacroTapDanceCorner(
+                x=self.x, y=self.y, w=self.width, h=self.height,
+                r=radius, corner=corner, fill=accent,
+            )
+        )
 
 
 class NailKey(Key):
@@ -661,6 +727,23 @@ class NailKey(Key):
             label_x = self.x + self.width * (1.0 - self.CONFIG.label_margin_size_multiplier)
         return label_x, label_y
 
+    def _append_macro_tap_dance_mark(self) -> None:
+        if self.target_key is None or self.render_context is None:
+            return
+        accent = self.render_context.accent_fill(self.target_key)
+        if accent is None:
+            return
+        from skim.application.render.marks import MacroTapDanceCorner
+
+        radius = self.width * self.CONFIG.corner_radius_width_multiplier
+        corner = "tr" if self.side == KeyboardSide.LEFT else "tl"
+        self.append(
+            MacroTapDanceCorner(
+                x=self.x, y=self.y, w=self.width, h=self.height,
+                r=radius, corner=corner, fill=accent,
+            )
+        )
+
 
 class KnuckleKey(Key):
     """The knuckle key in a thumb cluster.
@@ -747,6 +830,23 @@ class KnuckleKey(Key):
         else:
             label_x = self.x + self.width * (1.0 - self.CONFIG.label_margin_size_multiplier)
         return label_x, label_y
+
+    def _append_macro_tap_dance_mark(self) -> None:
+        if self.target_key is None or self.render_context is None:
+            return
+        accent = self.render_context.accent_fill(self.target_key)
+        if accent is None:
+            return
+        from skim.application.render.marks import MacroTapDanceCorner
+
+        radius = self.width * self.CONFIG.corner_radius_width_multiplier
+        corner = "br" if self.side == KeyboardSide.LEFT else "bl"
+        self.append(
+            MacroTapDanceCorner(
+                x=self.x, y=self.y, w=self.width, h=self.height,
+                r=radius, corner=corner, fill=accent,
+            )
+        )
 
 
 class CenterKey(Key):
@@ -917,6 +1017,23 @@ class DoubleSouthKey(Key):
         label_y = (self.y + self.height / 2.0) + (self.width * self.ACCENT_SIZE_MULTI / 4.0)
         label_x = self.x + self.width / 2
         return label_x, label_y
+
+    def _append_macro_tap_dance_mark(self) -> None:
+        if self.target_key is None or self.render_context is None:
+            return
+        accent = self.render_context.accent_fill(self.target_key)
+        if accent is None:
+            return
+        from skim.application.render.marks import MacroTapDanceCorner
+
+        # Radius matches the accent bar corner radius used in shape().
+        radius = self.width * self.ACCENT_SIZE_MULTI / 2.0
+        self.append(
+            MacroTapDanceCorner(
+                x=self.x, y=self.y, w=self.width, h=self.height,
+                r=radius, corner="bl", fill=accent,
+            )
+        )
 
 
 class DirectionalKey(Key):

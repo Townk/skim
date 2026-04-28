@@ -429,3 +429,44 @@ class TestKeyMacroTapDanceMark:
         clipped_group = marks[0].children[1]
         path = clipped_group.children[0]
         assert path.args["fill"] == cluster_context.palette.tap_dance_color
+
+
+@pytest.mark.parametrize(
+    "key_class_name,extra_kwargs,expected_corner",
+    [
+        ("DoubleSouthKey", "colors", "bl"),
+        ("DownKey",        None,     "bl"),
+        ("DoubleDownKey",  None,     "tl"),
+        ("UpKey",          None,     "bl"),
+        ("PadKey",         None,     "tl"),
+        ("NailKey",        None,     "tr"),
+        ("KnuckleKey",     None,     "br"),
+    ],
+)
+def test_thumb_and_double_south_keys_use_expected_corner(
+    cluster_context, sample_palette, key_class_name, extra_kwargs, expected_corner
+):
+    """Each non-directional non-center key class draws a corner in its
+    designed position when the bound key is a macro/TD."""
+    from skim.application.render import keys as keys_module
+    from skim.application.render.context import FingerClusterKeyColors
+    from skim.application.render.layout import Boundary, Position
+    from skim.application.render.marks import MacroTapDanceCorner
+
+    cls = getattr(keys_module, key_class_name)
+    key = SvalboardTargetKey(label="A", macro_id="3")
+    layout = Boundary(width=54, pos=Position(x=0, y=0))
+
+    # Some classes need a `colors` kwarg; others don't. Detect the spec via the kwarg name.
+    extra: dict = {}
+    if extra_kwargs == "colors":
+        extra["colors"] = FingerClusterKeyColors(primary="#208060", accent="#0E3024")
+
+    node = cls(ctx=cluster_context, key=key, layout=layout, **extra)
+    marks = [c for c in node.children if isinstance(c, MacroTapDanceCorner)]
+    assert len(marks) == 1, f"{key_class_name} should append one corner mark"
+    # Inspect the underlying clip-path id — it includes the corner identifier.
+    clip_path = marks[0].children[0]  # ClipPath
+    assert expected_corner in clip_path.id, (
+        f"{key_class_name} expected corner {expected_corner!r}; clip id was {clip_path.id!r}"
+    )
