@@ -250,7 +250,7 @@ class TestOutputTab:
             assert config_with_output["output"]["style"]["palette"]["macro_color"] == "#AAAAAA"
 
     @pytest.mark.asyncio()
-    async def test_alt_l_decreases_lightness_on_palette_color(self):
+    async def test_alt_left_decreases_lightness_on_palette_color(self):
         from textual.app import App, ComposeResult
         from textual.widgets import Input
 
@@ -270,7 +270,7 @@ class TestOutputTab:
             macro_input.focus()
             await pilot.pause()
             assert macro_input.value == "#89511C"
-            await pilot.press("alt+l")
+            await pilot.press("alt+left")
             await pilot.pause()
             # Value changed and is still a valid hex
             assert macro_input.value != "#89511C"
@@ -278,7 +278,7 @@ class TestOutputTab:
             assert len(macro_input.value) == 7
 
     @pytest.mark.asyncio()
-    async def test_alt_shift_l_increases_lightness_on_palette_color(self):
+    async def test_alt_right_increases_lightness_on_palette_color(self):
         from textual.app import App, ComposeResult
         from textual.widgets import Input
 
@@ -297,12 +297,12 @@ class TestOutputTab:
             macro_input = app.query_one("#palette-macro-color", Input)
             macro_input.focus()
             await pilot.pause()
-            await pilot.press("alt+shift+l")
+            await pilot.press("alt+right")
             await pilot.pause()
             assert macro_input.value != "#89511C"
 
     @pytest.mark.asyncio()
-    async def test_alt_s_on_named_color_is_noop(self):
+    async def test_alt_down_on_named_color_is_noop(self):
         from textual.app import App, ComposeResult
         from textual.widgets import Input
 
@@ -322,7 +322,34 @@ class TestOutputTab:
             assert bg_input.value == "white"
             bg_input.focus()
             await pilot.pause()
-            await pilot.press("alt+s")
+            await pilot.press("alt+down")
             await pilot.pause()
             # Named-color input: nudge is a no-op
             assert bg_input.value == "white"
+
+    @pytest.mark.asyncio()
+    async def test_alt_up_increases_saturation_on_palette_color(self):
+        from textual.app import App, ComposeResult
+        from textual.widgets import Input
+
+        from skim.data.config import SkimConfig
+        from skim.tui.output_tab import OutputTab
+
+        config_data = SkimConfig().model_dump(mode="json")
+
+        class T(App):
+            def compose(self) -> ComposeResult:
+                yield OutputTab(config_data=config_data)
+
+        app = T()
+        async with app.run_test(size=(120, 80)) as pilot:
+            await pilot.pause()
+            macro_input = app.query_one("#palette-macro-color", Input)
+            macro_input.focus()
+            await pilot.pause()
+            original = macro_input.value
+            await pilot.press("alt+up")
+            await pilot.pause()
+            assert macro_input.value != original
+            assert macro_input.value.startswith("#")
+            assert len(macro_input.value) == 7
