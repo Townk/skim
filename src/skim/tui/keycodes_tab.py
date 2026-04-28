@@ -776,25 +776,17 @@ class KeycodesTab(Widget):
         padding: 0 1;
     }
     KeycodesTab .keycodes-section {
-        height: 1fr;
-    }
-    KeycodesTab .keycodes-section ListDetailPane {
-        height: 1fr;
-    }
-    KeycodesTab .keycodes-section ListDetailPane .ldp-container {
-        height: 100%;
+        height: auto;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-list-col {
         width: 35%;
         min-width: 25;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-list {
-        height: 1fr;
         border: solid $accent 50%;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-detail {
         padding: 0 1;
-        height: auto;
         overflow-x: hidden;
         border: solid $accent 30%;
     }
