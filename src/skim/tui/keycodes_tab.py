@@ -583,7 +583,7 @@ class MacroListPane(ListDetailPane):
     def create_entry(self, index: int) -> dict:
         entries = self.get_entries()
         used = {e.get("id", "") or "" for e in entries}
-        candidate = 0
+        candidate = 1
         while str(candidate) in used:
             candidate += 1
         return {"id": str(candidate), "name": None, "preview": "Undefined"}
