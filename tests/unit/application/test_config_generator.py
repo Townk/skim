@@ -242,6 +242,100 @@ class TestGenerateFromKeybard:
         assert parsed["keycodes"]["overrides"] == []
 
 
+class TestMacroPreview:
+    """Tests for macro_preview helper."""
+
+    @pytest.fixture()
+    def adapter(self):
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
+        from skim.data import SkimConfig
+        from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+
+        config = SkimConfig()
+        mappings = load_keycode_mappings(config.keycodes)
+        return KeycodeLabelAdapter(config.keyboard, mappings)
+
+    def test_single_tap_action(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("KC_Q",)),),
+        )
+        assert macro_preview(macro, adapter) == "[↓↑ Q]"
+
+    def test_multi_keycode_up_action_joins_with_comma(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.UP, keys=("KC_E", "KC_1")),
+            ),
+        )
+        assert macro_preview(macro, adapter) == "[↑ E,1]"
+
+    def test_text_action_uses_nf_marker(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TEXT, text=";qj"),),
+        )
+        assert macro_preview(macro, adapter) == '[%%nf-md-text_recognition; ";qj"]'
+
+    def test_delay_action_uses_nf_marker(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.DELAY, duration_ms=30),
+            ),
+        )
+        assert macro_preview(macro, adapter) == "[%%nf-fa-hourglass_2; 30]"
+
+    def test_mixed_sequence_pipe_separated(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.DOWN, keys=("KC_E",)),
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.DELAY, duration_ms=30),
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.UP, keys=("KC_E", "KC_1")),
+            ),
+        )
+        assert macro_preview(macro, adapter) == "[↓ E | %%nf-fa-hourglass_2; 30 | ↑ E,1]"
+
+
 class TestQmkColorParsing:
     """Tests for QMK color.h header parsing via generate_from_keybard."""
 

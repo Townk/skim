@@ -35,6 +35,51 @@ import yaml
 
 from skim.application.render.styling import adjust_color, hex_str
 from skim.data.config import SkimConfig
+from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+from skim.domain.domain_types import (
+    SvalboardMacro,
+    SvalboardMacroAction,
+    SvalboardMacroActionKind,
+    SvalboardTapDance,  # noqa: F401
+)
+
+_MACRO_KIND_SYMBOLS: dict[SvalboardMacroActionKind, str] = {
+    SvalboardMacroActionKind.TAP: "↓↑",
+    SvalboardMacroActionKind.DOWN: "↓",
+    SvalboardMacroActionKind.UP: "↑",
+}
+
+_MACRO_TEXT_GLYPH = "%%nf-md-text_recognition;"
+_MACRO_DELAY_GLYPH = "%%nf-fa-hourglass_2;"
+
+
+def _resolve_key_label(keycode: str, adapter: KeycodeLabelAdapter) -> str:
+    """Return the resolved label for a keycode (raw markers preserved)."""
+    return adapter.transform(keycode).label or keycode
+
+
+def _format_macro_action(action: SvalboardMacroAction[str], adapter: KeycodeLabelAdapter) -> str:
+    if action.kind in _MACRO_KIND_SYMBOLS:
+        symbol = _MACRO_KIND_SYMBOLS[action.kind]
+        keys = ",".join(_resolve_key_label(k, adapter) for k in action.keys)
+        return f"{symbol} {keys}"
+    if action.kind is SvalboardMacroActionKind.TEXT:
+        return f'{_MACRO_TEXT_GLYPH} "{action.text}"'
+    if action.kind is SvalboardMacroActionKind.DELAY:
+        return f"{_MACRO_DELAY_GLYPH} {action.duration_ms}"
+    return ""
+
+
+def macro_preview(macro: SvalboardMacro[str], adapter: KeycodeLabelAdapter) -> str:
+    """Format a macro as a single-line preview string.
+
+    Square-bracket-wrapped, ``" | "``-separated actions. Keys inside an
+    action are resolved through the keycode-label adapter and joined
+    with ``","``. Text and delay actions use raw NerdFont markers
+    (resolved to glyphs at TUI display time).
+    """
+    formatted = [_format_macro_action(a, adapter) for a in macro.actions]
+    return "[" + " | ".join(formatted) + "]"
 
 
 class ConfigGenerator:
