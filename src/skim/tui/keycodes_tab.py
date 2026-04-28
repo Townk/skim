@@ -527,11 +527,14 @@ class MacroListPane(ListDetailPane):
 
     def format_entry(self, index: int, entry: dict) -> str:
         entries = self.get_entries()
-        idw = max((len(e.get("id", "") or "") for e in entries), default=0)
-        id_ = entry.get("id", "") or ""
+        display_ids = [f"M{e.get('id', '') or ''}" for e in entries]
+        idw = max((len(d) for d in display_ids), default=0)
+        display_id = (
+            display_ids[index] if 0 <= index < len(display_ids) else f"M{entry.get('id', '') or ''}"
+        )
         name = entry.get("name")
         label = name if name else _resolve_nerdfont_markers(entry.get("preview", "") or "")
-        return f"{id_:<{idw}}  ->  {label}"
+        return f"{display_id:<{idw}}  ->  {label}"
 
     def compose_detail_fields(self) -> ComposeResult:
         with Horizontal(classes="field-row"):
@@ -649,11 +652,16 @@ class TapDanceListPane(ListDetailPane):
 
     def format_entry(self, index: int, entry: dict) -> str:
         entries = self.get_entries()
-        idw = max((len(e.get("id", "") or "") for e in entries), default=0)
-        id_ = entry.get("id", "") or ""
+        display_ids = [f"TD({e.get('id', '') or ''})" for e in entries]
+        idw = max((len(d) for d in display_ids), default=0)
+        display_id = (
+            display_ids[index]
+            if 0 <= index < len(display_ids)
+            else f"TD({entry.get('id', '') or ''})"
+        )
         name = entry.get("name")
         label = name if name else _resolve_nerdfont_markers(entry.get("preview", "") or "")
-        return f"{id_:<{idw}}  ->  {label}"
+        return f"{display_id:<{idw}}  ->  {label}"
 
     def compose_detail_fields(self) -> ComposeResult:
         with Horizontal(classes="field-row"):

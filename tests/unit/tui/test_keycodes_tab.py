@@ -270,6 +270,25 @@ class TestMacroListPane:
             await pilot.pause()
             assert pane.get_entries()[0]["id"] == "1"
 
+    @pytest.mark.asyncio()
+    async def test_list_row_prefixes_macro_id_with_m(self):
+        config = SkimConfig().model_dump(mode="json")
+        config["keycodes"]["macros"] = [
+            {"id": "1", "name": "First", "preview": ""},
+            {"id": "42", "name": "Answer", "preview": ""},
+        ]
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            macro_list = app.query_one("#macro-list", SkimListView)
+            row_texts = [str(child.query_one(Static).content) for child in macro_list.children]
+            assert any("M1" in t for t in row_texts), row_texts
+            assert any("M42" in t for t in row_texts), row_texts
+            # Detail pane's ID input still shows the raw id
+            macro_list.index = 0
+            await pilot.pause()
+            assert app.query_one("#macro-id", Input).value == "1"
+
 
 class TestTapDanceListPane:
     """Tests for the new Tap-dance list/detail pane."""
@@ -374,6 +393,25 @@ class TestTapDanceListPane:
             expected_glyph = glyphs["nf-md-apple_keyboard_shift"]
             assert expected_glyph in str(item_text)
             assert "%%nf-md-apple_keyboard_shift;" not in str(item_text)
+
+    @pytest.mark.asyncio()
+    async def test_list_row_wraps_tap_dance_id_in_td_parens(self):
+        config = SkimConfig().model_dump(mode="json")
+        config["keycodes"]["tap_dances"] = [
+            {"id": "0", "name": "Quick shift", "preview": ""},
+            {"id": "MY_TD", "name": None, "preview": ""},
+        ]
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            td_list = app.query_one("#tap-dance-list", SkimListView)
+            row_texts = [str(child.query_one(Static).content) for child in td_list.children]
+            assert any("TD(0)" in t for t in row_texts), row_texts
+            assert any("TD(MY_TD)" in t for t in row_texts), row_texts
+            # Detail pane's ID input still shows the raw id
+            td_list.index = 0
+            await pilot.pause()
+            assert app.query_one("#tap-dance-id", Input).value == "0"
 
 
 class TestKeycodesTabStructure:
