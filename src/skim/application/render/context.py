@@ -77,6 +77,20 @@ class RenderContext:
 
         return default
 
+    def accent_fill(self, key: SvalboardTargetKey) -> str | None:
+        """Return the accent-fill colour for a special key, or None.
+
+        Macros use ``palette.macro_color``; tap-dances use
+        ``palette.tap_dance_color``. Plain keys (no ``macro_id`` and no
+        ``tap_dance_id``) return ``None`` so the caller can skip the
+        mark draw entirely.
+        """
+        if key.macro_id is not None:
+            return self.palette.macro_color
+        if key.tap_dance_id is not None:
+            return self.palette.tap_dance_color
+        return None
+
     def key_label_color(self, key: SvalboardTargetKey, fill_color: str) -> str:
         """Get the text color for a key's label.
 

@@ -419,3 +419,29 @@ class TestFingerClusterKeyColors:
         colors = FingerClusterKeyColors(primary="#FF0000", accent="#AA0000")
         # Slots-based classes don't have __dict__
         assert not hasattr(colors, "__dict__")
+
+
+class TestRenderContextAccentFill:
+    """Tests for RenderContext.accent_fill()."""
+
+    @pytest.fixture
+    def render_context(self, sample_palette):
+        return RenderContext(
+            palette=sample_palette,
+            layer_index=0,
+            has_double_south=True,
+            use_layer_colors_on_keys=False,
+            hold_symbol_position=SplitSidePosition.OUTWARD,
+        )
+
+    def test_accent_fill_for_macro_key(self, render_context):
+        key = SvalboardTargetKey(label="M3", macro_id="3")
+        assert render_context.accent_fill(key) == render_context.palette.macro_color
+
+    def test_accent_fill_for_tap_dance_key(self, render_context):
+        key = SvalboardTargetKey(label="TD0", tap_dance_id="0")
+        assert render_context.accent_fill(key) == render_context.palette.tap_dance_color
+
+    def test_accent_fill_for_plain_key_is_none(self, render_context):
+        key = SvalboardTargetKey(label="A")
+        assert render_context.accent_fill(key) is None
