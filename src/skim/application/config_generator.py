@@ -37,6 +37,7 @@ from skim.application.render.styling import adjust_color, hex_str
 from skim.data.config import Macro as _MacroConfig, SkimConfig, TapDance as _TapDanceConfig
 from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
 from skim.domain.domain_types import (
+    SEPARATOR_CHAR,
     SvalboardMacro,
     SvalboardMacroAction,
     SvalboardMacroActionKind,
@@ -60,11 +61,22 @@ def _resolve_key_label(keycode: str, adapter: KeycodeLabelAdapter) -> str:
     Transparent keycodes (``KC_TRANSPARENT`` / ``KC_TRNS`` / ``_______``)
     render as the Vial-style ``⛛`` glyph rather than their raw keycode
     name, since their resolved label is empty by design.
+
+    Layer-only functions (``MO(n)``, ``TG(n)``, ``TO(n)``, ``OSL(n)``,
+    ``DF(n)``, ``PDF(n)``, ``TT(n)``) resolve to a single layer glyph —
+    ambiguous on its own — so they are wrapped as ``(<glyph> <n>)`` to
+    surface the layer index. Compound functions (``LT(n, key)``,
+    ``LM(n, mods)``) already embed the layer digit alongside the held
+    key in their label, separated by the tap-hold separator, and are
+    returned as-is.
     """
     result = adapter.transform(keycode)
     if result.is_transparent:
         return _TRANSPARENT_GLYPH
-    return result.label or keycode
+    label = result.label or keycode
+    if result.layer_switch is not None and SEPARATOR_CHAR not in label:
+        return f"({label} {result.layer_switch})"
+    return label
 
 
 def _format_macro_action(action: SvalboardMacroAction[str], adapter: KeycodeLabelAdapter) -> str:
