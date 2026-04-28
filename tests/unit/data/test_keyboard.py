@@ -2008,3 +2008,38 @@ class TestZipLayoutsFunction:
         assert type(combined[0]) is DirectBundle
         assert type(combined[30]) is DirectBundle
         assert type(combined[59]) is DirectBundle
+
+
+class TestSvalboardKeymapTapDanceAndMacros:
+    """Tests for the optional tap_dances/macros fields."""
+
+    def test_defaults_to_empty(self):
+        layer = SvalboardLayout.from_sequence(["KC_A"] * 60)
+        keymap = SvalboardKeymap(layers={0: layer})
+        assert keymap.tap_dances == ()
+        assert keymap.macros == ()
+
+    def test_accepts_tap_dances(self):
+        from skim.domain.domain_types import SvalboardTapDance
+
+        layer = SvalboardLayout.from_sequence(["KC_A"] * 60)
+        td = SvalboardTapDance[str](id="0", tap="KC_A", hold="KC_LSHIFT")
+        keymap = SvalboardKeymap[str](layers={0: layer}, tap_dances=(td,))
+        assert keymap.tap_dances == (td,)
+
+    def test_accepts_macros(self):
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        layer = SvalboardLayout.from_sequence(["KC_A"] * 60)
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("KC_Q", "KC_U")),
+            ),
+        )
+        keymap = SvalboardKeymap[str](layers={0: layer}, macros=(macro,))
+        assert keymap.macros == (macro,)

@@ -19,6 +19,10 @@ from .domain_types import (
     KeyboardSide,
     KeyDirection,
     KeymapType,
+    SvalboardMacro,
+    SvalboardMacroAction,
+    SvalboardMacroActionKind,
+    SvalboardTapDance,
     SvalboardTargetKey,
 )
 from .utils import clip
@@ -30,6 +34,10 @@ __all__ = [
     "KeyboardSide",
     "KeyDirection",
     "KeymapType",
+    "SvalboardMacro",
+    "SvalboardMacroAction",
+    "SvalboardMacroActionKind",
+    "SvalboardTapDance",
     "SvalboardTargetKey",
     "clip",
 ]
