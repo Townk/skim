@@ -205,6 +205,51 @@ class TestKeymapTargetAdapterTransparentFallthrough:
         assert ghost.label == ""
         assert ghost.is_transparent is True
 
+    def test_fallthrough_propagates_macro_id(self):
+        """A transparent layer-1 slot whose layer-0 source carries macro_id
+        must inherit it after fallthrough."""
+        label_map = {
+            "L0_L_I": SvalboardTargetKey(label="M3", macro_id="3"),
+            "L1_L_I": SvalboardTargetKey(label="", is_transparent=True),
+        }
+        adapter = KeymapTargetAdapter(MockLabelAdapter(label_map))  # type: ignore[arg-type]
+        keymap = make_keymap(2)
+        result = adapter.transform(keymap)
+        higher_key = result.layers[1].left.index.center_key
+        assert higher_key.is_transparent is True
+        assert higher_key.macro_id == "3"
+        assert higher_key.label == "M3"
+
+    def test_fallthrough_propagates_tap_dance_id(self):
+        """A transparent layer-1 slot whose layer-0 source carries tap_dance_id
+        must inherit it after fallthrough."""
+        label_map = {
+            "L0_L_I": SvalboardTargetKey(label="TD7", tap_dance_id="7"),
+            "L1_L_I": SvalboardTargetKey(label="", is_transparent=True),
+        }
+        adapter = KeymapTargetAdapter(MockLabelAdapter(label_map))  # type: ignore[arg-type]
+        keymap = make_keymap(2)
+        result = adapter.transform(keymap)
+        higher_key = result.layers[1].left.index.center_key
+        assert higher_key.is_transparent is True
+        assert higher_key.tap_dance_id == "7"
+        assert higher_key.label == "TD7"
+
+    def test_self_referential_suppression_wins_over_macro_id(self):
+        """When layer-0 source has layer_switch == current_layer_index and
+        carries macro_id, suppression must still win — slot stays blank."""
+        label_map = {
+            "L0_L_I": SvalboardTargetKey(label="L1", layer_switch=1, macro_id="3"),
+            "L1_L_I": SvalboardTargetKey(label="", is_transparent=True),
+        }
+        adapter = KeymapTargetAdapter(MockLabelAdapter(label_map))  # type: ignore[arg-type]
+        keymap = make_keymap(2)
+        result = adapter.transform(keymap)
+        higher_key = result.layers[1].left.index.center_key
+        assert higher_key.is_transparent is True
+        assert higher_key.label == ""
+        assert higher_key.macro_id is None
+
 
 class TestTransformLayer:
     def test_transforms_all_keys_in_layer(self):

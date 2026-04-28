@@ -49,6 +49,8 @@ def _substitute(
         label=base_key.label,
         layer_switch=base_key.layer_switch,
         is_transparent=True,
+        macro_id=base_key.macro_id,
+        tap_dance_id=base_key.tap_dance_id,
     )
 
 
