@@ -27,7 +27,7 @@ from skim.application.loaders.keymap_loader import (
     load_keymap_from_stdin,
     load_keymap_json,
 )
-from skim.domain.domain_types import KeymapType
+from skim.domain.domain_types import KeymapType, SvalboardTapDance
 
 
 class TestDetectKeymapFromJson:
@@ -387,3 +387,61 @@ class TestLoadKeymap:
         # right.index.center_key is at index 0, left.thumb.down_key at index 54
         assert keymap.layers[0].right.index.center_key == "KC_0"
         assert keymap.layers[0].left.thumb.down_key == "KC_54"
+
+
+class TestParseVialTapDance:
+    """Tests that _parse_vial extracts top-level tap_dance entries."""
+
+    def test_no_tap_dance_key_yields_empty(self):
+        data = {"layout": [[["KC_A"] * 60]], "version": 1}
+        result = _parse_vial(data)
+        assert result.tap_dances == ()
+
+    def test_single_tap_dance(self):
+        data = {
+            "layout": [[["KC_A"] * 60]],
+            "version": 1,
+            "tap_dance": [["KC_Q", "KC_LSHIFT", "KC_NO", "KC_NO", 250]],
+        }
+        result = _parse_vial(data)
+        assert result.tap_dances == (
+            SvalboardTapDance[str](
+                id="0",
+                tap="KC_Q",
+                hold="KC_LSHIFT",
+                double_tap=None,
+                tap_then_hold=None,
+                tapping_term=250,
+            ),
+        )
+
+    def test_multiple_tap_dances_get_indexed_ids(self):
+        data = {
+            "layout": [[["KC_A"] * 60]],
+            "version": 1,
+            "tap_dance": [
+                ["KC_Q", "KC_NO", "KC_NO", "KC_NO", 100],
+                ["KC_NO", "KC_NO", "KC_NO", "KC_NO", 200],
+                ["KC_A", "KC_B", "KC_C", "KC_D", 300],
+            ],
+        }
+        result = _parse_vial(data)
+        assert [td.id for td in result.tap_dances] == ["0", "1", "2"]
+        assert result.tap_dances[2].tap == "KC_A"
+        assert result.tap_dances[2].hold == "KC_B"
+        assert result.tap_dances[2].double_tap == "KC_C"
+        assert result.tap_dances[2].tap_then_hold == "KC_D"
+        assert result.tap_dances[2].tapping_term == 300
+
+    def test_kc_no_maps_to_none_on_each_field(self):
+        data = {
+            "layout": [[["KC_A"] * 60]],
+            "version": 1,
+            "tap_dance": [["KC_NO", "KC_NO", "KC_NO", "KC_NO", 200]],
+        }
+        result = _parse_vial(data)
+        td = result.tap_dances[0]
+        assert td.tap is None
+        assert td.hold is None
+        assert td.double_tap is None
+        assert td.tap_then_hold is None

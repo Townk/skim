@@ -73,6 +73,35 @@ def _detect_format_from_path(path: Path) -> KeymapType | None:
     return None
 
 
+def _vial_keycode_or_none(value: Any) -> str | None:
+    """Map Vial's ``"KC_NO"`` sentinel to ``None`` for tap-dance fields."""
+    if value is None or value == "KC_NO":
+        return None
+    return str(value)
+
+
+def _parse_vial_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
+    """Parse the top-level ``tap_dance`` array if present."""
+    raw = data.get("tap_dance")
+    if not isinstance(raw, list):
+        return ()
+    tap_dances: list[SvalboardTapDance[str]] = []
+    for index, row in enumerate(raw):
+        if not isinstance(row, list) or len(row) < 5:
+            continue
+        tap_dances.append(
+            SvalboardTapDance[str](
+                id=str(index),
+                tap=_vial_keycode_or_none(row[0]),
+                hold=_vial_keycode_or_none(row[1]),
+                double_tap=_vial_keycode_or_none(row[2]),
+                tap_then_hold=_vial_keycode_or_none(row[3]),
+                tapping_term=int(row[4]),
+            )
+        )
+    return tuple(tap_dances)
+
+
 def _parse_vial(data: Any) -> ParsedKeymap:
     """Parse a Vial-format JSON object into a ParsedKeymap.
 
@@ -85,7 +114,10 @@ def _parse_vial(data: Any) -> ParsedKeymap:
     if not isinstance(layout, list):
         raise ValueError("'layout' must be a list")
     layers = KeymapJsonAdapter.transform(layout, KeymapType.VIAL)
-    return ParsedKeymap(layers=layers)
+    return ParsedKeymap(
+        layers=layers,
+        tap_dances=_parse_vial_tap_dances(data),
+    )
 
 
 def _parse_keybard(data: Any) -> ParsedKeymap:
