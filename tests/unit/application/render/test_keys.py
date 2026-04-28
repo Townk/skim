@@ -470,3 +470,51 @@ def test_thumb_and_double_south_keys_use_expected_corner(
     assert expected_corner in clip_path.id, (
         f"{key_class_name} expected corner {expected_corner!r}; clip id was {clip_path.id!r}"
     )
+
+
+@pytest.mark.parametrize(
+    "key_class_name,extra_kwargs,side,expected_corner",
+    [
+        ("DoubleDownKey", None, KeyboardSide.RIGHT, "tr"),
+        ("UpKey",         None, KeyboardSide.RIGHT, "br"),
+        ("PadKey",        None, KeyboardSide.RIGHT, "tr"),
+        ("NailKey",       None, KeyboardSide.RIGHT, "tl"),
+        ("KnuckleKey",    None, KeyboardSide.RIGHT, "bl"),
+    ],
+)
+def test_side_aware_thumb_keys_right_side(
+    sample_palette, key_class_name, extra_kwargs, side, expected_corner
+):
+    """Side-aware thumb cluster keys draw the correct corner for RIGHT side."""
+    from skim.application.render import keys as keys_module
+    from skim.application.render.context import FingerClusterKeyColors, RenderContext
+    from skim.application.render.layout import Boundary, Position
+    from skim.application.render.marks import MacroTapDanceCorner
+
+    # Create a right-side context
+    base = RenderContext(
+        palette=sample_palette,
+        layer_index=0,
+        has_double_south=False,
+        use_layer_colors_on_keys=True,
+        hold_symbol_position=SplitSidePosition.OUTWARD,
+    )
+    context_right = ClusterRenderContext.from_render_context(base, side)
+
+    cls = getattr(keys_module, key_class_name)
+    key = SvalboardTargetKey(label="A", macro_id="3")
+    layout = Boundary(width=54, pos=Position(x=0, y=0))
+
+    # Some classes need a `colors` kwarg; others don't. Detect the spec via the kwarg name.
+    extra: dict = {}
+    if extra_kwargs == "colors":
+        extra["colors"] = FingerClusterKeyColors(primary="#208060", accent="#0E3024")
+
+    node = cls(ctx=context_right, key=key, layout=layout, **extra)
+    marks = [c for c in node.children if isinstance(c, MacroTapDanceCorner)]
+    assert len(marks) == 1, f"{key_class_name} (RIGHT) should append one corner mark"
+    # Inspect the underlying clip-path id — it includes the corner identifier.
+    clip_path = marks[0].children[0]  # ClipPath
+    assert expected_corner in clip_path.id, (
+        f"{key_class_name} (RIGHT) expected corner {expected_corner!r}; clip id was {clip_path.id!r}"
+    )

@@ -327,6 +327,8 @@ class DoubleDownKey(Key):
         label_width_multiplier=0.8 - 0.08,
     )
 
+    side: KeyboardSide
+
     def __init__(
         self,
         ctx: ClusterRenderContext,
@@ -342,6 +344,7 @@ class DoubleDownKey(Key):
             layout: The layout boundary for this key.
             **kwargs: Additional arguments passed to the parent Key.
         """
+        self.side = ctx.side
         fill_color = ctx.key_fill_color(key, ctx.layer_colors.dark_accent_color)
         super().__init__(
             label=key.label,
@@ -396,10 +399,11 @@ class DoubleDownKey(Key):
         from skim.application.render.marks import MacroTapDanceCorner
 
         radius = self.width * self.CONFIG.corner_radius_width_multiplier
+        corner = "tl" if self.side == KeyboardSide.LEFT else "tr"
         self.append(
             MacroTapDanceCorner(
                 x=self.x, y=self.y, w=self.width, h=self.height,
-                r=radius, corner="tl", fill=accent,
+                r=radius, corner=corner, fill=accent,
             )
         )
 
