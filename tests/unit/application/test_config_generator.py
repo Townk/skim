@@ -994,3 +994,64 @@ class TestTapDanceToConfigEntry:
         assert entry.id == "2"
         assert entry.name is None
         assert entry.preview == "t:Q"
+
+
+class TestGenerateFromKeymapMacrosAndTapDances:
+    """Tests that generate_from_keymap populates macros and tap_dances."""
+
+    def test_vial_with_macros_and_tap_dances(self):
+        import json
+
+        from skim.application.config_generator import ConfigGenerator
+
+        data = {
+            "version": 1,
+            "layout": [[["KC_A"] * 60]],
+            "tap_dance": [["KC_Q", "KC_NO", "KC_NO", "KC_NO", 250]],
+            "macro": [[["text", "hello"]]],
+        }
+        yaml_out = ConfigGenerator().generate_from_keymap(json.dumps(data))
+        config = yaml.safe_load(yaml_out)
+
+        macros = config["keycodes"]["macros"]
+        assert len(macros) == 1
+        assert macros[0]["id"] == "0"
+        assert macros[0]["name"] is None
+        assert macros[0]["preview"] == '[%%nf-md-text_recognition; "hello"]'
+
+        tap_dances = config["keycodes"]["tap_dances"]
+        assert len(tap_dances) == 1
+        assert tap_dances[0]["id"] == "0"
+        assert tap_dances[0]["preview"] == "t:Q"
+
+    def test_vial_skips_empty_entries(self):
+        import json
+
+        from skim.application.config_generator import ConfigGenerator
+
+        data = {
+            "version": 1,
+            "layout": [[["KC_A"] * 60]],
+            "tap_dance": [
+                ["KC_NO", "KC_NO", "KC_NO", "KC_NO", 200],
+                ["KC_Q", "KC_NO", "KC_NO", "KC_NO", 200],
+            ],
+            "macro": [[], [["tap", "KC_A"]]],
+        }
+        yaml_out = ConfigGenerator().generate_from_keymap(json.dumps(data))
+        config = yaml.safe_load(yaml_out)
+
+        # Empty entries skipped; non-empty kept with their original ids
+        assert [td["id"] for td in config["keycodes"]["tap_dances"]] == ["1"]
+        assert [m["id"] for m in config["keycodes"]["macros"]] == ["1"]
+
+    def test_c2json_without_macros_yields_empty_lists(self):
+        import json
+
+        from skim.application.config_generator import ConfigGenerator
+
+        data = {"layers": [["KC_A"] * 60]}
+        yaml_out = ConfigGenerator().generate_from_keymap(json.dumps(data))
+        config = yaml.safe_load(yaml_out)
+        assert config["keycodes"]["macros"] == []
+        assert config["keycodes"]["tap_dances"] == []

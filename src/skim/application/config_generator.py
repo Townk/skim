@@ -390,8 +390,9 @@ class ConfigGenerator:
         """Generate config YAML from a Vial or c2json keymap file.
 
         Detects the keymap format, counts layers to create default layer
-        entries with auto-generated colors, and scans for non-standard
-        keycodes to populate overrides.
+        entries with auto-generated colors, scans for non-standard
+        keycodes to populate overrides, and emits ``keycodes.macros`` and
+        ``keycodes.tap_dances`` populated from the parsed keymap.
 
         For Keybard files, delegates to generate_from_keybard() which
         extracts richer metadata (layer names, colors, custom keycodes).
@@ -405,9 +406,13 @@ class ConfigGenerator:
         Raises:
             ValueError: If content is not valid JSON or format is unknown.
         """
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
         from skim.application.loaders.keymap_loader import (
             _detect_keymap_from_json,
             is_empty_layer,
+            load_keymap_json,
         )
         from skim.domain import KeymapType
 
@@ -421,24 +426,20 @@ class ConfigGenerator:
         if keymap_type == KeymapType.KEYBARD:
             return self.generate_from_keybard(content)
 
-        # Count layers based on format
         if keymap_type == KeymapType.VIAL:
             raw_layers = data.get("layout", [])
-        else:  # C2JSON
+        else:
             raw_layers = data.get("layers", [])
 
-        # Flatten and filter out empty layers (all KC_NO/KC_TRNS)
         flat_layers = self._flatten_keymap_layers(raw_layers, keymap_type)
         active_indices = [i for i, layer in enumerate(flat_layers) if not is_empty_layer(layer)]
 
-        # Build layers and palette only for non-empty indices
         keyboard_layers = [
             {"index": idx, "name": f"Layer {idx}", "id": None, "variant": None}
             for idx in active_indices
         ]
         palette_layers = self._build_default_palette_layers_for_indices(active_indices)
 
-        # Scan for non-standard keycodes (only active layers)
         active_flat = [flat_layers[i] for i in active_indices]
         standard = self._load_standard_keycodes()
         keycode_overrides = self._find_non_standard_keycodes(active_flat, standard)
@@ -447,6 +448,21 @@ class ConfigGenerator:
         config_dict["keyboard"]["layers"] = keyboard_layers
         config_dict["keycodes"]["overrides"] = keycode_overrides
         config_dict["output"]["style"]["palette"]["layers"] = palette_layers
+
+        # Populate macros and tap_dances from the parsed keymap.
+        parsed = load_keymap_json(content)
+        validated = SkimConfig.model_validate(config_dict)
+        adapter = KeycodeLabelAdapter(validated.keyboard, load_keycode_mappings(validated.keycodes))
+        config_dict["keycodes"]["macros"] = [
+            entry.model_dump(mode="json")
+            for macro in parsed.macros
+            if (entry := macro_to_config_entry(macro, adapter)) is not None
+        ]
+        config_dict["keycodes"]["tap_dances"] = [
+            entry.model_dump(mode="json")
+            for td in parsed.tap_dances
+            if (entry := tap_dance_to_config_entry(td, adapter)) is not None
+        ]
 
         return yaml.dump(config_dict, sort_keys=False, default_flow_style=False)
 
