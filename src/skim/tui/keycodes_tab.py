@@ -252,6 +252,25 @@ class OverrideTargetAutoComplete(AutoComplete):
         super()._handle_target_update()
 
 
+def _resolve_nerdfont_markers(raw: str) -> str:
+    """Substitute ``%%nf-…;`` markers with their Unicode glyphs.
+
+    Used by the Macro and Tap-dance panes to render their stored
+    preview strings live. Markers that don't resolve are left in
+    place verbatim.
+    """
+    if not raw:
+        return ""
+    glyphs = load_nerdfont_glyphs()
+
+    def _replace_nf(match: re.Match) -> str:
+        name = match.group(1)
+        key = name if name.startswith("nf-") else f"nf-{name}"
+        return glyphs.get(key, match.group(0) or "")
+
+    return re.sub(r"%%([^;]+);", _replace_nf, raw)
+
+
 class PreProcessListPane(ListDetailPane):
     """List/detail pane for pre-process keycode entries."""
 
@@ -513,19 +532,6 @@ class MacroListPane(ListDetailPane):
         label = entry.get("name") or entry.get("preview", "") or ""
         return f"{id_:<{idw}}  ->  {label}"
 
-    def _resolve_preview(self, raw: str) -> str:
-        """Resolve NerdFont markers in a preview string for display."""
-        if not raw:
-            return ""
-        glyphs = load_nerdfont_glyphs()
-
-        def _replace_nf(match: re.Match) -> str:
-            name = match.group(1)
-            key = name if name.startswith("nf-") else f"nf-{name}"
-            return glyphs.get(key, match.group(0) or "")
-
-        return re.sub(r"%%([^;]+);", _replace_nf, raw)
-
     def compose_detail_fields(self) -> ComposeResult:
         with Horizontal(classes="field-row"):
             yield Label("ID:", classes="field-label")
@@ -561,7 +567,7 @@ class MacroListPane(ListDetailPane):
         self._refreshing = True
         self.query_one("#macro-id", Input).value = entry.get("id", "") or ""
         self.query_one("#macro-name", Input).value = entry.get("name", "") or ""
-        self.query_one("#macro-preview", Input).value = self._resolve_preview(
+        self.query_one("#macro-preview", Input).value = _resolve_nerdfont_markers(
             entry.get("preview", "") or ""
         )
         self._refreshing = False
@@ -647,19 +653,6 @@ class TapDanceListPane(ListDetailPane):
         label = entry.get("name") or entry.get("preview", "") or ""
         return f"{id_:<{idw}}  ->  {label}"
 
-    def _resolve_preview(self, raw: str) -> str:
-        """Resolve NerdFont markers in a preview string for display."""
-        if not raw:
-            return ""
-        glyphs = load_nerdfont_glyphs()
-
-        def _replace_nf(match: re.Match) -> str:
-            name = match.group(1)
-            key = name if name.startswith("nf-") else f"nf-{name}"
-            return glyphs.get(key, match.group(0) or "")
-
-        return re.sub(r"%%([^;]+);", _replace_nf, raw)
-
     def compose_detail_fields(self) -> ComposeResult:
         with Horizontal(classes="field-row"):
             yield Label("ID:", classes="field-label")
@@ -695,7 +688,7 @@ class TapDanceListPane(ListDetailPane):
         self._refreshing = True
         self.query_one("#tap-dance-id", Input).value = entry.get("id", "") or ""
         self.query_one("#tap-dance-name", Input).value = entry.get("name", "") or ""
-        self.query_one("#tap-dance-preview", Input).value = self._resolve_preview(
+        self.query_one("#tap-dance-preview", Input).value = _resolve_nerdfont_markers(
             entry.get("preview", "") or ""
         )
         self._refreshing = False
@@ -771,8 +764,10 @@ class TapDanceListPane(ListDetailPane):
 class KeycodesTab(Widget):
     """Keycodes configuration tab.
 
-    Shows two sections -- Pre-process and Overrides -- each using a
-    ListDetailPane subclass for editing individual keycode mapping entries.
+    Shows four sections -- Pre-process, Overrides, Macros, and
+    Tap-dances -- each using a ListDetailPane subclass for editing
+    individual entries. The whole tab is wrapped in a SkimVerticalScroll
+    so all four sections scroll together.
     """
 
     DEFAULT_CSS = """

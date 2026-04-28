@@ -303,6 +303,22 @@ class TestTapDanceListPane:
             await pilot.pause()
             assert pane.get_entries()[0]["id"] == "0"
 
+    @pytest.mark.asyncio()
+    async def test_editing_name_writes_to_config(self, config_with_tap_dances):
+        from skim.tui.keycodes_tab import TapDanceListPane
+
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(TapDanceListPane)
+            pane._selected = 1
+            pane._enter_edit_mode()
+            await pilot.pause()
+            app.query_one("#tap-dance-name", Input).value = "AB-tap"
+            pane._exit_edit_mode(commit=True)
+            await pilot.pause()
+            assert pane.get_entries()[1]["name"] == "AB-tap"
+
 
 class TestKeycodesTabStructure:
     """Tests that the four sections compose in the correct order."""
