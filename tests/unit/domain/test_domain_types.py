@@ -180,3 +180,28 @@ class TestSvalboardMacro:
         macro = SvalboardMacro[str](id="0")
         with pytest.raises((AttributeError, Exception)):
             macro.id = "1"  # type: ignore[misc]
+
+
+def test_target_key_carries_macro_id():
+    key = SvalboardTargetKey(label="M3", macro_id="3")
+    assert key.macro_id == "3"
+    assert key.tap_dance_id is None
+
+
+def test_target_key_carries_tap_dance_id():
+    key = SvalboardTargetKey(label="TD0", tap_dance_id="0")
+    assert key.tap_dance_id == "0"
+    assert key.macro_id is None
+
+
+def test_target_key_defaults_special_ids_to_none():
+    key = SvalboardTargetKey(label="A")
+    assert key.macro_id is None
+    assert key.tap_dance_id is None
+
+
+def test_target_key_remains_hashable_with_special_ids():
+    a = SvalboardTargetKey(label="M3", macro_id="3")
+    b = SvalboardTargetKey(label="M3", macro_id="3")
+    assert hash(a) == hash(b)
+    assert a == b

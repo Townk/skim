@@ -216,6 +216,12 @@ class SvalboardTargetKey:
             transparent family (KC_TRANSPARENT, KC_TRNS, _______). Downstream
             stages may use this to render the key as a faded fall-through of
             the base-layer label. Defaults to False.
+        macro_id: Stable id of the QMK macro this key references
+            (``"0"`` for ``MACRO_0``, ``"MY_MACRO"`` for ``MACRO_MY_MACRO``),
+            or None when the key is not a macro reference. Defaults to None.
+        tap_dance_id: Stable id of the QMK tap-dance this key references
+            (``"0"`` for ``TD(0)``, ``"MY_TD"`` for ``TD(MY_TD)``), or
+            None when the key is not a tap-dance reference. Defaults to None.
 
     Example:
         >>> # Simple key with just a label
@@ -232,6 +238,8 @@ class SvalboardTargetKey:
     label: str = ""
     layer_switch: int | None = None
     is_transparent: bool = False
+    macro_id: str | None = None
+    tap_dance_id: str | None = None
 
 
 SEPARATOR_CHAR = "│"
