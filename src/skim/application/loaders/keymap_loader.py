@@ -127,7 +127,10 @@ def _parse_keybard_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
 
 
 def _parse_keybard_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
-    """Parse the top-level ``macros`` array if present."""
+    """Parse the top-level ``macros`` array if present.
+
+    IDs are 1-based (``mid + 1``) to match the Vial UI labelling (Macro 1–50).
+    """
     raw = data.get("macros")
     if not isinstance(raw, list):
         return ()
@@ -135,9 +138,12 @@ def _parse_keybard_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
     for entry in raw:
         if not isinstance(entry, dict) or "mid" not in entry:
             continue
+        mid = entry["mid"]
+        if not isinstance(mid, int):
+            continue
         macros.append(
             SvalboardMacro[str](
-                id=str(entry["mid"]),
+                id=str(mid + 1),
                 actions=_parse_vial_macro_actions(entry.get("actions", [])),
             )
         )
@@ -185,13 +191,16 @@ def _parse_c2json_macro_actions(raw: Any) -> tuple[SvalboardMacroAction[str], ..
 
 
 def _parse_c2json_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
-    """Parse the optional top-level ``macros`` array if present."""
+    """Parse the optional top-level ``macros`` array if present.
+
+    IDs are 1-based to match the Vial UI labelling (Macro 1–50).
+    """
     raw = data.get("macros")
     if not isinstance(raw, list):
         return ()
     return tuple(
         SvalboardMacro[str](id=str(index), actions=_parse_c2json_macro_actions(actions))
-        for index, actions in enumerate(raw)
+        for index, actions in enumerate(raw, start=1)
     )
 
 
@@ -228,13 +237,16 @@ def _parse_vial_macro_actions(raw: Any) -> tuple[SvalboardMacroAction[str], ...]
 
 
 def _parse_vial_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
-    """Parse the top-level ``macro`` array if present."""
+    """Parse the top-level ``macro`` array if present.
+
+    IDs are 1-based to match the Vial UI labelling (Macro 1–50).
+    """
     raw = data.get("macro")
     if not isinstance(raw, list):
         return ()
     return tuple(
         SvalboardMacro[str](id=str(index), actions=_parse_vial_macro_actions(actions))
-        for index, actions in enumerate(raw)
+        for index, actions in enumerate(raw, start=1)
     )
 
 

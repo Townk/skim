@@ -256,6 +256,20 @@ class TestMacroListPane:
             )
             assert "%%nf-md-text_recognition;" not in str(item_text)
 
+    @pytest.mark.asyncio()
+    async def test_add_starts_at_one_when_list_empty(self):
+        from skim.tui.keycodes_tab import MacroListPane
+
+        config = SkimConfig().model_dump(mode="json")
+        config["keycodes"]["macros"] = []
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(MacroListPane)
+            pane._add_entry()
+            await pilot.pause()
+            assert pane.get_entries()[0]["id"] == "1"
+
 
 class TestTapDanceListPane:
     """Tests for the new Tap-dance list/detail pane."""
