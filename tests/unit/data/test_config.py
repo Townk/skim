@@ -341,3 +341,21 @@ class TestKeycodesMacrosAndTapDances:
         dumped = original.model_dump(mode="json")
         rebuilt = Keycodes.model_validate(dumped)
         assert rebuilt == original
+
+
+class TestPalette:
+    def test_macro_and_tap_dance_color_defaults(self):
+        from skim.data.config import Palette
+
+        p = Palette()
+        assert p.macro_color == "#89511C"
+        assert p.tap_dance_color == "#41687F"
+
+    def test_macro_and_tap_dance_color_overrides_round_trip(self):
+        from skim.data.config import Palette
+
+        p = Palette(macro_color="#FF0000", tap_dance_color="#00FF00")
+        dumped = p.model_dump(mode="json")
+        rebuilt = Palette.model_validate(dumped)
+        assert rebuilt.macro_color == "#FF0000"
+        assert rebuilt.tap_dance_color == "#00FF00"

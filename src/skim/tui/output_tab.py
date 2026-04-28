@@ -101,6 +101,8 @@ _PALETTE_FIELD_MAP = {
     "palette-key-label-color": "key_label_color",
     "palette-background-color": "background_color",
     "palette-border-color": "border_color",
+    "palette-macro-color": "macro_color",
+    "palette-tap-dance-color": "tap_dance_color",
 }
 
 
@@ -786,6 +788,8 @@ class OutputTab(Widget):
                     ("Border color:", "palette-border-color", "border_color", "black"),
                     ("Neutral color:", "palette-neutral-color", "neutral_color", "#6F768B"),
                     ("Key label color:", "palette-key-label-color", "key_label_color", "white"),
+                    ("Macro color:", "palette-macro-color", "macro_color", "#89511C"),
+                    ("Tap-dance color:", "palette-tap-dance-color", "tap_dance_color", "#41687F"),
                 ]:
                     color_val = palette.get(config_key, "") or ""
                     with Horizontal(classes="field-row"):
