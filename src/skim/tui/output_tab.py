@@ -24,6 +24,7 @@ from skim.tui.app import LayerAdded, LayerRemoved
 from skim.tui.list_detail_pane import ListDetailPane
 from skim.tui.widgets import (
     ColorInput,
+    LayerColorInput,
     SkimInput,
     SkimListView,
     SkimSelect,
@@ -250,7 +251,7 @@ class LayerColorListPane(ListDetailPane):
             yield Static(
                 "\ue0b6\u2588\u2588\ue0b4", classes="color-swatch", id="swatch-lc-base-color"
             )
-            lc_color_input = SkimInput(
+            lc_color_input = LayerColorInput(
                 value="",
                 id="lc-base-color",
                 placeholder="#RRGGBB",
@@ -286,7 +287,7 @@ class LayerColorListPane(ListDetailPane):
                     classes="color-swatch",
                     id=f"swatch-lc-step-{i}",
                 )
-                step_input = SkimInput(
+                step_input = LayerColorInput(
                     value="",
                     id=f"lc-step-{i}",
                     placeholder="#RRGGBB",
