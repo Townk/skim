@@ -73,13 +73,13 @@ def _format_macro_action(action: SvalboardMacroAction[str], adapter: KeycodeLabe
 def macro_preview(macro: SvalboardMacro[str], adapter: KeycodeLabelAdapter) -> str:
     """Format a macro as a single-line preview string.
 
-    Square-bracket-wrapped, ``" | "``-separated actions. Keys inside an
-    action are resolved through the keycode-label adapter and joined
-    with ``","``. Text and delay actions use raw NerdFont markers
-    (resolved to glyphs at TUI display time).
+    ``" | "``-separated actions. Keys inside an action are resolved
+    through the keycode-label adapter and joined with ``","``. Text and
+    delay actions use raw NerdFont markers (resolved to glyphs at TUI
+    display time).
     """
     formatted = [_format_macro_action(a, adapter) for a in macro.actions]
-    return "[" + " | ".join(formatted) + "]"
+    return " | ".join(formatted)
 
 
 _TAP_DANCE_FIELD_ORDER: tuple[tuple[str, str], ...] = (

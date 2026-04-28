@@ -2,7 +2,7 @@
 
 import pytest
 from textual.app import App, ComposeResult
-from textual.widgets import Button, Input
+from textual.widgets import Button, Input, Static
 
 from skim.data.config import SkimConfig
 from skim.tui.keycodes_tab import KeycodesTab
@@ -234,6 +234,28 @@ class TestMacroListPane:
             await pilot.pause()
             assert pane.get_entries()[1]["name"] == "Q-tap"
 
+    @pytest.mark.asyncio()
+    async def test_list_row_resolves_nerdfont_markers(self):
+        from skim.application.loaders.nerdfont_glyphs_loader import (
+            load_nerdfont_glyphs,
+        )
+
+        config = SkimConfig().model_dump(mode="json")
+        config["keycodes"]["macros"] = [
+            {"id": "0", "name": None, "preview": '%%nf-md-text_recognition; "hi"'},
+        ]
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            macro_list = app.query_one("#macro-list", SkimListView)
+            item_text = macro_list.children[0].query_one(Static).content
+            glyphs = load_nerdfont_glyphs()
+            expected_glyph = glyphs["nf-md-text_recognition"]
+            assert expected_glyph in str(item_text), (
+                f"expected glyph {expected_glyph!r} in row text {item_text!r}"
+            )
+            assert "%%nf-md-text_recognition;" not in str(item_text)
+
 
 class TestTapDanceListPane:
     """Tests for the new Tap-dance list/detail pane."""
@@ -318,6 +340,26 @@ class TestTapDanceListPane:
             pane._exit_edit_mode(commit=True)
             await pilot.pause()
             assert pane.get_entries()[1]["name"] == "AB-tap"
+
+    @pytest.mark.asyncio()
+    async def test_list_row_resolves_nerdfont_markers(self):
+        from skim.application.loaders.nerdfont_glyphs_loader import (
+            load_nerdfont_glyphs,
+        )
+
+        config = SkimConfig().model_dump(mode="json")
+        config["keycodes"]["tap_dances"] = [
+            {"id": "0", "name": None, "preview": "t:%%nf-md-apple_keyboard_shift;"},
+        ]
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            td_list = app.query_one("#tap-dance-list", SkimListView)
+            item_text = td_list.children[0].query_one(Static).content
+            glyphs = load_nerdfont_glyphs()
+            expected_glyph = glyphs["nf-md-apple_keyboard_shift"]
+            assert expected_glyph in str(item_text)
+            assert "%%nf-md-apple_keyboard_shift;" not in str(item_text)
 
 
 class TestKeycodesTabStructure:

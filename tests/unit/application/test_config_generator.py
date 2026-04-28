@@ -269,7 +269,7 @@ class TestMacroPreview:
             id="0",
             actions=(SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("KC_Q",)),),
         )
-        assert macro_preview(macro, adapter) == "[↓↑ Q]"
+        assert macro_preview(macro, adapter) == "↓↑ Q"
 
     def test_multi_keycode_up_action_joins_with_comma(self, adapter):
         from skim.application.config_generator import macro_preview
@@ -285,7 +285,7 @@ class TestMacroPreview:
                 SvalboardMacroAction[str](kind=SvalboardMacroActionKind.UP, keys=("KC_E", "KC_1")),
             ),
         )
-        assert macro_preview(macro, adapter) == "[↑ E,1]"
+        assert macro_preview(macro, adapter) == "↑ E,1"
 
     def test_text_action_uses_nf_marker(self, adapter):
         from skim.application.config_generator import macro_preview
@@ -299,7 +299,7 @@ class TestMacroPreview:
             id="0",
             actions=(SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TEXT, text=";qj"),),
         )
-        assert macro_preview(macro, adapter) == '[%%nf-md-text_recognition; ";qj"]'
+        assert macro_preview(macro, adapter) == '%%nf-md-text_recognition; ";qj"'
 
     def test_delay_action_uses_nf_marker(self, adapter):
         from skim.application.config_generator import macro_preview
@@ -315,7 +315,7 @@ class TestMacroPreview:
                 SvalboardMacroAction[str](kind=SvalboardMacroActionKind.DELAY, duration_ms=30),
             ),
         )
-        assert macro_preview(macro, adapter) == "[%%nf-fa-hourglass_2; 30]"
+        assert macro_preview(macro, adapter) == "%%nf-fa-hourglass_2; 30"
 
     def test_mixed_sequence_pipe_separated(self, adapter):
         from skim.application.config_generator import macro_preview
@@ -333,7 +333,7 @@ class TestMacroPreview:
                 SvalboardMacroAction[str](kind=SvalboardMacroActionKind.UP, keys=("KC_E", "KC_1")),
             ),
         )
-        assert macro_preview(macro, adapter) == "[↓ E | %%nf-fa-hourglass_2; 30 | ↑ E,1]"
+        assert macro_preview(macro, adapter) == "↓ E | %%nf-fa-hourglass_2; 30 | ↑ E,1"
 
 
 class TestQmkColorParsing:
@@ -960,7 +960,7 @@ class TestMacroToConfigEntry:
         assert isinstance(entry, Macro)
         assert entry.id == "3"
         assert entry.name is None
-        assert entry.preview == "[↓↑ A]"
+        assert entry.preview == "↓↑ A"
 
 
 class TestTapDanceToConfigEntry:
@@ -1017,7 +1017,7 @@ class TestGenerateFromKeymapMacrosAndTapDances:
         assert len(macros) == 1
         assert macros[0]["id"] == "0"
         assert macros[0]["name"] is None
-        assert macros[0]["preview"] == '[%%nf-md-text_recognition; "hello"]'
+        assert macros[0]["preview"] == '%%nf-md-text_recognition; "hello"'
 
         tap_dances = config["keycodes"]["tap_dances"]
         assert len(tap_dances) == 1
@@ -1085,7 +1085,7 @@ class TestGenerateFromKeybardMacrosAndTapDances:
         macros = config["keycodes"]["macros"]
         assert len(macros) == 1
         assert macros[0]["id"] == "1"
-        assert macros[0]["preview"] == "[↓↑ X]"
+        assert macros[0]["preview"] == "↓↑ X"
 
         tap_dances = config["keycodes"]["tap_dances"]
         assert len(tap_dances) == 1

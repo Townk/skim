@@ -529,7 +529,8 @@ class MacroListPane(ListDetailPane):
         entries = self.get_entries()
         idw = max((len(e.get("id", "") or "") for e in entries), default=0)
         id_ = entry.get("id", "") or ""
-        label = entry.get("name") or entry.get("preview", "") or ""
+        name = entry.get("name")
+        label = name if name else _resolve_nerdfont_markers(entry.get("preview", "") or "")
         return f"{id_:<{idw}}  ->  {label}"
 
     def compose_detail_fields(self) -> ComposeResult:
@@ -650,7 +651,8 @@ class TapDanceListPane(ListDetailPane):
         entries = self.get_entries()
         idw = max((len(e.get("id", "") or "") for e in entries), default=0)
         id_ = entry.get("id", "") or ""
-        label = entry.get("name") or entry.get("preview", "") or ""
+        name = entry.get("name")
+        label = name if name else _resolve_nerdfont_markers(entry.get("preview", "") or "")
         return f"{id_:<{idw}}  ->  {label}"
 
     def compose_detail_fields(self) -> ComposeResult:
