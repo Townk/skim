@@ -302,10 +302,10 @@ def derive_accent_line(fill_color: str) -> str:
         A hex colour string for the lighter line tone.
     """
     r, g, b = str_to_rgb(fill_color)
-    h, l, s = colorsys.rgb_to_hls(r, g, b)
-    new_l = clip(l + 0.25, 0.0, 1.0)
-    new_s = clip(s - 0.10, 0.0, 1.0)
-    nr, ng, nb = colorsys.hls_to_rgb(h, new_l, new_s)
+    hue, lightness, saturation = colorsys.rgb_to_hls(r, g, b)
+    new_lightness = clip(lightness + 0.25, 0.0, 1.0)
+    new_saturation = clip(saturation - 0.10, 0.0, 1.0)
+    nr, ng, nb = colorsys.hls_to_rgb(hue, new_lightness, new_saturation)
     return hex_str(nr, ng, nb)
 
 
