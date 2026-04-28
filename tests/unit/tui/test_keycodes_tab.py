@@ -233,3 +233,72 @@ class TestMacroListPane:
             pane._exit_edit_mode(commit=True)
             await pilot.pause()
             assert pane.get_entries()[1]["name"] == "Q-tap"
+
+
+class TestTapDanceListPane:
+    """Tests for the new Tap-dance list/detail pane."""
+
+    @pytest.fixture()
+    def config_with_tap_dances(self) -> dict:
+        config = SkimConfig().model_dump(mode="json")
+        config["keycodes"]["tap_dances"] = [
+            {"id": "0", "name": "Quick shift", "preview": "t:Q"},
+            {"id": "3", "name": None, "preview": "t:A h:B"},
+        ]
+        return config
+
+    @pytest.mark.asyncio()
+    async def test_list_shows_entries(self, config_with_tap_dances):
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            td_list = app.query_one("#tap-dance-list", SkimListView)
+            assert len(td_list.children) == 2
+
+    @pytest.mark.asyncio()
+    async def test_id_and_name_disabled_by_default(self, config_with_tap_dances):
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            assert app.query_one("#tap-dance-id", Input).disabled is True
+            assert app.query_one("#tap-dance-name", Input).disabled is True
+
+    @pytest.mark.asyncio()
+    async def test_preview_field_disabled(self, config_with_tap_dances):
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            assert app.query_one("#tap-dance-preview", Input).disabled is True
+
+    @pytest.mark.asyncio()
+    async def test_add_creates_undefined_entry(self, config_with_tap_dances):
+        from skim.tui.keycodes_tab import TapDanceListPane
+
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(TapDanceListPane)
+            pane._add_entry()
+            await pilot.pause()
+            entries = pane.get_entries()
+            assert len(entries) == 3
+            new_entry = entries[-1]
+            assert new_entry["id"] == "1"
+            assert new_entry["name"] is None
+            assert new_entry["preview"] == "Undefined"
+
+    @pytest.mark.asyncio()
+    async def test_duplicate_id_reverts(self, config_with_tap_dances):
+        from skim.tui.keycodes_tab import TapDanceListPane
+
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(TapDanceListPane)
+            pane._selected = 0
+            pane._enter_edit_mode()
+            await pilot.pause()
+            app.query_one("#tap-dance-id", Input).value = "3"
+            pane._exit_edit_mode(commit=True)
+            await pilot.pause()
+            assert pane.get_entries()[0]["id"] == "0"

@@ -629,6 +629,145 @@ class MacroListPane(ListDetailPane):
                 self.update_all_list_items()
 
 
+class TapDanceListPane(ListDetailPane):
+    """List/detail pane for tap-dance definitions."""
+
+    def __init__(self, config_data: dict[str, Any], **kwargs: Any) -> None:
+        super().__init__(pane_id="tap-dance", list_help_key="keycodes-tap-dance-list", **kwargs)
+        self.config_data = config_data
+        self._refreshing: bool = False
+
+    def get_entries(self) -> list[dict]:
+        return self.config_data.get("keycodes", {}).get("tap_dances", [])
+
+    def format_entry(self, index: int, entry: dict) -> str:
+        entries = self.get_entries()
+        idw = max((len(e.get("id", "") or "") for e in entries), default=0)
+        id_ = entry.get("id", "") or ""
+        label = entry.get("name") or entry.get("preview", "") or ""
+        return f"{id_:<{idw}}  ->  {label}"
+
+    def _resolve_preview(self, raw: str) -> str:
+        """Resolve NerdFont markers in a preview string for display."""
+        if not raw:
+            return ""
+        glyphs = load_nerdfont_glyphs()
+
+        def _replace_nf(match: re.Match) -> str:
+            name = match.group(1)
+            key = name if name.startswith("nf-") else f"nf-{name}"
+            return glyphs.get(key, match.group(0) or "")
+
+        return re.sub(r"%%([^;]+);", _replace_nf, raw)
+
+    def compose_detail_fields(self) -> ComposeResult:
+        with Horizontal(classes="field-row"):
+            yield Label("ID:", classes="field-label")
+            yield SkimInput(
+                value="",
+                id="tap-dance-id",
+                placeholder="e.g. 0",
+                disabled=True,
+                help_key="keycodes-tap-dance-id",
+            )
+        with Horizontal(classes="field-row"):
+            yield Label("Name:", classes="field-label")
+            yield SkimInput(
+                value="",
+                id="tap-dance-name",
+                placeholder="e.g. Quick shift",
+                disabled=True,
+                help_key="keycodes-tap-dance-name",
+            )
+        with Horizontal(classes="field-row"):
+            yield Label("Preview:", classes="field-label")
+            yield SkimInput(
+                value="",
+                id="tap-dance-preview",
+                placeholder="resolved preview",
+                disabled=True,
+            )
+
+    def detail_field_ids(self) -> set[str]:
+        return {"tap-dance-id", "tap-dance-name"}
+
+    def refresh_fields(self, entry: dict) -> None:
+        self._refreshing = True
+        self.query_one("#tap-dance-id", Input).value = entry.get("id", "") or ""
+        self.query_one("#tap-dance-name", Input).value = entry.get("name", "") or ""
+        self.query_one("#tap-dance-preview", Input).value = self._resolve_preview(
+            entry.get("preview", "") or ""
+        )
+        self._refreshing = False
+
+    def clear_fields(self) -> None:
+        self._refreshing = True
+        self.query_one("#tap-dance-id", Input).value = ""
+        self.query_one("#tap-dance-name", Input).value = ""
+        self.query_one("#tap-dance-preview", Input).value = ""
+        self._refreshing = False
+
+    def create_entry(self, index: int) -> dict:
+        entries = self.get_entries()
+        used = {e.get("id", "") or "" for e in entries}
+        candidate = 0
+        while str(candidate) in used:
+            candidate += 1
+        return {"id": str(candidate), "name": None, "preview": "Undefined"}
+
+    def validate_and_apply(self, entry: dict) -> bool:
+        new_id = (self.query_one("#tap-dance-id", Input).value or "").strip()
+        if not new_id:
+            self._revert_and_show_error("Tap-dance ID cannot be empty.")
+            return False
+        entries = self.get_entries()
+        for i, other in enumerate(entries):
+            if i == self._selected:
+                continue
+            if (other.get("id", "") or "") == new_id:
+                self._revert_and_show_error(f"Tap-dance ID '{new_id}' is already used.")
+                return False
+        entry["id"] = new_id
+        entry["name"] = (self.query_one("#tap-dance-name", Input).value or "").strip() or None
+        return True
+
+    def _enter_edit_mode(self) -> None:
+        """Refresh fields from the selected entry, then enter edit mode.
+
+        Mirrors MacroListPane: ensures the input widgets reflect the
+        currently-selected entry even when ``_selected`` is set
+        programmatically (e.g. in unit tests) without going through the
+        list-view event flow.
+        """
+        entries = self.get_entries()
+        if 0 <= self._selected < len(entries):
+            self.refresh_fields(entries[self._selected])
+        super()._enter_edit_mode()
+
+    def _check_focus_commit(self) -> None:
+        if not self._editing:
+            return
+        focused = self.app.focused
+        all_fields = self.detail_field_ids() | {"tap-dance-preview"}
+        if focused is None or not isinstance(focused, Input) or focused.id not in all_fields:
+            self._exit_edit_mode(commit=True)
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        if self._refreshing:
+            return
+        input_id = event.input.id or ""
+        if input_id == "tap-dance-id":
+            entries = self.get_entries()
+            if self._selected < len(entries):
+                entries[self._selected]["id"] = event.value
+                self.update_all_list_items()
+        elif input_id == "tap-dance-name":
+            entries = self.get_entries()
+            if self._selected < len(entries):
+                entries[self._selected]["name"] = event.value or None
+                self.update_all_list_items()
+
+
 class KeycodesTab(Widget):
     """Keycodes configuration tab.
 
@@ -686,6 +825,10 @@ class KeycodesTab(Widget):
             yield Static("Macros", classes="section-title")
             yield MacroListPane(config_data=self.config_data)
 
+        with Vertical(id="tap-dances-section", classes="keycodes-section"):
+            yield Static("Tap-dances", classes="section-title")
+            yield TapDanceListPane(config_data=self.config_data)
+
     def on_mount(self) -> None:
         pp_pane = self.query_one(PreProcessListPane)
         pp_pane.rebuild_list()
@@ -710,6 +853,14 @@ class KeycodesTab(Widget):
             macro_pane._selected = 0
             macro_pane.refresh_fields(macro_entries[0])
         macro_pane._update_list_state()
+
+        td_pane = self.query_one(TapDanceListPane)
+        td_pane.rebuild_list()
+        td_entries = td_pane.get_entries()
+        if td_entries:
+            td_pane._selected = 0
+            td_pane.refresh_fields(td_entries[0])
+        td_pane._update_list_state()
 
     # Compatibility: expose _enter_edit_mode and _exit_edit_mode for tests
     def _enter_edit_mode(self, section: str) -> None:
