@@ -125,3 +125,86 @@ class MacroTapDanceCorner(draw.Group):
         clipped = draw.Group(clip_path=f"url(#{clip_id})")
         clipped.append(draw.Path(d=tri_path, fill=fill))
         self.append(clipped)
+
+
+# --- Home-circle wedge badge ------------------------------------------------
+
+# The wedge geometry is taken from docs/design/CenterKeyBadge.svg. That SVG
+# lays the home circle at centre (450, 450) and radius 450 in its own
+# coordinate system (after collapsing the two outer transforms). The path
+# below is the wedge expressed on a unit circle (centre origin, radius 1)
+# so a renderer can scale it to any home-circle size.
+#
+# Mapping from SVG path coords (px, py) to normalised (nx, ny):
+#   nx = (px * 1.090909 + 11.181818 - 825 - 450) / 450
+#   ny = (py * 1.090909 - 988.363636 - 1200 - 450) / 450
+#
+# Path elements (extracted from the source SVG, then normalised by the above):
+#   M  1571,    2418.5
+#   L  1557.403, 2418.5
+#   C  1510.596, 2418.5  1469.748, 2386.761  1458.182, 2341.406
+#   C  1430.283, 2232.594 1344.677, 2146.911 1235.913, 2118.89
+#   C  1190.366, 2107.223 1158.511, 2066.18  1158.511, 2019.163
+#   C  1158.5,   2011.156 1158.5,   2006     1158.5,   2006
+#   C  1386.317, 2006     1571,     2190.683 1571,     2418.5
+#   Z
+
+
+def _norm(px: float, py: float) -> tuple[float, float]:
+    return (
+        (px * 1.090909 + 11.181818 - 825.0 - 450.0) / 450.0,
+        (py * 1.090909 - 988.363636 - 1200.0 - 450.0) / 450.0,
+    )
+
+
+_BADGE_PATH_PTS_NORMALISED: list[tuple[str, list[tuple[float, float]]]] = [
+    ("M", [_norm(1571, 2418.5)]),
+    ("L", [_norm(1557.403, 2418.5)]),
+    ("C", [_norm(1510.596, 2418.5), _norm(1469.748, 2386.761), _norm(1458.182, 2341.406)]),
+    ("C", [_norm(1430.283, 2232.594), _norm(1344.677, 2146.911), _norm(1235.913, 2118.89)]),
+    ("C", [_norm(1190.366, 2107.223), _norm(1158.511, 2066.18), _norm(1158.511, 2019.163)]),
+    ("C", [_norm(1158.5, 2011.156), _norm(1158.5, 2006), _norm(1158.5, 2006)]),
+    ("C", [_norm(1386.317, 2006), _norm(1571, 2190.683), _norm(1571, 2418.5)]),
+    ("Z", []),
+]
+"""Wedge path in unit-circle space — list of (command, point list) tuples."""
+
+
+_NORMALISED_BADGE_RIGHT_TIP: tuple[float, float] = _BADGE_PATH_PTS_NORMALISED[0][1][0]
+"""The first M point — right-most tip of the wedge — on the unit circle."""
+
+
+def _badge_path_d(cx: float, cy: float, r: float) -> str:
+    """Build the SVG ``d`` attribute for a wedge sized to ``r`` and centred
+    at ``(cx, cy)``."""
+    parts: list[str] = []
+    for cmd, pts in _BADGE_PATH_PTS_NORMALISED:
+        if cmd == "Z":
+            parts.append("Z")
+            continue
+        coords = " ".join(f"{cx + nx * r} {cy + ny * r}" for nx, ny in pts)
+        parts.append(f"{cmd} {coords}")
+    return " ".join(parts)
+
+
+class MacroTapDanceCircleBadge(draw.Group):
+    """Curved wedge badge in the NE quadrant of a home circle.
+
+    The wedge geometry is taken from ``docs/design/CenterKeyBadge.svg`` and
+    re-scaled to the renderer's home-circle radius. The host circle and any
+    centred glyph are drawn separately by the caller — this helper paints
+    only the wedge.
+    """
+
+    def __init__(self, cx: float, cy: float, r: float, fill: str, **kwargs):
+        """Build the badge group.
+
+        Args:
+            cx: Home-circle centre x in the parent SVG coordinate system.
+            cy: Home-circle centre y.
+            r: Home-circle radius.
+            fill: Hex colour of the wedge (the accent fill).
+            **kwargs: Forwarded to ``drawsvg.Group``.
+        """
+        super().__init__(**kwargs)
+        self.append(draw.Path(d=_badge_path_d(cx, cy, r), fill=fill))
