@@ -284,6 +284,31 @@ def nudge_color_hsl(
     return hex_str(r_new, g_new, b_new)
 
 
+def derive_accent_line(fill_color: str) -> str:
+    """Derive a lighter "line" accent tone from a darker accent fill.
+
+    The design uses two tones per accent — a dark fill (used for chip
+    bodies and key corner triangles) and a lighter line tone (used for
+    chip outlines, section title text, and underlines). The fill lives
+    in config; this helper computes the line tone in HSL space by
+    raising lightness ~25 percentage points and reducing saturation
+    ~10 percentage points.
+
+    Args:
+        fill_color: The dark accent fill, e.g. ``"#89511C"`` or
+            ``"#41687F"``.
+
+    Returns:
+        A hex colour string for the lighter line tone.
+    """
+    r, g, b = str_to_rgb(fill_color)
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    new_l = clip(l + 0.25, 0.0, 1.0)
+    new_s = clip(s - 0.10, 0.0, 1.0)
+    nr, ng, nb = colorsys.hls_to_rgb(h, new_l, new_s)
+    return hex_str(nr, ng, nb)
+
+
 def make_gradient(base_color: str, base_index: int = 2) -> tuple[str, str, str, str, str, str]:
     """Generate a 6-color gradient with base color at specified index.
 

@@ -439,3 +439,29 @@ class TestNudgeColorHsl:
         nudged = nudge_color_hsl("#7F4040", lightness_delta=0.05)
         new_hue, _, _ = colorsys.rgb_to_hls(*str_to_rgb(nudged))
         assert abs(new_hue - original_hue) < 1e-6
+
+
+class TestDeriveAccentLine:
+    def test_macro_fill_yields_lighter_amber(self):
+        from skim.application.render.styling import derive_accent_line, str_to_rgb
+        import colorsys
+
+        line = derive_accent_line("#89511C")
+        fill_l = colorsys.rgb_to_hls(*str_to_rgb("#89511C"))[1]
+        line_l = colorsys.rgb_to_hls(*str_to_rgb(line))[1]
+        assert line_l > fill_l + 0.15  # at least ~15 pp (HLS scale 0..1) lighter
+
+    def test_tap_dance_fill_yields_lighter_blue(self):
+        from skim.application.render.styling import derive_accent_line, str_to_rgb
+        import colorsys
+
+        line = derive_accent_line("#41687F")
+        fill_l = colorsys.rgb_to_hls(*str_to_rgb("#41687F"))[1]
+        line_l = colorsys.rgb_to_hls(*str_to_rgb(line))[1]
+        assert line_l > fill_l + 0.15
+
+    def test_returns_hex_string(self):
+        from skim.application.render.styling import derive_accent_line
+        line = derive_accent_line("#89511C")
+        assert line.startswith("#")
+        assert len(line) == 7
