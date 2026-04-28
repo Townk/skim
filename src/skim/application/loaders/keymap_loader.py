@@ -104,6 +104,28 @@ def _parse_vial_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
     return tuple(tap_dances)
 
 
+def _parse_keybard_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
+    """Parse the top-level ``tapdances`` array if present."""
+    raw = data.get("tapdances")
+    if not isinstance(raw, list):
+        return ()
+    tap_dances: list[SvalboardTapDance[str]] = []
+    for entry in raw:
+        if not isinstance(entry, dict) or "tdid" not in entry:
+            continue
+        tap_dances.append(
+            SvalboardTapDance[str](
+                id=str(entry["tdid"]),
+                tap=_vial_keycode_or_none(entry.get("tap")),
+                hold=_vial_keycode_or_none(entry.get("hold")),
+                double_tap=_vial_keycode_or_none(entry.get("doubletap")),
+                tap_then_hold=_vial_keycode_or_none(entry.get("taphold")),
+                tapping_term=int(entry.get("tapms", 200)),
+            )
+        )
+    return tuple(tap_dances)
+
+
 _KEY_ACTION_KINDS: dict[str, SvalboardMacroActionKind] = {
     "tap": SvalboardMacroActionKind.TAP,
     "down": SvalboardMacroActionKind.DOWN,
@@ -181,7 +203,10 @@ def _parse_keybard(data: Any) -> ParsedKeymap:
     if not isinstance(keymap, list):
         raise ValueError("'keymap' must be a list")
     layers = KeymapJsonAdapter.transform(keymap, KeymapType.KEYBARD)
-    return ParsedKeymap(layers=layers)
+    return ParsedKeymap(
+        layers=layers,
+        tap_dances=_parse_keybard_tap_dances(data),
+    )
 
 
 def _parse_c2json(data: Any) -> ParsedKeymap:

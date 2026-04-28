@@ -539,3 +539,60 @@ class TestParseVialMacros:
         result = _parse_vial(data)
         assert [m.id for m in result.macros] == ["0", "1", "2"]
         assert result.macros[1].actions == ()
+
+
+class TestParseKeybardTapDance:
+    """Tests that _parse_keybard extracts top-level tapdances entries."""
+
+    def test_no_tapdances_key_yields_empty(self):
+        data = {"keymap": [["KC_A"] * 60]}
+        result = _parse_keybard(data)
+        assert result.tap_dances == ()
+
+    def test_single_tap_dance(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "tapdances": [
+                {
+                    "tdid": 0,
+                    "tap": "TO(0)",
+                    "hold": "MO(3)",
+                    "doubletap": "KC_NO",
+                    "taphold": "KC_NO",
+                    "tapms": 200,
+                }
+            ],
+        }
+        result = _parse_keybard(data)
+        assert result.tap_dances == (
+            SvalboardTapDance[str](
+                id="0",
+                tap="TO(0)",
+                hold="MO(3)",
+                double_tap=None,
+                tap_then_hold=None,
+                tapping_term=200,
+            ),
+        )
+
+    def test_kc_no_maps_to_none(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "tapdances": [
+                {
+                    "tdid": 5,
+                    "tap": "KC_NO",
+                    "hold": "KC_NO",
+                    "doubletap": "KC_NO",
+                    "taphold": "KC_NO",
+                    "tapms": 200,
+                }
+            ],
+        }
+        result = _parse_keybard(data)
+        td = result.tap_dances[0]
+        assert td.id == "5"
+        assert td.tap is None
+        assert td.hold is None
+        assert td.double_tap is None
+        assert td.tap_then_hold is None
