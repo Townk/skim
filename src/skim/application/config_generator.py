@@ -40,7 +40,7 @@ from skim.domain.domain_types import (
     SvalboardMacro,
     SvalboardMacroAction,
     SvalboardMacroActionKind,
-    SvalboardTapDance,  # noqa: F401
+    SvalboardTapDance,
 )
 
 _MACRO_KIND_SYMBOLS: dict[SvalboardMacroActionKind, str] = {
@@ -80,6 +80,30 @@ def macro_preview(macro: SvalboardMacro[str], adapter: KeycodeLabelAdapter) -> s
     """
     formatted = [_format_macro_action(a, adapter) for a in macro.actions]
     return "[" + " | ".join(formatted) + "]"
+
+
+_TAP_DANCE_FIELD_ORDER: tuple[tuple[str, str], ...] = (
+    ("tap", "t"),
+    ("hold", "h"),
+    ("double_tap", "dt"),
+    ("tap_then_hold", "th"),
+)
+
+
+def tap_dance_preview(tap_dance: SvalboardTapDance[str], adapter: KeycodeLabelAdapter) -> str:
+    """Format a tap dance as a single-line preview string.
+
+    Initials in fixed order (``t:``, ``h:``, ``dt:``, ``th:``), space
+    joined, omitting fields whose value is ``None``. The tapping term
+    is not shown.
+    """
+    parts: list[str] = []
+    for attr, prefix in _TAP_DANCE_FIELD_ORDER:
+        value = getattr(tap_dance, attr)
+        if value is None:
+            continue
+        parts.append(f"{prefix}:{_resolve_key_label(value, adapter)}")
+    return " ".join(parts)
 
 
 class ConfigGenerator:

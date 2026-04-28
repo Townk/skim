@@ -856,3 +856,68 @@ class TestWithSampleC2json:
         assert len(parsed["output"]["style"]["palette"]["layers"]) == len(
             parsed["keyboard"]["layers"]
         )
+
+
+class TestTapDancePreview:
+    """Tests for tap_dance_preview helper."""
+
+    @pytest.fixture()
+    def adapter(self):
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
+        from skim.data import SkimConfig
+        from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+
+        config = SkimConfig()
+        mappings = load_keycode_mappings(config.keycodes)
+        return KeycodeLabelAdapter(config.keyboard, mappings)
+
+    def test_only_tap(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0", tap="KC_Q")
+        assert tap_dance_preview(td, adapter) == "t:Q"
+
+    def test_tap_and_hold(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0", tap="KC_Q", hold="KC_LSHIFT")
+        result = tap_dance_preview(td, adapter)
+        # Order: tap then hold; hold uses whatever label adapter produces
+        # for KC_LSHIFT — accept either the resolved character or
+        # a NerdFont marker.
+        assert result.startswith("t:Q ")
+        assert "h:" in result
+
+    def test_all_four_fields(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](
+            id="0",
+            tap="KC_A",
+            hold="KC_B",
+            double_tap="KC_C",
+            tap_then_hold="KC_D",
+            tapping_term=300,
+        )
+        assert tap_dance_preview(td, adapter) == "t:A h:B dt:C th:D"
+
+    def test_skips_null_fields_in_fixed_order(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0", tap="KC_A", double_tap="KC_C", tapping_term=200)
+        assert tap_dance_preview(td, adapter) == "t:A dt:C"
+
+    def test_tapping_term_not_shown(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0", tap="KC_Q", tapping_term=999)
+        result = tap_dance_preview(td, adapter)
+        assert "999" not in result
+        assert "ms" not in result
