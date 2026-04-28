@@ -596,3 +596,53 @@ class TestParseKeybardTapDance:
         assert td.hold is None
         assert td.double_tap is None
         assert td.tap_then_hold is None
+
+
+class TestParseKeybardMacros:
+    """Tests that _parse_keybard extracts top-level macros entries."""
+
+    def test_no_macros_key_yields_empty(self):
+        data = {"keymap": [["KC_A"] * 60]}
+        result = _parse_keybard(data)
+        assert result.macros == ()
+
+    def test_macro_with_mid_and_actions(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "macros": [
+                {
+                    "mid": 0,
+                    "actions": [
+                        ["tap", "LSFT(KC_QUOTE)"],
+                        ["tap", "OSM(MOD_LSFT)"],
+                    ],
+                }
+            ],
+        }
+        result = _parse_keybard(data)
+        assert len(result.macros) == 1
+        macro = result.macros[0]
+        assert macro.id == "0"
+        assert len(macro.actions) == 2
+        assert macro.actions[0].kind is SvalboardMacroActionKind.TAP
+        assert macro.actions[0].keys == ("LSFT(KC_QUOTE)",)
+
+    def test_empty_actions_list(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "macros": [{"mid": 7, "actions": []}],
+        }
+        result = _parse_keybard(data)
+        assert result.macros == (SvalboardMacro[str](id="7"),)
+
+    def test_skips_entries_missing_mid(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "macros": [
+                {"mid": 0, "actions": []},
+                {"actions": []},
+                {"mid": 2, "actions": []},
+            ],
+        }
+        result = _parse_keybard(data)
+        assert [m.id for m in result.macros] == ["0", "2"]

@@ -126,6 +126,24 @@ def _parse_keybard_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
     return tuple(tap_dances)
 
 
+def _parse_keybard_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
+    """Parse the top-level ``macros`` array if present."""
+    raw = data.get("macros")
+    if not isinstance(raw, list):
+        return ()
+    macros: list[SvalboardMacro[str]] = []
+    for entry in raw:
+        if not isinstance(entry, dict) or "mid" not in entry:
+            continue
+        macros.append(
+            SvalboardMacro[str](
+                id=str(entry["mid"]),
+                actions=_parse_vial_macro_actions(entry.get("actions", [])),
+            )
+        )
+    return tuple(macros)
+
+
 _KEY_ACTION_KINDS: dict[str, SvalboardMacroActionKind] = {
     "tap": SvalboardMacroActionKind.TAP,
     "down": SvalboardMacroActionKind.DOWN,
@@ -206,6 +224,7 @@ def _parse_keybard(data: Any) -> ParsedKeymap:
     return ParsedKeymap(
         layers=layers,
         tap_dances=_parse_keybard_tap_dances(data),
+        macros=_parse_keybard_macros(data),
     )
 
 
