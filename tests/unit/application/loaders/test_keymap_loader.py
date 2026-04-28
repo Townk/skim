@@ -646,3 +646,73 @@ class TestParseKeybardMacros:
         }
         result = _parse_keybard(data)
         assert [m.id for m in result.macros] == ["0", "2"]
+
+
+class TestParseC2jsonMacros:
+    """Tests that _parse_c2json extracts hand-edited macros (object form)."""
+
+    def test_no_macros_key_yields_empty(self):
+        data = {"layers": [["KC_A"] * 60]}
+        result = _parse_c2json(data)
+        assert result.macros == ()
+        assert result.tap_dances == ()
+
+    def test_object_form_tap_action(self):
+        data = {
+            "layers": [["KC_A"] * 60],
+            "macros": [
+                [{"action": "tap", "keycodes": ["KC_Q", "KC_U"]}],
+            ],
+        }
+        result = _parse_c2json(data)
+        assert len(result.macros) == 1
+        action = result.macros[0].actions[0]
+        assert action.kind is SvalboardMacroActionKind.TAP
+        assert action.keys == ("KC_Q", "KC_U")
+
+    def test_object_form_text_and_delay(self):
+        data = {
+            "layers": [["KC_A"] * 60],
+            "macros": [
+                [
+                    {"action": "text", "text": ";qj"},
+                    {"action": "delay", "duration": 100},
+                ]
+            ],
+        }
+        result = _parse_c2json(data)
+        actions = result.macros[0].actions
+        assert actions[0].kind is SvalboardMacroActionKind.TEXT
+        assert actions[0].text == ";qj"
+        assert actions[1].kind is SvalboardMacroActionKind.DELAY
+        assert actions[1].duration_ms == 100
+
+    def test_object_form_down_up(self):
+        data = {
+            "layers": [["KC_A"] * 60],
+            "macros": [
+                [
+                    {"action": "down", "keycodes": ["KC_LSHIFT"]},
+                    {"action": "up", "keycodes": ["KC_LSHIFT"]},
+                ]
+            ],
+        }
+        result = _parse_c2json(data)
+        kinds = [a.kind for a in result.macros[0].actions]
+        assert kinds == [
+            SvalboardMacroActionKind.DOWN,
+            SvalboardMacroActionKind.UP,
+        ]
+
+    def test_indexed_ids(self):
+        data = {
+            "layers": [["KC_A"] * 60],
+            "macros": [
+                [{"action": "tap", "keycodes": ["KC_A"]}],
+                [],
+                [{"action": "text", "text": "hi"}],
+            ],
+        }
+        result = _parse_c2json(data)
+        assert [m.id for m in result.macros] == ["0", "1", "2"]
+        assert result.macros[1].actions == ()

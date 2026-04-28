@@ -151,6 +151,50 @@ _KEY_ACTION_KINDS: dict[str, SvalboardMacroActionKind] = {
 }
 
 
+def _parse_c2json_action(raw: Any) -> SvalboardMacroAction[str] | None:
+    """Parse a single QMK-schema macro action from its object form."""
+    if not isinstance(raw, dict):
+        return None
+    action = raw.get("action")
+    if action in _KEY_ACTION_KINDS:
+        keycodes = raw.get("keycodes", [])
+        if not isinstance(keycodes, list):
+            return None
+        return SvalboardMacroAction[str](
+            kind=_KEY_ACTION_KINDS[action],
+            keys=tuple(str(k) for k in keycodes),
+        )
+    if action == "text":
+        return SvalboardMacroAction[str](
+            kind=SvalboardMacroActionKind.TEXT, text=str(raw.get("text", ""))
+        )
+    if action == "delay":
+        return SvalboardMacroAction[str](
+            kind=SvalboardMacroActionKind.DELAY,
+            duration_ms=int(raw.get("duration", 0)),
+        )
+    return None
+
+
+def _parse_c2json_macro_actions(raw: Any) -> tuple[SvalboardMacroAction[str], ...]:
+    """Parse the action sequence of a single c2json macro."""
+    if not isinstance(raw, list):
+        return ()
+    parsed = (_parse_c2json_action(action) for action in raw)
+    return tuple(action for action in parsed if action is not None)
+
+
+def _parse_c2json_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
+    """Parse the optional top-level ``macros`` array if present."""
+    raw = data.get("macros")
+    if not isinstance(raw, list):
+        return ()
+    return tuple(
+        SvalboardMacro[str](id=str(index), actions=_parse_c2json_macro_actions(actions))
+        for index, actions in enumerate(raw)
+    )
+
+
 def _parse_vial_action(raw: Any) -> SvalboardMacroAction[str] | None:
     """Parse a single Vial macro action from its array form.
 
@@ -239,7 +283,10 @@ def _parse_c2json(data: Any) -> ParsedKeymap:
         if not isinstance(layer, list):
             raise ValueError(f"Layer {i} must be a list")
     layers = KeymapJsonAdapter.transform(layers_raw, KeymapType.C2JSON)
-    return ParsedKeymap(layers=layers)
+    return ParsedKeymap(
+        layers=layers,
+        macros=_parse_c2json_macros(data),
+    )
 
 
 def load_keymap_json(content: str, keymap_type: KeymapType | None = None) -> ParsedKeymap:
