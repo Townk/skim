@@ -355,11 +355,11 @@ class TestOutputTab:
             assert len(macro_input.value) == 7
 
     # ------------------------------------------------------------------
-    # ColorInput footer visibility: exactly two nudge bindings shown
+    # ColorInput footer visibility: all four nudge bindings shown
     # ------------------------------------------------------------------
 
     @pytest.mark.asyncio()
-    async def test_color_input_shows_exactly_two_nudge_bindings(self):
+    async def test_color_input_shows_exactly_four_nudge_bindings(self):
         from textual.app import App, ComposeResult
         from textual.widgets import Input
 
@@ -383,9 +383,9 @@ class TestOutputTab:
                 for b in app.active_bindings.values()
                 if b.binding.show and b.binding.action.startswith("nudge_")
             ]
-            assert len(visible_nudge) == 2
+            assert len(visible_nudge) == 4
             visible_keys = {b.key for b in visible_nudge}
-            assert visible_keys == {"alt+up", "alt+right"}
+            assert visible_keys == {"alt+up", "alt+down", "alt+right", "alt+left"}
 
     @pytest.mark.asyncio()
     async def test_color_input_all_four_nudge_bindings_are_active(self):
@@ -511,3 +511,41 @@ class TestOutputTab:
                 assert step_input.value != original
                 assert step_input.value.startswith("#")
                 assert len(step_input.value) == 7
+
+    @pytest.mark.asyncio()
+    async def test_color_nudge_renders_paired_in_footer(self):
+        from textual.widgets import TabbedContent
+        from textual.widgets._footer import FooterKey
+
+        from skim.data.config import SkimConfig
+        from skim.tui.app import SkimConfigApp
+        from skim.tui.widgets import SkimFooter
+
+        config_data = SkimConfig().model_dump(mode="json")
+
+        app = SkimConfigApp(config_data=config_data)
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            # Switch to the Output tab and focus a palette colour input.
+            tabbed = app.query_one(TabbedContent)
+            tabbed.active = "output-tab"
+            await pilot.pause()
+            macro_input = app.query_one("#palette-macro-color", Input)
+            macro_input.focus()
+            await pilot.pause()
+
+            footer = app.query_one(SkimFooter)
+            cells = list(footer.query(FooterKey))
+            sat_cells = [c for c in cells if c.action == "nudge_saturation_up"]
+            lum_cells = [c for c in cells if c.action == "nudge_lightness_up"]
+            # Each pair is rendered as a single cell on the saturation-up /
+            # lightness-up action; the *_down siblings are paired in via
+            # _PAIRS and don't render their own cell.
+            assert len(sat_cells) == 1
+            assert len(lum_cells) == 1
+            # The combined description from _PAIRS is used.
+            assert sat_cells[0].description == "Sat +/-"
+            assert lum_cells[0].description == "Lum +/-"
+            # The combined key display has both keys joined by "/".
+            assert "/" in sat_cells[0].key_display
+            assert "/" in lum_cells[0].key_display
