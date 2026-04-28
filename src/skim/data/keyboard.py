@@ -1104,6 +1104,13 @@ class SvalboardKeymap(Generic[T]):
         layers: A dict mapping layer indices to SvalboardLayout objects.
             Keys are QMK layer indices (which may be non-sequential, e.g.
             0, 1, 2, 15). Layer 0 is typically the base/default layer.
+        tap_dances: Tuple of SvalboardTapDance definitions referenced by
+            keys on the layers. Defaults to an empty tuple. Source formats
+            that don't carry tap-dance definitions (e.g. QMK c2json) yield
+            an empty tuple.
+        macros: Tuple of SvalboardMacro definitions referenced by keys on
+            the layers. Defaults to an empty tuple. Source formats that
+            don't carry macro definitions yield an empty tuple.
 
     Example:
         Creating a keymap with multiple layers::
