@@ -1,6 +1,9 @@
 """Unit tests for skim.application.render.legend."""
 
+import drawsvg as draw
+
 from skim.application.render.legend import (
+    build_action_glyph,
     collect_used_ids,
     plan_layout,
     resolve_macros,
@@ -154,3 +157,29 @@ def test_plan_layout_only_tap_dances_balances():
     assert [t.id for t in plan.tap_dance_left] == ["0", "1"]
     assert [t.id for t in plan.tap_dance_right] == ["2"]
     assert plan.tap_dances_span_columns is True
+
+
+def test_build_action_glyph_tap_returns_circle():
+    g = build_action_glyph(SvalboardMacroActionKind.TAP, cx=10, cy=10, color="#000")
+    # The glyph for TAP is a draw.Circle directly.
+    assert isinstance(g, draw.Circle)
+
+
+def test_build_action_glyph_for_each_kind_returns_some_element():
+    for kind in SvalboardMacroActionKind:
+        g = build_action_glyph(kind, cx=0, cy=0, color="#000")
+        assert g is not None
+
+
+def test_build_action_glyph_press_is_filled():
+    """Press should be a filled drawing element (a down-triangle)."""
+    g = build_action_glyph(SvalboardMacroActionKind.DOWN, cx=10, cy=10, color="#abc")
+    # It's a draw.Lines (filled), not a Group.
+    assert isinstance(g, draw.Lines)
+    assert g.args.get("fill") == "#abc"
+
+
+def test_build_action_glyph_delay_returns_group():
+    """Delay is a clock face — multiple primitives → a Group."""
+    g = build_action_glyph(SvalboardMacroActionKind.DELAY, cx=10, cy=10, color="#000")
+    assert isinstance(g, draw.Group)

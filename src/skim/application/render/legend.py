@@ -17,8 +17,10 @@ Geometry mirrors ``docs/design/layer.jsx::Legend``.
 import math
 from dataclasses import dataclass, field
 
+import drawsvg as draw
+
 from skim.data import SvalboardLayout
-from skim.domain import SvalboardMacro, SvalboardTapDance
+from skim.domain import SvalboardMacro, SvalboardMacroActionKind, SvalboardTapDance
 from skim.domain.domain_types import SvalboardTargetKey
 
 
@@ -124,4 +126,49 @@ def plan_layout(
         tap_dance_left=tap_dances[:half],
         tap_dance_right=tap_dances[half:],
         tap_dances_span_columns=True,
+    )
+
+
+def build_action_glyph(
+    kind: SvalboardMacroActionKind, cx: float, cy: float, color: str
+) -> draw.DrawingElement:
+    """Return a tiny SVG primitive for the given action kind.
+
+    - TAP   → filled circle (●).
+    - DOWN  → filled down-triangle (▼) — "press".
+    - UP    → filled up-triangle   (▲) — "release".
+    - TEXT  → italic capital ``T``.
+    - DELAY → small clock dial (circle + two hands).
+    """
+    if kind == SvalboardMacroActionKind.TAP:
+        return draw.Circle(cx=cx, cy=cy, r=3, fill=color)
+    if kind == SvalboardMacroActionKind.DOWN:
+        return draw.Lines(
+            cx - 3, cy - 3,
+            cx + 3, cy - 3,
+            cx,     cy + 3,
+            close=True, fill=color,
+        )
+    if kind == SvalboardMacroActionKind.UP:
+        return draw.Lines(
+            cx - 3, cy + 3,
+            cx + 3, cy + 3,
+            cx,     cy - 3,
+            close=True, fill=color,
+        )
+    if kind == SvalboardMacroActionKind.DELAY:
+        g = draw.Group()
+        g.append(draw.Circle(cx=cx, cy=cy, r=3.5, fill="none",
+                             stroke=color, stroke_width=1.1))
+        # Clock hands at 12 o'clock + 3 o'clock.
+        g.append(draw.Line(sx=cx, sy=cy, ex=cx, ey=cy - 2.2,
+                           stroke=color, stroke_width=1.1, stroke_linecap="round"))
+        g.append(draw.Line(sx=cx, sy=cy, ex=cx + 1.6, ey=cy,
+                           stroke=color, stroke_width=1.1, stroke_linecap="round"))
+        return g
+    # TEXT
+    return draw.Text(
+        "T", x=cx, y=cy, font_size=9, fill=color, font_weight="700",
+        font_style="italic", text_anchor="middle", dominant_baseline="central",
+        font_family="'Roboto', sans-serif",
     )
