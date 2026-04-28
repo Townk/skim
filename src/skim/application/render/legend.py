@@ -15,6 +15,7 @@ Geometry mirrors ``docs/design/layer.jsx::Legend``.
 """
 
 from skim.data import SvalboardLayout
+from skim.domain import SvalboardMacro, SvalboardTapDance
 from skim.domain.domain_types import SvalboardTargetKey
 
 
@@ -37,3 +38,35 @@ def collect_used_ids(
         if key.tap_dance_id is not None:
             tap_dances.add(key.tap_dance_id)
     return macros, tap_dances
+
+
+def _sort_key(id_: str) -> tuple[int, int | str]:
+    """Numeric ids sort first (ascending) then named ids lex-ascending."""
+    try:
+        return (0, int(id_))
+    except ValueError:
+        return (1, id_)
+
+
+def resolve_macros(
+    used_ids: set[str],
+    available: tuple[SvalboardMacro[SvalboardTargetKey], ...],
+) -> list[SvalboardMacro[SvalboardTargetKey]]:
+    """Filter ``available`` to ``used_ids`` and sort by id."""
+    by_id = {m.id: m for m in available}
+    return sorted(
+        (by_id[i] for i in used_ids if i in by_id),
+        key=lambda m: _sort_key(m.id),
+    )
+
+
+def resolve_tap_dances(
+    used_ids: set[str],
+    available: tuple[SvalboardTapDance[SvalboardTargetKey], ...],
+) -> list[SvalboardTapDance[SvalboardTargetKey]]:
+    """Filter ``available`` to ``used_ids`` and sort by id."""
+    by_id = {t.id: t for t in available}
+    return sorted(
+        (by_id[i] for i in used_ids if i in by_id),
+        key=lambda t: _sort_key(t.id),
+    )
