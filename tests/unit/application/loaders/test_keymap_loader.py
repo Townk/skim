@@ -16,11 +16,12 @@ from unittest.mock import patch
 import pytest
 
 from skim.application.loaders.keymap_loader import (
+    ParsedKeymap,
     _detect_format_from_path,
     _detect_keymap_from_json,
-    _get_c2json_layers,
-    _get_keybard_layers,
-    _get_vial_layers,
+    _parse_c2json,
+    _parse_keybard,
+    _parse_vial,
     load_keymap,
     load_keymap_file,
     load_keymap_from_stdin,
@@ -100,56 +101,56 @@ class TestDetectFormatFromPath:
         assert _detect_format_from_path(path) is None
 
 
-class TestGetVialLayers:
-    """Tests for _get_vial_layers function."""
+class TestParseVial:
+    """Tests for _parse_vial function."""
 
     def test_missing_layout_key_raises(self):
         """Missing 'layout' key raises ValueError."""
         with pytest.raises(ValueError, match="Missing 'layout' key"):
-            _get_vial_layers({"other": "data"})
+            _parse_vial({"other": "data"})
 
     def test_layout_not_list_raises(self):
         """Non-list 'layout' raises ValueError."""
         with pytest.raises(ValueError, match="'layout' must be a list"):
-            _get_vial_layers({"layout": "not a list"})
+            _parse_vial({"layout": "not a list"})
 
 
-class TestGetKeybardLayers:
-    """Tests for _get_keybard_layers function."""
+class TestParseKeybard:
+    """Tests for _parse_keybard function."""
 
     def test_missing_keymap_key_raises(self):
         """Missing 'keymap' key raises ValueError."""
         with pytest.raises(ValueError, match="Missing 'keymap' key"):
-            _get_keybard_layers({"other": "data"})
+            _parse_keybard({"other": "data"})
 
     def test_keymap_not_list_raises(self):
         """Non-list 'keymap' raises ValueError."""
         with pytest.raises(ValueError, match="'keymap' must be a list"):
-            _get_keybard_layers({"keymap": "not a list"})
+            _parse_keybard({"keymap": "not a list"})
 
 
-class TestGetC2jsonLayers:
-    """Tests for _get_c2json_layers function."""
+class TestParseC2json:
+    """Tests for _parse_c2json function."""
 
     def test_missing_layers_key_raises(self):
         """Missing 'layers' key raises ValueError."""
         with pytest.raises(ValueError, match="Missing 'layers' key"):
-            _get_c2json_layers({"other": "data"})
+            _parse_c2json({"other": "data"})
 
     def test_layers_not_list_raises(self):
         """Non-list 'layers' raises ValueError."""
         with pytest.raises(ValueError, match="'layers' must be a list"):
-            _get_c2json_layers({"layers": "not a list"})
+            _parse_c2json({"layers": "not a list"})
 
     def test_layer_item_not_list_raises(self):
         """Non-list layer item raises ValueError."""
         with pytest.raises(ValueError, match="Layer 0 must be a list"):
-            _get_c2json_layers({"layers": ["not a list"]})
+            _parse_c2json({"layers": ["not a list"]})
 
     def test_multiple_invalid_layers_reports_first(self):
         """Reports first invalid layer."""
         with pytest.raises(ValueError, match="Layer 1 must be a list"):
-            _get_c2json_layers({"layers": [[], "not a list"]})
+            _parse_c2json({"layers": [[], "not a list"]})
 
 
 class TestLoadKeymapJson:
@@ -194,7 +195,7 @@ class TestLoadKeymapFile:
 
         result = load_keymap_file(path)
         assert result is not None
-        assert len(result) == 1  # One layer
+        assert len(result.layers) == 1  # One layer
 
     def test_detects_format_from_extension(self, tmp_path):
         """Format is detected from file extension."""
@@ -225,7 +226,7 @@ class TestLoadKeymapFromStdin:
             mock_stdin.read.return_value = json.dumps(keymap_data)
             result = load_keymap_from_stdin()
             assert result is not None
-            assert len(result) == 1
+            assert len(result.layers) == 1
 
     def test_invalid_json_from_stdin_raises(self):
         """Invalid JSON from stdin raises ValueError."""
@@ -234,6 +235,39 @@ class TestLoadKeymapFromStdin:
             mock_stdin.read.return_value = "not valid json"
             with pytest.raises(ValueError, match="Invalid JSON"):
                 load_keymap_from_stdin()
+
+
+class TestParsedKeymapBundle:
+    """Tests that the loader helpers return a ParsedKeymap bundle."""
+
+    def test_parse_vial_returns_bundle_with_empty_definitions(self):
+        data = {"layout": [[["KC_A"] * 60]], "version": 1}
+        result = _parse_vial(data)
+        assert isinstance(result, ParsedKeymap)
+        assert len(result.layers) == 1
+        assert result.tap_dances == ()
+        assert result.macros == ()
+
+    def test_parse_keybard_returns_bundle(self):
+        data = {"keymap": [["KC_A"] * 60]}
+        result = _parse_keybard(data)
+        assert isinstance(result, ParsedKeymap)
+        assert result.tap_dances == ()
+        assert result.macros == ()
+
+    def test_parse_c2json_returns_bundle(self):
+        data = {"layers": [["KC_A"] * 60]}
+        result = _parse_c2json(data)
+        assert isinstance(result, ParsedKeymap)
+        assert result.tap_dances == ()
+        assert result.macros == ()
+
+    def test_load_keymap_json_returns_bundle(self):
+        import json as _json
+
+        content = _json.dumps({"keymap": [["KC_A"] * 60]})
+        result = load_keymap_json(content)
+        assert isinstance(result, ParsedKeymap)
 
 
 class TestLoadKeymap:
