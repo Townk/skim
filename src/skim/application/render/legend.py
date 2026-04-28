@@ -14,6 +14,9 @@ its rows when only one type is in use.
 Geometry mirrors ``docs/design/layer.jsx::Legend``.
 """
 
+import math
+from dataclasses import dataclass, field
+
 from skim.data import SvalboardLayout
 from skim.domain import SvalboardMacro, SvalboardTapDance
 from skim.domain.domain_types import SvalboardTargetKey
@@ -69,4 +72,56 @@ def resolve_tap_dances(
     return sorted(
         (by_id[i] for i in used_ids if i in by_id),
         key=lambda t: _sort_key(t.id),
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class LegendLayout:
+    """Per-column row assignments for the legend block.
+
+    When both sections are present, ``macro_left`` carries all macros and
+    ``tap_dance_left`` carries all tap-dances; ``*_right`` are empty. When
+    only one type is present, that section's rows are split across two
+    balanced columns and the corresponding ``*_span_columns`` flag is True.
+    """
+
+    macro_left: list[SvalboardMacro[SvalboardTargetKey]] = field(default_factory=list)
+    macro_right: list[SvalboardMacro[SvalboardTargetKey]] = field(default_factory=list)
+    tap_dance_left: list[SvalboardTapDance[SvalboardTargetKey]] = field(default_factory=list)
+    tap_dance_right: list[SvalboardTapDance[SvalboardTargetKey]] = field(default_factory=list)
+    macros_span_columns: bool = False
+    tap_dances_span_columns: bool = False
+
+
+def plan_layout(
+    macros: list[SvalboardMacro[SvalboardTargetKey]],
+    tap_dances: list[SvalboardTapDance[SvalboardTargetKey]],
+) -> LegendLayout | None:
+    """Decide how rows fill the two-column legend.
+
+    Returns ``None`` when both lists are empty (no legend block).
+    """
+    if not macros and not tap_dances:
+        return None
+
+    if macros and tap_dances:
+        return LegendLayout(
+            macro_left=list(macros),
+            tap_dance_left=list(tap_dances),
+        )
+
+    if macros:
+        # Single-type → balance across two columns.
+        half = math.ceil(len(macros) / 2)
+        return LegendLayout(
+            macro_left=macros[:half],
+            macro_right=macros[half:],
+            macros_span_columns=True,
+        )
+
+    half = math.ceil(len(tap_dances) / 2)
+    return LegendLayout(
+        tap_dance_left=tap_dances[:half],
+        tap_dance_right=tap_dances[half:],
+        tap_dances_span_columns=True,
     )

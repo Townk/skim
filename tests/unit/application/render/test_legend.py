@@ -1,6 +1,11 @@
 """Unit tests for skim.application.render.legend."""
 
-from skim.application.render.legend import collect_used_ids, resolve_macros, resolve_tap_dances
+from skim.application.render.legend import (
+    collect_used_ids,
+    plan_layout,
+    resolve_macros,
+    resolve_tap_dances,
+)
 from skim.data import SvalboardLayout
 from skim.domain import (
     SvalboardMacro,
@@ -104,3 +109,48 @@ def test_resolve_tap_dances_same_rules():
     used = {"0", "2"}
     out = resolve_tap_dances(used, available)
     assert [t.id for t in out] == ["0", "2"]
+
+
+def test_plan_layout_neither_returns_none():
+    assert plan_layout([], []) is None
+
+
+def test_plan_layout_both_keeps_each_in_own_column():
+    plan = plan_layout([_macro("0")], [_td("0")])
+    assert plan is not None
+    assert [m.id for m in plan.macro_left] == ["0"]
+    assert plan.macro_right == []
+    assert [t.id for t in plan.tap_dance_left] == ["0"]
+    assert plan.tap_dance_right == []
+    assert plan.macros_span_columns is False
+    assert plan.tap_dances_span_columns is False
+
+
+def test_plan_layout_only_macros_balances_two_columns():
+    macros = [_macro(str(i)) for i in range(5)]
+    plan = plan_layout(macros, [])
+    assert plan is not None
+    # 5 entries → 3 left, 2 right (ceil/floor split).
+    assert [m.id for m in plan.macro_left] == ["0", "1", "2"]
+    assert [m.id for m in plan.macro_right] == ["3", "4"]
+    assert plan.macros_span_columns is True
+    assert plan.tap_dance_left == []
+    assert plan.tap_dance_right == []
+
+
+def test_plan_layout_single_macro_only_left_column():
+    plan = plan_layout([_macro("0")], [])
+    assert plan is not None
+    assert [m.id for m in plan.macro_left] == ["0"]
+    assert plan.macro_right == []
+    assert plan.macros_span_columns is True
+
+
+def test_plan_layout_only_tap_dances_balances():
+    tds = [_td(str(i)) for i in range(3)]
+    plan = plan_layout([], tds)
+    assert plan is not None
+    # 3 entries → 2 left, 1 right.
+    assert [t.id for t in plan.tap_dance_left] == ["0", "1"]
+    assert [t.id for t in plan.tap_dance_right] == ["2"]
+    assert plan.tap_dances_span_columns is True
