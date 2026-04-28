@@ -12,8 +12,17 @@ Tests cover LayerColor methods that are not exercised by other tests:
 """
 
 import pytest
+from pydantic import ValidationError
 
-from skim.data.config import Keyboard, KeyboardLayer, LayerColor, Output, Style
+from skim.data.config import (
+    Keyboard,
+    KeyboardLayer,
+    LayerColor,
+    Macro,
+    Output,
+    Style,
+    TapDance,
+)
 
 
 class TestLayerColorGetItem:
@@ -259,3 +268,76 @@ class TestStyleShowTransparentFallthrough:
     def test_can_set_to_false(self):
         """show_transparent_fallthrough can be set to False."""
         assert Style(show_transparent_fallthrough=False).show_transparent_fallthrough is False
+
+
+class TestMacro:
+    def test_minimal_construction(self):
+        m = Macro(id="0")
+        assert m.id == "0"
+        assert m.name is None
+        assert m.preview == ""
+
+    def test_full_construction(self):
+        m = Macro(id="3", name="Em-dash", preview="[↓ E]")
+        assert m.id == "3"
+        assert m.name == "Em-dash"
+        assert m.preview == "[↓ E]"
+
+    def test_is_frozen(self):
+        m = Macro(id="0")
+        with pytest.raises(ValidationError):
+            m.id = "1"  # type: ignore[misc]
+
+    def test_is_hashable(self):
+        a = Macro(id="0", name="foo", preview="bar")
+        b = Macro(id="0", name="foo", preview="bar")
+        assert hash(a) == hash(b)
+
+
+class TestTapDance:
+    def test_minimal_construction(self):
+        td = TapDance(id="0")
+        assert td.id == "0"
+        assert td.name is None
+        assert td.preview == ""
+
+    def test_full_construction(self):
+        td = TapDance(id="2", name="Quick shift", preview="t:Q h:⇧")
+        assert td.name == "Quick shift"
+        assert td.preview == "t:Q h:⇧"
+
+    def test_is_frozen(self):
+        td = TapDance(id="0")
+        with pytest.raises(ValidationError):
+            td.preview = "x"  # type: ignore[misc]
+
+
+class TestKeycodesMacrosAndTapDances:
+    def test_defaults_empty(self):
+        from skim.data.config import Keycodes
+
+        k = Keycodes()
+        assert k.macros == ()
+        assert k.tap_dances == ()
+
+    def test_accepts_lists_and_coerces_to_tuples(self):
+        from skim.data.config import Keycodes
+
+        k = Keycodes(
+            macros=[Macro(id="0"), Macro(id="1", name="x")],
+            tap_dances=[TapDance(id="0", preview="t:Q")],
+        )
+        assert isinstance(k.macros, tuple)
+        assert isinstance(k.tap_dances, tuple)
+        assert k.macros[1].name == "x"
+
+    def test_round_trips_through_model_dump(self):
+        from skim.data.config import Keycodes
+
+        original = Keycodes(
+            macros=(Macro(id="0", name="A", preview="[↓ Q]"),),
+            tap_dances=(TapDance(id="3", name=None, preview="t:Q"),),
+        )
+        dumped = original.model_dump(mode="json")
+        rebuilt = Keycodes.model_validate(dumped)
+        assert rebuilt == original

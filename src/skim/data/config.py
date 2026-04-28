@@ -303,6 +303,50 @@ class Keycode(BaseModel):
         return hash((self.keycode, self.target))
 
 
+class Macro(BaseModel):
+    """A macro reference with an optional human-readable name and preview.
+
+    Attributes:
+        id: String id matching how the keycode references this macro
+            (``"0"`` for ``MACRO_0``, ``"MY_MACRO"`` for ``MACRO_MY_MACRO``).
+        name: Optional human-readable name surfaced by the renderer.
+        preview: Single-line display summary, generated at bootstrap time
+            or set to ``"Undefined"`` for manually-added entries. Read-only
+            in the TUI.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    name: str | None = None
+    preview: str = ""
+
+    def __hash__(self) -> int:
+        return hash((self.id, self.name, self.preview))
+
+
+class TapDance(BaseModel):
+    """A tap-dance reference with an optional human-readable name and preview.
+
+    Attributes:
+        id: String id matching how the keycode references this tap dance
+            (``"0"`` for ``TD(0)``, ``"MY_TD"`` for ``TD(MY_TD)``).
+        name: Optional human-readable name surfaced by the renderer.
+        preview: Single-line display summary, generated at bootstrap time
+            or set to ``"Undefined"`` for manually-added entries. Read-only
+            in the TUI.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    name: str | None = None
+    preview: str = ""
+
+    def __hash__(self) -> int:
+        return hash((self.id, self.name, self.preview))
+
+
 class Keycodes(BaseModel):
     """Configuration for keycode transformation and display.
 
@@ -321,6 +365,10 @@ class Keycodes(BaseModel):
         overrides: Keycode-to-label mappings that override the standard
             mapping results. Applied after all other transformations.
             Defaults to an empty tuple.
+        macros: Macro references with optional names and previews.
+            Defaults to an empty tuple.
+        tap_dances: Tap-dance references with optional names and previews.
+            Defaults to an empty tuple.
 
     Example:
         >>> keycodes = Keycodes(
@@ -335,9 +383,11 @@ class Keycodes(BaseModel):
 
     pre_process: Annotated[tuple[Keycode, ...], BeforeValidator(_coerce_to_tuple)] = ()
     overrides: Annotated[tuple[Keycode, ...], BeforeValidator(_coerce_to_tuple)] = ()
+    macros: Annotated[tuple[Macro, ...], BeforeValidator(_coerce_to_tuple)] = ()
+    tap_dances: Annotated[tuple[TapDance, ...], BeforeValidator(_coerce_to_tuple)] = ()
 
     def __hash__(self) -> int:
-        return hash((self.pre_process, self.overrides))
+        return hash((self.pre_process, self.overrides, self.macros, self.tap_dances))
 
 
 class Spacing(BaseModel):
