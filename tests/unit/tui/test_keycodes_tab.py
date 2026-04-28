@@ -2,7 +2,7 @@
 
 import pytest
 from textual.app import App, ComposeResult
-from textual.widgets import Button, Input
+from textual.widgets import Button, Input, Static
 
 from skim.data.config import SkimConfig
 from skim.tui.keycodes_tab import KeycodesTab
@@ -145,3 +145,261 @@ class TestKeycodesTab:
             assert app.query_one("#override-list", SkimListView).can_focus is False
             assert app.query_one("#pre-process-remove", Button).disabled is True
             assert app.query_one("#override-remove", Button).disabled is True
+
+
+class TestMacroListPane:
+    """Tests for the new Macro list/detail pane."""
+
+    @pytest.fixture()
+    def config_with_macros(self) -> dict:
+        config = SkimConfig().model_dump(mode="json")
+        config["keycodes"]["macros"] = [
+            {"id": "0", "name": "Em-dash", "preview": "[↓ E]"},
+            {"id": "5", "name": None, "preview": "[↓↑ Q]"},
+        ]
+        return config
+
+    @pytest.mark.asyncio()
+    async def test_list_shows_entries(self, config_with_macros):
+        app = KeycodesTabTestApp(config_data=config_with_macros)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            macro_list = app.query_one("#macro-list", SkimListView)
+            assert len(macro_list.children) == 2
+
+    @pytest.mark.asyncio()
+    async def test_id_and_name_disabled_by_default(self, config_with_macros):
+        app = KeycodesTabTestApp(config_data=config_with_macros)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            assert app.query_one("#macro-id", Input).disabled is True
+            assert app.query_one("#macro-name", Input).disabled is True
+
+    @pytest.mark.asyncio()
+    async def test_preview_field_disabled(self, config_with_macros):
+        app = KeycodesTabTestApp(config_data=config_with_macros)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            # Preview is always disabled (read-only)
+            assert app.query_one("#macro-preview", Input).disabled is True
+
+    @pytest.mark.asyncio()
+    async def test_add_creates_undefined_entry(self, config_with_macros):
+        app = KeycodesTabTestApp(config_data=config_with_macros)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            from skim.tui.keycodes_tab import MacroListPane
+
+            pane = app.query_one(MacroListPane)
+            pane._add_entry()
+            await pilot.pause()
+            entries = pane.get_entries()
+            assert len(entries) == 3
+            new_entry = entries[-1]
+            assert new_entry["id"] == "1"  # 0 and 5 used; smallest free is 1
+            assert new_entry["name"] is None
+            assert new_entry["preview"] == "Undefined"
+
+    @pytest.mark.asyncio()
+    async def test_duplicate_id_reverts(self, config_with_macros):
+        from skim.tui.keycodes_tab import MacroListPane
+
+        app = KeycodesTabTestApp(config_data=config_with_macros)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(MacroListPane)
+            pane._selected = 0
+            pane._enter_edit_mode()
+            await pilot.pause()
+            app.query_one("#macro-id", Input).value = "5"  # collides with row 1
+            pane._exit_edit_mode(commit=True)
+            await pilot.pause()
+            # Snapshot reverted: row 0 keeps its original id
+            entries = pane.get_entries()
+            assert entries[0]["id"] == "0"
+
+    @pytest.mark.asyncio()
+    async def test_editing_name_writes_to_config(self, config_with_macros):
+        from skim.tui.keycodes_tab import MacroListPane
+
+        app = KeycodesTabTestApp(config_data=config_with_macros)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(MacroListPane)
+            pane._selected = 1
+            pane._enter_edit_mode()
+            await pilot.pause()
+            app.query_one("#macro-name", Input).value = "Q-tap"
+            pane._exit_edit_mode(commit=True)
+            await pilot.pause()
+            assert pane.get_entries()[1]["name"] == "Q-tap"
+
+    @pytest.mark.asyncio()
+    async def test_list_row_resolves_nerdfont_markers(self):
+        from skim.application.loaders.nerdfont_glyphs_loader import (
+            load_nerdfont_glyphs,
+        )
+
+        config = SkimConfig().model_dump(mode="json")
+        config["keycodes"]["macros"] = [
+            {"id": "0", "name": None, "preview": '%%nf-md-text_recognition; "hi"'},
+        ]
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            macro_list = app.query_one("#macro-list", SkimListView)
+            item_text = macro_list.children[0].query_one(Static).content
+            glyphs = load_nerdfont_glyphs()
+            expected_glyph = glyphs["nf-md-text_recognition"]
+            assert expected_glyph in str(item_text), (
+                f"expected glyph {expected_glyph!r} in row text {item_text!r}"
+            )
+            assert "%%nf-md-text_recognition;" not in str(item_text)
+
+
+class TestTapDanceListPane:
+    """Tests for the new Tap-dance list/detail pane."""
+
+    @pytest.fixture()
+    def config_with_tap_dances(self) -> dict:
+        config = SkimConfig().model_dump(mode="json")
+        config["keycodes"]["tap_dances"] = [
+            {"id": "0", "name": "Quick shift", "preview": "t:Q"},
+            {"id": "3", "name": None, "preview": "t:A h:B"},
+        ]
+        return config
+
+    @pytest.mark.asyncio()
+    async def test_list_shows_entries(self, config_with_tap_dances):
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            td_list = app.query_one("#tap-dance-list", SkimListView)
+            assert len(td_list.children) == 2
+
+    @pytest.mark.asyncio()
+    async def test_id_and_name_disabled_by_default(self, config_with_tap_dances):
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            assert app.query_one("#tap-dance-id", Input).disabled is True
+            assert app.query_one("#tap-dance-name", Input).disabled is True
+
+    @pytest.mark.asyncio()
+    async def test_preview_field_disabled(self, config_with_tap_dances):
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            assert app.query_one("#tap-dance-preview", Input).disabled is True
+
+    @pytest.mark.asyncio()
+    async def test_add_creates_undefined_entry(self, config_with_tap_dances):
+        from skim.tui.keycodes_tab import TapDanceListPane
+
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(TapDanceListPane)
+            pane._add_entry()
+            await pilot.pause()
+            entries = pane.get_entries()
+            assert len(entries) == 3
+            new_entry = entries[-1]
+            assert new_entry["id"] == "1"
+            assert new_entry["name"] is None
+            assert new_entry["preview"] == "Undefined"
+
+    @pytest.mark.asyncio()
+    async def test_duplicate_id_reverts(self, config_with_tap_dances):
+        from skim.tui.keycodes_tab import TapDanceListPane
+
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(TapDanceListPane)
+            pane._selected = 0
+            pane._enter_edit_mode()
+            await pilot.pause()
+            app.query_one("#tap-dance-id", Input).value = "3"
+            pane._exit_edit_mode(commit=True)
+            await pilot.pause()
+            assert pane.get_entries()[0]["id"] == "0"
+
+    @pytest.mark.asyncio()
+    async def test_editing_name_writes_to_config(self, config_with_tap_dances):
+        from skim.tui.keycodes_tab import TapDanceListPane
+
+        app = KeycodesTabTestApp(config_data=config_with_tap_dances)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(TapDanceListPane)
+            pane._selected = 1
+            pane._enter_edit_mode()
+            await pilot.pause()
+            app.query_one("#tap-dance-name", Input).value = "AB-tap"
+            pane._exit_edit_mode(commit=True)
+            await pilot.pause()
+            assert pane.get_entries()[1]["name"] == "AB-tap"
+
+    @pytest.mark.asyncio()
+    async def test_list_row_resolves_nerdfont_markers(self):
+        from skim.application.loaders.nerdfont_glyphs_loader import (
+            load_nerdfont_glyphs,
+        )
+
+        config = SkimConfig().model_dump(mode="json")
+        config["keycodes"]["tap_dances"] = [
+            {"id": "0", "name": None, "preview": "t:%%nf-md-apple_keyboard_shift;"},
+        ]
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            td_list = app.query_one("#tap-dance-list", SkimListView)
+            item_text = td_list.children[0].query_one(Static).content
+            glyphs = load_nerdfont_glyphs()
+            expected_glyph = glyphs["nf-md-apple_keyboard_shift"]
+            assert expected_glyph in str(item_text)
+            assert "%%nf-md-apple_keyboard_shift;" not in str(item_text)
+
+
+class TestKeycodesTabStructure:
+    """Tests that the four sections compose in the correct order."""
+
+    @pytest.mark.asyncio()
+    async def test_all_four_sections_present(self):
+        config = SkimConfig().model_dump(mode="json")
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            for list_id in (
+                "#pre-process-list",
+                "#override-list",
+                "#macro-list",
+                "#tap-dance-list",
+            ):
+                assert app.query_one(list_id) is not None, f"missing {list_id}"
+
+    @pytest.mark.asyncio()
+    async def test_tab_uses_skim_vertical_scroll(self):
+        from skim.tui.widgets import SkimVerticalScroll
+
+        config = SkimConfig().model_dump(mode="json")
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            tab = app.query_one(KeycodesTab)
+            scrolls = list(tab.query(SkimVerticalScroll))
+            assert scrolls, "KeycodesTab is not wrapped in a SkimVerticalScroll"
+
+    @pytest.mark.asyncio()
+    async def test_section_order_matches_spec(self):
+        from skim.tui.list_detail_pane import ListDetailPane
+
+        config = SkimConfig().model_dump(mode="json")
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            tab = app.query_one(KeycodesTab)
+            panes = list(tab.query(ListDetailPane))
+            ids = [pane.pane_id for pane in panes]
+            assert ids == ["pre-process", "override", "macro", "tap-dance"]

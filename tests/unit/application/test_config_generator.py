@@ -242,6 +242,116 @@ class TestGenerateFromKeybard:
         assert parsed["keycodes"]["overrides"] == []
 
 
+class TestMacroPreview:
+    """Tests for macro_preview helper."""
+
+    @pytest.fixture()
+    def adapter(self):
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
+        from skim.data import SkimConfig
+        from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+
+        config = SkimConfig()
+        mappings = load_keycode_mappings(config.keycodes)
+        return KeycodeLabelAdapter(config.keyboard, mappings)
+
+    def test_single_tap_action(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("KC_Q",)),),
+        )
+        assert macro_preview(macro, adapter) == "↓↑ Q"
+
+    def test_multi_keycode_up_action_joins_with_comma(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.UP, keys=("KC_E", "KC_1")),
+            ),
+        )
+        assert macro_preview(macro, adapter) == "↑ E,1"
+
+    def test_text_action_uses_nf_marker(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TEXT, text=";qj"),),
+        )
+        assert macro_preview(macro, adapter) == '%%nf-md-text_recognition; ";qj"'
+
+    def test_delay_action_uses_nf_marker(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.DELAY, duration_ms=30),
+            ),
+        )
+        assert macro_preview(macro, adapter) == "%%nf-fa-hourglass_2; 30"
+
+    def test_mixed_sequence_pipe_separated(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.DOWN, keys=("KC_E",)),
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.DELAY, duration_ms=30),
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.UP, keys=("KC_E", "KC_1")),
+            ),
+        )
+        assert macro_preview(macro, adapter) == "↓ E | %%nf-fa-hourglass_2; 30 | ↑ E,1"
+
+    def test_transparent_keycode_in_macro(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("KC_TRNS",)),
+            ),
+        )
+        assert macro_preview(macro, adapter) == "↓↑ ⛛"
+
+
 class TestQmkColorParsing:
     """Tests for QMK color.h header parsing via generate_from_keybard."""
 
@@ -762,3 +872,258 @@ class TestWithSampleC2json:
         assert len(parsed["output"]["style"]["palette"]["layers"]) == len(
             parsed["keyboard"]["layers"]
         )
+
+
+class TestTapDancePreview:
+    """Tests for tap_dance_preview helper."""
+
+    @pytest.fixture()
+    def adapter(self):
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
+        from skim.data import SkimConfig
+        from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+
+        config = SkimConfig()
+        mappings = load_keycode_mappings(config.keycodes)
+        return KeycodeLabelAdapter(config.keyboard, mappings)
+
+    def test_only_tap(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0", tap="KC_Q")
+        assert tap_dance_preview(td, adapter) == "t:Q"
+
+    def test_tap_and_hold(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0", tap="KC_Q", hold="KC_LSHIFT")
+        result = tap_dance_preview(td, adapter)
+        # Order: tap then hold; hold uses whatever label adapter produces
+        # for KC_LSHIFT — accept either the resolved character or
+        # a NerdFont marker.
+        assert result.startswith("t:Q ")
+        assert "h:" in result
+
+    def test_all_four_fields(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](
+            id="0",
+            tap="KC_A",
+            hold="KC_B",
+            double_tap="KC_C",
+            tap_then_hold="KC_D",
+            tapping_term=300,
+        )
+        assert tap_dance_preview(td, adapter) == "t:A h:B dt:C th:D"
+
+    def test_skips_null_fields_in_fixed_order(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0", tap="KC_A", double_tap="KC_C", tapping_term=200)
+        assert tap_dance_preview(td, adapter) == "t:A dt:C"
+
+    def test_tapping_term_not_shown(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0", tap="KC_Q", tapping_term=999)
+        result = tap_dance_preview(td, adapter)
+        assert "999" not in result
+        assert "ms" not in result
+
+    def test_transparent_keycode_in_tap_dance(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0", tap="KC_TRNS", hold="KC_U")
+        result = tap_dance_preview(td, adapter)
+        assert result.startswith("t:⛛ ")
+        assert "h:U" in result
+
+
+class TestMacroToConfigEntry:
+    @pytest.fixture()
+    def adapter(self):
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
+        from skim.data import SkimConfig
+        from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+
+        config = SkimConfig()
+        mappings = load_keycode_mappings(config.keycodes)
+        return KeycodeLabelAdapter(config.keyboard, mappings)
+
+    def test_skips_macro_with_empty_actions(self, adapter):
+        from skim.application.config_generator import macro_to_config_entry
+        from skim.domain.domain_types import SvalboardMacro
+
+        macro = SvalboardMacro[str](id="0", actions=())
+        assert macro_to_config_entry(macro, adapter) is None
+
+    def test_emits_macro_entry(self, adapter):
+        from skim.application.config_generator import macro_to_config_entry
+        from skim.data.config import Macro
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="3",
+            actions=(SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("KC_A",)),),
+        )
+        entry = macro_to_config_entry(macro, adapter)
+        assert isinstance(entry, Macro)
+        assert entry.id == "3"
+        assert entry.name is None
+        assert entry.preview == "↓↑ A"
+
+
+class TestTapDanceToConfigEntry:
+    @pytest.fixture()
+    def adapter(self):
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
+        from skim.data import SkimConfig
+        from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+
+        config = SkimConfig()
+        mappings = load_keycode_mappings(config.keycodes)
+        return KeycodeLabelAdapter(config.keyboard, mappings)
+
+    def test_skips_all_null_tap_dance(self, adapter):
+        from skim.application.config_generator import tap_dance_to_config_entry
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0")
+        assert tap_dance_to_config_entry(td, adapter) is None
+
+    def test_emits_tap_dance_entry(self, adapter):
+        from skim.application.config_generator import tap_dance_to_config_entry
+        from skim.data.config import TapDance
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="2", tap="KC_Q")
+        entry = tap_dance_to_config_entry(td, adapter)
+        assert isinstance(entry, TapDance)
+        assert entry.id == "2"
+        assert entry.name is None
+        assert entry.preview == "t:Q"
+
+
+class TestGenerateFromKeymapMacrosAndTapDances:
+    """Tests that generate_from_keymap populates macros and tap_dances."""
+
+    def test_vial_with_macros_and_tap_dances(self):
+        import json
+
+        from skim.application.config_generator import ConfigGenerator
+
+        data = {
+            "version": 1,
+            "layout": [[["KC_A"] * 60]],
+            "tap_dance": [["KC_Q", "KC_NO", "KC_NO", "KC_NO", 250]],
+            "macro": [[["text", "hello"]]],
+        }
+        yaml_out = ConfigGenerator().generate_from_keymap(json.dumps(data))
+        config = yaml.safe_load(yaml_out)
+
+        macros = config["keycodes"]["macros"]
+        assert len(macros) == 1
+        assert macros[0]["id"] == "0"
+        assert macros[0]["name"] is None
+        assert macros[0]["preview"] == '%%nf-md-text_recognition; "hello"'
+
+        tap_dances = config["keycodes"]["tap_dances"]
+        assert len(tap_dances) == 1
+        assert tap_dances[0]["id"] == "0"
+        assert tap_dances[0]["preview"] == "t:Q"
+
+    def test_vial_skips_empty_entries(self):
+        import json
+
+        from skim.application.config_generator import ConfigGenerator
+
+        data = {
+            "version": 1,
+            "layout": [[["KC_A"] * 60]],
+            "tap_dance": [
+                ["KC_NO", "KC_NO", "KC_NO", "KC_NO", 200],
+                ["KC_Q", "KC_NO", "KC_NO", "KC_NO", 200],
+            ],
+            "macro": [[], [["tap", "KC_A"]]],
+        }
+        yaml_out = ConfigGenerator().generate_from_keymap(json.dumps(data))
+        config = yaml.safe_load(yaml_out)
+
+        # Empty entries skipped; non-empty kept with their original ids
+        assert [td["id"] for td in config["keycodes"]["tap_dances"]] == ["1"]
+        assert [m["id"] for m in config["keycodes"]["macros"]] == ["1"]
+
+    def test_c2json_without_macros_yields_empty_lists(self):
+        import json
+
+        from skim.application.config_generator import ConfigGenerator
+
+        data = {"layers": [["KC_A"] * 60]}
+        yaml_out = ConfigGenerator().generate_from_keymap(json.dumps(data))
+        config = yaml.safe_load(yaml_out)
+        assert config["keycodes"]["macros"] == []
+        assert config["keycodes"]["tap_dances"] == []
+
+
+class TestGenerateFromKeybardMacrosAndTapDances:
+    """Keybard path also populates keycodes.macros and tap_dances."""
+
+    def test_keybard_with_macros_and_tap_dances(self):
+        import json
+
+        from skim.application.config_generator import ConfigGenerator
+
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "tapdances": [
+                {
+                    "tdid": 4,
+                    "tap": "KC_A",
+                    "hold": "KC_LSHIFT",
+                    "doubletap": "KC_NO",
+                    "taphold": "KC_NO",
+                    "tapms": 350,
+                }
+            ],
+            "macros": [{"mid": 1, "actions": [["tap", "KC_X"]]}],
+        }
+        yaml_out = ConfigGenerator().generate_from_keybard(json.dumps(data))
+        config = yaml.safe_load(yaml_out)
+
+        macros = config["keycodes"]["macros"]
+        assert len(macros) == 1
+        assert macros[0]["id"] == "1"
+        assert macros[0]["preview"] == "↓↑ X"
+
+        tap_dances = config["keycodes"]["tap_dances"]
+        assert len(tap_dances) == 1
+        assert tap_dances[0]["id"] == "4"
+        assert tap_dances[0]["preview"].startswith("t:A ")
+
+    def test_keybard_without_extras_yields_empty_lists(self):
+        import json
+
+        from skim.application.config_generator import ConfigGenerator
+
+        data = {"keymap": [["KC_A"] * 60]}
+        yaml_out = ConfigGenerator().generate_from_keybard(json.dumps(data))
+        config = yaml.safe_load(yaml_out)
+        assert config["keycodes"]["macros"] == []
+        assert config["keycodes"]["tap_dances"] == []

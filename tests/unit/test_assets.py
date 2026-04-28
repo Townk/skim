@@ -258,3 +258,24 @@ class TestHelpText:
         assets = BundleAssets()
         with pytest.raises(FileNotFoundError):
             assets.help_text("anything")
+
+
+class TestMacroAndTapDanceHelpFiles:
+    """The new TUI help files are bundled and loadable."""
+
+    def test_all_six_help_files_resolve(self):
+        from skim.assets import ASSETS
+
+        for key in (
+            "keycodes-macro-list",
+            "keycodes-macro-id",
+            "keycodes-macro-name",
+            "keycodes-tap-dance-list",
+            "keycodes-tap-dance-id",
+            "keycodes-tap-dance-name",
+        ):
+            content = ASSETS.help_text(key)
+            assert content.strip(), f"Help text for '{key}' is empty"
+            assert content != ASSETS.help_text("general"), (
+                f"Help text for '{key}' fell back to general.md"
+            )

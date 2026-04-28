@@ -34,7 +34,118 @@ from typing import Any
 import yaml
 
 from skim.application.render.styling import adjust_color, hex_str
-from skim.data.config import SkimConfig
+from skim.data.config import Macro as _MacroConfig, SkimConfig, TapDance as _TapDanceConfig
+from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+from skim.domain.domain_types import (
+    SvalboardMacro,
+    SvalboardMacroAction,
+    SvalboardMacroActionKind,
+    SvalboardTapDance,
+)
+
+_MACRO_KIND_SYMBOLS: dict[SvalboardMacroActionKind, str] = {
+    SvalboardMacroActionKind.TAP: "↓↑",
+    SvalboardMacroActionKind.DOWN: "↓",
+    SvalboardMacroActionKind.UP: "↑",
+}
+
+_MACRO_TEXT_GLYPH = "%%nf-md-text_recognition;"
+_MACRO_DELAY_GLYPH = "%%nf-fa-hourglass_2;"
+_TRANSPARENT_GLYPH = "⛛"
+
+
+def _resolve_key_label(keycode: str, adapter: KeycodeLabelAdapter) -> str:
+    """Return the resolved label for a keycode (raw markers preserved).
+
+    Transparent keycodes (``KC_TRANSPARENT`` / ``KC_TRNS`` / ``_______``)
+    render as the Vial-style ``⛛`` glyph rather than their raw keycode
+    name, since their resolved label is empty by design.
+    """
+    result = adapter.transform(keycode)
+    if result.is_transparent:
+        return _TRANSPARENT_GLYPH
+    return result.label or keycode
+
+
+def _format_macro_action(action: SvalboardMacroAction[str], adapter: KeycodeLabelAdapter) -> str:
+    if action.kind in _MACRO_KIND_SYMBOLS:
+        symbol = _MACRO_KIND_SYMBOLS[action.kind]
+        keys = ",".join(_resolve_key_label(k, adapter) for k in action.keys)
+        return f"{symbol} {keys}"
+    if action.kind is SvalboardMacroActionKind.TEXT:
+        return f'{_MACRO_TEXT_GLYPH} "{action.text}"'
+    if action.kind is SvalboardMacroActionKind.DELAY:
+        return f"{_MACRO_DELAY_GLYPH} {action.duration_ms}"
+    return ""
+
+
+def macro_preview(macro: SvalboardMacro[str], adapter: KeycodeLabelAdapter) -> str:
+    """Format a macro as a single-line preview string.
+
+    ``" | "``-separated actions. Keys inside an action are resolved
+    through the keycode-label adapter and joined with ``","``. Text and
+    delay actions use raw NerdFont markers (resolved to glyphs at TUI
+    display time).
+    """
+    formatted = [_format_macro_action(a, adapter) for a in macro.actions]
+    return " | ".join(formatted)
+
+
+_TAP_DANCE_FIELD_ORDER: tuple[tuple[str, str], ...] = (
+    ("tap", "t"),
+    ("hold", "h"),
+    ("double_tap", "dt"),
+    ("tap_then_hold", "th"),
+)
+
+
+def tap_dance_preview(tap_dance: SvalboardTapDance[str], adapter: KeycodeLabelAdapter) -> str:
+    """Format a tap dance as a single-line preview string.
+
+    Initials in fixed order (``t:``, ``h:``, ``dt:``, ``th:``), space
+    joined, omitting fields whose value is ``None``. The tapping term
+    is not shown.
+    """
+    parts: list[str] = []
+    for attr, prefix in _TAP_DANCE_FIELD_ORDER:
+        value = getattr(tap_dance, attr)
+        if value is None:
+            continue
+        parts.append(f"{prefix}:{_resolve_key_label(value, adapter)}")
+    return " ".join(parts)
+
+
+def macro_to_config_entry(
+    macro: SvalboardMacro[str], adapter: KeycodeLabelAdapter
+) -> _MacroConfig | None:
+    """Convert a parsed macro into a config-ready ``Macro`` model.
+
+    Returns ``None`` when ``macro.actions`` is empty so the bootstrap
+    can skip placeholder rows that source formats reserve.
+    """
+    if not macro.actions:
+        return None
+    return _MacroConfig(id=macro.id, name=None, preview=macro_preview(macro, adapter))
+
+
+def tap_dance_to_config_entry(
+    tap_dance: SvalboardTapDance[str], adapter: KeycodeLabelAdapter
+) -> _TapDanceConfig | None:
+    """Convert a parsed tap dance into a config-ready ``TapDance`` model.
+
+    Returns ``None`` when all four key fields are ``None`` so the
+    bootstrap can skip placeholder rows.
+    """
+    if (
+        tap_dance.tap is None
+        and tap_dance.hold is None
+        and tap_dance.double_tap is None
+        and tap_dance.tap_then_hold is None
+    ):
+        return None
+    return _TapDanceConfig(
+        id=tap_dance.id, name=None, preview=tap_dance_preview(tap_dance, adapter)
+    )
 
 
 class ConfigGenerator:
@@ -118,6 +229,26 @@ class ConfigGenerator:
         config_dict["keycodes"]["overrides"] = keycode_overrides
         config_dict["output"]["style"]["palette"]["layers"] = palette_layers
         config_dict["output"]["style"]["palette"]["overrides"] = palette_overrides
+
+        # Populate macros and tap_dances from the parsed keymap.
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
+        from skim.application.loaders.keymap_loader import load_keymap_json
+
+        parsed = load_keymap_json(keybard_content)
+        validated = SkimConfig.model_validate(config_dict)
+        adapter = KeycodeLabelAdapter(validated.keyboard, load_keycode_mappings(validated.keycodes))
+        config_dict["keycodes"]["macros"] = [
+            entry.model_dump(mode="json")
+            for macro in parsed.macros
+            if (entry := macro_to_config_entry(macro, adapter)) is not None
+        ]
+        config_dict["keycodes"]["tap_dances"] = [
+            entry.model_dump(mode="json")
+            for td in parsed.tap_dances
+            if (entry := tap_dance_to_config_entry(td, adapter)) is not None
+        ]
 
         return yaml.dump(config_dict, sort_keys=False, default_flow_style=False)
 
@@ -288,8 +419,9 @@ class ConfigGenerator:
         """Generate config YAML from a Vial or c2json keymap file.
 
         Detects the keymap format, counts layers to create default layer
-        entries with auto-generated colors, and scans for non-standard
-        keycodes to populate overrides.
+        entries with auto-generated colors, scans for non-standard
+        keycodes to populate overrides, and emits ``keycodes.macros`` and
+        ``keycodes.tap_dances`` populated from the parsed keymap.
 
         For Keybard files, delegates to generate_from_keybard() which
         extracts richer metadata (layer names, colors, custom keycodes).
@@ -303,9 +435,13 @@ class ConfigGenerator:
         Raises:
             ValueError: If content is not valid JSON or format is unknown.
         """
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
         from skim.application.loaders.keymap_loader import (
             _detect_keymap_from_json,
             is_empty_layer,
+            load_keymap_json,
         )
         from skim.domain import KeymapType
 
@@ -319,24 +455,20 @@ class ConfigGenerator:
         if keymap_type == KeymapType.KEYBARD:
             return self.generate_from_keybard(content)
 
-        # Count layers based on format
         if keymap_type == KeymapType.VIAL:
             raw_layers = data.get("layout", [])
-        else:  # C2JSON
+        else:
             raw_layers = data.get("layers", [])
 
-        # Flatten and filter out empty layers (all KC_NO/KC_TRNS)
         flat_layers = self._flatten_keymap_layers(raw_layers, keymap_type)
         active_indices = [i for i, layer in enumerate(flat_layers) if not is_empty_layer(layer)]
 
-        # Build layers and palette only for non-empty indices
         keyboard_layers = [
             {"index": idx, "name": f"Layer {idx}", "id": None, "variant": None}
             for idx in active_indices
         ]
         palette_layers = self._build_default_palette_layers_for_indices(active_indices)
 
-        # Scan for non-standard keycodes (only active layers)
         active_flat = [flat_layers[i] for i in active_indices]
         standard = self._load_standard_keycodes()
         keycode_overrides = self._find_non_standard_keycodes(active_flat, standard)
@@ -345,6 +477,21 @@ class ConfigGenerator:
         config_dict["keyboard"]["layers"] = keyboard_layers
         config_dict["keycodes"]["overrides"] = keycode_overrides
         config_dict["output"]["style"]["palette"]["layers"] = palette_layers
+
+        # Populate macros and tap_dances from the parsed keymap.
+        parsed = load_keymap_json(content)
+        validated = SkimConfig.model_validate(config_dict)
+        adapter = KeycodeLabelAdapter(validated.keyboard, load_keycode_mappings(validated.keycodes))
+        config_dict["keycodes"]["macros"] = [
+            entry.model_dump(mode="json")
+            for macro in parsed.macros
+            if (entry := macro_to_config_entry(macro, adapter)) is not None
+        ]
+        config_dict["keycodes"]["tap_dances"] = [
+            entry.model_dump(mode="json")
+            for td in parsed.tap_dances
+            if (entry := tap_dance_to_config_entry(td, adapter)) is not None
+        ]
 
         return yaml.dump(config_dict, sort_keys=False, default_flow_style=False)
 
