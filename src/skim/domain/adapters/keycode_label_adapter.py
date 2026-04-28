@@ -65,6 +65,25 @@ LT and LM both require holding the key to activate the layer.
 _TRANSPARENT_KEYCODES = frozenset({"KC_TRANSPARENT", "KC_TRNS", "_______"})
 """QMK keycodes that mark a key as falling through to a lower layer."""
 
+_TAP_DANCE_RE = re.compile(r"^TD\((\w+)\)$")
+_MACRO_RE = re.compile(r"^MACRO_(\w+)$")
+
+
+def _detect_special_ids(keycode: str) -> tuple[str | None, str | None]:
+    """Return (macro_id, tap_dance_id) for special-key keycodes.
+
+    Detected before any pre-processing or label resolution so the
+    structured signal survives whatever label the user maps the keycode
+    to.
+    """
+    td_match = _TAP_DANCE_RE.fullmatch(keycode)
+    if td_match:
+        return None, td_match.group(1)
+    macro_match = _MACRO_RE.fullmatch(keycode)
+    if macro_match:
+        return macro_match.group(1), None
+    return None, None
+
 
 class KeycodeLabelAdapter:
     """Transforms QMK keycodes into human-readable display labels.
@@ -154,16 +173,25 @@ class KeycodeLabelAdapter:
             >>> adapter.transform("MO(1)")
             SvalboardTargetKey(label='L2', layer_switch=1)
         """
+        macro_id, tap_dance_id = _detect_special_ids(text)
+
         keycode = self._apply_pre_processing(text)
 
         macro_result, target_layer = self._parse_macro_function(keycode)
         if macro_result is not None:
-            return SvalboardTargetKey(label=macro_result, layer_switch=target_layer)
+            return SvalboardTargetKey(
+                label=macro_result,
+                layer_switch=target_layer,
+                macro_id=macro_id,
+                tap_dance_id=tap_dance_id,
+            )
 
         is_transparent = keycode in _TRANSPARENT_KEYCODES
         return SvalboardTargetKey(
             label=self._resolve_keycode(keycode),
             is_transparent=is_transparent,
+            macro_id=macro_id,
+            tap_dance_id=tap_dance_id,
         )
 
     def _apply_pre_processing(self, keycode: str) -> str:

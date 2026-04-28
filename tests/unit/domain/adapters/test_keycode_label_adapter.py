@@ -418,3 +418,45 @@ class TestKeycodeLabelAdapterTransparentDetection:
     def test_macro_does_not_set_flag(self):
         result = self._adapter().transform("MO(0)")
         assert result.is_transparent is False
+
+
+class TestSpecialIdDetection:
+    def test_td_numeric_carries_tap_dance_id(self):
+        adapter = make_adapter(make_mappings(keycodes={"TD(0)": "TD0"}))
+        result = adapter.transform("TD(0)")
+        assert result.tap_dance_id == "0"
+        assert result.macro_id is None
+        # label resolution is unchanged
+        assert result.label == "TD0"
+
+    def test_td_named_carries_tap_dance_id(self):
+        adapter = make_adapter(make_mappings(keycodes={}))
+        result = adapter.transform("TD(MY_TD)")
+        assert result.tap_dance_id == "MY_TD"
+        assert result.macro_id is None
+
+    def test_macro_numeric_carries_macro_id(self):
+        adapter = make_adapter(make_mappings(keycodes={}))
+        result = adapter.transform("MACRO_5")
+        assert result.macro_id == "5"
+        assert result.tap_dance_id is None
+
+    def test_macro_named_carries_macro_id(self):
+        adapter = make_adapter(make_mappings(keycodes={}))
+        result = adapter.transform("MACRO_MY_MACRO")
+        assert result.macro_id == "MY_MACRO"
+
+    def test_plain_keycode_has_no_special_ids(self):
+        adapter = make_adapter(make_mappings(keycodes={"KC_A": "A"}))
+        result = adapter.transform("KC_A")
+        assert result.macro_id is None
+        assert result.tap_dance_id is None
+
+    def test_layer_function_has_no_special_ids(self):
+        adapter = make_adapter(
+            make_mappings(macro_functions={"MO": "L#0;"}),
+            keyboard=make_keyboard_with_layers(2),
+        )
+        result = adapter.transform("MO(1)")
+        assert result.macro_id is None
+        assert result.tap_dance_id is None
