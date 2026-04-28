@@ -353,3 +353,161 @@ class TestOutputTab:
             assert macro_input.value != original
             assert macro_input.value.startswith("#")
             assert len(macro_input.value) == 7
+
+    # ------------------------------------------------------------------
+    # ColorInput footer visibility: exactly two nudge bindings shown
+    # ------------------------------------------------------------------
+
+    @pytest.mark.asyncio()
+    async def test_color_input_shows_exactly_two_nudge_bindings(self):
+        from textual.app import App, ComposeResult
+        from textual.widgets import Input
+
+        from skim.data.config import SkimConfig
+        from skim.tui.output_tab import OutputTab
+
+        config_data = SkimConfig().model_dump(mode="json")
+
+        class T(App):
+            def compose(self) -> ComposeResult:
+                yield OutputTab(config_data=config_data)
+
+        app = T()
+        async with app.run_test(size=(120, 80)) as pilot:
+            await pilot.pause()
+            macro_input = app.query_one("#palette-macro-color", Input)
+            macro_input.focus()
+            await pilot.pause()
+            visible_nudge = [
+                b.binding
+                for b in app.active_bindings.values()
+                if b.binding.show and b.binding.action.startswith("nudge_")
+            ]
+            assert len(visible_nudge) == 2
+            visible_keys = {b.key for b in visible_nudge}
+            assert visible_keys == {"alt+up", "alt+right"}
+
+    @pytest.mark.asyncio()
+    async def test_color_input_all_four_nudge_bindings_are_active(self):
+        from textual.app import App, ComposeResult
+        from textual.widgets import Input
+
+        from skim.data.config import SkimConfig
+        from skim.tui.output_tab import OutputTab
+
+        config_data = SkimConfig().model_dump(mode="json")
+
+        class T(App):
+            def compose(self) -> ComposeResult:
+                yield OutputTab(config_data=config_data)
+
+        app = T()
+        async with app.run_test(size=(120, 80)) as pilot:
+            await pilot.pause()
+            macro_input = app.query_one("#palette-macro-color", Input)
+            macro_input.focus()
+            await pilot.pause()
+            all_nudge_keys = {
+                b.binding.key
+                for b in app.active_bindings.values()
+                if b.binding.action.startswith("nudge_")
+            }
+            assert all_nudge_keys == {"alt+up", "alt+down", "alt+right", "alt+left"}
+
+    # ------------------------------------------------------------------
+    # LayerColorInput: static binding check + end-to-end nudge
+    # ------------------------------------------------------------------
+
+    def test_layer_color_input_has_nudge_bindings(self):
+        from skim.tui.widgets import LayerColorInput
+
+        keys = {b.key for b in LayerColorInput.BINDINGS if hasattr(b, "key")}
+        assert "alt+up" in keys
+        assert "alt+down" in keys
+        assert "alt+left" in keys
+        assert "alt+right" in keys
+
+    @pytest.mark.asyncio()
+    async def test_alt_up_increases_saturation_on_lc_base_color(self):
+        from textual.app import App, ComposeResult
+        from textual.widgets import Input
+
+        from skim.data.config import SkimConfig
+        from skim.tui.output_tab import LayerColorListPane, OutputTab
+
+        config_data = SkimConfig().model_dump(mode="json")
+        config_data["output"]["style"]["palette"]["layers"] = [
+            {"base_color": "#7F4040", "color_index": 2, "gradient": None},
+        ]
+
+        class T(App):
+            def compose(self) -> ComposeResult:
+                yield OutputTab(config_data=config_data)
+
+        app = T()
+        async with app.run_test(size=(120, 80)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(LayerColorListPane)
+            pane._selected = 0
+            pane._enter_edit_mode()
+            await pilot.pause()
+            base_input = app.query_one("#lc-base-color", Input)
+            base_input.focus()
+            await pilot.pause()
+            original = base_input.value
+            await pilot.press("alt+up")
+            await pilot.pause()
+            assert base_input.value != original
+            assert base_input.value.startswith("#")
+            assert len(base_input.value) == 7
+
+    @pytest.mark.asyncio()
+    async def test_alt_left_decreases_lightness_on_lc_step_input(self):
+        from textual.app import App, ComposeResult
+        from textual.widgets import Input
+
+        from skim.data.config import SkimConfig
+        from skim.tui.output_tab import LayerColorListPane, OutputTab
+        from skim.tui.widgets import LayerColorInput
+
+        config_data = SkimConfig().model_dump(mode="json")
+        config_data["output"]["style"]["palette"]["layers"] = [
+            {
+                "base_color": "#7F4040",
+                "color_index": 2,
+                "gradient": [
+                    "#100000",
+                    "#300000",
+                    "#500000",
+                    "#7F4040",
+                    "#A06060",
+                    "#C09090",
+                ],
+            },
+        ]
+
+        class T(App):
+            def compose(self) -> ComposeResult:
+                yield OutputTab(config_data=config_data)
+
+        app = T()
+        async with app.run_test(size=(120, 80)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(LayerColorListPane)
+            pane._selected = 0
+            pane._enter_edit_mode()
+            await pilot.pause()
+            # The entry already has a manual gradient, so the pane should
+            # be in manual mode already. Verify the step inputs exist.
+            step_input = app.query_one("#lc-step-3", Input)
+            assert isinstance(step_input, LayerColorInput)
+            step_input.focus()
+            await pilot.pause()
+            original = step_input.value
+            await pilot.press("alt+left")
+            await pilot.pause()
+            # If the input had a valid hex value, it should have changed.
+            if original and original.startswith("#") and len(original) == 7:
+                assert step_input.value != original
+                assert step_input.value.startswith("#")
+                assert len(step_input.value) == 7

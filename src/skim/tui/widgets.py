@@ -168,6 +168,36 @@ class SkimStandaloneInput(Input):
         self.help_key = help_key
 
 
+_COLOR_NUDGE_BINDINGS: list[Binding] = [
+    Binding("alt+up", "nudge_saturation_up", "/↓ Sat +/-", show=True, priority=True),
+    Binding("alt+down", "nudge_saturation_down", "Sat -", show=False, priority=True),
+    Binding("alt+right", "nudge_lightness_up", "/← Lum +/-", show=True, priority=True),
+    Binding("alt+left", "nudge_lightness_down", "Lum -", show=False, priority=True),
+]
+
+_HSL_STEP = 0.05
+_HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
+
+def _nudge_color(
+    widget: Any, *, saturation_delta: float = 0.0, lightness_delta: float = 0.0
+) -> None:
+    """Apply an HSL nudge to *widget*.value if it is a valid 6-digit hex color."""
+    from skim.application.render.styling import nudge_color_hsl
+
+    current = (widget.value or "").strip()
+    if not _HEX_RE.match(current):
+        return
+    try:
+        widget.value = nudge_color_hsl(
+            current,
+            saturation_delta=saturation_delta,
+            lightness_delta=lightness_delta,
+        )
+    except Exception:
+        return
+
+
 class ColorInput(SkimStandaloneInput):
     """SkimStandaloneInput with shortcuts to nudge the color's HSL channels.
 
@@ -176,44 +206,25 @@ class ColorInput(SkimStandaloneInput):
     0.05 delta clamped into ``[0, 1]``. Non-hex values (empty input,
     named CSS colors, malformed strings) are silently ignored — the
     binding is a no-op.
+
+    The footer renders two grouped cells: ``⌥↑ /↓ Sat +/-`` and
+    ``⌥→ /← Lum +/-``.  The alt+down and alt+left bindings are hidden
+    (``show=False``) but remain functional.
     """
 
-    BINDINGS = [
-        Binding("alt+up", "nudge_saturation_up", "Sat +", show=True, priority=True),
-        Binding("alt+down", "nudge_saturation_down", "Sat -", show=True, priority=True),
-        Binding("alt+right", "nudge_lightness_up", "Lum +", show=True, priority=True),
-        Binding("alt+left", "nudge_lightness_down", "Lum -", show=True, priority=True),
-    ]
-
-    _HSL_STEP = 0.05
-    _HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
-
-    def _nudge(self, *, saturation_delta: float = 0.0, lightness_delta: float = 0.0) -> None:
-        from skim.application.render.styling import nudge_color_hsl
-
-        current = (self.value or "").strip()
-        if not self._HEX_RE.match(current):
-            return
-        try:
-            self.value = nudge_color_hsl(
-                current,
-                saturation_delta=saturation_delta,
-                lightness_delta=lightness_delta,
-            )
-        except Exception:
-            return
+    BINDINGS = list(_COLOR_NUDGE_BINDINGS)
 
     def action_nudge_saturation_up(self) -> None:
-        self._nudge(saturation_delta=self._HSL_STEP)
+        _nudge_color(self, saturation_delta=_HSL_STEP)
 
     def action_nudge_saturation_down(self) -> None:
-        self._nudge(saturation_delta=-self._HSL_STEP)
+        _nudge_color(self, saturation_delta=-_HSL_STEP)
 
     def action_nudge_lightness_up(self) -> None:
-        self._nudge(lightness_delta=self._HSL_STEP)
+        _nudge_color(self, lightness_delta=_HSL_STEP)
 
     def action_nudge_lightness_down(self) -> None:
-        self._nudge(lightness_delta=-self._HSL_STEP)
+        _nudge_color(self, lightness_delta=-_HSL_STEP)
 
 
 class SkimInput(Input):
@@ -234,6 +245,24 @@ class SkimInput(Input):
 
     def action_cancel_edit(self) -> None:
         """No-op — handled by ListDetailPane.on_key via event bubbling."""
+
+
+class LayerColorInput(SkimInput):
+    """SkimInput variant with HSL-nudge shortcuts (Layer Colors edit pane)."""
+
+    BINDINGS = list(_COLOR_NUDGE_BINDINGS)
+
+    def action_nudge_saturation_up(self) -> None:
+        _nudge_color(self, saturation_delta=_HSL_STEP)
+
+    def action_nudge_saturation_down(self) -> None:
+        _nudge_color(self, saturation_delta=-_HSL_STEP)
+
+    def action_nudge_lightness_up(self) -> None:
+        _nudge_color(self, lightness_delta=_HSL_STEP)
+
+    def action_nudge_lightness_down(self) -> None:
+        _nudge_color(self, lightness_delta=-_HSL_STEP)
 
 
 class SkimListView(ListView):
