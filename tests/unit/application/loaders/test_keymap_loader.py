@@ -716,3 +716,73 @@ class TestParseC2jsonMacros:
         result = _parse_c2json(data)
         assert [m.id for m in result.macros] == ["0", "1", "2"]
         assert result.macros[1].actions == ()
+
+
+class TestLoadKeymapPopulatesDefinitions:
+    """End-to-end check that load_keymap surfaces TDs and macros."""
+
+    def test_vial_tap_dance_and_macros_reach_keymap(self, tmp_path):
+        data = {
+            "version": 1,
+            "layout": [[["KC_A"] * 60]],
+            "tap_dance": [["KC_Q", "KC_NO", "KC_NO", "KC_NO", 250]],
+            "macro": [[["text", "hello"]]],
+        }
+        path = tmp_path / "test.vil"
+        path.write_text(json.dumps(data))
+
+        keymap = load_keymap(path)
+
+        assert keymap.tap_dances == (
+            SvalboardTapDance[str](
+                id="0",
+                tap="KC_Q",
+                hold=None,
+                double_tap=None,
+                tap_then_hold=None,
+                tapping_term=250,
+            ),
+        )
+        assert keymap.macros == (
+            SvalboardMacro[str](
+                id="0",
+                actions=(
+                    SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TEXT, text="hello"),
+                ),
+            ),
+        )
+
+    def test_keybard_tap_dance_and_macros_reach_keymap(self, tmp_path):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "tapdances": [
+                {
+                    "tdid": 4,
+                    "tap": "KC_A",
+                    "hold": "KC_LSHIFT",
+                    "doubletap": "KC_NO",
+                    "taphold": "KC_NO",
+                    "tapms": 350,
+                }
+            ],
+            "macros": [{"mid": 1, "actions": [["tap", "KC_X"]]}],
+        }
+        path = tmp_path / "test.kbi"
+        path.write_text(json.dumps(data))
+
+        keymap = load_keymap(path)
+
+        assert keymap.tap_dances[0].id == "4"
+        assert keymap.tap_dances[0].tapping_term == 350
+        assert keymap.macros[0].id == "1"
+        assert keymap.macros[0].actions[0].keys == ("KC_X",)
+
+    def test_c2json_returns_empty_definitions_by_default(self, tmp_path):
+        data = {"layers": [["KC_A"] * 60]}
+        path = tmp_path / "test.json"
+        path.write_text(json.dumps(data))
+
+        keymap = load_keymap(path)
+
+        assert keymap.tap_dances == ()
+        assert keymap.macros == ()
