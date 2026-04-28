@@ -62,7 +62,7 @@ class LayerUpdated(Message):
         self.source_tab = source_tab
 
 
-class QuitConfirmScreen(ModalScreen[str]):
+class QuitConfirmScreen(ModalScreen[str | None]):
     """Modal dialog for save-on-quit with unsaved changes.
 
     Returns "save" to save and quit, "discard" to quit without saving,
@@ -72,6 +72,7 @@ class QuitConfirmScreen(ModalScreen[str]):
     BINDINGS = [
         Binding(key="s", action="save_quit", description="Save & Quit", show=False),
         Binding(key="d", action="discard", description="Discard", show=False),
+        Binding(key="escape", action="dismiss_dialog", description="Cancel", show=False),
     ]
 
     def compose(self) -> ComposeResult:
@@ -92,6 +93,9 @@ class QuitConfirmScreen(ModalScreen[str]):
 
     def action_discard(self) -> None:
         self.dismiss("discard")
+
+    def action_dismiss_dialog(self) -> None:
+        self.dismiss(None)
 
 
 _DEFAULT_CONFIG_NAME = "skim-config.yaml"
