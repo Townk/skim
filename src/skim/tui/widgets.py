@@ -46,6 +46,11 @@ _ACTION_ORDER: dict[str, int] = {
     # Edit-pane
     "submit": 20,
     "cancel_edit": 21,
+    # HSL nudge
+    "nudge_saturation_up": 30,
+    "nudge_saturation_down": 30,
+    "nudge_lightness_up": 31,
+    "nudge_lightness_down": 31,
 }
 
 # Pairs rendered with "/" between key displays.
@@ -55,6 +60,8 @@ _PAIRS: dict[str, tuple[str, str]] = {
     "scroll_view('up')": ("scroll_view('down')", "Scroll up/down"),
     "focus_previous": ("focus_next", "Prev/Next field"),
     "cursor_up": ("cursor_down", "Prev/Next item"),
+    "nudge_saturation_up": ("nudge_saturation_down", "Sat +/-"),
+    "nudge_lightness_up": ("nudge_lightness_down", "Lum +/-"),
 }
 
 # Second actions in pairs — skipped during individual rendering.
@@ -169,10 +176,10 @@ class SkimStandaloneInput(Input):
 
 
 _COLOR_NUDGE_BINDINGS: list[Binding] = [
-    Binding("alt+up", "nudge_saturation_up", "/↓ Sat +/-", show=True, priority=True),
-    Binding("alt+down", "nudge_saturation_down", "Sat -", show=False, priority=True),
-    Binding("alt+right", "nudge_lightness_up", "/← Lum +/-", show=True, priority=True),
-    Binding("alt+left", "nudge_lightness_down", "Lum -", show=False, priority=True),
+    Binding("alt+up", "nudge_saturation_up", "Sat +", show=True, priority=True),
+    Binding("alt+down", "nudge_saturation_down", "Sat -", show=True, priority=True),
+    Binding("alt+right", "nudge_lightness_up", "Lum +", show=True, priority=True),
+    Binding("alt+left", "nudge_lightness_down", "Lum -", show=True, priority=True),
 ]
 
 _HSL_STEP = 0.05
@@ -207,9 +214,9 @@ class ColorInput(SkimStandaloneInput):
     named CSS colors, malformed strings) are silently ignored — the
     binding is a no-op.
 
-    The footer renders two grouped cells: ``⌥↑ /↓ Sat +/-`` and
-    ``⌥→ /← Lum +/-``.  The alt+down and alt+left bindings are hidden
-    (``show=False``) but remain functional.
+    The footer renders two grouped cells using ``SkimFooter._PAIRS``:
+    one for the saturation pair and one for the lightness pair, with
+    the standard yellow-key / white-description styling.
     """
 
     BINDINGS = list(_COLOR_NUDGE_BINDINGS)
