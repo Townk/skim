@@ -593,6 +593,11 @@ class Palette(BaseModel):
             Defaults to "white".
         border_color: Color for keyboard and cluster borders.
             Defaults to "black".
+        macro_color: Background color for macro badges and macro-table
+            titles in the rendered keymap. Defaults to "#89511C".
+        tap_dance_color: Background color for tap-dance badges and
+            tap-dance-table titles in the rendered keymap. Defaults to
+            "#41687F".
         layers: Tuple of LayerColor configurations, one per layer.
             Layer indices correspond to positions in this tuple.
             Defaults to an empty tuple.
@@ -617,6 +622,8 @@ class Palette(BaseModel):
     key_label_color: str = "white"
     background_color: str = "white"
     border_color: str = "black"
+    macro_color: str = "#89511C"
+    tap_dance_color: str = "#41687F"
     layers: Annotated[tuple[LayerColor, ...], BeforeValidator(_coerce_to_tuple)] = ()
 
 

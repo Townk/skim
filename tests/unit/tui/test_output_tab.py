@@ -228,3 +228,23 @@ class TestOutputTab:
                 "#AA6666",
             ]
             assert layer0["base_color"] == "#FF0000"
+
+    @pytest.mark.asyncio()
+    async def test_palette_includes_macro_and_tap_dance_color_inputs(self, config_with_output):
+        app = OutputTabTestApp(config_data=config_with_output)
+        async with app.run_test(size=(120, 80)) as pilot:
+            await pilot.pause()
+            macro_input = app.query_one("#palette-macro-color", Input)
+            td_input = app.query_one("#palette-tap-dance-color", Input)
+            assert macro_input.value == "#89511C"
+            assert td_input.value == "#41687F"
+
+    @pytest.mark.asyncio()
+    async def test_editing_macro_color_writes_to_config(self, config_with_output):
+        app = OutputTabTestApp(config_data=config_with_output)
+        async with app.run_test(size=(120, 80)) as pilot:
+            await pilot.pause()
+            macro_input = app.query_one("#palette-macro-color", Input)
+            macro_input.value = "#AAAAAA"
+            await pilot.pause()
+            assert config_with_output["output"]["style"]["palette"]["macro_color"] == "#AAAAAA"
