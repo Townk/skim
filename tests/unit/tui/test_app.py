@@ -166,3 +166,116 @@ class TestHelpScreenIntegration:
 
             md = app.screen.query_one(Markdown)
             assert "Navigation" in md.source
+
+
+class TestQuitConfirmScreenEscape:
+    """ESC dismisses the quit-confirm dialog without committing to save or discard."""
+
+    @pytest.mark.asyncio()
+    async def test_escape_dismisses_with_none(self):
+        from textual.app import App, ComposeResult
+        from textual.widgets import Static
+
+        from skim.tui.app import QuitConfirmScreen
+
+        captured: list[str | None] = []
+
+        class TestApp(App):
+            def compose(self) -> ComposeResult:
+                yield Static("body")
+
+            def on_mount(self) -> None:
+                self.push_screen(QuitConfirmScreen(), captured.append)
+
+        app = TestApp()
+        async with app.run_test(size=(80, 24)) as pilot:
+            await pilot.pause()
+            assert isinstance(app.screen, QuitConfirmScreen)
+            await pilot.press("escape")
+            await pilot.pause()
+            # Screen popped back to the host App
+            assert not isinstance(app.screen, QuitConfirmScreen)
+
+        assert captured == [None], captured
+
+
+class TestSaveTargetScreenEscape:
+    @pytest.mark.asyncio()
+    async def test_escape_dismisses_with_none(self, tmp_path):
+        from textual.app import App, ComposeResult
+        from textual.widgets import Static
+
+        from skim.tui.app import SaveTargetScreen
+
+        captured: list[str | None] = []
+
+        class TestApp(App):
+            def compose(self) -> ComposeResult:
+                yield Static("body")
+
+            def on_mount(self) -> None:
+                self.push_screen(
+                    SaveTargetScreen(tmp_path / "skim-config.yaml"),
+                    captured.append,
+                )
+
+        app = TestApp()
+        async with app.run_test(size=(80, 24)) as pilot:
+            await pilot.pause()
+            await pilot.press("escape")
+            await pilot.pause()
+
+        assert captured == [None], captured
+
+
+class TestOverwriteConfirmScreenEscape:
+    @pytest.mark.asyncio()
+    async def test_escape_dismisses_without_overwriting(self, tmp_path):
+        from textual.app import App, ComposeResult
+        from textual.widgets import Static
+
+        from skim.tui.app import OverwriteConfirmScreen
+
+        captured: list[bool] = []
+
+        class TestApp(App):
+            def compose(self) -> ComposeResult:
+                yield Static("body")
+
+            def on_mount(self) -> None:
+                self.push_screen(OverwriteConfirmScreen(tmp_path / "x.yaml"), captured.append)
+
+        app = TestApp()
+        async with app.run_test(size=(80, 24)) as pilot:
+            await pilot.pause()
+            await pilot.press("escape")
+            await pilot.pause()
+
+        # Cancel-equivalent: callback receives False, so no overwrite happens
+        assert captured == [False], captured
+
+
+class TestHelpScreenEscape:
+    @pytest.mark.asyncio()
+    async def test_escape_dismisses(self):
+        from textual.app import App, ComposeResult
+        from textual.widgets import Static
+
+        from skim.tui.app import HelpScreen
+
+        captured: list[None] = []
+
+        class TestApp(App):
+            def compose(self) -> ComposeResult:
+                yield Static("body")
+
+            def on_mount(self) -> None:
+                self.push_screen(HelpScreen("# title"), captured.append)
+
+        app = TestApp()
+        async with app.run_test(size=(80, 24)) as pilot:
+            await pilot.pause()
+            await pilot.press("escape")
+            await pilot.pause()
+
+        assert captured == [None], captured
