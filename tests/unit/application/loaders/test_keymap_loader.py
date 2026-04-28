@@ -27,7 +27,13 @@ from skim.application.loaders.keymap_loader import (
     load_keymap_from_stdin,
     load_keymap_json,
 )
-from skim.domain.domain_types import KeymapType, SvalboardTapDance
+from skim.domain.domain_types import (
+    KeymapType,
+    SvalboardMacro,
+    SvalboardMacroAction,
+    SvalboardMacroActionKind,
+    SvalboardTapDance,
+)
 
 
 class TestDetectKeymapFromJson:
@@ -445,3 +451,91 @@ class TestParseVialTapDance:
         assert td.hold is None
         assert td.double_tap is None
         assert td.tap_then_hold is None
+
+
+def _vial_data_with_macros(macros: list) -> dict:
+    return {"layout": [[["KC_A"] * 60]], "version": 1, "macro": macros}
+
+
+class TestParseVialMacros:
+    """Tests that _parse_vial extracts top-level macro entries."""
+
+    def test_no_macro_key_yields_empty(self):
+        data = {"layout": [[["KC_A"] * 60]], "version": 1}
+        result = _parse_vial(data)
+        assert result.macros == ()
+
+    def test_empty_macro_entry(self):
+        data = _vial_data_with_macros([[]])
+        result = _parse_vial(data)
+        assert result.macros == (SvalboardMacro[str](id="0"),)
+
+    def test_single_keycode_tap_action(self):
+        data = _vial_data_with_macros([[["tap", "KC_A"]]])
+        result = _parse_vial(data)
+        assert result.macros == (
+            SvalboardMacro[str](
+                id="0",
+                actions=(
+                    SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("KC_A",)),
+                ),
+            ),
+        )
+
+    def test_multi_keycode_action(self):
+        data = _vial_data_with_macros([[["up", "KC_E", "KC_2"]]])
+        result = _parse_vial(data)
+        action = result.macros[0].actions[0]
+        assert action.kind is SvalboardMacroActionKind.UP
+        assert action.keys == ("KC_E", "KC_2")
+
+    def test_text_action(self):
+        data = _vial_data_with_macros([[["text", ";qj"]]])
+        result = _parse_vial(data)
+        action = result.macros[0].actions[0]
+        assert action.kind is SvalboardMacroActionKind.TEXT
+        assert action.text == ";qj"
+        assert action.keys == ()
+
+    def test_delay_action(self):
+        data = _vial_data_with_macros([[["delay", 30]]])
+        result = _parse_vial(data)
+        action = result.macros[0].actions[0]
+        assert action.kind is SvalboardMacroActionKind.DELAY
+        assert action.duration_ms == 30
+        assert action.keys == ()
+
+    def test_mixed_action_sequence(self):
+        data = _vial_data_with_macros(
+            [
+                [
+                    ["down", "KC_E"],
+                    ["delay", 30],
+                    ["down", "KC_1"],
+                    ["delay", 30],
+                    ["up", "KC_E", "KC_1"],
+                ]
+            ]
+        )
+        result = _parse_vial(data)
+        kinds = [a.kind for a in result.macros[0].actions]
+        assert kinds == [
+            SvalboardMacroActionKind.DOWN,
+            SvalboardMacroActionKind.DELAY,
+            SvalboardMacroActionKind.DOWN,
+            SvalboardMacroActionKind.DELAY,
+            SvalboardMacroActionKind.UP,
+        ]
+        assert result.macros[0].actions[4].keys == ("KC_E", "KC_1")
+
+    def test_multiple_macros_get_indexed_ids(self):
+        data = _vial_data_with_macros(
+            [
+                [["tap", "KC_A"]],
+                [],
+                [["text", "hi"]],
+            ]
+        )
+        result = _parse_vial(data)
+        assert [m.id for m in result.macros] == ["0", "1", "2"]
+        assert result.macros[1].actions == ()

@@ -22,6 +22,8 @@ from skim.data import SvalboardKeymap, SvalboardLayout
 from skim.domain import (
     KeymapType,
     SvalboardMacro,
+    SvalboardMacroAction,
+    SvalboardMacroActionKind,
     SvalboardTapDance,
 )
 from skim.domain.adapters import KeymapJsonAdapter
@@ -102,11 +104,61 @@ def _parse_vial_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
     return tuple(tap_dances)
 
 
+_KEY_ACTION_KINDS: dict[str, SvalboardMacroActionKind] = {
+    "tap": SvalboardMacroActionKind.TAP,
+    "down": SvalboardMacroActionKind.DOWN,
+    "up": SvalboardMacroActionKind.UP,
+}
+
+
+def _parse_vial_action(raw: Any) -> SvalboardMacroAction[str] | None:
+    """Parse a single Vial macro action from its array form.
+
+    Action shape: ``[kind, *rest]`` where kind is one of
+    ``"tap" | "down" | "up" | "text" | "delay"``. ``tap``/``down``/``up``
+    accept one or more keycodes; ``text`` takes a string; ``delay`` takes
+    a numeric millisecond duration. Returns ``None`` if ``raw`` is not a
+    parseable action.
+    """
+    if not isinstance(raw, list) or not raw:
+        return None
+    kind = raw[0]
+    if kind in _KEY_ACTION_KINDS:
+        keys = tuple(str(k) for k in raw[1:])
+        return SvalboardMacroAction[str](kind=_KEY_ACTION_KINDS[kind], keys=keys)
+    if kind == "text" and len(raw) >= 2:
+        return SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TEXT, text=str(raw[1]))
+    if kind == "delay" and len(raw) >= 2:
+        return SvalboardMacroAction[str](
+            kind=SvalboardMacroActionKind.DELAY, duration_ms=int(raw[1])
+        )
+    return None
+
+
+def _parse_vial_macro_actions(raw: Any) -> tuple[SvalboardMacroAction[str], ...]:
+    """Parse the action sequence of a single Vial macro."""
+    if not isinstance(raw, list):
+        return ()
+    parsed = (_parse_vial_action(action) for action in raw)
+    return tuple(action for action in parsed if action is not None)
+
+
+def _parse_vial_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
+    """Parse the top-level ``macro`` array if present."""
+    raw = data.get("macro")
+    if not isinstance(raw, list):
+        return ()
+    return tuple(
+        SvalboardMacro[str](id=str(index), actions=_parse_vial_macro_actions(actions))
+        for index, actions in enumerate(raw)
+    )
+
+
 def _parse_vial(data: Any) -> ParsedKeymap:
     """Parse a Vial-format JSON object into a ParsedKeymap.
 
     Layers come from the top-level ``layout`` key. Tap dances and macros
-    are parsed in later tasks; they are empty here.
+    are parsed from top-level ``tap_dance`` and ``macro`` keys.
     """
     if "layout" not in data:
         raise ValueError("Missing 'layout' key in vial data")
@@ -117,6 +169,7 @@ def _parse_vial(data: Any) -> ParsedKeymap:
     return ParsedKeymap(
         layers=layers,
         tap_dances=_parse_vial_tap_dances(data),
+        macros=_parse_vial_macros(data),
     )
 
 
