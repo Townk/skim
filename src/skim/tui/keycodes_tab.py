@@ -786,7 +786,7 @@ class KeycodesTab(Widget):
         height: auto;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-list {
-        height: 9;
+        height: 8;
         border: solid $accent 50%;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-detail {

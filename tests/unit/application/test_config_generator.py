@@ -335,6 +335,22 @@ class TestMacroPreview:
         )
         assert macro_preview(macro, adapter) == "↓ E | %%nf-fa-hourglass_2; 30 | ↑ E,1"
 
+    def test_transparent_keycode_in_macro(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("KC_TRNS",)),
+            ),
+        )
+        assert macro_preview(macro, adapter) == "↓↑ ⛛"
+
 
 class TestQmkColorParsing:
     """Tests for QMK color.h header parsing via generate_from_keybard."""
@@ -921,6 +937,15 @@ class TestTapDancePreview:
         result = tap_dance_preview(td, adapter)
         assert "999" not in result
         assert "ms" not in result
+
+    def test_transparent_keycode_in_tap_dance(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0", tap="KC_TRNS", hold="KC_U")
+        result = tap_dance_preview(td, adapter)
+        assert result.startswith("t:⛛ ")
+        assert "h:U" in result
 
 
 class TestMacroToConfigEntry:

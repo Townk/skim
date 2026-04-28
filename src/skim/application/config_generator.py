@@ -51,11 +51,20 @@ _MACRO_KIND_SYMBOLS: dict[SvalboardMacroActionKind, str] = {
 
 _MACRO_TEXT_GLYPH = "%%nf-md-text_recognition;"
 _MACRO_DELAY_GLYPH = "%%nf-fa-hourglass_2;"
+_TRANSPARENT_GLYPH = "⛛"
 
 
 def _resolve_key_label(keycode: str, adapter: KeycodeLabelAdapter) -> str:
-    """Return the resolved label for a keycode (raw markers preserved)."""
-    return adapter.transform(keycode).label or keycode
+    """Return the resolved label for a keycode (raw markers preserved).
+
+    Transparent keycodes (``KC_TRANSPARENT`` / ``KC_TRNS`` / ``_______``)
+    render as the Vial-style ``⛛`` glyph rather than their raw keycode
+    name, since their resolved label is empty by design.
+    """
+    result = adapter.transform(keycode)
+    if result.is_transparent:
+        return _TRANSPARENT_GLYPH
+    return result.label or keycode
 
 
 def _format_macro_action(action: SvalboardMacroAction[str], adapter: KeycodeLabelAdapter) -> str:
