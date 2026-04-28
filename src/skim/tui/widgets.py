@@ -171,18 +171,18 @@ class SkimStandaloneInput(Input):
 class ColorInput(SkimStandaloneInput):
     """SkimStandaloneInput with shortcuts to nudge the color's HSL channels.
 
-    ``alt+s`` / ``alt+shift+s`` decrease / increase saturation; ``alt+l``
-    / ``alt+shift+l`` decrease / increase lightness. Each press applies
-    a 0.05 delta clamped into ``[0, 1]``. Non-hex values (empty input,
+    ``alt+up`` / ``alt+down`` increase / decrease saturation; ``alt+right``
+    / ``alt+left`` increase / decrease lightness. Each press applies a
+    0.05 delta clamped into ``[0, 1]``. Non-hex values (empty input,
     named CSS colors, malformed strings) are silently ignored — the
     binding is a no-op.
     """
 
     BINDINGS = [
-        Binding("alt+s", "nudge_saturation_down", "Saturation -", show=False),
-        Binding("alt+shift+s", "nudge_saturation_up", "Saturation +", show=False),
-        Binding("alt+l", "nudge_lightness_down", "Lightness -", show=False),
-        Binding("alt+shift+l", "nudge_lightness_up", "Lightness +", show=False),
+        Binding("alt+up", "nudge_saturation_up", "Sat +", show=True, priority=True),
+        Binding("alt+down", "nudge_saturation_down", "Sat -", show=True, priority=True),
+        Binding("alt+right", "nudge_lightness_up", "Lum +", show=True, priority=True),
+        Binding("alt+left", "nudge_lightness_down", "Lum -", show=True, priority=True),
     ]
 
     _HSL_STEP = 0.05
@@ -201,20 +201,19 @@ class ColorInput(SkimStandaloneInput):
                 lightness_delta=lightness_delta,
             )
         except Exception:
-            # Defensive: if the styling helper rejects the value we leave the input alone.
             return
-
-    def action_nudge_saturation_down(self) -> None:
-        self._nudge(saturation_delta=-self._HSL_STEP)
 
     def action_nudge_saturation_up(self) -> None:
         self._nudge(saturation_delta=self._HSL_STEP)
 
-    def action_nudge_lightness_down(self) -> None:
-        self._nudge(lightness_delta=-self._HSL_STEP)
+    def action_nudge_saturation_down(self) -> None:
+        self._nudge(saturation_delta=-self._HSL_STEP)
 
     def action_nudge_lightness_up(self) -> None:
         self._nudge(lightness_delta=self._HSL_STEP)
+
+    def action_nudge_lightness_down(self) -> None:
+        self._nudge(lightness_delta=-self._HSL_STEP)
 
 
 class SkimInput(Input):
