@@ -921,3 +921,76 @@ class TestTapDancePreview:
         result = tap_dance_preview(td, adapter)
         assert "999" not in result
         assert "ms" not in result
+
+
+class TestMacroToConfigEntry:
+    @pytest.fixture()
+    def adapter(self):
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
+        from skim.data import SkimConfig
+        from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+
+        config = SkimConfig()
+        mappings = load_keycode_mappings(config.keycodes)
+        return KeycodeLabelAdapter(config.keyboard, mappings)
+
+    def test_skips_macro_with_empty_actions(self, adapter):
+        from skim.application.config_generator import macro_to_config_entry
+        from skim.domain.domain_types import SvalboardMacro
+
+        macro = SvalboardMacro[str](id="0", actions=())
+        assert macro_to_config_entry(macro, adapter) is None
+
+    def test_emits_macro_entry(self, adapter):
+        from skim.application.config_generator import macro_to_config_entry
+        from skim.data.config import Macro
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="3",
+            actions=(SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("KC_A",)),),
+        )
+        entry = macro_to_config_entry(macro, adapter)
+        assert isinstance(entry, Macro)
+        assert entry.id == "3"
+        assert entry.name is None
+        assert entry.preview == "[↓↑ A]"
+
+
+class TestTapDanceToConfigEntry:
+    @pytest.fixture()
+    def adapter(self):
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
+        from skim.data import SkimConfig
+        from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+
+        config = SkimConfig()
+        mappings = load_keycode_mappings(config.keycodes)
+        return KeycodeLabelAdapter(config.keyboard, mappings)
+
+    def test_skips_all_null_tap_dance(self, adapter):
+        from skim.application.config_generator import tap_dance_to_config_entry
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0")
+        assert tap_dance_to_config_entry(td, adapter) is None
+
+    def test_emits_tap_dance_entry(self, adapter):
+        from skim.application.config_generator import tap_dance_to_config_entry
+        from skim.data.config import TapDance
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="2", tap="KC_Q")
+        entry = tap_dance_to_config_entry(td, adapter)
+        assert isinstance(entry, TapDance)
+        assert entry.id == "2"
+        assert entry.name is None
+        assert entry.preview == "t:Q"

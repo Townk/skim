@@ -34,7 +34,7 @@ from typing import Any
 import yaml
 
 from skim.application.render.styling import adjust_color, hex_str
-from skim.data.config import SkimConfig
+from skim.data.config import Macro as _MacroConfig, SkimConfig, TapDance as _TapDanceConfig
 from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
 from skim.domain.domain_types import (
     SvalboardMacro,
@@ -104,6 +104,39 @@ def tap_dance_preview(tap_dance: SvalboardTapDance[str], adapter: KeycodeLabelAd
             continue
         parts.append(f"{prefix}:{_resolve_key_label(value, adapter)}")
     return " ".join(parts)
+
+
+def macro_to_config_entry(
+    macro: SvalboardMacro[str], adapter: KeycodeLabelAdapter
+) -> _MacroConfig | None:
+    """Convert a parsed macro into a config-ready ``Macro`` model.
+
+    Returns ``None`` when ``macro.actions`` is empty so the bootstrap
+    can skip placeholder rows that source formats reserve.
+    """
+    if not macro.actions:
+        return None
+    return _MacroConfig(id=macro.id, name=None, preview=macro_preview(macro, adapter))
+
+
+def tap_dance_to_config_entry(
+    tap_dance: SvalboardTapDance[str], adapter: KeycodeLabelAdapter
+) -> _TapDanceConfig | None:
+    """Convert a parsed tap dance into a config-ready ``TapDance`` model.
+
+    Returns ``None`` when all four key fields are ``None`` so the
+    bootstrap can skip placeholder rows.
+    """
+    if (
+        tap_dance.tap is None
+        and tap_dance.hold is None
+        and tap_dance.double_tap is None
+        and tap_dance.tap_then_hold is None
+    ):
+        return None
+    return _TapDanceConfig(
+        id=tap_dance.id, name=None, preview=tap_dance_preview(tap_dance, adapter)
+    )
 
 
 class ConfigGenerator:
