@@ -786,3 +786,29 @@ class TestLoadKeymapPopulatesDefinitions:
 
         assert keymap.tap_dances == ()
         assert keymap.macros == ()
+
+
+class TestLoadKeymapSampleFiles:
+    """Smoke test against the bundled sample files under samples/keymaps/."""
+
+    SAMPLES_DIR = Path(__file__).resolve().parents[4] / "samples" / "keymaps"
+
+    def test_vial_sample_has_tap_dances_and_macros(self):
+        path = self.SAMPLES_DIR / "vial-sample.vil"
+        keymap = load_keymap(path)
+        assert len(keymap.tap_dances) > 0
+        assert len(keymap.macros) > 0
+        assert all(td.id == str(i) for i, td in enumerate(keymap.tap_dances))
+        assert all(m.id == str(i) for i, m in enumerate(keymap.macros))
+
+    def test_keybard_sample_has_tap_dances_and_macros(self):
+        path = self.SAMPLES_DIR / "keybard-sample.kbi"
+        keymap = load_keymap(path)
+        assert len(keymap.tap_dances) > 0
+        assert len(keymap.macros) > 0
+
+    def test_c2json_sample_has_no_definitions(self):
+        path = self.SAMPLES_DIR / "c2json-sample.json"
+        keymap = load_keymap(path)
+        assert keymap.tap_dances == ()
+        assert keymap.macros == ()
