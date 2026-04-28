@@ -781,14 +781,20 @@ class KeycodesTab(Widget):
     KeycodesTab .keycodes-section ListDetailPane .ldp-list-col {
         width: 35%;
         min-width: 25;
+        height: auto;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-list {
+        height: 9;
         border: solid $accent 50%;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-detail {
         padding: 0 1;
+        height: auto;
         overflow-x: hidden;
         border: solid $accent 30%;
+    }
+    KeycodesTab .keycodes-section ListDetailPane .ldp-detail .field-row {
+        height: auto;
     }
     KeycodesTab .keycodes-section ListDetailPane .ldp-detail:focus-within {
         border: solid $accent;
