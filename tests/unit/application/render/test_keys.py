@@ -518,3 +518,40 @@ def test_side_aware_thumb_keys_right_side(
     assert expected_corner in clip_path.id, (
         f"{key_class_name} (RIGHT) expected corner {expected_corner!r}; clip id was {clip_path.id!r}"
     )
+
+
+class TestCenterKeyMacroTapDanceMark:
+    def test_macro_center_key_appends_circle_badge(self, cluster_context, sample_palette):
+        from skim.application.render.marks import MacroTapDanceCircleBadge
+
+        key = SvalboardTargetKey(label="A", macro_id="3")
+        layout = Boundary(width=54, pos=Position(x=0, y=0))
+        colors = FingerClusterKeyColors(primary="#208060", accent="#0E3024")
+        node = CenterKey(ctx=cluster_context, key=key, colors=colors, layout=layout)
+        badges = [c for c in node.children if isinstance(c, MacroTapDanceCircleBadge)]
+        assert len(badges) == 1
+
+    def test_plain_center_key_has_no_badge(self, cluster_context, sample_palette):
+        from skim.application.render.marks import MacroTapDanceCircleBadge
+
+        key = SvalboardTargetKey(label="A")
+        layout = Boundary(width=54, pos=Position(x=0, y=0))
+        colors = FingerClusterKeyColors(primary="#208060", accent="#0E3024")
+        node = CenterKey(ctx=cluster_context, key=key, colors=colors, layout=layout)
+        badges = [c for c in node.children if isinstance(c, MacroTapDanceCircleBadge)]
+        assert badges == []
+
+    def test_tap_dance_center_key_uses_blue_badge(self, cluster_context, sample_palette):
+        import drawsvg as draw
+
+        from skim.application.render.marks import MacroTapDanceCircleBadge
+
+        key = SvalboardTargetKey(label="A", tap_dance_id="0")
+        layout = Boundary(width=54, pos=Position(x=0, y=0))
+        colors = FingerClusterKeyColors(primary="#208060", accent="#0E3024")
+        node = CenterKey(ctx=cluster_context, key=key, colors=colors, layout=layout)
+        badges = [c for c in node.children if isinstance(c, MacroTapDanceCircleBadge)]
+        assert len(badges) == 1
+        # The badge appends a draw.Path with the requested fill colour.
+        path = next(c for c in badges[0].children if isinstance(c, draw.Path))
+        assert path.args["fill"] == cluster_context.palette.tap_dance_color

@@ -925,6 +925,21 @@ class CenterKey(Key):
         label_x = self.x + self.width / 2
         return label_x, label_y
 
+    def _append_macro_tap_dance_mark(self) -> None:
+        if self.target_key is None or self.render_context is None:
+            return
+        accent = self.render_context.accent_fill(self.target_key)
+        if accent is None:
+            return
+        from skim.application.render.marks import MacroTapDanceCircleBadge
+
+        half = self.width / 2.0
+        self.append(
+            MacroTapDanceCircleBadge(
+                cx=self.x + half, cy=self.y + half, r=half, fill=accent,
+            )
+        )
+
 
 class DoubleSouthKey(Key):
     """The double-south key in a finger cluster.
