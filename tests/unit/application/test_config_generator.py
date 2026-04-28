@@ -1127,3 +1127,67 @@ class TestGenerateFromKeybardMacrosAndTapDances:
         config = yaml.safe_load(yaml_out)
         assert config["keycodes"]["macros"] == []
         assert config["keycodes"]["tap_dances"] == []
+
+
+class TestLayerPillInPreview:
+    """Layer-only function keycodes wrap as ``(<glyph> <n>)`` in previews."""
+
+    @pytest.fixture()
+    def adapter(self):
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
+        from skim.data import SkimConfig
+        from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+
+        config = SkimConfig()
+        mappings = load_keycode_mappings(config.keycodes)
+        return KeycodeLabelAdapter(config.keyboard, mappings)
+
+    def test_mo_in_tap_dance(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        td = SvalboardTapDance[str](id="0", tap="TO(0)", hold="MO(3)")
+        result = tap_dance_preview(td, adapter)
+        # Both fields wrap their layer trigger; we don't pin the exact glyphs
+        # since they come from the keycode-mappings YAML — but the parens and
+        # layer numbers must be present.
+        assert "0)" in result, f"missing TO(0) layer index in {result!r}"
+        assert "3)" in result, f"missing MO(3) layer index in {result!r}"
+        assert result.startswith("t:(")
+        assert " h:(" in result
+
+    def test_mo_in_macro_tap_action(self, adapter):
+        from skim.application.config_generator import macro_preview
+        from skim.domain.domain_types import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+        )
+
+        macro = SvalboardMacro[str](
+            id="0",
+            actions=(
+                SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("MO(3)",)),
+            ),
+        )
+        result = macro_preview(macro, adapter)
+        assert result.endswith("3)"), f"expected layer index suffix in {result!r}"
+        assert "(" in result and ")" in result
+
+    def test_compound_lt_keeps_existing_label(self, adapter):
+        from skim.application.config_generator import tap_dance_preview
+        from skim.domain.domain_types import SvalboardTapDance
+
+        # LT(1, KC_A) embeds the layer digit alongside KC_A's label using the
+        # tap-hold separator. The pill should NOT be applied here because the
+        # label already carries the layer info via the separator.
+        td = SvalboardTapDance[str](id="0", tap="LT(1, KC_A)")
+        result = tap_dance_preview(td, adapter)
+        # Sanity checks: we don't append a redundant " 1)" and the held key
+        # ('A') shows up.
+        assert "A" in result
+        # The result must not look like ``t:(<…> 1)`` — the parens-pill form
+        # is reserved for layer-only keycodes.
+        assert not result.startswith("t:(")
