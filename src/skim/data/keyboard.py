@@ -49,6 +49,8 @@ from typing import Any, ClassVar, Generic, TypeVar, overload
 
 from typing_extensions import Self
 
+from skim.domain.domain_types import SvalboardMacro, SvalboardTapDance
+
 T = TypeVar("T")
 """TypeVar for the value type stored in cluster positions."""
 
@@ -1123,6 +1125,8 @@ class SvalboardKeymap(Generic[T]):
     """
 
     layers: dict[int, SvalboardLayout[T]]
+    tap_dances: tuple[SvalboardTapDance[T], ...] = ()
+    macros: tuple[SvalboardMacro[T], ...] = ()
 
 
 @overload
