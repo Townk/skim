@@ -43,14 +43,14 @@ _ACTION_ORDER: dict[str, int] = {
     "dismiss": 12,
     "cursor_up": 13,
     "select_cursor": 14,
+    # HSL nudge (before submit so they sit left of "Confirm changes")
+    "nudge_saturation_up": 18,
+    "nudge_saturation_down": 18,
+    "nudge_lightness_up": 19,
+    "nudge_lightness_down": 19,
     # Edit-pane
     "submit": 20,
     "cancel_edit": 21,
-    # HSL nudge
-    "nudge_saturation_up": 30,
-    "nudge_saturation_down": 30,
-    "nudge_lightness_up": 31,
-    "nudge_lightness_down": 31,
 }
 
 # Pairs rendered with "/" between key displays.
