@@ -13,7 +13,13 @@ from skim.data.keyboard import (
     ThumbCluster,
 )
 from skim.domain.adapters.keymap_target_adapter import KeymapTargetAdapter
-from skim.domain.domain_types import SvalboardTargetKey
+from skim.domain.domain_types import (
+    SvalboardMacro,
+    SvalboardMacroAction,
+    SvalboardMacroActionKind,
+    SvalboardTapDance,
+    SvalboardTargetKey,
+)
 
 
 def make_split_side(prefix: str) -> SplitSide[str]:
@@ -221,3 +227,99 @@ class TestTransformLayer:
         result = adapter._transform_layer(layout)
         first_key = result.left.index.center_key
         assert "L0_L_I" in first_key.label
+
+
+class TestKeymapTargetAdapterTapDances:
+    """Tests that transform rewrites tap-dance keycodes into target keys."""
+
+    def test_keycodes_are_label_transformed(self):
+        label_adapter = MockLabelAdapter(
+            {
+                "KC_Q": SvalboardTargetKey(label="Q"),
+                "KC_LSHIFT": SvalboardTargetKey(label="LShift"),
+            }
+        )
+        adapter = KeymapTargetAdapter(label_adapter)  # type: ignore[arg-type]
+        keymap = SvalboardKeymap[str](
+            layers=make_keymap(1).layers,
+            tap_dances=(
+                SvalboardTapDance[str](
+                    id="0",
+                    tap="KC_Q",
+                    hold="KC_LSHIFT",
+                    double_tap=None,
+                    tap_then_hold=None,
+                    tapping_term=250,
+                    name="Quick shift",
+                ),
+            ),
+        )
+        result = adapter.transform(keymap)
+        td = result.tap_dances[0]
+        assert td.id == "0"
+        assert td.name == "Quick shift"
+        assert td.tapping_term == 250
+        assert td.tap == SvalboardTargetKey(label="Q")
+        assert td.hold == SvalboardTargetKey(label="LShift")
+        assert td.double_tap is None
+        assert td.tap_then_hold is None
+
+    def test_no_tap_dances_yields_empty_tuple(self):
+        label_adapter = MockLabelAdapter()
+        adapter = KeymapTargetAdapter(label_adapter)  # type: ignore[arg-type]
+        result = adapter.transform(make_keymap(1))
+        assert result.tap_dances == ()
+
+
+class TestKeymapTargetAdapterMacros:
+    """Tests that transform rewrites macro action keycodes."""
+
+    def test_action_keys_are_label_transformed(self):
+        label_adapter = MockLabelAdapter(
+            {
+                "KC_E": SvalboardTargetKey(label="E"),
+                "KC_1": SvalboardTargetKey(label="1"),
+            }
+        )
+        adapter = KeymapTargetAdapter(label_adapter)  # type: ignore[arg-type]
+        keymap = SvalboardKeymap[str](
+            layers=make_keymap(1).layers,
+            macros=(
+                SvalboardMacro[str](
+                    id="6",
+                    actions=(
+                        SvalboardMacroAction[str](
+                            kind=SvalboardMacroActionKind.DOWN, keys=("KC_E",)
+                        ),
+                        SvalboardMacroAction[str](
+                            kind=SvalboardMacroActionKind.DELAY, duration_ms=30
+                        ),
+                        SvalboardMacroAction[str](
+                            kind=SvalboardMacroActionKind.UP, keys=("KC_E", "KC_1")
+                        ),
+                        SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TEXT, text=";qj"),
+                    ),
+                    name="E1",
+                ),
+            ),
+        )
+        result = adapter.transform(keymap)
+        macro = result.macros[0]
+        assert macro.id == "6"
+        assert macro.name == "E1"
+        assert macro.actions[0].keys == (SvalboardTargetKey(label="E"),)
+        assert macro.actions[1].duration_ms == 30
+        assert macro.actions[1].keys == ()
+        assert macro.actions[2].keys == (
+            SvalboardTargetKey(label="E"),
+            SvalboardTargetKey(label="1"),
+        )
+        assert macro.actions[3].kind is SvalboardMacroActionKind.TEXT
+        assert macro.actions[3].text == ";qj"
+        assert macro.actions[3].keys == ()
+
+    def test_no_macros_yields_empty_tuple(self):
+        label_adapter = MockLabelAdapter()
+        adapter = KeymapTargetAdapter(label_adapter)  # type: ignore[arg-type]
+        result = adapter.transform(make_keymap(1))
+        assert result.macros == ()

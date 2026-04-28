@@ -25,7 +25,12 @@ Example:
 """
 
 from skim.data import SvalboardKeymap, SvalboardLayout
-from skim.domain import SvalboardTargetKey
+from skim.domain import (
+    SvalboardMacro,
+    SvalboardMacroAction,
+    SvalboardTapDance,
+    SvalboardTargetKey,
+)
 
 from .keycode_label_adapter import KeycodeLabelAdapter
 
@@ -118,7 +123,10 @@ class KeymapTargetAdapter:
                 for idx, layer in layers.items()
             }
 
-        return SvalboardKeymap(layers)
+        tap_dances = tuple(self._transform_tap_dance(td) for td in keymap.tap_dances)
+        macros = tuple(self._transform_macro(macro) for macro in keymap.macros)
+
+        return SvalboardKeymap(layers=layers, tap_dances=tap_dances, macros=macros)
 
     @staticmethod
     def _apply_fallthrough(
@@ -156,3 +164,42 @@ class KeymapTargetAdapter:
             and layer-switching metadata.
         """
         return layer.map(self._label_adapter.transform)
+
+    def _transform_optional_keycode(self, keycode: str | None) -> SvalboardTargetKey | None:
+        """Apply the label adapter to an optional keycode string."""
+        if keycode is None:
+            return None
+        return self._label_adapter.transform(keycode)
+
+    def _transform_tap_dance(
+        self, tap_dance: SvalboardTapDance[str]
+    ) -> SvalboardTapDance[SvalboardTargetKey]:
+        """Rewrite each keycode field of a tap dance via the label adapter."""
+        return SvalboardTapDance[SvalboardTargetKey](
+            id=tap_dance.id,
+            tap=self._transform_optional_keycode(tap_dance.tap),
+            hold=self._transform_optional_keycode(tap_dance.hold),
+            double_tap=self._transform_optional_keycode(tap_dance.double_tap),
+            tap_then_hold=self._transform_optional_keycode(tap_dance.tap_then_hold),
+            tapping_term=tap_dance.tapping_term,
+            name=tap_dance.name,
+        )
+
+    def _transform_macro_action(
+        self, action: SvalboardMacroAction[str]
+    ) -> SvalboardMacroAction[SvalboardTargetKey]:
+        """Rewrite a macro action's keys via the label adapter."""
+        return SvalboardMacroAction[SvalboardTargetKey](
+            kind=action.kind,
+            keys=tuple(self._label_adapter.transform(k) for k in action.keys),
+            text=action.text,
+            duration_ms=action.duration_ms,
+        )
+
+    def _transform_macro(self, macro: SvalboardMacro[str]) -> SvalboardMacro[SvalboardTargetKey]:
+        """Rewrite each action of a macro via the label adapter."""
+        return SvalboardMacro[SvalboardTargetKey](
+            id=macro.id,
+            actions=tuple(self._transform_macro_action(a) for a in macro.actions),
+            name=macro.name,
+        )
