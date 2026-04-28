@@ -647,6 +647,58 @@ class TestParseKeybardMacros:
         result = _parse_keybard(data)
         assert [m.id for m in result.macros] == ["0", "2"]
 
+    def test_text_and_delay_actions(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "macros": [
+                {
+                    "mid": 3,
+                    "actions": [
+                        ["text", ";qj"],
+                        ["delay", 30],
+                    ],
+                }
+            ],
+        }
+        result = _parse_keybard(data)
+        actions = result.macros[0].actions
+        assert actions[0].kind is SvalboardMacroActionKind.TEXT
+        assert actions[0].text == ";qj"
+        assert actions[1].kind is SvalboardMacroActionKind.DELAY
+        assert actions[1].duration_ms == 30
+
+    def test_multi_keycode_action(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "macros": [{"mid": 4, "actions": [["up", "KC_E", "KC_2"]]}],
+        }
+        result = _parse_keybard(data)
+        action = result.macros[0].actions[0]
+        assert action.kind is SvalboardMacroActionKind.UP
+        assert action.keys == ("KC_E", "KC_2")
+
+    def test_mixed_action_sequence(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "macros": [
+                {
+                    "mid": 5,
+                    "actions": [
+                        ["down", "KC_E"],
+                        ["delay", 30],
+                        ["up", "KC_E"],
+                    ],
+                }
+            ],
+        }
+        result = _parse_keybard(data)
+        kinds = [a.kind for a in result.macros[0].actions]
+        assert kinds == [
+            SvalboardMacroActionKind.DOWN,
+            SvalboardMacroActionKind.DELAY,
+            SvalboardMacroActionKind.UP,
+        ]
+
 
 class TestParseC2jsonMacros:
     """Tests that _parse_c2json extracts hand-edited macros (object form)."""

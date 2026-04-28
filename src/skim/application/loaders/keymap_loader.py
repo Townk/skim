@@ -14,7 +14,7 @@ definitions where the source format provides them.
 
 import json
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -47,7 +47,7 @@ class ParsedKeymap:
 
     layers: list[list[str]]
     tap_dances: tuple[SvalboardTapDance[str], ...] = ()
-    macros: tuple[SvalboardMacro[str], ...] = field(default_factory=tuple)
+    macros: tuple[SvalboardMacro[str], ...] = ()
 
 
 def is_empty_layer(layer: list[str]) -> bool:
@@ -285,6 +285,7 @@ def _parse_c2json(data: Any) -> ParsedKeymap:
     layers = KeymapJsonAdapter.transform(layers_raw, KeymapType.C2JSON)
     return ParsedKeymap(
         layers=layers,
+        tap_dances=(),
         macros=_parse_c2json_macros(data),
     )
 
