@@ -1055,3 +1055,50 @@ class TestGenerateFromKeymapMacrosAndTapDances:
         config = yaml.safe_load(yaml_out)
         assert config["keycodes"]["macros"] == []
         assert config["keycodes"]["tap_dances"] == []
+
+
+class TestGenerateFromKeybardMacrosAndTapDances:
+    """Keybard path also populates keycodes.macros and tap_dances."""
+
+    def test_keybard_with_macros_and_tap_dances(self):
+        import json
+
+        from skim.application.config_generator import ConfigGenerator
+
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "tapdances": [
+                {
+                    "tdid": 4,
+                    "tap": "KC_A",
+                    "hold": "KC_LSHIFT",
+                    "doubletap": "KC_NO",
+                    "taphold": "KC_NO",
+                    "tapms": 350,
+                }
+            ],
+            "macros": [{"mid": 1, "actions": [["tap", "KC_X"]]}],
+        }
+        yaml_out = ConfigGenerator().generate_from_keybard(json.dumps(data))
+        config = yaml.safe_load(yaml_out)
+
+        macros = config["keycodes"]["macros"]
+        assert len(macros) == 1
+        assert macros[0]["id"] == "1"
+        assert macros[0]["preview"] == "[↓↑ X]"
+
+        tap_dances = config["keycodes"]["tap_dances"]
+        assert len(tap_dances) == 1
+        assert tap_dances[0]["id"] == "4"
+        assert tap_dances[0]["preview"].startswith("t:A ")
+
+    def test_keybard_without_extras_yields_empty_lists(self):
+        import json
+
+        from skim.application.config_generator import ConfigGenerator
+
+        data = {"keymap": [["KC_A"] * 60]}
+        yaml_out = ConfigGenerator().generate_from_keybard(json.dumps(data))
+        config = yaml.safe_load(yaml_out)
+        assert config["keycodes"]["macros"] == []
+        assert config["keycodes"]["tap_dances"] == []

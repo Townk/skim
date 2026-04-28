@@ -221,6 +221,26 @@ class ConfigGenerator:
         config_dict["output"]["style"]["palette"]["layers"] = palette_layers
         config_dict["output"]["style"]["palette"]["overrides"] = palette_overrides
 
+        # Populate macros and tap_dances from the parsed keymap.
+        from skim.application.loaders.keycode_mappings_loader import (
+            load_keycode_mappings,
+        )
+        from skim.application.loaders.keymap_loader import load_keymap_json
+
+        parsed = load_keymap_json(keybard_content)
+        validated = SkimConfig.model_validate(config_dict)
+        adapter = KeycodeLabelAdapter(validated.keyboard, load_keycode_mappings(validated.keycodes))
+        config_dict["keycodes"]["macros"] = [
+            entry.model_dump(mode="json")
+            for macro in parsed.macros
+            if (entry := macro_to_config_entry(macro, adapter)) is not None
+        ]
+        config_dict["keycodes"]["tap_dances"] = [
+            entry.model_dump(mode="json")
+            for td in parsed.tap_dances
+            if (entry := tap_dance_to_config_entry(td, adapter)) is not None
+        ]
+
         return yaml.dump(config_dict, sort_keys=False, default_flow_style=False)
 
     def _build_layers_for_indices(
