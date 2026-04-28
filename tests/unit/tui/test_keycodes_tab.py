@@ -302,3 +302,46 @@ class TestTapDanceListPane:
             pane._exit_edit_mode(commit=True)
             await pilot.pause()
             assert pane.get_entries()[0]["id"] == "0"
+
+
+class TestKeycodesTabStructure:
+    """Tests that the four sections compose in the correct order."""
+
+    @pytest.mark.asyncio()
+    async def test_all_four_sections_present(self):
+        config = SkimConfig().model_dump(mode="json")
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            for list_id in (
+                "#pre-process-list",
+                "#override-list",
+                "#macro-list",
+                "#tap-dance-list",
+            ):
+                assert app.query_one(list_id) is not None, f"missing {list_id}"
+
+    @pytest.mark.asyncio()
+    async def test_tab_uses_skim_vertical_scroll(self):
+        from skim.tui.widgets import SkimVerticalScroll
+
+        config = SkimConfig().model_dump(mode="json")
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            tab = app.query_one(KeycodesTab)
+            scrolls = list(tab.query(SkimVerticalScroll))
+            assert scrolls, "KeycodesTab is not wrapped in a SkimVerticalScroll"
+
+    @pytest.mark.asyncio()
+    async def test_section_order_matches_spec(self):
+        from skim.tui.list_detail_pane import ListDetailPane
+
+        config = SkimConfig().model_dump(mode="json")
+        app = KeycodesTabTestApp(config_data=config)
+        async with app.run_test(size=(120, 60)) as pilot:
+            await pilot.pause()
+            tab = app.query_one(KeycodesTab)
+            panes = list(tab.query(ListDetailPane))
+            ids = [pane.pane_id for pane in panes]
+            assert ids == ["pre-process", "override", "macro", "tap-dance"]

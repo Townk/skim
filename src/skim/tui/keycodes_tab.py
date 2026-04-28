@@ -25,7 +25,7 @@ from skim.data.config import SkimConfig
 from skim.domain import SEPARATOR_CHAR
 from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
 from skim.tui.list_detail_pane import ListDetailPane
-from skim.tui.widgets import SkimInput
+from skim.tui.widgets import SkimInput, SkimVerticalScroll
 
 
 def _load_base_keycode_names() -> list[str]:
@@ -813,67 +813,59 @@ class KeycodesTab(Widget):
         self.config_data = config_data
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="pre-process-section", classes="keycodes-section"):
-            yield Static("Pre-process", classes="section-title section-title-first")
-            yield PreProcessListPane(config_data=self.config_data)
+        with SkimVerticalScroll(can_focus=False):
+            with Vertical(id="pre-process-section", classes="keycodes-section"):
+                yield Static("Pre-process", classes="section-title section-title-first")
+                yield PreProcessListPane(config_data=self.config_data)
 
-        with Vertical(id="overrides-section", classes="keycodes-section"):
-            yield Static("Overrides", classes="section-title")
-            yield OverrideListPane(config_data=self.config_data)
+            with Vertical(id="overrides-section", classes="keycodes-section"):
+                yield Static("Overrides", classes="section-title")
+                yield OverrideListPane(config_data=self.config_data)
 
-        with Vertical(id="macros-section", classes="keycodes-section"):
-            yield Static("Macros", classes="section-title")
-            yield MacroListPane(config_data=self.config_data)
+            with Vertical(id="macros-section", classes="keycodes-section"):
+                yield Static("Macros", classes="section-title")
+                yield MacroListPane(config_data=self.config_data)
 
-        with Vertical(id="tap-dances-section", classes="keycodes-section"):
-            yield Static("Tap-dances", classes="section-title")
-            yield TapDanceListPane(config_data=self.config_data)
+            with Vertical(id="tap-dances-section", classes="keycodes-section"):
+                yield Static("Tap-dances", classes="section-title")
+                yield TapDanceListPane(config_data=self.config_data)
 
     def on_mount(self) -> None:
-        pp_pane = self.query_one(PreProcessListPane)
-        pp_pane.rebuild_list()
-        pp_entries = pp_pane.get_entries()
-        if pp_entries:
-            pp_pane._selected = 0
-            pp_pane.refresh_fields(pp_entries[0])
-        pp_pane._update_list_state()
-
-        ov_pane = self.query_one(OverrideListPane)
-        ov_pane.rebuild_list()
-        ov_entries = ov_pane.get_entries()
-        if ov_entries:
-            ov_pane._selected = 0
-            ov_pane.refresh_fields(ov_entries[0])
-        ov_pane._update_list_state()
-
-        macro_pane = self.query_one(MacroListPane)
-        macro_pane.rebuild_list()
-        macro_entries = macro_pane.get_entries()
-        if macro_entries:
-            macro_pane._selected = 0
-            macro_pane.refresh_fields(macro_entries[0])
-        macro_pane._update_list_state()
-
-        td_pane = self.query_one(TapDanceListPane)
-        td_pane.rebuild_list()
-        td_entries = td_pane.get_entries()
-        if td_entries:
-            td_pane._selected = 0
-            td_pane.refresh_fields(td_entries[0])
-        td_pane._update_list_state()
+        for pane_cls in (
+            PreProcessListPane,
+            OverrideListPane,
+            MacroListPane,
+            TapDanceListPane,
+        ):
+            pane = self.query_one(pane_cls)
+            pane.rebuild_list()
+            entries = pane.get_entries()
+            if entries:
+                pane._selected = 0
+                pane.refresh_fields(entries[0])
+            pane._update_list_state()
 
     # Compatibility: expose _enter_edit_mode and _exit_edit_mode for tests
     def _enter_edit_mode(self, section: str) -> None:
-        if section == "pre-process":
-            self.query_one(PreProcessListPane)._enter_edit_mode()
-        elif section == "override":
-            self.query_one(OverrideListPane)._enter_edit_mode()
+        mapping = {
+            "pre-process": PreProcessListPane,
+            "override": OverrideListPane,
+            "macro": MacroListPane,
+            "tap-dance": TapDanceListPane,
+        }
+        pane_cls = mapping.get(section)
+        if pane_cls is not None:
+            self.query_one(pane_cls)._enter_edit_mode()
 
     def _exit_edit_mode(self, commit: bool) -> None:
         """Exit edit mode on whichever pane is currently editing."""
-        pp_pane = self.query_one(PreProcessListPane)
-        ov_pane = self.query_one(OverrideListPane)
-        if pp_pane._editing:
-            pp_pane._exit_edit_mode(commit=commit)
-        elif ov_pane._editing:
-            ov_pane._exit_edit_mode(commit=commit)
+        for pane_cls in (
+            PreProcessListPane,
+            OverrideListPane,
+            MacroListPane,
+            TapDanceListPane,
+        ):
+            pane = self.query_one(pane_cls)
+            if pane._editing:
+                pane._exit_edit_mode(commit=commit)
+                return
