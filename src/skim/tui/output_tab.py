@@ -23,6 +23,7 @@ from skim.application.render.styling import default_layer_color, make_gradient
 from skim.tui.app import LayerAdded, LayerRemoved
 from skim.tui.list_detail_pane import ListDetailPane
 from skim.tui.widgets import (
+    ColorInput,
     SkimInput,
     SkimListView,
     SkimSelect,
@@ -799,7 +800,7 @@ class OutputTab(Widget):
                             classes="color-swatch",
                             id=f"swatch-{field_id}",
                         )
-                        color_input = SkimStandaloneInput(
+                        color_input = ColorInput(
                             value=color_val,
                             id=field_id,
                             placeholder=placeholder,
