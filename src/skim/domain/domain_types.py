@@ -30,6 +30,7 @@ Example:
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Generic, TypeVar
 
 
 class Alignment(Enum):
@@ -259,3 +260,82 @@ Example:
     This would display "⌘ Cmd" on keys at the left side of the cluster and
     "Cmd ⌘" on keys at the right of the cluster.
 """
+
+T = TypeVar("T")
+
+
+@dataclass(frozen=True, slots=True)
+class SvalboardTapDance(Generic[T]):
+    """A QMK Vial-style tap-dance definition.
+
+    Attributes:
+        id: Stable id matching how the keycode references this tap dance
+            (``"0"`` for ``TD(0)``, ``"MY_TD"`` for ``TD(MY_TD)``).
+        tap: Action sent on a single tap, or None for "no action".
+        hold: Action sent while held, or None.
+        double_tap: Action sent on a double tap, or None.
+        tap_then_hold: Action sent when tapped then held, or None.
+        tapping_term: Tapping term in milliseconds. Defaults to 200.
+        name: Optional human-readable name (populated later from config).
+    """
+
+    id: str
+    tap: T | None = None
+    hold: T | None = None
+    double_tap: T | None = None
+    tap_then_hold: T | None = None
+    tapping_term: int = 200
+    name: str | None = None
+
+
+class SvalboardMacroActionKind(Enum):
+    """Discriminator for the supported QMK macro action kinds.
+
+    Vial and Keybard macros support these five kinds. ``TAP``, ``DOWN``,
+    and ``UP`` carry one or more keycodes; ``TEXT`` carries a string;
+    ``DELAY`` carries a duration in milliseconds.
+    """
+
+    __slots__ = ()
+
+    TAP = "tap"
+    DOWN = "down"
+    UP = "up"
+    TEXT = "text"
+    DELAY = "delay"
+
+
+@dataclass(frozen=True, slots=True)
+class SvalboardMacroAction(Generic[T]):
+    """A single step inside a QMK macro.
+
+    Discriminated by ``kind``. Only the field(s) relevant to that kind
+    carry meaningful values; the others retain their defaults.
+
+    Attributes:
+        kind: The action kind from :class:`SvalboardMacroActionKind`.
+        keys: Tuple of one or more keycodes for ``TAP``/``DOWN``/``UP``.
+        text: Literal string for ``TEXT``.
+        duration_ms: Delay length in milliseconds for ``DELAY``.
+    """
+
+    kind: SvalboardMacroActionKind
+    keys: tuple[T, ...] = ()
+    text: str = ""
+    duration_ms: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class SvalboardMacro(Generic[T]):
+    """A QMK macro made up of an ordered sequence of actions.
+
+    Attributes:
+        id: Stable id matching how the keycode references this macro
+            (``"0"`` for ``MACRO_0``, ``"MY_MACRO"`` for ``MACRO_MY_MACRO``).
+        actions: Ordered tuple of :class:`SvalboardMacroAction` steps.
+        name: Optional human-readable name (populated later from config).
+    """
+
+    id: str
+    actions: tuple[SvalboardMacroAction[T], ...] = ()
+    name: str | None = None
