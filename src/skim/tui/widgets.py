@@ -176,10 +176,38 @@ class SkimStandaloneInput(Input):
 
 
 _COLOR_NUDGE_BINDINGS: list[Binding] = [
-    Binding("alt+up", "nudge_saturation_up", "Sat +", show=True, priority=True),
-    Binding("alt+down", "nudge_saturation_down", "Sat -", show=True, priority=True),
-    Binding("alt+right", "nudge_lightness_up", "Lum +", show=True, priority=True),
-    Binding("alt+left", "nudge_lightness_down", "Lum -", show=True, priority=True),
+    Binding(
+        "alt+up",
+        "nudge_saturation_up",
+        "Sat +",
+        key_display="\u2325\u2191",
+        show=True,
+        priority=True,
+    ),
+    Binding(
+        "alt+down",
+        "nudge_saturation_down",
+        "Sat -",
+        key_display="\u2325\u2193",
+        show=True,
+        priority=True,
+    ),
+    Binding(
+        "alt+right",
+        "nudge_lightness_up",
+        "Lum +",
+        key_display="\u2325\u2192",
+        show=True,
+        priority=True,
+    ),
+    Binding(
+        "alt+left",
+        "nudge_lightness_down",
+        "Lum -",
+        key_display="\u2325\u2190",
+        show=True,
+        priority=True,
+    ),
 ]
 
 _HSL_STEP = 0.05
