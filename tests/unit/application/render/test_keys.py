@@ -366,3 +366,66 @@ class TestKeyGhostLabelColor:
         colors = FingerClusterKeyColors(primary="#2F5E3E", accent="#AA0000")
         key = CenterKey(cluster_context, target, colors, key_layout)
         assert key.stroke_color == "#FFFFFF"
+
+
+class TestKeyMacroTapDanceMark:
+    def test_directional_key_with_macro_appends_corner(
+        self, cluster_context, sample_palette
+    ):
+        from skim.application.render.marks import MacroTapDanceCorner
+
+        key = SvalboardTargetKey(label="A", macro_id="3")
+        layout = Boundary(width=54, pos=Position(x=0, y=0))
+        colors = FingerClusterKeyColors(primary="#208060", accent="#0E3024")
+        node = DirectionalKey(
+            ctx=cluster_context,
+            key=key,
+            colors=colors,
+            direction=KeyDirection.NORTH,
+            layout=layout,
+        )
+        marks = [c for c in node.children if isinstance(c, MacroTapDanceCorner)]
+        assert len(marks) == 1
+
+    def test_plain_directional_key_has_no_mark(
+        self, cluster_context, sample_palette
+    ):
+        from skim.application.render.marks import MacroTapDanceCorner
+
+        key = SvalboardTargetKey(label="A")
+        layout = Boundary(width=54, pos=Position(x=0, y=0))
+        colors = FingerClusterKeyColors(primary="#208060", accent="#0E3024")
+        node = DirectionalKey(
+            ctx=cluster_context,
+            key=key,
+            colors=colors,
+            direction=KeyDirection.NORTH,
+            layout=layout,
+        )
+        marks = [c for c in node.children if isinstance(c, MacroTapDanceCorner)]
+        assert marks == []
+
+    def test_tap_dance_directional_key_uses_blue(
+        self, cluster_context, sample_palette
+    ):
+        from skim.application.render.marks import MacroTapDanceCorner
+
+        key = SvalboardTargetKey(label="A", tap_dance_id="0")
+        layout = Boundary(width=54, pos=Position(x=0, y=0))
+        colors = FingerClusterKeyColors(primary="#208060", accent="#0E3024")
+        node = DirectionalKey(
+            ctx=cluster_context,
+            key=key,
+            colors=colors,
+            direction=KeyDirection.NORTH,
+            layout=layout,
+        )
+        marks = [c for c in node.children if isinstance(c, MacroTapDanceCorner)]
+        assert len(marks) == 1
+        # Walk into the mark's children to find the filled triangle path
+        # and verify it uses the tap-dance blue, not macro amber.
+        # MacroTapDanceCorner appends [ClipPath, Group(clip-path=...)] children.
+        # The Group contains the Path with the fill.
+        clipped_group = marks[0].children[1]
+        path = clipped_group.children[0]
+        assert path.args["fill"] == cluster_context.palette.tap_dance_color

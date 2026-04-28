@@ -71,6 +71,8 @@ class Key(draw.Group, metaclass=ABCMeta):
         fill_color: The fill color of the key.
         stroke_color: The stroke color of the key shape.
         label_color: The text color used to render the label.
+        target_key: The bound SvalboardTargetKey, if any.
+        render_context: The cluster render context, if any.
     """
 
     x: float
@@ -83,6 +85,8 @@ class Key(draw.Group, metaclass=ABCMeta):
     fill_color: str
     stroke_color: str | None
     label_color: str
+    target_key: "SvalboardTargetKey | None"
+    render_context: "ClusterRenderContext | None"
 
     def __init__(
         self,
@@ -98,6 +102,8 @@ class Key(draw.Group, metaclass=ABCMeta):
         stroke_color: str = "#FFF",
         label_color: str | None = None,
         use_system_fonts: bool = False,
+        target_key: "SvalboardTargetKey | None" = None,
+        render_context: "ClusterRenderContext | None" = None,
         **kwargs,
     ):
         """Initialize a key.
@@ -116,6 +122,8 @@ class Key(draw.Group, metaclass=ABCMeta):
             label_color: Optional override for the label text color. Defaults
                 to ``stroke_color``.
             use_system_fonts: Whether to use system font families. Default: False.
+            target_key: The bound SvalboardTargetKey for this key. Default: None.
+            render_context: The cluster render context. Default: None.
             **kwargs: Additional arguments passed to the parent Group.
         """
         super().__init__(**kwargs)
@@ -138,20 +146,32 @@ class Key(draw.Group, metaclass=ABCMeta):
         self.stroke_color = stroke_color
         self.label_color = resolved_label_color
         self._use_system_fonts = use_system_fonts
+        self.target_key = target_key
+        self.render_context = render_context
         self.build()
 
     def build(self) -> None:
         """Build the SVG elements for this key.
 
-        Appends the key shape and label text to this group.
+        Appends the key shape, macro/tap-dance mark (if any), and label text
+        to this group.
         """
         self.append(self.shape)
+        self._append_macro_tap_dance_mark()
         label_x, label_y = self.label_coordinates
         font_size = self.label.size_to_fit(
             self.label_width,
             round(self.height * self.font_height_multi),
         )
         self.append(self.label.build_text(label_x, label_y, font_size, self._use_system_fonts))
+
+    def _append_macro_tap_dance_mark(self) -> None:
+        """Subclass hook — default is a no-op.
+
+        Subclasses with a clearly-defined fold corner override this to
+        append a ``MacroTapDanceCorner`` (rect/curved-bottom hosts) or a
+        ``MacroTapDanceCircleBadge`` (the home circle).
+        """
 
     @property
     def text_anchor(self) -> str:
@@ -240,6 +260,8 @@ class DownKey(Key):
             stroke_color=ctx.palette.key_label_color,
             label_color=ctx.key_label_color(key, fill_color),
             use_system_fonts=ctx.use_system_fonts,
+            target_key=key,
+            render_context=ctx,
             **kwargs,
         )
 
@@ -316,6 +338,8 @@ class DoubleDownKey(Key):
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
+            target_key=key,
+            render_context=ctx,
             **kwargs,
         )
 
@@ -395,6 +419,8 @@ class UpKey(Key):
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
+            target_key=key,
+            render_context=ctx,
             **kwargs,
         )
 
@@ -509,6 +535,8 @@ class PadKey(Key):
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
+            target_key=key,
+            render_context=ctx,
             **kwargs,
         )
 
@@ -594,6 +622,8 @@ class NailKey(Key):
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
+            target_key=key,
+            render_context=ctx,
             **kwargs,
         )
 
@@ -679,6 +709,8 @@ class KnuckleKey(Key):
             font=Font.THUMB_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
+            target_key=key,
+            render_context=ctx,
             **kwargs,
         )
 
@@ -759,6 +791,8 @@ class CenterKey(Key):
             font=Font.FINGER_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
+            target_key=key,
+            render_context=ctx,
             **kwargs,
         )
 
@@ -835,6 +869,8 @@ class DoubleSouthKey(Key):
             font=Font.FINGER_KEY,
             font_height_multi=self.CONFIG.font_height_multiplier,
             use_system_fonts=ctx.use_system_fonts,
+            target_key=key,
+            render_context=ctx,
             **kwargs,
         )
 
@@ -938,6 +974,8 @@ class DirectionalKey(Key):
             stroke_color=ctx.palette.key_label_color,
             label_color=ctx.key_label_color(key, fill_color),
             use_system_fonts=ctx.use_system_fonts,
+            target_key=key,
+            render_context=ctx,
             **kwargs,
         )
 
@@ -1051,3 +1089,36 @@ class DirectionalKey(Key):
             label_x = (self.x + self.width / 2.0) - (accent_offset / 2.0)
 
         return label_x, label_y
+
+    def _append_macro_tap_dance_mark(self) -> None:
+        if self.target_key is None or self.render_context is None:
+            return
+        accent = self.render_context.accent_fill(self.target_key)
+        if accent is None:
+            return
+        from skim.application.render.marks import (
+            SATELLITE_FOLD_CORNER,
+            MacroTapDanceCorner,
+        )
+
+        # Map KeyDirection to the satellite "edgeSide" key, then to corner.
+        edge_side_for_direction = {
+            KeyDirection.NORTH: "bottom",
+            KeyDirection.EAST: "left",
+            KeyDirection.SOUTH: "top",
+            KeyDirection.WEST: "right",
+        }
+        corner = SATELLITE_FOLD_CORNER[edge_side_for_direction[self._direction]]
+        # DirectionalKey draws its accent bar at radius = width * ACCENT_SIZE_MULTI / 2.
+        radius = self.width * DirectionalKey.ACCENT_SIZE_MULTI / 2.0
+        self.append(
+            MacroTapDanceCorner(
+                x=self.x,
+                y=self.y,
+                w=self.width,
+                h=self.height,
+                r=radius,
+                corner=corner,
+                fill=accent,
+            )
+        )
