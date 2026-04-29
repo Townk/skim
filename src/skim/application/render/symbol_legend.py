@@ -400,6 +400,7 @@ def _collect_raw(
     func_desc: dict[str, str | dict] = keycode_mappings.get("function_descriptions", {})
     symbol_cats: dict[str, str] = keycode_mappings.get("symbol_categories", {})
     func_cats: dict[str, str] = keycode_mappings.get("function_categories", {})
+    legend_aliases: dict[str, str] = keycode_mappings.get("symbol_legend_aliases", {})
 
     for raw in keycodes_raw:
         # Apply pre-processing normalisation
@@ -525,26 +526,34 @@ def _collect_raw(
 
         # --- Plain atomic keycode ---
         chain = _resolve_aliases(keycode, keycodes_dict)
+        canonical = chain[-1]
+        # Apply legend-only L/R alias map so R-variant canonicals redirect to
+        # their L-variant counterpart for sort_key deduplication and lookup.
+        effective_canonical = legend_aliases.get(canonical, canonical)
+
         for name in chain:
-            if name in symbol_desc:
-                desc = symbol_desc[name]
-                # The display label is the resolved label of the *original* keycode
-                # (post pre-processing, through the full alias chain)
-                canonical = chain[-1]
-                raw_label = keycodes_dict.get(canonical, canonical)
+            # Apply the same legend alias redirect to each step in the chain
+            # so that both "KC_RIGHT_CTRL" and "KC_LEFT_CTRL" in the chain
+            # resolve to the effective canonical.
+            effective_name = legend_aliases.get(name, name)
+            if effective_name in symbol_desc:
+                desc = symbol_desc[effective_name]
+                # Display label is derived from the effective canonical's glyph
+                # (L and R variants share the same glyph in keycodes_dict via @@)
+                raw_label = keycodes_dict.get(effective_canonical, effective_canonical)
                 # Strip any remaining @@; or %% tokens for a clean label
                 display = re.sub(r"@@[A-Z0-9_]+;", "", raw_label).strip()
                 if not display:
                     # Fall back to the resolved keycode label via the first name
                     first_label = keycodes_dict.get(keycode, keycode)
                     display = re.sub(r"@@[A-Z0-9_]+;", "", first_label).strip() or keycode
-                sort_k = name
+                sort_k = effective_name
                 if sort_k not in out:
                     out[sort_k] = SymbolLegendEntry(
                         display_label=display,
                         description=desc,
                         sort_key=sort_k,
-                        category=symbol_cats.get(name, ""),
+                        category=symbol_cats.get(effective_name, ""),
                     )
                 break  # Use the first matching step in the chain
 

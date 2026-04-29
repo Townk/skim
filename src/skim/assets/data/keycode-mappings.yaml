@@ -1193,16 +1193,22 @@ macro_functions:
 # (non-alias) keycode names — alias resolution happens before lookup.
 # Keep this sparse: keycodes whose rendered label is obvious (a letter,
 # a digit, a punctuation glyph) should NOT have an entry.
+# Legend-only alias mapping. When the collector lands on a canonical
+# keycode that appears as a key here, it substitutes the value as the
+# effective canonical name for sort + lookup. Used to fold L/R modifier
+# pairs into a single legend entry.
+symbol_legend_aliases:
+  KC_RIGHT_CTRL: KC_LEFT_CTRL
+  KC_RIGHT_SHIFT: KC_LEFT_SHIFT
+  KC_RIGHT_ALT: KC_LEFT_ALT
+  KC_RIGHT_GUI: KC_LEFT_GUI
+
 symbol_descriptions:
   Modifiers:
-    KC_LEFT_CTRL: "Left Ctrl"
-    KC_RIGHT_CTRL: "Right Ctrl"
-    KC_LEFT_SHIFT: "Left Shift"
-    KC_RIGHT_SHIFT: "Right Shift"
-    KC_LEFT_ALT: "Left Alt / Option"
-    KC_RIGHT_ALT: "Right Alt / Option (AltGr)"
-    KC_LEFT_GUI: "Left GUI / Cmd / Win"
-    KC_RIGHT_GUI: "Right GUI / Cmd / Win"
+    KC_LEFT_CTRL: "Ctrl"
+    KC_LEFT_SHIFT: "Shift"
+    KC_LEFT_ALT: "Alt / Option"
+    KC_LEFT_GUI: "GUI / Cmd / Win"
 
   Lock Keys:
     KC_CAPS_LOCK: "Caps Lock"

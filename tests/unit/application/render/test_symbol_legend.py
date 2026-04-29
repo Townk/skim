@@ -32,17 +32,17 @@ def _entries(keycodes, keymap=None):
 
 class TestCollectUsedDescriptions:
     def test_collect_simple_modifier(self):
-        """KC_LEFT_CTRL produces one entry with 'Left Ctrl' description."""
+        """KC_LEFT_CTRL produces one entry with 'Ctrl' description."""
         entries = _entries(["KC_LEFT_CTRL"])
         assert len(entries) == 1
-        assert entries[0].description == "Left Ctrl"
+        assert entries[0].description == "Ctrl"
         assert entries[0].sort_key == "KC_LEFT_CTRL"
 
     def test_collect_alias_resolves_to_canonical(self):
-        """KC_LCTL is an alias for KC_LEFT_CTRL → still produces 'Left Ctrl'."""
+        """KC_LCTL is an alias for KC_LEFT_CTRL → still produces 'Ctrl'."""
         entries = _entries(["KC_LCTL"])
         assert len(entries) == 1
-        assert entries[0].description == "Left Ctrl"
+        assert entries[0].description == "Ctrl"
 
     def test_collect_recurses_into_wrapper_lctl(self):
         """LCTL(KC_A) → KC_LEFT_CTRL entry; KC_A has no description."""
@@ -90,7 +90,7 @@ class TestCollectUsedDescriptions:
     def test_collect_dedupes_alias_and_canonical(self):
         """KC_LEFT_CTRL and KC_LCTL resolve to same canonical → single entry."""
         entries = _entries(["KC_LEFT_CTRL", "KC_LCTL"])
-        ctrl_entries = [e for e in entries if e.description == "Left Ctrl"]
+        ctrl_entries = [e for e in entries if e.description == "Ctrl"]
         assert len(ctrl_entries) == 1
 
     def test_collect_skips_obvious_keys(self):
@@ -280,6 +280,21 @@ class TestCollectUsedDescriptions:
         # ``#0;`` in the raw description resolves to ``#`` at render time
         assert entry.description == "Hold layer #"
 
+    def test_collect_dedupes_left_right_modifier_pair(self):
+        """LCTL and RCTL produce a single entry."""
+        entries = _entries(["KC_LEFT_CTRL", "KC_RIGHT_CTRL"])
+        ctrl_entries = [e for e in entries if "Ctrl" in e.description]
+        assert len(ctrl_entries) == 1
+        # The merged description has no L/R qualifier.
+        assert ctrl_entries[0].description == "Ctrl"
+
+    def test_collect_only_right_modifier_still_produces_entry(self):
+        """When a layer only binds the right variant, the legend still shows it."""
+        entries = _entries(["KC_RIGHT_GUI"])
+        gui_entries = [e for e in entries if "GUI" in e.description]
+        assert len(gui_entries) == 1
+        assert gui_entries[0].description == "GUI / Cmd / Win"
+
     def test_description_resolves_at_at_keycode_alias(self):
         """``@@KEYCODE;`` in a function description is resolved to the
         keycode's display label via the adapter's alias chain.
@@ -423,7 +438,7 @@ class TestBuildSymbolLegend:
         g = build_symbol_legend(entries, 0, 0, 800, self._palette())
         assert g is not None
         svg_str = self._to_svg(g)
-        assert "Left Ctrl" in svg_str
+        assert "Ctrl" in svg_str
 
 
 # ---------------------------------------------------------------------------
