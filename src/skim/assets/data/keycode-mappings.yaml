@@ -1388,7 +1388,9 @@ symbol_descriptions:
 # to e.g. ``MO(1)``, the function ``MO`` is added to the symbol legend
 # alongside whatever its template renders.
 function_descriptions:
-  # ---- Layer functions ----
+  # Layer functions only — tap-hold combinations (LT, modifier-tap *_T,
+  # generic MT) are intentionally NOT described here. The user can read
+  # those keys directly from the rendered tap|hold label.
   DF:
     symbol: "%%nf-md-memory; %%nf-md-layers; #"
     description: "Set default layer to # until power down"
@@ -1401,9 +1403,6 @@ function_descriptions:
   LM:
     symbol: "%%nf-md-layers_outline; # +mods"
     description: "Change to layer # while holding (with modifiers)"
-  LT:
-    symbol: "%%nf-md-layers_outline; # | key"
-    description: "Tap for the bound key, hold for layer #"
   OSL:
     symbol: "%%nf-md-layers_outline;¹ #"
     description: "One-shot layer # (next key triggers it once)"
@@ -1417,50 +1416,7 @@ function_descriptions:
     symbol: "%%nf-md-layers_triple_outline; #"
     description: "Layer #: momentary on hold, toggle on multi-tap"
 
-  # ---- One-shot modifier ----
+  # One-shot modifier — describes the one-shot mechanic (not tap-hold).
   OSM:
     symbol: "mod¹"
     description: "One-shot modifier (next key gets the modifier once)"
-
-  # ---- Modifier-tap functions: tap for the key, hold for the modifier ----
-  LCTL_T:
-    symbol: "key | %%nf-md-apple_keyboard_control;"
-    description: "Tap for the bound key, hold for Left Ctrl"
-  LSFT_T:
-    symbol: "key | %%nf-md-apple_keyboard_shift;"
-    description: "Tap for the bound key, hold for Left Shift"
-  LALT_T:
-    symbol: "key | %%nf-md-apple_keyboard_option;"
-    description: "Tap for the bound key, hold for Left Alt"
-  LGUI_T:
-    symbol: "key | %%nf-md-apple_keyboard_command;"
-    description: "Tap for the bound key, hold for Left GUI"
-  RCTL_T:
-    symbol: "key | %%nf-md-apple_keyboard_control;"
-    description: "Tap for the bound key, hold for Right Ctrl"
-  RSFT_T:
-    symbol: "key | %%nf-md-apple_keyboard_shift;"
-    description: "Tap for the bound key, hold for Right Shift"
-  RALT_T:
-    symbol: "key | %%nf-md-apple_keyboard_option;"
-    description: "Tap for the bound key, hold for Right Alt"
-  RGUI_T:
-    symbol: "key | %%nf-md-apple_keyboard_command;"
-    description: "Tap for the bound key, hold for Right GUI"
-
-  # ---- Generic modifier-tap ----
-  MT:
-    symbol: "key | mod"
-    description: "Tap for the bound key, hold for the specified modifier"
-  CTL_T:
-    symbol: "key | %%nf-md-apple_keyboard_control;"
-    description: "Tap for the bound key, hold for Ctrl"
-  SFT_T:
-    symbol: "key | %%nf-md-apple_keyboard_shift;"
-    description: "Tap for the bound key, hold for Shift"
-  ALT_T:
-    symbol: "key | %%nf-md-apple_keyboard_option;"
-    description: "Tap for the bound key, hold for Alt"
-  GUI_T:
-    symbol: "key | %%nf-md-apple_keyboard_command;"
-    description: "Tap for the bound key, hold for GUI"

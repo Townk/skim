@@ -64,10 +64,15 @@ class TestCollectUsedDescriptions:
         assert "layer #" in mo_entry.description
         assert "#" in mo_entry.display_label
 
-    def test_collect_lt_function(self):
-        """LT(1, KC_A) produces an 'LT' function entry."""
+    def test_collect_lt_function_not_described(self):
+        """LT is a tap-hold combination — not in function_descriptions.
+
+        The user can read the tap|hold label directly on the key, so we
+        intentionally omit tap-hold patterns from the legend. ``LT(1, KC_A)``
+        recurses into its args (no LT entry; KC_A isn't described either).
+        """
         entries = _entries(["LT(1,KC_A)"])
-        assert any(e.sort_key == "LT" for e in entries)
+        assert all(e.sort_key != "LT" for e in entries)
 
     def test_collect_tg_function(self):
         """TG(2) produces a 'TG' function entry with 'Toggle' description."""
