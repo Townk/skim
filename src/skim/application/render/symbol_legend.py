@@ -25,12 +25,16 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import drawsvg as draw
 
 from skim.application.render.text import Font, Label, TextPart
 from skim.data import KeycodeMappings, SvalboardKeymap
 from skim.domain import SEPARATOR_CHAR, SvalboardTargetKey
+
+if TYPE_CHECKING:
+    from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
 
 # ---------------------------------------------------------------------------
 # Data types
@@ -103,6 +107,42 @@ def _resolve_aliases(
 def _count_placeholders(template: str) -> int:
     """Count ``@N;`` and ``#N;`` placeholders in a function template."""
     return len(re.findall(r"[@#]\d+;", template))
+
+
+def _resolve_description(
+    raw_description: str,
+    adapter: KeycodeLabelAdapter,
+) -> str:
+    """Resolve a function description with all placeholders substituted.
+
+    Handles ``@N;`` / ``#N;`` (both substituted with the literal ``#``
+    placeholder — descriptions are deduplicated by function name so the
+    actual layer/keycode argument is not available), ``@@KEYCODE;``
+    references (resolved through the adapter's alias chain), and ``|;``
+    (replaced with :data:`~skim.domain.SEPARATOR_CHAR`).
+
+    Parameters
+    ----------
+    raw_description:
+        The raw description string from the yaml (e.g.
+        ``"Change to layer #0; while holding"``).
+    adapter:
+        A :class:`~skim.domain.adapters.keycode_label_adapter.KeycodeLabelAdapter`
+        instance used to resolve ``@@KEYCODE;`` references.
+
+    Returns
+    -------
+    str
+        The description with all placeholders resolved.
+    """
+    text = raw_description
+    # @N; and #N; → literal "#" (generic layer/keycode-arg indicator)
+    text = re.sub(r"[@#]\d+;", "#", text)
+    # |; → separator character
+    text = text.replace("|;", SEPARATOR_CHAR)
+    # @@KEYCODE; → resolved symbol via the adapter
+    text = adapter._resolve_label_reference(text, set())
+    return text
 
 
 def _function_display_label(
@@ -280,8 +320,13 @@ def _collect_raw(
 
             # Check function_descriptions
             if func_name in func_desc and func_name not in visited_funcs:
+                from skim.data import Keyboard
+                from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
+
                 fd_entry = func_desc[func_name]
-                desc = fd_entry["description"] if isinstance(fd_entry, dict) else fd_entry
+                raw_desc = fd_entry["description"] if isinstance(fd_entry, dict) else fd_entry
+                adapter = KeycodeLabelAdapter(Keyboard(), keycode_mappings)
+                desc = _resolve_description(raw_desc, adapter)
                 label = _function_display_label(
                     func_name, macro_functions, keycode_mappings
                 )

@@ -231,6 +231,8 @@ class TestCollectUsedDescriptions:
 
         When the template has no layer placeholder the adapter appends `` #``
         for layer functions so the legend reader knows a layer arg is involved.
+        The description uses the new ``#0;`` placeholder syntax which resolves
+        to the literal ``#`` at legend-render time.
         """
         from skim.application.render.symbol_legend import collect_used_descriptions
 
@@ -244,7 +246,8 @@ class TestCollectUsedDescriptions:
             "modifier_union": {},
             "symbol_descriptions": {},
             "function_descriptions": {
-                "MO": "Hold layer #",
+                # Use the new #N; placeholder syntax
+                "MO": "Hold layer #0;",
             },
         }
         entries = collect_used_descriptions(["MO(5)"], None, mappings)
@@ -254,7 +257,38 @@ class TestCollectUsedDescriptions:
         # display_label is derived from the template + ``#`` appended for layer functions
         assert "%%nf-md-layers_outline;" in entry.display_label
         assert "#" in entry.display_label
+        # ``#0;`` in the raw description resolves to ``#`` at render time
         assert entry.description == "Hold layer #"
+
+    def test_description_resolves_at_at_keycode_alias(self):
+        """``@@KEYCODE;`` in a function description is resolved to the
+        keycode's display label via the adapter's alias chain.
+
+        E.g. ``"Hold @@KC_LEFT_CTRL; while pressing #0;"`` should render as
+        ``"Hold ⌃ while pressing #"`` when KC_LEFT_CTRL maps to ``⌃``.
+        """
+        from skim.application.render.symbol_legend import collect_used_descriptions
+
+        mappings: dict = {
+            "keycodes": {
+                "KC_LEFT_CTRL": "⌃",
+            },
+            "pre_processing": {},
+            "macro_functions": {
+                "MO": "%%nf-md-layers_outline;",
+            },
+            "modifier_union": {},
+            "symbol_descriptions": {},
+            "function_descriptions": {
+                "MO": "Hold @@KC_LEFT_CTRL; while pressing #0;",
+            },
+        }
+        entries = collect_used_descriptions(["MO(2)"], None, mappings)
+        mo_entries = [e for e in entries if e.sort_key == "MO"]
+        assert len(mo_entries) == 1
+        entry = mo_entries[0]
+        # @@KC_LEFT_CTRL; → "⌃", #0; → "#"
+        assert entry.description == "Hold ⌃ while pressing #"
 
 
 # ---------------------------------------------------------------------------

@@ -1395,14 +1395,18 @@ function_descriptions:
   # The display symbol is derived automatically from the macro_functions
   # template via the label adapter (``#`` is used as the layer-arg
   # placeholder). No ``symbol`` field is needed here.
-  DF: "Set default layer to # until power down"
-  PDF: "Set permanent default layer to # (persists after power down)"
-  MO: "Change to layer # while holding"
-  LM: "Change to layer # while holding (with modifiers)"
-  OSL: "One-shot layer # (next key triggers it once)"
-  TG: "Toggle layer # on/off"
-  TO: "Activate layer # and turn off all others except base"
-  TT: "Layer #: momentary on hold, toggle on multi-tap"
+  #
+  # Descriptions use the same placeholder syntax as macro_functions templates:
+  # ``#N;`` → literal layer-arg N (rendered as ``#`` in the legend),
+  # ``@N;`` → keycode arg N (rendered as ``#``), ``@@KC;`` → resolved symbol.
+  DF: "Set default layer to #0; until power down"
+  PDF: "Set permanent default layer to #0; (persists after power down)"
+  MO: "Change to layer #0; while holding"
+  LM: "Change to layer #0; while holding (with modifiers)"
+  OSL: "One-shot layer #0; (next key triggers it once)"
+  TG: "Toggle layer #0; on/off"
+  TO: "Activate layer #0; and turn off all others except base"
+  TT: "Layer #0;: momentary on hold, toggle on multi-tap"
 
   # One-shot modifier — describes the one-shot mechanic (not tap-hold).
   OSM: "One-shot modifier (next key gets the modifier once)"
