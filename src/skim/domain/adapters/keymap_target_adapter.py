@@ -35,6 +35,27 @@ from skim.domain import (
 from .keycode_label_adapter import KeycodeLabelAdapter
 
 
+def _detect_special_ids(
+    keycode: str,
+    macros: tuple[SvalboardMacro[str], ...],
+    tap_dances: tuple[SvalboardTapDance[str], ...],
+) -> tuple[str | None, str | None]:
+    """Return ``(macro_id, tap_dance_id)`` for ``keycode`` by lookup.
+
+    A macro matches when the keycode equals ``f"M{m.id}"`` (Vial form) or
+    ``f"MACRO_{m.id}"`` (QMK form). A tap-dance matches when the keycode
+    equals ``f"TD({t.id})"``. No regex; pure string equality against the
+    known definitions so only actually-defined ids are stamped.
+    """
+    for m in macros:
+        if keycode == f"M{m.id}" or keycode == f"MACRO_{m.id}":
+            return m.id, None
+    for t in tap_dances:
+        if keycode == f"TD({t.id})":
+            return None, t.id
+    return None, None
+
+
 def _substitute(
     key: SvalboardTargetKey,
     base_key: SvalboardTargetKey,
@@ -116,7 +137,10 @@ class KeymapTargetAdapter:
             A new keymap containing SvalboardTargetKey objects at each
             position, ready for rendering.
         """
-        layers = {idx: self._transform_layer(layer) for idx, layer in keymap.layers.items()}
+        layers = {
+            idx: self._transform_layer(layer, keymap.macros, keymap.tap_dances)
+            for idx, layer in keymap.layers.items()
+        }
 
         base = layers.get(0)
         if self._fallthrough_to_layer_zero and base is not None:
@@ -155,17 +179,41 @@ class KeymapTargetAdapter:
             ]
         )
 
-    def _transform_layer(self, layer: SvalboardLayout[str]) -> SvalboardLayout[SvalboardTargetKey]:
+    def _transform_layer(
+        self,
+        layer: SvalboardLayout[str],
+        macros: tuple[SvalboardMacro[str], ...],
+        tap_dances: tuple[SvalboardTapDance[str], ...],
+    ) -> SvalboardLayout[SvalboardTargetKey]:
         """Transform a single layer from strings to target keys.
+
+        Each key's raw keycode is looked up against the known macro and
+        tap-dance definitions to stamp ``macro_id`` / ``tap_dance_id``
+        without relying on regular expressions.
 
         Args:
             layer: A layout containing raw QMK keycode strings.
+            macros: Macro definitions from the parsed keymap.
+            tap_dances: Tap-dance definitions from the parsed keymap.
 
         Returns:
-            A layout containing SvalboardTargetKey objects with labels
-            and layer-switching metadata.
+            A layout containing SvalboardTargetKey objects with labels,
+            layer-switching metadata, and special ids where applicable.
         """
-        return layer.map(self._label_adapter.transform)
+        def _convert(keycode: str) -> SvalboardTargetKey:
+            target = self._label_adapter.transform(keycode)
+            macro_id, tap_dance_id = _detect_special_ids(keycode, macros, tap_dances)
+            if macro_id is None and tap_dance_id is None:
+                return target
+            return SvalboardTargetKey(
+                label=target.label,
+                layer_switch=target.layer_switch,
+                is_transparent=target.is_transparent,
+                macro_id=macro_id,
+                tap_dance_id=tap_dance_id,
+            )
+
+        return layer.map(_convert)
 
     def _transform_optional_keycode(self, keycode: str | None) -> SvalboardTargetKey | None:
         """Apply the label adapter to an optional keycode string."""
