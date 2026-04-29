@@ -5,13 +5,19 @@ import drawsvg as draw
 from skim.application.render.legend import (
     CONTENT_STRIP_HEIGHT,
     HEADER_STRIP_HEIGHT,
+    TD_HEADER_HEIGHT,
+    TD_ROW_GAP,
+    TD_ROW_HEIGHT,
     build_action_glyph,
     build_macro_row,
+    build_tap_dance_column_header,
+    build_tap_dance_row,
     collect_used_ids,
     macro_row_height,
     plan_layout,
     resolve_macros,
     resolve_tap_dances,
+    tap_dance_section_height,
 )
 from skim.data import SvalboardLayout
 from skim.domain import (
@@ -236,4 +242,49 @@ def test_build_macro_row_returns_group():
         macro=macro, x=0, y=0, content_width=600,
         accent_fill="#89511C", accent_line="#DD9857", text_color="#000",
     )
+    assert isinstance(g, draw.Group)
+
+
+def test_tap_dance_section_height_includes_column_header_and_rows():
+    rows = [_td("0"), _td("1"), _td("2")]
+    h = tap_dance_section_height(rows)
+    assert h == TD_HEADER_HEIGHT + len(rows) * (TD_ROW_HEIGHT + TD_ROW_GAP)
+
+
+def test_tap_dance_section_height_zero_for_empty_rows():
+    h = tap_dance_section_height([])
+    # Even empty: header still reserved? Or 0? Implementer to choose; the
+    # legend skip-check is at the section level above. Conservative: just
+    # the column header (no rows).
+    assert h == TD_HEADER_HEIGHT
+
+
+def test_build_tap_dance_row_returns_group():
+    td = SvalboardTapDance(
+        id="0",
+        tap=SvalboardTargetKey(label="Z"),
+        hold=SvalboardTargetKey(label="⌘"),
+        double_tap=None,
+        tap_then_hold=None,
+        name="Undo / Cmd",
+    )
+    g = build_tap_dance_row(
+        td=td, x=0, y=0, column_width=600,
+        accent_fill="#41687F", accent_line="#9AB9CB", text_color="#000",
+    )
+    assert isinstance(g, draw.Group)
+
+
+def test_build_tap_dance_row_handles_none_variants():
+    """Missing variants render an empty/dashed cell, not a crash."""
+    td = SvalboardTapDance(id="0", tap=None, hold=None, double_tap=None, tap_then_hold=None)
+    g = build_tap_dance_row(
+        td=td, x=0, y=0, column_width=600,
+        accent_fill="#41687F", accent_line="#9AB9CB", text_color="#000",
+    )
+    assert isinstance(g, draw.Group)
+
+
+def test_build_tap_dance_column_header_returns_group():
+    g = build_tap_dance_column_header(x=0, y=0, text_color="#000")
     assert isinstance(g, draw.Group)

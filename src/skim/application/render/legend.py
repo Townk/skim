@@ -327,3 +327,104 @@ def build_macro_row(
             cx += w + PILL_GAP
         line_y += CONTENT_STRIP_HEIGHT
     return g
+
+
+# --- Tap-dance geometry constants -------------------------------------------
+TD_ROW_HEIGHT = 22
+TD_ROW_GAP = 16
+TD_HEADER_HEIGHT = 32  # space reserved for the "TAP HOLD DOUBLE-TAP …" labels
+TD_NAME_W = 200
+TD_CELL_W = 110
+
+
+def tap_dance_section_height(
+    tap_dances: list[SvalboardTapDance[SvalboardTargetKey]],
+) -> float:
+    """Height of a tap-dance section (column header strip + rows)."""
+    return TD_HEADER_HEIGHT + len(tap_dances) * (TD_ROW_HEIGHT + TD_ROW_GAP)
+
+
+def _tap_dance_cell(
+    x: float, y: float, content: SvalboardTargetKey | None,
+    text_color: str,
+) -> draw.Group:
+    """Render one of the four variant cells (TAP, HOLD, DOUBLE-TAP, TAP&HOLD).
+
+    ``y`` is the vertical centre of the cell. An empty (``None``) cell
+    renders as a dashed placeholder rect.
+    """
+    g = draw.Group()
+    if content is None:
+        g.append(draw.Rectangle(
+            x=x, y=y - 11, width=80, height=22, rx=4, ry=4, fill="none",
+            stroke=text_color, stroke_opacity=0.08, stroke_dasharray="3 3",
+        ))
+        return g
+    g.append(draw.Rectangle(
+        x=x, y=y - 11, width=80, height=22, rx=4, ry=4,
+        fill="#FAFAF6", stroke=text_color, stroke_opacity=0.18,
+    ))
+    g.append(draw.Text(
+        content.label, x=x + 40, y=y + 0.5, font_size=12, fill=text_color,
+        text_anchor="middle", dominant_baseline="central",
+        font_family="'Roboto', sans-serif",
+    ))
+    return g
+
+
+def build_tap_dance_row(
+    td: SvalboardTapDance[SvalboardTargetKey],
+    x: float,
+    y: float,
+    column_width: float,
+    accent_fill: str,
+    accent_line: str,
+    text_color: str,
+) -> draw.Group:
+    """Render a single tap-dance row at ``(x, y)``.
+
+    ``y`` is the vertical centre of the row.
+    """
+    g = draw.Group()
+    # Title chip — left half accent fill, full chip outlined.
+    g.append(draw.Rectangle(
+        x=x, y=y - TD_ROW_HEIGHT / 2, width=TAG_W, height=TD_ROW_HEIGHT,
+        fill=accent_fill,
+    ))
+    g.append(draw.Rectangle(
+        x=x, y=y - TD_ROW_HEIGHT / 2, width=TD_NAME_W, height=TD_ROW_HEIGHT,
+        rx=4, ry=4, fill="none", stroke=accent_line, stroke_width=1.2,
+    ))
+    g.append(draw.Text(
+        f"T{td.id}", x=x + TAG_W / 2, y=y + 0.5,
+        font_size=12, font_weight="700", text_anchor="middle",
+        dominant_baseline="central", font_family="'Roboto', sans-serif",
+        fill="#FFF",
+    ))
+    name = td.name if td.name else f"Tap-Dance {td.id}"
+    g.append(draw.Text(
+        name, x=x + TAG_W + 10, y=y + 0.5, font_size=12, font_weight="500",
+        text_anchor="start", dominant_baseline="central",
+        font_family="'Roboto', sans-serif", fill=text_color,
+    ))
+    # Four variant cells.
+    cells_x = x + TD_NAME_W + 12
+    for i, variant in enumerate((td.tap, td.hold, td.double_tap, td.tap_then_hold)):
+        cell_x = cells_x + i * TD_CELL_W + TD_CELL_W / 2 - 40
+        g.append(_tap_dance_cell(cell_x, y, variant, text_color))
+    return g
+
+
+def build_tap_dance_column_header(
+    x: float, y: float, text_color: str
+) -> draw.Group:
+    """Render the once-per-column TAP/HOLD/DOUBLE-TAP/TAP&HOLD strip."""
+    g = draw.Group()
+    cells_x = x + TD_NAME_W + 12
+    for i, label in enumerate(("TAP", "HOLD", "DOUBLE-TAP", "TAP & HOLD")):
+        g.append(draw.Text(
+            label, x=cells_x + i * TD_CELL_W + TD_CELL_W / 2,
+            y=y, font_size=9, fill=text_color, letter_spacing=1.5,
+            text_anchor="middle", font_family="'Roboto', sans-serif",
+        ))
+    return g
