@@ -22,6 +22,7 @@ from skim.application.loaders.keymap_loader import (
     _parse_c2json,
     _parse_keybard,
     _parse_vial,
+    _vial_keycode_or_none,
     load_keymap,
     load_keymap_file,
     load_keymap_from_stdin,
@@ -395,6 +396,31 @@ class TestLoadKeymap:
         assert keymap.layers[0].left.thumb.down_key == "KC_54"
 
 
+class TestVialKeycodeOrNone:
+    """Tests for _vial_keycode_or_none helper."""
+
+    def test_none_maps_to_none(self):
+        assert _vial_keycode_or_none(None) is None
+
+    def test_kc_no_maps_to_none(self):
+        assert _vial_keycode_or_none("KC_NO") is None
+
+    def test_kc_trns_maps_to_none(self):
+        assert _vial_keycode_or_none("KC_TRNS") is None
+
+    def test_kc_transparent_maps_to_none(self):
+        assert _vial_keycode_or_none("KC_TRANSPARENT") is None
+
+    def test_underscore_alias_maps_to_none(self):
+        assert _vial_keycode_or_none("_______") is None
+
+    def test_real_keycode_passes_through(self):
+        assert _vial_keycode_or_none("KC_A") == "KC_A"
+
+    def test_layer_keycode_passes_through(self):
+        assert _vial_keycode_or_none("TO(0)") == "TO(0)"
+
+
 class TestParseVialTapDance:
     """Tests that _parse_vial extracts top-level tap_dance entries."""
 
@@ -464,6 +490,32 @@ class TestParseVialTapDance:
         assert td.hold is None
         assert td.double_tap is None
         assert td.tap_then_hold is None
+
+    def test_kc_trns_maps_to_none_in_tap_dance_field(self):
+        data = {
+            "layout": [[["KC_A"] * 60]],
+            "version": 1,
+            "tap_dance": [["KC_Q", "KC_TRNS", "KC_TRANSPARENT", "_______", 200]],
+        }
+        result = _parse_vial(data)
+        assert len(result.tap_dances) == 1
+        td = result.tap_dances[0]
+        assert td.tap == "KC_Q"
+        assert td.hold is None
+        assert td.double_tap is None
+        assert td.tap_then_hold is None
+
+    def test_all_kc_trns_aliases_skip_entire_tap_dance(self):
+        """An entry with all four variants set to KC_TRNS aliases is skipped."""
+        data = {
+            "layout": [[["KC_A"] * 60]],
+            "version": 1,
+            "tap_dance": [
+                ["KC_TRNS", "KC_TRANSPARENT", "_______", "KC_TRNS", 200],
+            ],
+        }
+        result = _parse_vial(data)
+        assert result.tap_dances == ()
 
 
 def _vial_data_with_macros(macros: list) -> dict:
@@ -626,6 +678,28 @@ class TestParseKeybardTapDance:
         td = result.tap_dances[0]
         assert td.id == "5"
         assert td.tap == "KC_Z"
+        assert td.hold is None
+        assert td.double_tap is None
+        assert td.tap_then_hold is None
+
+    def test_kc_trns_maps_to_none_in_keybard_tap_dance(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "tapdances": [
+                {
+                    "tdid": 1,
+                    "tap": "TO(0)",
+                    "hold": "KC_TRNS",
+                    "doubletap": "KC_TRANSPARENT",
+                    "taphold": "_______",
+                    "tapms": 200,
+                }
+            ],
+        }
+        result = _parse_keybard(data)
+        assert len(result.tap_dances) == 1
+        td = result.tap_dances[0]
+        assert td.tap == "TO(0)"
         assert td.hold is None
         assert td.double_tap is None
         assert td.tap_then_hold is None

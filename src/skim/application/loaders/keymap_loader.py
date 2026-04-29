@@ -31,6 +31,9 @@ from skim.domain.adapters import KeymapJsonAdapter
 EMPTY_LAYER_KEYCODES = frozenset({"KC_NO", "KC_TRNS"})
 """Keycodes that mark a key as inactive on a layer."""
 
+_TAP_DANCE_EMPTY_KEYCODES = frozenset({"KC_NO", "KC_TRNS", "KC_TRANSPARENT", "_______"})
+"""Keycodes that mean "no action" in a tap-dance slot."""
+
 
 @dataclass(frozen=True, slots=True)
 class ParsedKeymap:
@@ -76,8 +79,14 @@ def _detect_format_from_path(path: Path) -> KeymapType | None:
 
 
 def _vial_keycode_or_none(value: Any) -> str | None:
-    """Map Vial's ``"KC_NO"`` sentinel to ``None`` for tap-dance fields."""
-    if value is None or value == "KC_NO":
+    """Map Vial's empty-slot sentinels to ``None`` for tap-dance fields.
+
+    Vial uses both ``"KC_NO"`` and ``"KC_TRNS"`` (and its aliases) to mean
+    "no action" in tap-dance slots — the user did not bind anything to that
+    variant. Both should produce an empty cell in the legend rather than
+    a real keycode label.
+    """
+    if value is None or value in _TAP_DANCE_EMPTY_KEYCODES:
         return None
     return str(value)
 
