@@ -430,6 +430,27 @@ class TestKeyMacroTapDanceMark:
         path = clipped_group.children[0]
         assert path.args["fill"] == cluster_context.palette.tap_dance_color
 
+    def test_transparent_macro_directional_key_still_appends_corner(
+        self, cluster_context, sample_palette
+    ):
+        """A transparent fallthrough that inherited a macro_id still
+        renders the corner triangle (corner is geometry, not text — ghost
+        colour applies only to the label)."""
+        from skim.application.render.marks import MacroTapDanceCorner
+
+        key = SvalboardTargetKey(label="M3", macro_id="3", is_transparent=True)
+        layout = Boundary(width=54, pos=Position(x=0, y=0))
+        colors = FingerClusterKeyColors(primary="#208060", accent="#0E3024")
+        node = DirectionalKey(
+            ctx=cluster_context,
+            key=key,
+            colors=colors,
+            direction=KeyDirection.NORTH,
+            layout=layout,
+        )
+        marks = [c for c in node.children if isinstance(c, MacroTapDanceCorner)]
+        assert len(marks) == 1
+
 
 @pytest.mark.parametrize(
     "key_class_name,extra_kwargs,expected_corner",
