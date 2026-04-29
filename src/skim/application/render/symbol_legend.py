@@ -310,11 +310,23 @@ def _resolve_display_label(
             result = result.split("|;")[0].strip()
         return result.strip()
 
-    # Atomic keycode — resolve through alias chain
+    # Atomic keycode — resolve through alias chain to the canonical name,
+    # then expand any remaining ``@@KEYCODE;`` references inside the label
+    # (e.g. ``QK_ALT_REPEAT_KEY: "@@QK_REPEAT_KEY; ′"`` should resolve to the
+    # repeat glyph followed by the prime mark, NOT just the prime mark).
     chain = _resolve_aliases(keycode, keycodes_dict)
     canonical = chain[-1]
     raw_label = keycodes_dict.get(canonical, canonical)
-    display = re.sub(r"@@[A-Z0-9_]+;", "", raw_label).strip()
+
+    def _sub_alias(m: re.Match[str]) -> str:
+        key = m.group(1)
+        label = keycodes_dict.get(key, key)
+        nested = _ALIAS_RE.fullmatch(label.strip())
+        if nested:
+            label = keycodes_dict.get(nested.group(1), nested.group(1))
+        return label
+
+    display = re.sub(r"@@([A-Z0-9_]+);", _sub_alias, raw_label).strip()
     return display if display else keycode
 
 
