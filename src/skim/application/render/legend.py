@@ -341,7 +341,13 @@ TD_CELL_W = 110
 def tap_dance_section_height(
     tap_dances: list[SvalboardTapDance[SvalboardTargetKey]],
 ) -> float:
-    """Height of a tap-dance section (column header strip + rows)."""
+    """Height of a tap-dance section (column header strip + rows).
+
+    Returns 0 for an empty list so the legend's column-balanced height
+    math does not overstate when only one column is populated.
+    """
+    if not tap_dances:
+        return 0.0
     return TD_HEADER_HEIGHT + len(tap_dances) * (TD_ROW_HEIGHT + TD_ROW_GAP)
 
 

@@ -253,10 +253,10 @@ def test_tap_dance_section_height_includes_column_header_and_rows():
 
 def test_tap_dance_section_height_zero_for_empty_rows():
     h = tap_dance_section_height([])
-    # Even empty: header still reserved? Or 0? Implementer to choose; the
-    # legend skip-check is at the section level above. Conservative: just
-    # the column header (no rows).
-    assert h == TD_HEADER_HEIGHT
+    # An empty list contributes no height — the header is not reserved when
+    # there are no rows, so the legend's column-balanced height math does not
+    # overstate when only one column is populated.
+    assert h == 0.0
 
 
 def test_build_tap_dance_row_returns_group():
