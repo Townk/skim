@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 import drawsvg as draw
 
 from skim.application.render.styling import derive_accent_line
-from skim.application.render.text import Font, Label
+from skim.application.render.text import Font, Label, TextPart
 from skim.data import Palette, SvalboardLayout
 from skim.domain import (
     SvalboardMacro,
@@ -244,11 +244,21 @@ def _legend_key_label(key: SvalboardTargetKey) -> str:
 def _pill_width(label: str) -> float:
     """Compute the pill width to wrap ``label`` exactly.
 
-    Uses :meth:`Label.measure_width` (PIL-based actual font metrics) so
-    each pill is sized to its rendered glyph width, not the alias-string
-    length.
+    Walks the parsed :class:`Label` parts and measures each at its actual
+    rendered case. ``TextPart.measure_width`` uppercases the text — that
+    matches keymap-key conventions but overstates legend pills, where
+    ``Label.build_text`` emits the literal text. Bypass the uppercase
+    override for plain text parts; defer to each non-text part's own
+    measurement so symbol and separator parts keep their tuned widths.
     """
-    text_width = Label(label, Font.FINGER_KEY, text_color="#000").measure_width(PILL_FONT_SIZE)
+    label_obj = Label(label, Font.FINGER_KEY, text_color="#000")
+    text_width = 0.0
+    for part in label_obj.parts:
+        font = part.font.load(PILL_FONT_SIZE)
+        if isinstance(part, TextPart):
+            text_width += font.getlength(part.text)
+        else:
+            text_width += part.measure_width(font)
     text_width = max(text_width, 8.0)
     return max(28.0, text_width + PILL_CHROME_WIDTH)
 
