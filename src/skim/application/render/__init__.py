@@ -18,6 +18,7 @@ import drawsvg as draw
 
 from skim.assets import ASSETS
 from skim.data import (
+    KeycodeMappings,
     KeymapGeneratorTargets,
     SkimConfig,
     SplitSide,
@@ -39,6 +40,11 @@ from .legend import (
 )
 from .overview import HeaderDims, compute_header_dims, draw_overview
 from .styling import make_gradient
+from .symbol_legend import (
+    build_symbol_legend,
+    collect_used_descriptions,
+    symbol_legend_height,
+)
 from .text import Font, FontSubsetter, FontUsageAnalyzer, Label
 
 
@@ -50,6 +56,9 @@ def _draw_layer(
     header_dims: HeaderDims,
     macros: tuple[SvalboardMacro[SvalboardTargetKey], ...] = (),
     tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...] = (),
+    raw_layer_keycodes: list[str] | None = None,
+    raw_keymap: SvalboardKeymap[str] | None = None,
+    keycode_mappings: KeycodeMappings | None = None,
 ) -> draw.Drawing:
     use_system_fonts = config.output.style.use_system_fonts
     render_context = RenderContext(
@@ -193,7 +202,7 @@ def _draw_layer(
         copyright_font_size + bottom_inset if config.output.copyright else 0.0
     )
 
-    # Plan the legend and reserve its vertical space.
+    # Plan the macro/TD legend and reserve its vertical space.
     if config.output.style.show_special_keys_legend:
         used_macro_ids, used_td_ids = collect_used_ids(layer)
         macro_entries = resolve_macros(used_macro_ids, macros)
@@ -202,15 +211,30 @@ def _draw_layer(
     else:
         legend_plan = None
 
+    # Plan the symbol legend.
+    if config.output.style.show_symbol_legend and raw_layer_keycodes and keycode_mappings:
+        symbol_entries = collect_used_descriptions(
+            raw_layer_keycodes, raw_keymap, keycode_mappings
+        )
+    else:
+        symbol_entries = []
+
     legend_top_gap = 36.0
+    symbol_legend_gap = 24.0
     content_width = canvas_width - 2 * outer_padding
     legend_h = legend_height(legend_plan, content_width)
+    sym_h = symbol_legend_height(symbol_entries, content_width)
     keyboard_bottom = keyboard_canvas_h - bottom_inset
-    legend_top = keyboard_bottom + legend_top_gap if legend_h > 0 else None
+    legend_top = keyboard_bottom + legend_top_gap if (legend_h > 0 or sym_h > 0) else None
 
     canvas_height = keyboard_canvas_h
     if legend_h > 0:
         canvas_height += legend_top_gap + legend_h
+    if sym_h > 0:
+        if legend_h > 0:
+            canvas_height += symbol_legend_gap + sym_h
+        else:
+            canvas_height += legend_top_gap + sym_h
     canvas_height += copyright_extra
 
     # Create drawing
@@ -331,6 +355,24 @@ def _draw_layer(
         if legend_group is not None:
             d.append(legend_group)
 
+    # Symbol legend — placed after the macro/TD legend (or directly after
+    # the keyboard when there's no macro/TD legend).
+    if symbol_entries:
+        if legend_top is not None:
+            sym_legend_y = legend_top + legend_h + symbol_legend_gap if legend_h > 0 else legend_top
+        else:
+            sym_legend_y = keyboard_bottom + legend_top_gap
+        sym_group = build_symbol_legend(
+            entries=symbol_entries,
+            x=outer_padding,
+            y=sym_legend_y,
+            content_width=content_width,
+            palette=config.output.style.palette,
+            use_system_fonts=use_system_fonts,
+        )
+        if sym_group is not None:
+            d.append(sym_group)
+
     return d
 
 
@@ -355,18 +397,32 @@ def draw_keymap(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
     targets: KeymapGeneratorTargets,
+    raw_keymap: SvalboardKeymap[str] | None = None,
+    keycode_mappings: KeycodeMappings | None = None,
 ) -> dict[str, draw.Drawing]:
     keymap_images: dict[str, draw.Drawing] = {}
     header_dims = compute_header_dims(config, keymap)
     for qmk_idx, pos, layer in _selected_layers(keymap, targets, config):
+        # Flatten the raw keycodes for this layer (if available)
+        raw_layer_keycodes: list[str] | None = None
+        if raw_keymap is not None and qmk_idx in raw_keymap.layers:
+            raw_layer = raw_keymap.layers[qmk_idx]
+            raw_layer_keycodes = [k for k in raw_layer if k is not None]
         keymap_images[f"keymap-layer-{qmk_idx}"] = _draw_layer(
             config, layer, pos, qmk_idx, header_dims,
             macros=keymap.macros,
             tap_dances=keymap.tap_dances,
+            raw_layer_keycodes=raw_layer_keycodes,
+            raw_keymap=raw_keymap,
+            keycode_mappings=keycode_mappings,
         )
 
     if targets.overview:
-        keymap_images["keymap-overview"] = draw_overview(config, keymap)
+        keymap_images["keymap-overview"] = draw_overview(
+            config, keymap,
+            raw_keymap=raw_keymap,
+            keycode_mappings=keycode_mappings,
+        )
 
     return keymap_images
 

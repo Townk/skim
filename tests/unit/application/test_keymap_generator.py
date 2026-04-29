@@ -235,7 +235,10 @@ class TestGenerateKeymap:
         mock_get_config.assert_called_once()
         mock_get_input_keymap.assert_called_once_with(inputs, mock_config)
         mock_resolve_keymap.assert_called_once_with(mock_config, mock_input_keymap)
-        mock_draw_keymap.assert_called_once_with(mock_config, mock_resolved_keymap, targets)
+        # draw_keymap is called with positional args + optional raw_keymap / keycode_mappings kwargs
+        mock_draw_keymap.assert_called_once()
+        draw_call_args, draw_call_kwargs = mock_draw_keymap.call_args
+        assert draw_call_args[:3] == (mock_config, mock_resolved_keymap, targets)
         mock_save_drawings.assert_called_once_with(outputs, mock_drawings, None)
 
     @patch("skim.application.keymap_generator.logger")

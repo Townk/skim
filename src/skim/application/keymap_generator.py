@@ -62,6 +62,7 @@ def _get_config(
     use_system_fonts: bool = False,
     keymap_for_defaults: Path | None = None,
     show_special_keys_legend: bool = True,
+    show_symbol_legend: bool = True,
 ) -> SkimConfig:
     """Load and enhance configuration with generated gradients.
 
@@ -102,6 +103,7 @@ def _get_config(
             "palette": new_palette,
             "use_system_fonts": use_system_fonts,
             "show_special_keys_legend": show_special_keys_legend,
+            "show_symbol_legend": show_symbol_legend,
         }
     )
     new_output = config.output.model_copy(update={"style": new_style})
@@ -158,6 +160,7 @@ def generate_keymap(
     outputs: OutputFiles,
     targets: KeymapGeneratorTargets,
     show_special_keys_legend: bool = True,
+    show_symbol_legend: bool = True,
 ) -> None:
     """Generate keymap visualization images.
 
@@ -191,8 +194,14 @@ def generate_keymap(
         outputs.use_system_fonts,
         keymap_for_defaults=keymap_for_defaults,
         show_special_keys_legend=show_special_keys_legend,
+        show_symbol_legend=show_symbol_legend,
     )
     input_keymap = _get_input_keymap(inputs, config)
     keymap = _resolve_keymap(config, input_keymap)
-    drawings = draw_keymap(config, keymap, targets)
+    keycode_mappings = load_keycode_mappings(config.keycodes)
+    drawings = draw_keymap(
+        config, keymap, targets,
+        raw_keymap=input_keymap,
+        keycode_mappings=keycode_mappings,
+    )
     save_drawings(outputs, drawings, outputs.render_engine)

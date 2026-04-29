@@ -217,6 +217,13 @@ def doctor() -> None:
     default=False,
     help="Omit the macro and tap-dance legend tables from the rendered SVGs.",
 )
+@click.option(
+    "--no-symbols",
+    "no_symbols",
+    is_flag=True,
+    default=False,
+    help="Omit the symbol legend from the rendered SVGs.",
+)
 @click.argument("stdin_marker", required=False, type=click.STRING)
 def generate(
     config: Path | None,
@@ -228,6 +235,7 @@ def generate(
     use_system_fonts: bool,
     render_engine: str | None,
     no_special_keys: bool,
+    no_symbols: bool,
     stdin_marker: str | None,
 ) -> None:
     """Generate keymap visualization images.
@@ -256,7 +264,13 @@ def generate(
         engine = RenderEngine(render_engine) if render_engine else None
         outputs = OutputFiles(output_dir, output_format, force, use_system_fonts, engine)
         targets = KeymapGeneratorTargets.from_args(layer, partial(click.echo, err=True))
-        generate_keymap(inputs, outputs, targets, show_special_keys_legend=not no_special_keys)
+        generate_keymap(
+            inputs,
+            outputs,
+            targets,
+            show_special_keys_legend=not no_special_keys,
+            show_symbol_legend=not no_symbols,
+        )
     except click.Abort as e:
         click.echo(f"Aborted: {e}", err=True)
         sys.exit(1)

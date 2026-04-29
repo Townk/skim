@@ -18,7 +18,7 @@ from dataclasses import dataclass
 import drawsvg as draw
 
 from skim.assets import ASSETS
-from skim.data import SkimConfig, SvalboardKeymap, SvalboardLayout
+from skim.data import KeycodeMappings, SkimConfig, SvalboardKeymap, SvalboardLayout
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .components import FingerClusterComponent, ThumbClusterComponent
@@ -52,6 +52,11 @@ from .overview_layout import (
     _LOGO_WIDTH_TO_BADGE_WIDTH,
     BadgeDimensions,
     OverviewLayout,
+)
+from .symbol_legend import (
+    build_symbol_legend,
+    collect_used_descriptions,
+    symbol_legend_height,
 )
 from .text import Font
 
@@ -584,6 +589,8 @@ def _build_thumb_clusters(
 def draw_overview(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
+    raw_keymap: SvalboardKeymap[str] | None = None,
+    keycode_mappings: KeycodeMappings | None = None,
 ) -> draw.Drawing:
     """Generate the full overview SVG image for a multi-layer keymap."""
     num_layers = len(config.keyboard.layers)
@@ -681,9 +688,22 @@ def draw_overview(
         legend_plan = plan_layout(macro_entries, td_entries)
     else:
         legend_plan = None
+
+    # Plan symbol legend (union of all rendered layers).
+    if config.output.style.show_symbol_legend and raw_keymap is not None and keycode_mappings is not None:
+        all_raw_keycodes: list[str] = []
+        for _, qmk_idx in render_layers:
+            if qmk_idx in raw_keymap.layers:
+                all_raw_keycodes.extend(k for k in raw_keymap.layers[qmk_idx] if k is not None)
+        symbol_entries = collect_used_descriptions(all_raw_keycodes, raw_keymap, keycode_mappings)
+    else:
+        symbol_entries = []
+
     legend_top_gap = 36.0
+    symbol_legend_gap = 24.0
     legend_content_width = canvas_w - 2 * padding
     legend_h = legend_height(legend_plan, legend_content_width)
+    sym_h = symbol_legend_height(symbol_entries, legend_content_width)
     # ``routing.extra_bottom_padding`` includes a 0.5*keymap_spacing buffer
     # below the bottommost DOWN lane (see ConnectorRouting docstring). Strip
     # that buffer when measuring where the keyboard area visually ends so
@@ -695,9 +715,14 @@ def draw_overview(
         else 0.0
     )
     keyboard_section_bottom = canvas_h - copyright_extra - routing_buffer
-    legend_top = keyboard_section_bottom + legend_top_gap if legend_h > 0 else None
+    legend_top = keyboard_section_bottom + legend_top_gap if (legend_h > 0 or sym_h > 0) else None
     if legend_h > 0:
         canvas_h += legend_top_gap + legend_h
+    if sym_h > 0:
+        if legend_h > 0:
+            canvas_h += symbol_legend_gap + sym_h
+        else:
+            canvas_h += legend_top_gap + sym_h
 
     # Match top padding: layout.canvas_height ends with one m.inset of
     # breathing room, but the top has a full `padding`. When copyright is
@@ -915,6 +940,20 @@ def draw_overview(
         )
         if legend_group is not None:
             d.append(legend_group)
+
+    # Symbol legend
+    if symbol_entries and legend_top is not None:
+        sym_legend_y = legend_top + legend_h + symbol_legend_gap if legend_h > 0 else legend_top
+        sym_group = build_symbol_legend(
+            entries=symbol_entries,
+            x=padding,
+            y=sym_legend_y,
+            content_width=legend_content_width,
+            palette=palette,
+            use_system_fonts=use_system_fonts,
+        )
+        if sym_group is not None:
+            d.append(sym_group)
 
     # Copyright
     if config.output.copyright:

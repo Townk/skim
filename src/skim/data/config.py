@@ -695,6 +695,10 @@ class Style(BaseModel):
             layer, and the overview SVG includes a full legend of all
             macros and tap-dances in the keymap. Set False to omit
             both legends entirely.
+        show_symbol_legend: When True (default), per-layer SVGs include
+            a symbol legend describing the non-obvious glyphs used on
+            the layer. The overview includes symbols across all rendered
+            layers. Set False to omit the symbol legend entirely.
 
     Example:
         >>> style = Style(
@@ -716,6 +720,7 @@ class Style(BaseModel):
     show_layer_connectors: bool = True
     show_transparent_fallthrough: bool = True
     show_special_keys_legend: bool = True
+    show_symbol_legend: bool = True
 
 
 class Output(BaseModel):
