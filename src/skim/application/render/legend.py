@@ -14,7 +14,6 @@ its rows when only one type is in use.
 Geometry mirrors ``docs/design/layer.jsx::Legend``.
 """
 
-import math
 from dataclasses import dataclass, field
 
 import drawsvg as draw
@@ -116,50 +115,30 @@ class LegendLayout:
     """Per-column row assignments for the legend block.
 
     When both sections are present, ``macro_left`` carries all macros and
-    ``tap_dance_left`` carries all tap-dances; ``*_right`` are empty. When
-    only one type is present, that section's rows are split across two
-    balanced columns and the corresponding ``*_span_columns`` flag is True.
+    ``tap_dance_left`` carries all tap-dances. When only one type is
+    present, the other type's left list is empty.
     """
 
     macro_left: list[SvalboardMacro[SvalboardTargetKey]] = field(default_factory=list)
-    macro_right: list[SvalboardMacro[SvalboardTargetKey]] = field(default_factory=list)
     tap_dance_left: list[SvalboardTapDance[SvalboardTargetKey]] = field(default_factory=list)
-    tap_dance_right: list[SvalboardTapDance[SvalboardTargetKey]] = field(default_factory=list)
-    macros_span_columns: bool = False
-    tap_dances_span_columns: bool = False
 
 
 def plan_layout(
     macros: list[SvalboardMacro[SvalboardTargetKey]],
     tap_dances: list[SvalboardTapDance[SvalboardTargetKey]],
 ) -> LegendLayout | None:
-    """Decide how rows fill the two-column legend.
+    """Decide how rows fill the legend.
 
     Returns ``None`` when both lists are empty (no legend block).
+    Otherwise both types share the layout: each gets one column, with
+    macros on the left and tap-dances on the right (right is empty if
+    only macros, left is empty for the macro slot if only tap-dances).
     """
     if not macros and not tap_dances:
         return None
-
-    if macros and tap_dances:
-        return LegendLayout(
-            macro_left=list(macros),
-            tap_dance_left=list(tap_dances),
-        )
-
-    if macros:
-        # Single-type → balance across two columns.
-        half = math.ceil(len(macros) / 2)
-        return LegendLayout(
-            macro_left=macros[:half],
-            macro_right=macros[half:],
-            macros_span_columns=True,
-        )
-
-    half = math.ceil(len(tap_dances) / 2)
     return LegendLayout(
-        tap_dance_left=tap_dances[:half],
-        tap_dance_right=tap_dances[half:],
-        tap_dances_span_columns=True,
+        macro_left=list(macros),
+        tap_dance_left=list(tap_dances),
     )
 
 
@@ -662,36 +641,20 @@ def _macro_section_height(
 def legend_height(layout: LegendLayout | None, content_width: float) -> float:
     """Total intrinsic height of the legend block.
 
-    Returns 0 when ``layout is None`` (no specials on this layer).
+    Each section (macros, tap-dances) occupies its own column at half
+    the content width. Returns the height of the taller section so the
+    caller reserves enough space for both. Returns 0 when ``layout is
+    None`` (no specials on this layer).
     """
     if layout is None:
         return 0.0
     col_w, _ = _column_widths(content_width)
-    if layout.macros_span_columns:
-        h_left = _macro_section_height(layout.macro_left, col_w)
-        h_right = (
-            _macro_section_height(layout.macro_right, col_w)
-            if layout.macro_right
-            else 0.0
-        )
-        # Title and column header are shared (one strip above both columns);
-        # both column totals already include SECTION_HEADER_HEIGHT +
-        # MACRO_COLUMN_HEADER_HEIGHT, so subtract both and add them back once.
-        shared = SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT
-        inner_left = max(h_left - shared, 0.0)
-        inner_right = max(h_right - shared, 0.0) if h_right else 0.0
-        return shared + max(inner_left, inner_right)
-    if layout.tap_dances_span_columns:
-        h_left = tap_dance_section_height(layout.tap_dance_left)
-        h_right = (
-            tap_dance_section_height(layout.tap_dance_right)
-            if layout.tap_dance_right
-            else 0.0
-        )
-        return SECTION_HEADER_HEIGHT + max(h_left, h_right)
-    # Both present — independent columns.
     h_macros = _macro_section_height(layout.macro_left, col_w)
-    h_tds = SECTION_HEADER_HEIGHT + tap_dance_section_height(layout.tap_dance_left)
+    h_tds = (
+        SECTION_HEADER_HEIGHT + tap_dance_section_height(layout.tap_dance_left)
+        if layout.tap_dance_left
+        else 0.0
+    )
     return max(h_macros, h_tds)
 
 
@@ -846,87 +809,34 @@ def build_legend(
     col_w, _ = _column_widths(content_width)
     g = draw.Group()
 
-    if layout.macros_span_columns:
+    if layout.macro_left:
         _draw_macro_title(
-            g, x, y, content_width, macro_line,
-            count=len(layout.macro_left) + len(layout.macro_right),
+            g, x, y, col_w, macro_line, count=len(layout.macro_left),
         )
         g.append(build_macro_column_header(
             x=x, y=y + SECTION_HEADER_HEIGHT + 12, text_color=palette.text_color,
         ))
-        if layout.macro_right:
-            g.append(build_macro_column_header(
-                x=x + col_w + COLUMN_GAP,
-                y=y + SECTION_HEADER_HEIGHT + 12,
-                text_color=palette.text_color,
-            ))
-        rows_top = y + SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT
         end_left = _draw_macro_column(
-            g, layout.macro_left, x, rows_top, col_w,
-            palette.macro_color, macro_line, palette.text_color,
-            use_system_fonts=use_system_fonts,
-        )
-        end_right = _draw_macro_column(
-            g, layout.macro_right, x + col_w + COLUMN_GAP, rows_top, col_w,
+            g, layout.macro_left, x,
+            y + SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT, col_w,
             palette.macro_color, macro_line, palette.text_color,
             use_system_fonts=use_system_fonts,
         )
         g.append(_action_key_strip(
-            x=x, y=max(end_left, end_right) + ACTION_KEY_PRE_GAP,
-            text_color=palette.text_color,
+            x=x, y=end_left + ACTION_KEY_PRE_GAP, text_color=palette.text_color,
         ))
-        return g
 
-    if layout.tap_dances_span_columns:
+    if layout.tap_dance_left:
         _draw_td_title(
-            g, x, y, content_width, td_line,
-            count=len(layout.tap_dance_left) + len(layout.tap_dance_right),
+            g, x + col_w + COLUMN_GAP, y, col_w, td_line,
+            count=len(layout.tap_dance_left),
         )
-        rows_top = y + SECTION_HEADER_HEIGHT
-        td_name_w = _td_name_column_width(
-            layout.tap_dance_left, layout.tap_dance_right,
-        )
+        td_name_w = _td_name_column_width(layout.tap_dance_left)
         _draw_td_column(
-            g, layout.tap_dance_left, x, rows_top, col_w,
+            g, layout.tap_dance_left, x + col_w + COLUMN_GAP,
+            y + SECTION_HEADER_HEIGHT, col_w,
             palette.tap_dance_color, td_line, palette.text_color,
             use_system_fonts=use_system_fonts,
             name_column_width=td_name_w,
         )
-        if layout.tap_dance_right:
-            _draw_td_column(
-                g, layout.tap_dance_right, x + col_w + COLUMN_GAP, rows_top, col_w,
-                palette.tap_dance_color, td_line, palette.text_color,
-                use_system_fonts=use_system_fonts,
-                name_column_width=td_name_w,
-            )
-        return g
-
-    # Both present — independent columns.
-    _draw_macro_title(
-        g, x, y, col_w, macro_line, count=len(layout.macro_left),
-    )
-    g.append(build_macro_column_header(
-        x=x, y=y + SECTION_HEADER_HEIGHT + 12, text_color=palette.text_color,
-    ))
-    end_left = _draw_macro_column(
-        g, layout.macro_left, x, y + SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT, col_w,
-        palette.macro_color, macro_line, palette.text_color,
-        use_system_fonts=use_system_fonts,
-    )
-    g.append(_action_key_strip(
-        x=x, y=end_left + ACTION_KEY_PRE_GAP, text_color=palette.text_color,
-    ))
-
-    _draw_td_title(
-        g, x + col_w + COLUMN_GAP, y, col_w, td_line,
-        count=len(layout.tap_dance_left),
-    )
-    td_name_w = _td_name_column_width(layout.tap_dance_left)
-    _draw_td_column(
-        g, layout.tap_dance_left, x + col_w + COLUMN_GAP,
-        y + SECTION_HEADER_HEIGHT, col_w,
-        palette.tap_dance_color, td_line, palette.text_color,
-        use_system_fonts=use_system_fonts,
-        name_column_width=td_name_w,
-    )
     return g
