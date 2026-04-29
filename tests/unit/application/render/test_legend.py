@@ -8,6 +8,8 @@ from skim.application.render.legend import (
     TD_HEADER_HEIGHT,
     TD_ROW_GAP,
     TD_ROW_HEIGHT,
+    all_macros,
+    all_tap_dances,
     build_action_glyph,
     build_macro_row,
     build_tap_dance_column_header,
@@ -335,3 +337,30 @@ def test_build_legend_both_returns_group(palette):
     layout = plan_layout([_macro("0")], [_td("0")])
     g = build_legend(layout, x=0, y=0, content_width=1200, palette=palette)
     assert isinstance(g, draw.Group)
+
+
+def test_all_macros_returns_sorted_full_list():
+    """all_macros returns every macro sorted numerically then lexicographically."""
+    available = (_macro("5"), _macro("0"), _macro("3"), _macro("10"))
+    result = all_macros(available)
+    assert [m.id for m in result] == ["0", "3", "5", "10"]
+
+
+def test_all_macros_returns_sorted_full_list_named():
+    """all_macros handles named (non-numeric) ids sorted lexicographically."""
+    available = (_macro("GAMMA"), _macro("ALPHA"), _macro("BETA"))
+    result = all_macros(available)
+    assert [m.id for m in result] == ["ALPHA", "BETA", "GAMMA"]
+
+
+def test_all_tap_dances_returns_sorted_full_list():
+    """all_tap_dances returns every tap-dance sorted numerically."""
+    available = (_td("2"), _td("0"), _td("5"), _td("1"))
+    result = all_tap_dances(available)
+    assert [t.id for t in result] == ["0", "1", "2", "5"]
+
+
+def test_all_tap_dances_empty_input():
+    """all_tap_dances returns an empty list for an empty tuple."""
+    result = all_tap_dances(())
+    assert result == []

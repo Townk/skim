@@ -84,6 +84,20 @@ def resolve_tap_dances(
     )
 
 
+def all_macros(
+    macros: tuple[SvalboardMacro[SvalboardTargetKey], ...]
+) -> list[SvalboardMacro[SvalboardTargetKey]]:
+    """Return all parsed macros sorted by id (no filter)."""
+    return sorted(macros, key=lambda m: _sort_key(m.id))
+
+
+def all_tap_dances(
+    tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...]
+) -> list[SvalboardTapDance[SvalboardTargetKey]]:
+    """Return all parsed tap-dances sorted by id (no filter)."""
+    return sorted(tap_dances, key=lambda t: _sort_key(t.id))
+
+
 @dataclass(frozen=True, slots=True)
 class LegendLayout:
     """Per-column row assignments for the legend block.
@@ -191,17 +205,23 @@ PILL_GAP = 6
 PILL_HEIGHT = 24
 PILL_FONT_SIZE = 11
 
+PILL_PAD_X = 10               # horizontal padding inside each pill
+ICON_WIDTH = 6                # visual width of action glyphs (circle r=3, etc.)
+ICON_TEXT_GAP = 12            # gap from icon's right edge to text's left edge
+                              # (≤ 1.5 × PILL_PAD_X = 15, matches user's spec)
+PILL_CHROME_WIDTH = 2 * PILL_PAD_X + ICON_WIDTH + ICON_TEXT_GAP  # = 38
+
 
 def _pill_width(label: str) -> float:
-    """Approximate the pill width given its visible label.
+    """Compute the pill width given its visible label.
 
-    Mirrors the JSX rule: ``v.length > 3 ? max(110, len*7 + 28) : 50``. We
-    accept a small margin of error — the rendered text is short enough
-    that the approximation never causes wrapping problems in practice.
+    The pill chrome (padding + icon + icon-to-text gap) is a fixed
+    constant; the pill widens to accommodate the label's text width.
+    Approximate text width is ``len(label) * 7`` for the legend's
+    11px Roboto. Short labels still get a comfortable minimum width.
     """
-    if len(label) > 3:
-        return max(110.0, len(label) * 7.0 + 28.0)
-    return 50.0
+    text_width = max(len(label) * 7, 14)  # 14 = roughly two characters
+    return max(50.0, text_width + PILL_CHROME_WIDTH)
 
 
 def _macro_action_pill_labels(action: SvalboardMacroAction) -> list[str]:
@@ -315,24 +335,32 @@ def build_macro_row(
                 width=w, height=PILL_HEIGHT, rx=4, ry=4,
                 fill="#FAFAF6", stroke=text_color, stroke_opacity=0.18,
             ))
-            # Action glyph at left
+            # Action glyph — icon centred at cx + PILL_PAD_X (so left padding
+            # from pill edge to icon centre = PILL_PAD_X).
             g.append(build_action_glyph(
-                kind, cx=cx + 9, cy=line_y + CONTENT_STRIP_HEIGHT / 2, color=text_color,
+                kind, cx=cx + PILL_PAD_X, cy=line_y + CONTENT_STRIP_HEIGHT / 2,
+                color=text_color,
             ))
-            # Label — use Label machinery so %%nf-*; glyph aliases are resolved.
-            pill_label = Label(
-                label,
-                font=Font.FINGER_KEY,
-                text_color=text_color,
-                text_anchor="middle",
-                dominant_baseline="central",
+            # Label — symmetric around the available text region.
+            #   Text region: [cx + PILL_PAD_X + ICON_WIDTH/2 + ICON_TEXT_GAP, cx + w - PILL_PAD_X]
+            #   Text region centre: cx + (PILL_PAD_X + ICON_WIDTH/2 + ICON_TEXT_GAP + w - PILL_PAD_X) / 2
+            #                     = cx + (ICON_WIDTH/2 + ICON_TEXT_GAP + w) / 2
+            text_centre_x = cx + (ICON_WIDTH / 2 + ICON_TEXT_GAP + w) / 2
+            g.append(
+                Label(
+                    label,
+                    Font.FINGER_KEY,
+                    text_color=text_color,
+                    background_color="#FAFAF6",
+                    text_anchor="middle",
+                    dominant_baseline="central",
+                ).build_text(
+                    text_centre_x,
+                    line_y + CONTENT_STRIP_HEIGHT / 2 + 0.5,
+                    PILL_FONT_SIZE,
+                    use_system_fonts,
+                )
             )
-            g.append(pill_label.build_text(
-                x=cx + (w + 14) / 2 + 4,
-                y=line_y + CONTENT_STRIP_HEIGHT / 2 + 0.5,
-                font_size=PILL_FONT_SIZE,
-                use_system_fonts=use_system_fonts,
-            ))
             cx += w + PILL_GAP
         line_y += CONTENT_STRIP_HEIGHT
     return g
