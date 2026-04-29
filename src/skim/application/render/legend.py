@@ -20,7 +20,12 @@ from dataclasses import dataclass, field
 import drawsvg as draw
 
 from skim.data import SvalboardLayout
-from skim.domain import SvalboardMacro, SvalboardMacroActionKind, SvalboardTapDance
+from skim.domain import (
+    SvalboardMacro,
+    SvalboardMacroAction,
+    SvalboardMacroActionKind,
+    SvalboardTapDance,
+)
 from skim.domain.domain_types import SvalboardTargetKey
 
 
@@ -172,3 +177,153 @@ def build_action_glyph(
         font_style="italic", text_anchor="middle", dominant_baseline="central",
         font_family="'Roboto', sans-serif",
     )
+
+
+# --- Geometry constants (mirrors docs/design/layer.jsx Legend) -------------
+TAG_W = 48
+TAG_H = 22
+HEADER_STRIP_HEIGHT = 28
+CONTENT_STRIP_HEIGHT = 28
+ROW_GAP = 18
+PILL_GAP = 6
+PILL_HEIGHT = 24
+PILL_FONT_SIZE = 11
+
+
+def _pill_width(label: str) -> float:
+    """Approximate the pill width given its visible label.
+
+    Mirrors the JSX rule: ``v.length > 3 ? max(110, len*7 + 28) : 50``. We
+    accept a small margin of error — the rendered text is short enough
+    that the approximation never causes wrapping problems in practice.
+    """
+    if len(label) > 3:
+        return max(110.0, len(label) * 7.0 + 28.0)
+    return 50.0
+
+
+def _macro_action_pill_labels(action: SvalboardMacroAction) -> list[str]:
+    """Visible label per pill emitted by an action.
+
+    TAP/DOWN/UP emit one pill per key in ``action.keys``. TEXT emits one
+    pill with the literal text. DELAY emits one pill with ``"<duration>ms"``.
+    """
+    if action.kind in (
+        SvalboardMacroActionKind.TAP,
+        SvalboardMacroActionKind.DOWN,
+        SvalboardMacroActionKind.UP,
+    ):
+        return [k.label for k in action.keys]
+    if action.kind == SvalboardMacroActionKind.TEXT:
+        return [action.text]
+    if action.kind == SvalboardMacroActionKind.DELAY:
+        return [f"{action.duration_ms}ms"]
+    return []
+
+
+def _flatten_macro_pills(
+    macro: SvalboardMacro[SvalboardTargetKey],
+) -> list[tuple[SvalboardMacroActionKind, str]]:
+    """Pre-flatten ``macro.actions`` into a (kind, label) sequence."""
+    out: list[tuple[SvalboardMacroActionKind, str]] = []
+    for action in macro.actions:
+        for label in _macro_action_pill_labels(action):
+            out.append((action.kind, label))
+    return out
+
+
+def _layout_pill_lines(
+    pills: list[tuple[SvalboardMacroActionKind, str]],
+    line_width: float,
+) -> list[list[tuple[SvalboardMacroActionKind, str, float]]]:
+    """Pack pills into lines, wrapping when the next pill would overflow.
+
+    Returns a list of lines, each a list of ``(kind, label, width)``.
+    """
+    lines: list[list[tuple[SvalboardMacroActionKind, str, float]]] = [[]]
+    cursor = 0.0
+    for kind, label in pills:
+        w = _pill_width(label)
+        if lines[-1] and cursor + PILL_GAP + w > line_width:
+            lines.append([])
+            cursor = 0.0
+        if lines[-1]:
+            cursor += PILL_GAP
+        lines[-1].append((kind, label, w))
+        cursor += w
+    return lines
+
+
+def macro_row_height(
+    macro: SvalboardMacro[SvalboardTargetKey], content_width: float
+) -> float:
+    """Total height of one macro row (header + content lines)."""
+    pills = _flatten_macro_pills(macro)
+    indent = TAG_W + 12
+    lines = _layout_pill_lines(pills, content_width - indent)
+    return HEADER_STRIP_HEIGHT + CONTENT_STRIP_HEIGHT * max(1, len(lines))
+
+
+def build_macro_row(
+    macro: SvalboardMacro[SvalboardTargetKey],
+    x: float,
+    y: float,
+    content_width: float,
+    accent_fill: str,
+    accent_line: str,
+    text_color: str,
+) -> draw.Group:
+    """Render a single macro row at ``(x, y)``."""
+    g = draw.Group()
+    # Header strip — tag chip + name + rule.
+    g.append(draw.Rectangle(
+        x=x, y=y, width=TAG_W, height=TAG_H, rx=4, ry=4,
+        fill=accent_fill, stroke=accent_line, stroke_width=1.2,
+    ))
+    g.append(draw.Text(
+        f"M{macro.id}", x=x + TAG_W / 2, y=y + TAG_H / 2 + 0.5,
+        font_size=12, font_weight="700", text_anchor="middle",
+        dominant_baseline="central", font_family="'Roboto', sans-serif",
+        fill="#FFF",
+    ))
+    name = macro.name if macro.name else f"Macro {macro.id}"
+    g.append(draw.Text(
+        name, x=x + TAG_W + 10, y=y + TAG_H / 2 + 0.5,
+        font_size=13, font_weight="500", dominant_baseline="central",
+        font_family="'Roboto', sans-serif", fill=text_color,
+    ))
+    g.append(draw.Line(
+        sx=x + TAG_W, sy=y + TAG_H - 0.5,
+        ex=x + content_width, ey=y + TAG_H - 0.5,
+        stroke=accent_line, stroke_opacity=0.55, stroke_width=1,
+    ))
+
+    # Content strip — pills with overflow wrap.
+    pills = _flatten_macro_pills(macro)
+    indent = TAG_W + 12
+    lines = _layout_pill_lines(pills, content_width - indent)
+    line_y = y + HEADER_STRIP_HEIGHT
+    for line in lines:
+        cx = x + indent
+        for kind, label, w in line:
+            # Pill background
+            g.append(draw.Rectangle(
+                x=cx, y=line_y + (CONTENT_STRIP_HEIGHT - PILL_HEIGHT) / 2,
+                width=w, height=PILL_HEIGHT, rx=4, ry=4,
+                fill="#FAFAF6", stroke=text_color, stroke_opacity=0.18,
+            ))
+            # Action glyph at left
+            g.append(build_action_glyph(
+                kind, cx=cx + 9, cy=line_y + CONTENT_STRIP_HEIGHT / 2, color=text_color,
+            ))
+            # Label
+            g.append(draw.Text(
+                label, x=cx + (w + 14) / 2 + 4,
+                y=line_y + CONTENT_STRIP_HEIGHT / 2 + 0.5,
+                font_size=PILL_FONT_SIZE, fill=text_color,
+                text_anchor="middle", dominant_baseline="central",
+                font_family="'Roboto', sans-serif",
+            ))
+            cx += w + PILL_GAP
+        line_y += CONTENT_STRIP_HEIGHT
+    return g

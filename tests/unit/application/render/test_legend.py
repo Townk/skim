@@ -3,8 +3,12 @@
 import drawsvg as draw
 
 from skim.application.render.legend import (
+    CONTENT_STRIP_HEIGHT,
+    HEADER_STRIP_HEIGHT,
     build_action_glyph,
+    build_macro_row,
     collect_used_ids,
+    macro_row_height,
     plan_layout,
     resolve_macros,
     resolve_tap_dances,
@@ -182,4 +186,54 @@ def test_build_action_glyph_press_is_filled():
 def test_build_action_glyph_delay_returns_group():
     """Delay is a clock face — multiple primitives → a Group."""
     g = build_action_glyph(SvalboardMacroActionKind.DELAY, cx=10, cy=10, color="#000")
+    assert isinstance(g, draw.Group)
+
+
+def _macro_with_actions(*kinds_and_keys) -> SvalboardMacro:
+    """Helper: build a macro from (kind, *args) tuples.
+
+    For TAP/DOWN/UP, args are key labels (one or more strings).
+    For TEXT, args is one string.
+    For DELAY, args is one int (duration_ms).
+    """
+    actions = []
+    for kind, *rest in kinds_and_keys:
+        if kind in (
+            SvalboardMacroActionKind.TAP,
+            SvalboardMacroActionKind.DOWN,
+            SvalboardMacroActionKind.UP,
+        ):
+            keys = tuple(SvalboardTargetKey(label=k) for k in rest)
+            actions.append(SvalboardMacroAction(kind=kind, keys=keys))
+        elif kind == SvalboardMacroActionKind.TEXT:
+            actions.append(SvalboardMacroAction(kind=kind, text=rest[0]))
+        elif kind == SvalboardMacroActionKind.DELAY:
+            actions.append(SvalboardMacroAction(kind=kind, duration_ms=rest[0]))
+    return SvalboardMacro(id="0", actions=tuple(actions))
+
+
+def test_macro_row_height_no_overflow():
+    macro = _macro_with_actions(
+        (SvalboardMacroActionKind.TAP, "A"),
+        (SvalboardMacroActionKind.TAP, "B"),
+    )
+    h = macro_row_height(macro, content_width=600)
+    assert h == HEADER_STRIP_HEIGHT + CONTENT_STRIP_HEIGHT
+
+
+def test_macro_row_height_two_content_lines_when_overflow():
+    long_macro = _macro_with_actions(
+        *(((SvalboardMacroActionKind.TAP, "K"),) * 30)
+    )
+    # Tight column → at least 2 content lines.
+    h = macro_row_height(long_macro, content_width=120)
+    assert h >= HEADER_STRIP_HEIGHT + 2 * CONTENT_STRIP_HEIGHT
+
+
+def test_build_macro_row_returns_group():
+    macro = _macro_with_actions((SvalboardMacroActionKind.TAP, "A"))
+    g = build_macro_row(
+        macro=macro, x=0, y=0, content_width=600,
+        accent_fill="#89511C", accent_line="#DD9857", text_color="#000",
+    )
     assert isinstance(g, draw.Group)
