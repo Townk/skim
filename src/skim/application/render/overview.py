@@ -684,7 +684,17 @@ def draw_overview(
     legend_top_gap = 36.0
     legend_content_width = canvas_w - 2 * padding
     legend_h = legend_height(legend_plan, legend_content_width)
-    keyboard_section_bottom = canvas_h - copyright_extra
+    # ``routing.extra_bottom_padding`` includes a 0.5*keymap_spacing buffer
+    # below the bottommost DOWN lane (see ConnectorRouting docstring). Strip
+    # that buffer when measuring where the keyboard area visually ends so
+    # the legend's top sits ``legend_top_gap`` below the actual arm tip,
+    # not ``buffer + legend_top_gap`` below it.
+    routing_buffer = (
+        0.5 * nk * _CONNECTOR_SPACING_RATIO
+        if (routing is not None and routing.extra_bottom_padding > 0)
+        else 0.0
+    )
+    keyboard_section_bottom = canvas_h - copyright_extra - routing_buffer
     legend_top = keyboard_section_bottom + legend_top_gap if legend_h > 0 else None
     if legend_h > 0:
         canvas_h += legend_top_gap + legend_h
