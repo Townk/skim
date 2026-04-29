@@ -68,11 +68,50 @@ class SymbolLegendEntry:
         description: Human-readable description from the yaml data.
         sort_key: Canonical keycode or function name used for deduplication
             and stable ordering.
+        category: QMK-style category name for grouped display (e.g.
+            ``"Modifiers"``, ``"Layers"``).  Empty string means uncategorized.
     """
 
     display_label: str
     description: str
     sort_key: str
+    category: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Category ordering
+# ---------------------------------------------------------------------------
+
+_CATEGORY_ORDER = (
+    "Layers",
+    "Modifiers",
+    "Lock Keys",
+    "International",
+    "Commands",
+    "Media Keys",
+    "Mouse",
+    "Number Pad",
+    "Special Keys",
+    "Svalboard",
+)
+
+
+def _category_index(name: str) -> int:
+    """Position in the category order.  Uncategorized entries sort last."""
+    try:
+        return _CATEGORY_ORDER.index(name)
+    except ValueError:
+        return len(_CATEGORY_ORDER)
+
+
+def _entry_sort_key(entry: SymbolLegendEntry) -> tuple:
+    """Return a composite sort key: (category_index, numeric_flag, sort_key)."""
+    cat_idx = _category_index(entry.category)
+    try:
+        sort_pair: tuple = (0, int(entry.sort_key))
+    except (ValueError, TypeError):
+        sort_pair = (1, entry.sort_key)
+    return (cat_idx,) + sort_pair
 
 
 # ---------------------------------------------------------------------------
@@ -359,6 +398,8 @@ def _collect_raw(
     macro_functions: dict[str, str] = keycode_mappings.get("macro_functions", {})
     symbol_desc: dict[str, str] = keycode_mappings.get("symbol_descriptions", {})
     func_desc: dict[str, str | dict] = keycode_mappings.get("function_descriptions", {})
+    symbol_cats: dict[str, str] = keycode_mappings.get("symbol_categories", {})
+    func_cats: dict[str, str] = keycode_mappings.get("function_categories", {})
 
     for raw in keycodes_raw:
         # Apply pre-processing normalisation
@@ -377,6 +418,7 @@ def _collect_raw(
                     display_label=_TRANSPARENT_GLYPH,
                     description=symbol_desc["KC_TRANSPARENT"],
                     sort_key=sort_k,
+                    category=symbol_cats.get("KC_TRANSPARENT", ""),
                 )
             continue
 
@@ -392,6 +434,7 @@ def _collect_raw(
                     display_label=display,
                     description=desc,
                     sort_key=sort_k,
+                    category=symbol_cats.get(keycode, ""),
                 )
             continue  # Do NOT recurse — one entry for the whole pattern
 
@@ -422,6 +465,7 @@ def _collect_raw(
                             display_label=display_label,
                             description=desc,
                             sort_key=sort_k,
+                            category=func_cats.get(func_name, ""),
                         )
                     # Do NOT recurse — description covers the function as a whole.
                     continue
@@ -437,6 +481,7 @@ def _collect_raw(
                             display_label=label,
                             description=desc,
                             sort_key=sort_k,
+                            category=func_cats.get(func_name, ""),
                         )
                     # Fall through to recurse into args below.
 
@@ -499,6 +544,7 @@ def _collect_raw(
                         display_label=display,
                         description=desc,
                         sort_key=sort_k,
+                        category=symbol_cats.get(name, ""),
                     )
                 break  # Use the first matching step in the chain
 
@@ -528,7 +574,7 @@ def collect_used_descriptions(
     """
     out: dict[str, SymbolLegendEntry] = {}
     _collect_raw(keycodes, keymap, keycode_mappings, out, set())
-    return sorted(out.values(), key=lambda e: e.sort_key)
+    return sorted(out.values(), key=_entry_sort_key)
 
 
 # ---------------------------------------------------------------------------

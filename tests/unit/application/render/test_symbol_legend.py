@@ -133,10 +133,30 @@ class TestCollectUsedDescriptions:
         assert entries == []
 
     def test_collect_sorted(self):
-        """Entries are sorted by sort_key."""
+        """Entries are sorted by category first, then by sort_key within a category."""
+        from itertools import groupby
+
+        from skim.application.render.symbol_legend import _category_index
+
         entries = _entries(["KC_SPACE", "KC_LEFT_CTRL", "MO(1)"])
-        sort_keys = [e.sort_key for e in entries]
-        assert sort_keys == sorted(sort_keys)
+        # Category priority is respected: Layers (MO) < Modifiers (KC_LEFT_CTRL)
+        # < Special Keys (KC_SPACE).
+        cat_indices = [_category_index(e.category) for e in entries]
+        assert cat_indices == sorted(cat_indices)
+
+        # Within each category, sort_key order is preserved (lexicographic).
+        for _cat, group in groupby(entries, key=lambda e: e.category):
+            group_list = list(group)
+            sort_keys = [e.sort_key for e in group_list]
+            assert sort_keys == sorted(sort_keys)
+
+    def test_collect_groups_by_category(self):
+        """Entries with category metadata sort by category, then by id."""
+        entries = _entries(["KC_NUM_LOCK", "KC_LEFT_CTRL", "MO(1)", "KC_ENTER"])
+        categories = [e.category for e in entries]
+        # Layers (MO) → Modifiers (KC_LEFT_CTRL) → Lock Keys (KC_NUM_LOCK)
+        # → Special Keys (KC_ENTER)
+        assert categories == ["Layers", "Modifiers", "Lock Keys", "Special Keys"]
 
     def test_collect_multiple_functions(self):
         """MO(1) and TG(2) each produce their own entry, deduped."""
