@@ -311,3 +311,87 @@ class TestDrawKeymapWithSpecialKeys:
         targets = KeymapGeneratorTargets(all_layers=True)
         result = draw_keymap(sample_config, keymap, targets)
         assert len(result) == 1
+
+
+class TestLayerLegendIntegration:
+    """End-to-end check that the legend block grows the canvas and emits
+    the accent colours when a layer carries macros / tap-dances."""
+
+    def _make_keymap_with_specials(
+        self,
+    ) -> "SvalboardKeymap[SvalboardTargetKey]":
+        from skim.data.keyboard import SvalboardKeymap, SvalboardLayout
+        from skim.domain import (
+            SvalboardMacro,
+            SvalboardMacroAction,
+            SvalboardMacroActionKind,
+            SvalboardTapDance,
+        )
+        from skim.domain.domain_types import SvalboardTargetKey
+
+        keys = [SvalboardTargetKey(label=f"K{i}") for i in range(60)]
+        keys[0] = SvalboardTargetKey(label="M0", macro_id="0")
+        keys[10] = SvalboardTargetKey(label="TD0", tap_dance_id="0")
+        return SvalboardKeymap(
+            layers={0: SvalboardLayout.from_sequence(keys)},
+            macros=(
+                SvalboardMacro(
+                    id="0",
+                    actions=(
+                        SvalboardMacroAction(
+                            kind=SvalboardMacroActionKind.TAP,
+                            keys=(SvalboardTargetKey(label="A"),),
+                        ),
+                    ),
+                    name="Type A",
+                ),
+            ),
+            tap_dances=(
+                SvalboardTapDance(
+                    id="0",
+                    tap=SvalboardTargetKey(label="Z"),
+                    hold=SvalboardTargetKey(label="\u2318"),  # ⌘
+                    name="Undo / Cmd",
+                ),
+            ),
+        )
+
+    def test_layer_with_specials_grows_canvas(
+        self, sample_config, single_layer_keymap
+    ):
+        targets = KeymapGeneratorTargets(all_layers=True)
+        plain_imgs = draw_keymap(sample_config, single_layer_keymap, targets)
+        plain_drawing = plain_imgs["keymap-layer-0"]
+
+        special_keymap = self._make_keymap_with_specials()
+        special_imgs = draw_keymap(sample_config, special_keymap, targets)
+        special_drawing = special_imgs["keymap-layer-0"]
+
+        assert special_drawing.height > plain_drawing.height
+
+    def test_layer_with_specials_emits_accent_colours(self, sample_config):
+        targets = KeymapGeneratorTargets(all_layers=True)
+        special_keymap = self._make_keymap_with_specials()
+        special_imgs = draw_keymap(sample_config, special_keymap, targets)
+        special_drawing = special_imgs["keymap-layer-0"]
+        svg_text = special_drawing.as_svg()
+
+        palette = sample_config.output.style.palette
+        assert palette.macro_color in svg_text
+        assert palette.tap_dance_color in svg_text
+
+    def test_plain_layer_does_not_emit_accent_colours(
+        self, sample_config, single_layer_keymap
+    ):
+        targets = KeymapGeneratorTargets(all_layers=True)
+        plain_imgs = draw_keymap(sample_config, single_layer_keymap, targets)
+        plain_drawing = plain_imgs["keymap-layer-0"]
+        svg_text = plain_drawing.as_svg()
+
+        palette = sample_config.output.style.palette
+        # Plain keymap's only special-key fills come from the legend; with
+        # no specials, those colours should not appear in the SVG output.
+        # NOTE: the macro_color (#89511C) and tap_dance_color (#41687F)
+        # defaults are unlikely to appear elsewhere in the keymap palette.
+        assert palette.macro_color not in svg_text
+        assert palette.tap_dance_color not in svg_text
