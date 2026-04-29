@@ -692,9 +692,15 @@ def draw_overview(
     # Match top padding: layout.canvas_height ends with one m.inset of
     # breathing room, but the top has a full `padding`. When copyright is
     # present, copyright_extra already provides `padding` worth of bottom
-    # margin via its trailing layout.padding; otherwise we need to add the
-    # difference explicitly. (Always positive in practice — padding > inset.)
-    if not config.output.copyright:
+    # margin via its trailing layout.padding; when routing has DOWN lanes,
+    # routing.extra_bottom_padding already includes a 0.5*keymap_spacing
+    # buffer below the bottommost lane (see connectors.ConnectorRouting
+    # docstring). Only add the explicit top/bottom padding match when
+    # neither buffer applies — i.e. no copyright AND no DOWN-lane routing.
+    routing_provides_buffer = (
+        routing is not None and routing.extra_bottom_padding > 0
+    )
+    if not config.output.copyright and not routing_provides_buffer:
         canvas_h += max(0.0, padding - base_metrics.inset)
 
     d = draw.Drawing(canvas_w, canvas_h)
