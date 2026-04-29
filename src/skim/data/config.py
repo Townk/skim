@@ -690,6 +690,11 @@ class Style(BaseModel):
             keycodes (KC_TRNS / _______) on layers above 0 render the
             same label as layer 0 in a faded "ghost" color. Set False to
             leave transparent keys blank.
+        show_special_keys_legend: When True (default), per-layer SVGs
+            include a legend table of macros and tap-dances used on the
+            layer, and the overview SVG includes a full legend of all
+            macros and tap-dances in the keymap. Set False to omit
+            both legends entirely.
 
     Example:
         >>> style = Style(
@@ -710,6 +715,7 @@ class Style(BaseModel):
     show_layer_indicators: bool = True
     show_layer_connectors: bool = True
     show_transparent_fallthrough: bool = True
+    show_special_keys_legend: bool = True
 
 
 class Output(BaseModel):

@@ -194,10 +194,13 @@ def _draw_layer(
     )
 
     # Plan the legend and reserve its vertical space.
-    used_macro_ids, used_td_ids = collect_used_ids(layer)
-    macro_entries = resolve_macros(used_macro_ids, macros)
-    td_entries = resolve_tap_dances(used_td_ids, tap_dances)
-    legend_plan = plan_layout(macro_entries, td_entries)
+    if config.output.style.show_special_keys_legend:
+        used_macro_ids, used_td_ids = collect_used_ids(layer)
+        macro_entries = resolve_macros(used_macro_ids, macros)
+        td_entries = resolve_tap_dances(used_td_ids, tap_dances)
+        legend_plan = plan_layout(macro_entries, td_entries)
+    else:
+        legend_plan = None
 
     legend_top_gap = 36.0
     content_width = canvas_width - 2 * outer_padding

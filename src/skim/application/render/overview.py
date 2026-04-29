@@ -675,9 +675,12 @@ def draw_overview(
     margin = base_metrics.margin
 
     # Plan and reserve space for the macros/TDs legend at the bottom.
-    macro_entries = all_macros(keymap.macros)
-    td_entries = all_tap_dances(keymap.tap_dances)
-    legend_plan = plan_layout(macro_entries, td_entries)
+    if config.output.style.show_special_keys_legend:
+        macro_entries = all_macros(keymap.macros)
+        td_entries = all_tap_dances(keymap.tap_dances)
+        legend_plan = plan_layout(macro_entries, td_entries)
+    else:
+        legend_plan = None
     legend_top_gap = 36.0
     legend_content_width = canvas_w - 2 * padding
     legend_h = legend_height(legend_plan, legend_content_width)

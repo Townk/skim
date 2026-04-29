@@ -61,6 +61,7 @@ def _get_config(
     config_path: Path | None,
     use_system_fonts: bool = False,
     keymap_for_defaults: Path | None = None,
+    show_special_keys_legend: bool = True,
 ) -> SkimConfig:
     """Load and enhance configuration with generated gradients.
 
@@ -97,7 +98,11 @@ def _get_config(
 
     new_palette = config.output.style.palette.model_copy(update={"layers": new_layers})
     new_style = config.output.style.model_copy(
-        update={"palette": new_palette, "use_system_fonts": use_system_fonts}
+        update={
+            "palette": new_palette,
+            "use_system_fonts": use_system_fonts,
+            "show_special_keys_legend": show_special_keys_legend,
+        }
     )
     new_output = config.output.model_copy(update={"style": new_style})
     return config.model_copy(update={"output": new_output})
@@ -152,6 +157,7 @@ def generate_keymap(
     inputs: InputFiles,
     outputs: OutputFiles,
     targets: KeymapGeneratorTargets,
+    show_special_keys_legend: bool = True,
 ) -> None:
     """Generate keymap visualization images.
 
@@ -181,7 +187,10 @@ def generate_keymap(
 
     keymap_for_defaults = None if inputs.force_stdin_keymap else inputs.keymap
     config: SkimConfig = _get_config(
-        inputs.config, outputs.use_system_fonts, keymap_for_defaults=keymap_for_defaults
+        inputs.config,
+        outputs.use_system_fonts,
+        keymap_for_defaults=keymap_for_defaults,
+        show_special_keys_legend=show_special_keys_legend,
     )
     input_keymap = _get_input_keymap(inputs, config)
     keymap = _resolve_keymap(config, input_keymap)
