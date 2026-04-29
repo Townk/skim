@@ -24,11 +24,21 @@ from skim.data import (
     SvalboardKeymap,
     SvalboardLayout,
 )
-from skim.domain import KeyboardSide, SvalboardTargetKey
+from skim.domain import KeyboardSide, SvalboardMacro, SvalboardTapDance, SvalboardTargetKey
 
 from .components import FingerClusterComponent, ThumbClusterComponent
 from .context import RenderContext
 from .layout import Boundary, KeymapLayout
+from .legend import (
+    all_macros,
+    all_tap_dances,
+    build_legend,
+    collect_used_ids,
+    legend_height,
+    plan_layout,
+    resolve_macros,
+    resolve_tap_dances,
+)
 from .overview import HeaderDims, compute_header_dims, draw_overview
 from .styling import make_gradient
 from .text import Font, FontSubsetter, FontUsageAnalyzer, Label
@@ -40,6 +50,9 @@ def _draw_layer(
     config_position: int,
     qmk_index: int,
     header_dims: HeaderDims,
+    macros: tuple[SvalboardMacro[SvalboardTargetKey], ...] = (),
+    tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...] = (),
+    show_all_legend_entries: bool = False,
 ) -> draw.Drawing:
     use_system_fonts = config.output.style.use_system_fonts
     render_context = RenderContext(
@@ -168,20 +181,40 @@ def _draw_layer(
     canvas_width = layer_layout.canvas_width(
         horizontal_indicator_offset=horizontal_indicator_offset
     )
-    canvas_height = layer_layout.canvas_height(
+    # Keyboard-area height as the existing layout helper computes it. This
+    # already includes the bottom inset below the thumb cluster.
+    keyboard_canvas_h = layer_layout.canvas_height(
         cluster_height,
         left_thumb.height,
         vertical_indicator_offset=vertical_indicator_offset,
         top_indicator_offset=top_indicator_offset,
         header_offset=header_offset,
     )
-    copyright_font_size = header_dims.copyright_font_size
-    # The layout's canvas_height already reserves ``inset + margin`` below the
-    # thumb cluster — that's the bottom inset for the no-copyright case. When a
-    # copyright is present, keep that same inset below the text and reuse it as
-    # the gap between the thumb cluster and the text.
     bottom_inset = m.inset + m.margin
-    copyright_extra = copyright_font_size + bottom_inset if config.output.copyright else 0.0
+    copyright_font_size = header_dims.copyright_font_size
+    copyright_extra = (
+        copyright_font_size + bottom_inset if config.output.copyright else 0.0
+    )
+
+    # Plan the legend and reserve its vertical space.
+    if show_all_legend_entries:
+        macro_entries = all_macros(macros)
+        td_entries = all_tap_dances(tap_dances)
+    else:
+        used_macro_ids, used_td_ids = collect_used_ids(layer)
+        macro_entries = resolve_macros(used_macro_ids, macros)
+        td_entries = resolve_tap_dances(used_td_ids, tap_dances)
+    legend_plan = plan_layout(macro_entries, td_entries)
+
+    legend_top_gap = 36.0
+    content_width = canvas_width - 2 * outer_padding
+    legend_h = legend_height(legend_plan, content_width)
+    keyboard_bottom = keyboard_canvas_h - bottom_inset
+    legend_top = keyboard_bottom + legend_top_gap if legend_h > 0 else None
+
+    canvas_height = keyboard_canvas_h
+    if legend_h > 0:
+        canvas_height += legend_top_gap + legend_h
     canvas_height += copyright_extra
 
     # Create drawing
@@ -218,6 +251,7 @@ def _draw_layer(
     if not use_system_fonts:
         font_analyzer = FontUsageAnalyzer()
         font_analyzer.analyze_keymap(labels_keymap, layer_title, config.output.copyright)
+        font_analyzer.analyze_legend(macros, tap_dances)
 
         font_subsetter = FontSubsetter(font_analyzer)
         subsetted_css = font_subsetter.generate_subsetted_css()
@@ -289,6 +323,18 @@ def _draw_layer(
             )
         )
 
+    if legend_plan is not None and legend_top is not None:
+        legend_group = build_legend(
+            layout=legend_plan,
+            x=outer_padding,
+            y=legend_top,
+            content_width=content_width,
+            palette=config.output.style.palette,
+            use_system_fonts=use_system_fonts,
+        )
+        if legend_group is not None:
+            d.append(legend_group)
+
     return d
 
 
@@ -318,7 +364,10 @@ def draw_keymap(
     header_dims = compute_header_dims(config, keymap)
     for qmk_idx, pos, layer in _selected_layers(keymap, targets, config):
         keymap_images[f"keymap-layer-{qmk_idx}"] = _draw_layer(
-            config, layer, pos, qmk_idx, header_dims
+            config, layer, pos, qmk_idx, header_dims,
+            macros=keymap.macros,
+            tap_dances=keymap.tap_dances,
+            show_all_legend_entries=targets.show_all_legend_entries,
         )
 
     if targets.overview:

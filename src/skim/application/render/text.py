@@ -24,7 +24,8 @@ from PIL import ImageFont
 from skim.application.loaders import load_nerdfont_glyphs
 from skim.assets import ASSETS
 from skim.data import SvalboardLayout
-from skim.domain import SEPARATOR_CHAR
+from skim.domain import SEPARATOR_CHAR, SvalboardMacro, SvalboardTapDance
+from skim.domain.domain_types import SvalboardTargetKey
 
 from .styling import adjust_luminance
 
@@ -525,6 +526,53 @@ class FontUsageAnalyzer:
             self._collect_from_label(Label(layer_name, Font.TITLE, text_color="#000"))
         if copyright_text:
             self._collect_from_label(Label(copyright_text, Font.FINGER_KEY, text_color="#000"))
+
+    def analyze_legend(
+        self,
+        macros: tuple[SvalboardMacro[SvalboardTargetKey], ...],
+        tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...],
+    ) -> None:
+        """Analyze legend macros and tap-dances to collect character usage.
+
+        Walks every macro action and tap-dance variant label to ensure the
+        font subset includes glyphs that appear only in the legend.
+        """
+        for macro in macros:
+            # Macro chip: name + per-action glyphs/keys/text
+            if macro.name:
+                self._collect_from_label(
+                    Label(macro.name, Font.FINGER_KEY, text_color="#000")
+                )
+            for action in macro.actions:
+                for key in action.keys:
+                    if key is not None and key.label:
+                        self._collect_from_label(
+                            Label(key.label, Font.FINGER_KEY, text_color="#000")
+                        )
+                if action.text:
+                    self._collect_from_label(
+                        Label(action.text, Font.FINGER_KEY, text_color="#000")
+                    )
+        for td in tap_dances:
+            if td.name:
+                self._collect_from_label(
+                    Label(td.name, Font.FINGER_KEY, text_color="#000")
+                )
+            for variant in (td.tap, td.hold, td.double_tap, td.tap_then_hold):
+                if variant is not None and variant.label:
+                    self._collect_from_label(
+                        Label(variant.label, Font.FINGER_KEY, text_color="#000")
+                    )
+
+        # Chip glyphs — appear once per macro / tap-dance row.
+        if macros:
+            self._collect_from_label(
+                Label("%%nf-md-script_text_play_outline;", Font.FINGER_KEY, text_color="#000")
+            )
+        if tap_dances:
+            self._collect_from_label(
+                Label("%%nf-md-keyboard_close;", Font.FINGER_KEY, text_color="#000")
+            )
 
     def get_used_chars(self, font: Font) -> set[str]:
         """Get the set of characters used from a specific font."""

@@ -12,7 +12,7 @@ from skim.data.keyboard import (
     SvalboardLayout,
     ThumbCluster,
 )
-from skim.domain.adapters.keymap_target_adapter import KeymapTargetAdapter
+from skim.domain.adapters.keymap_target_adapter import KeymapTargetAdapter, _detect_special_ids
 from skim.domain.domain_types import (
     SvalboardMacro,
     SvalboardMacroAction,
@@ -205,13 +205,58 @@ class TestKeymapTargetAdapterTransparentFallthrough:
         assert ghost.label == ""
         assert ghost.is_transparent is True
 
+    def test_fallthrough_propagates_macro_id(self):
+        """A transparent layer-1 slot whose layer-0 source carries macro_id
+        must inherit it after fallthrough."""
+        label_map = {
+            "L0_L_I": SvalboardTargetKey(label="M3", macro_id="3"),
+            "L1_L_I": SvalboardTargetKey(label="", is_transparent=True),
+        }
+        adapter = KeymapTargetAdapter(MockLabelAdapter(label_map))  # type: ignore[arg-type]
+        keymap = make_keymap(2)
+        result = adapter.transform(keymap)
+        higher_key = result.layers[1].left.index.center_key
+        assert higher_key.is_transparent is True
+        assert higher_key.macro_id == "3"
+        assert higher_key.label == "M3"
+
+    def test_fallthrough_propagates_tap_dance_id(self):
+        """A transparent layer-1 slot whose layer-0 source carries tap_dance_id
+        must inherit it after fallthrough."""
+        label_map = {
+            "L0_L_I": SvalboardTargetKey(label="TD7", tap_dance_id="7"),
+            "L1_L_I": SvalboardTargetKey(label="", is_transparent=True),
+        }
+        adapter = KeymapTargetAdapter(MockLabelAdapter(label_map))  # type: ignore[arg-type]
+        keymap = make_keymap(2)
+        result = adapter.transform(keymap)
+        higher_key = result.layers[1].left.index.center_key
+        assert higher_key.is_transparent is True
+        assert higher_key.tap_dance_id == "7"
+        assert higher_key.label == "TD7"
+
+    def test_self_referential_suppression_wins_over_macro_id(self):
+        """When layer-0 source has layer_switch == current_layer_index and
+        carries macro_id, suppression must still win — slot stays blank."""
+        label_map = {
+            "L0_L_I": SvalboardTargetKey(label="L1", layer_switch=1, macro_id="3"),
+            "L1_L_I": SvalboardTargetKey(label="", is_transparent=True),
+        }
+        adapter = KeymapTargetAdapter(MockLabelAdapter(label_map))  # type: ignore[arg-type]
+        keymap = make_keymap(2)
+        result = adapter.transform(keymap)
+        higher_key = result.layers[1].left.index.center_key
+        assert higher_key.is_transparent is True
+        assert higher_key.label == ""
+        assert higher_key.macro_id is None
+
 
 class TestTransformLayer:
     def test_transforms_all_keys_in_layer(self):
         label_adapter = MockLabelAdapter()
         adapter = KeymapTargetAdapter(label_adapter)  # type: ignore[arg-type]
         layout = make_layout("L0")
-        result = adapter._transform_layer(layout)
+        result = adapter._transform_layer(layout, (), ())
         keys = list(result)
         assert len(keys) == 60
         assert all(isinstance(k, SvalboardTargetKey) for k in keys)
@@ -224,7 +269,7 @@ class TestTransformLayer:
         label_adapter.transform.side_effect = transform_with_position
         adapter = KeymapTargetAdapter(label_adapter)
         layout = make_layout("L0")
-        result = adapter._transform_layer(layout)
+        result = adapter._transform_layer(layout, (), ())
         first_key = result.left.index.center_key
         assert "L0_L_I" in first_key.label
 
@@ -323,3 +368,121 @@ class TestKeymapTargetAdapterMacros:
         adapter = KeymapTargetAdapter(label_adapter)  # type: ignore[arg-type]
         result = adapter.transform(make_keymap(1))
         assert result.macros == ()
+
+
+def _make_macro(id_: str) -> SvalboardMacro[str]:
+    return SvalboardMacro[str](
+        id=id_,
+        actions=(
+            SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TEXT, text="x"),
+        ),
+    )
+
+
+def _make_tap_dance(id_: str) -> SvalboardTapDance[str]:
+    return SvalboardTapDance[str](
+        id=id_,
+        tap="KC_A",
+        hold=None,
+        double_tap=None,
+        tap_then_hold=None,
+        tapping_term=200,
+    )
+
+
+class TestDetectSpecialIds:
+    """Unit tests for the module-level _detect_special_ids helper."""
+
+    def _macros(self, *ids: str) -> tuple[SvalboardMacro[str], ...]:
+        return tuple(_make_macro(i) for i in ids)
+
+    def _tap_dances(self, *ids: str) -> tuple[SvalboardTapDance[str], ...]:
+        return tuple(_make_tap_dance(i) for i in ids)
+
+    def test_vial_m0_matches_macro_id_0(self):
+        macro_id, td_id = _detect_special_ids("M0", self._macros("0", "1"), ())
+        assert macro_id == "0"
+        assert td_id is None
+
+    def test_qmk_macro3_matches_macro_id_3(self):
+        macro_id, td_id = _detect_special_ids("MACRO_3", self._macros("3"), ())
+        assert macro_id == "3"
+        assert td_id is None
+
+    def test_vial_m99_unknown_leaves_both_none(self):
+        macro_id, td_id = _detect_special_ids("M99", self._macros("0", "1"), ())
+        assert macro_id is None
+        assert td_id is None
+
+    def test_td5_matches_tap_dance_id_5(self):
+        macro_id, td_id = _detect_special_ids("TD(5)", (), self._tap_dances("5"))
+        assert macro_id is None
+        assert td_id == "5"
+
+    def test_td99_unknown_leaves_both_none(self):
+        macro_id, td_id = _detect_special_ids("TD(99)", (), self._tap_dances("0", "1"))
+        assert macro_id is None
+        assert td_id is None
+
+    def test_plain_kc_a_leaves_both_none(self):
+        macro_id, td_id = _detect_special_ids("KC_A", self._macros("0"), self._tap_dances("0"))
+        assert macro_id is None
+        assert td_id is None
+
+    def test_empty_definitions_leaves_both_none(self):
+        macro_id, td_id = _detect_special_ids("M0", (), ())
+        assert macro_id is None
+        assert td_id is None
+
+
+class TestSpecialIdStampingViaTransformLayer:
+    """Integration tests: _transform_layer stamps macro_id / tap_dance_id
+    via lookup, and fallthrough propagates them."""
+
+    def _make_keymap_with_macros_tds(self) -> SvalboardKeymap[str]:
+        """Single-layer keymap where one key is M0 and another is TD(5)."""
+        # Use a custom layout so a known position has the special keycodes.
+        from skim.data.keyboard import FingerCluster, SplitSide, ThumbCluster
+
+        def _side(prefix: str, special_key: str) -> SplitSide[str]:
+            return SplitSide(
+                index=FingerCluster(special_key),   # center = special
+                middle=FingerCluster(f"{prefix}_M"),
+                ring=FingerCluster(f"{prefix}_R"),
+                pinky=FingerCluster(f"{prefix}_P"),
+                thumb=ThumbCluster(f"{prefix}_T"),
+            )
+
+        layout = SvalboardLayout(
+            left=_side("L0_L", "M0"),
+            right=_side("L0_R", "TD(5)"),
+        )
+        return SvalboardKeymap(
+            layers={0: layout},
+            macros=(_make_macro("0"),),
+            tap_dances=(_make_tap_dance("5"),),
+        )
+
+    def test_vial_macro_keycode_gets_macro_id(self):
+        adapter = KeymapTargetAdapter(MockLabelAdapter())  # type: ignore[arg-type]
+        keymap = self._make_keymap_with_macros_tds()
+        result = adapter.transform(keymap)
+        key = result.layers[0].left.index.center_key
+        assert key.macro_id == "0"
+        assert key.tap_dance_id is None
+
+    def test_td_keycode_gets_tap_dance_id(self):
+        adapter = KeymapTargetAdapter(MockLabelAdapter())  # type: ignore[arg-type]
+        keymap = self._make_keymap_with_macros_tds()
+        result = adapter.transform(keymap)
+        key = result.layers[0].right.index.center_key
+        assert key.tap_dance_id == "5"
+        assert key.macro_id is None
+
+    def test_plain_key_has_no_special_ids(self):
+        adapter = KeymapTargetAdapter(MockLabelAdapter())  # type: ignore[arg-type]
+        keymap = self._make_keymap_with_macros_tds()
+        result = adapter.transform(keymap)
+        key = result.layers[0].left.middle.center_key
+        assert key.macro_id is None
+        assert key.tap_dance_id is None

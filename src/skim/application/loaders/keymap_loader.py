@@ -31,6 +31,9 @@ from skim.domain.adapters import KeymapJsonAdapter
 EMPTY_LAYER_KEYCODES = frozenset({"KC_NO", "KC_TRNS"})
 """Keycodes that mark a key as inactive on a layer."""
 
+_TAP_DANCE_EMPTY_KEYCODES = frozenset({"KC_NO", "KC_TRNS", "KC_TRANSPARENT", "_______"})
+"""Keycodes that mean "no action" in a tap-dance slot."""
+
 
 @dataclass(frozen=True, slots=True)
 class ParsedKeymap:
@@ -76,14 +79,24 @@ def _detect_format_from_path(path: Path) -> KeymapType | None:
 
 
 def _vial_keycode_or_none(value: Any) -> str | None:
-    """Map Vial's ``"KC_NO"`` sentinel to ``None`` for tap-dance fields."""
-    if value is None or value == "KC_NO":
+    """Map Vial's empty-slot sentinels to ``None`` for tap-dance fields.
+
+    Vial uses both ``"KC_NO"`` and ``"KC_TRNS"`` (and its aliases) to mean
+    "no action" in tap-dance slots — the user did not bind anything to that
+    variant. Both should produce an empty cell in the legend rather than
+    a real keycode label.
+    """
+    if value is None or value in _TAP_DANCE_EMPTY_KEYCODES:
         return None
     return str(value)
 
 
 def _parse_vial_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
-    """Parse the top-level ``tap_dance`` array if present."""
+    """Parse the top-level ``tap_dance`` array if present.
+
+    Entries with all four variants set to None (i.e. all `KC_NO` in source)
+    are silently skipped.
+    """
     raw = data.get("tap_dance")
     if not isinstance(raw, list):
         return ()
@@ -91,21 +104,26 @@ def _parse_vial_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
     for index, row in enumerate(raw):
         if not isinstance(row, list) or len(row) < 5:
             continue
-        tap_dances.append(
-            SvalboardTapDance[str](
-                id=str(index),
-                tap=_vial_keycode_or_none(row[0]),
-                hold=_vial_keycode_or_none(row[1]),
-                double_tap=_vial_keycode_or_none(row[2]),
-                tap_then_hold=_vial_keycode_or_none(row[3]),
-                tapping_term=int(row[4]),
-            )
+        td = SvalboardTapDance[str](
+            id=str(index),
+            tap=_vial_keycode_or_none(row[0]),
+            hold=_vial_keycode_or_none(row[1]),
+            double_tap=_vial_keycode_or_none(row[2]),
+            tap_then_hold=_vial_keycode_or_none(row[3]),
+            tapping_term=int(row[4]),
         )
+        if td.tap is None and td.hold is None and td.double_tap is None and td.tap_then_hold is None:
+            continue
+        tap_dances.append(td)
     return tuple(tap_dances)
 
 
 def _parse_keybard_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
-    """Parse the top-level ``tapdances`` array if present."""
+    """Parse the top-level ``tapdances`` array if present.
+
+    Entries with all four variants set to None (i.e. all `KC_NO` in source)
+    are silently skipped.
+    """
     raw = data.get("tapdances")
     if not isinstance(raw, list):
         return ()
@@ -113,23 +131,25 @@ def _parse_keybard_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
     for entry in raw:
         if not isinstance(entry, dict) or "tdid" not in entry:
             continue
-        tap_dances.append(
-            SvalboardTapDance[str](
-                id=str(entry["tdid"]),
-                tap=_vial_keycode_or_none(entry.get("tap")),
-                hold=_vial_keycode_or_none(entry.get("hold")),
-                double_tap=_vial_keycode_or_none(entry.get("doubletap")),
-                tap_then_hold=_vial_keycode_or_none(entry.get("taphold")),
-                tapping_term=int(entry.get("tapms", 200)),
-            )
+        td = SvalboardTapDance[str](
+            id=str(entry["tdid"]),
+            tap=_vial_keycode_or_none(entry.get("tap")),
+            hold=_vial_keycode_or_none(entry.get("hold")),
+            double_tap=_vial_keycode_or_none(entry.get("doubletap")),
+            tap_then_hold=_vial_keycode_or_none(entry.get("taphold")),
+            tapping_term=int(entry.get("tapms", 200)),
         )
+        if td.tap is None and td.hold is None and td.double_tap is None and td.tap_then_hold is None:
+            continue
+        tap_dances.append(td)
     return tuple(tap_dances)
 
 
 def _parse_keybard_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
     """Parse the top-level ``macros`` array if present.
 
-    IDs are 1-based (``mid + 1``) to match the Vial UI labelling (Macro 1–50).
+    IDs are 0-based, matching how keycodes reference macros (``M0`` → first
+    macro). Entries with no actions are silently skipped.
     """
     raw = data.get("macros")
     if not isinstance(raw, list):
@@ -141,10 +161,13 @@ def _parse_keybard_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
         mid = entry["mid"]
         if not isinstance(mid, int):
             continue
+        parsed_actions = _parse_vial_macro_actions(entry.get("actions", []))
+        if not parsed_actions:
+            continue
         macros.append(
             SvalboardMacro[str](
-                id=str(mid + 1),
-                actions=_parse_vial_macro_actions(entry.get("actions", [])),
+                id=str(mid),
+                actions=parsed_actions,
             )
         )
     return tuple(macros)
@@ -193,15 +216,19 @@ def _parse_c2json_macro_actions(raw: Any) -> tuple[SvalboardMacroAction[str], ..
 def _parse_c2json_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
     """Parse the optional top-level ``macros`` array if present.
 
-    IDs are 1-based to match the Vial UI labelling (Macro 1–50).
+    IDs are 0-based, matching how keycodes reference macros (``M0`` → first
+    macro). Entries with no actions are silently skipped.
     """
     raw = data.get("macros")
     if not isinstance(raw, list):
         return ()
-    return tuple(
-        SvalboardMacro[str](id=str(index), actions=_parse_c2json_macro_actions(actions))
-        for index, actions in enumerate(raw, start=1)
-    )
+    macros: list[SvalboardMacro[str]] = []
+    for index, actions in enumerate(raw):
+        parsed_actions = _parse_c2json_macro_actions(actions)
+        if not parsed_actions:
+            continue
+        macros.append(SvalboardMacro[str](id=str(index), actions=parsed_actions))
+    return tuple(macros)
 
 
 def _parse_vial_action(raw: Any) -> SvalboardMacroAction[str] | None:
@@ -239,15 +266,19 @@ def _parse_vial_macro_actions(raw: Any) -> tuple[SvalboardMacroAction[str], ...]
 def _parse_vial_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
     """Parse the top-level ``macro`` array if present.
 
-    IDs are 1-based to match the Vial UI labelling (Macro 1–50).
+    IDs are 0-based, matching how keycodes reference macros (``M0`` → first
+    macro). Entries with no actions are silently skipped.
     """
     raw = data.get("macro")
     if not isinstance(raw, list):
         return ()
-    return tuple(
-        SvalboardMacro[str](id=str(index), actions=_parse_vial_macro_actions(actions))
-        for index, actions in enumerate(raw, start=1)
-    )
+    macros: list[SvalboardMacro[str]] = []
+    for index, actions in enumerate(raw):
+        parsed_actions = _parse_vial_macro_actions(actions)
+        if not parsed_actions:
+            continue
+        macros.append(SvalboardMacro[str](id=str(index), actions=parsed_actions))
+    return tuple(macros)
 
 
 def _parse_vial(data: Any) -> ParsedKeymap:

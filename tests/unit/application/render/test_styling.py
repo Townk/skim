@@ -16,9 +16,11 @@ from skim.application.render.styling import (
     adjust_hls,
     adjust_luminance,
     adjust_saturation,
+    derive_accent_line,
     hex_str,
     lighten,
     make_gradient,
+    nudge_color_hsl,
     rgb_to_hex,
     str_to_rgb,
 )
@@ -408,20 +410,14 @@ class TestMakeGradient:
 
 class TestNudgeColorHsl:
     def test_lightness_increase_clamps_at_one(self):
-        from skim.application.render.styling import nudge_color_hsl
-
         result = nudge_color_hsl("#FFFFFF", lightness_delta=0.5)
         assert result == "#FFFFFF"
 
     def test_lightness_decrease_clamps_at_zero(self):
-        from skim.application.render.styling import nudge_color_hsl
-
         result = nudge_color_hsl("#000000", lightness_delta=-0.5)
         assert result == "#000000"
 
     def test_saturation_decrease_moves_toward_grey(self):
-        from skim.application.render.styling import nudge_color_hsl
-
         # Pure red has S=1.0, L=0.5. Decreasing saturation by 0.5 puts
         # us at S=0.5 with the same lightness.
         result = nudge_color_hsl("#FF0000", saturation_delta=-0.5)
@@ -431,11 +427,28 @@ class TestNudgeColorHsl:
         assert len(result) == 7
 
     def test_lightness_nudge_preserves_hue(self):
-        import colorsys
-
-        from skim.application.render.styling import nudge_color_hsl, str_to_rgb
-
         original_hue, _, _ = colorsys.rgb_to_hls(*str_to_rgb("#7F4040"))
         nudged = nudge_color_hsl("#7F4040", lightness_delta=0.05)
         new_hue, _, _ = colorsys.rgb_to_hls(*str_to_rgb(nudged))
         assert abs(new_hue - original_hue) < 1e-6
+
+
+class TestDeriveAccentLine:
+    def test_macro_fill_yields_lighter_amber(self):
+        line = derive_accent_line("#89511C")
+        fill_l = colorsys.rgb_to_hls(*str_to_rgb("#89511C"))[1]
+        line_l = colorsys.rgb_to_hls(*str_to_rgb(line))[1]
+        # implementation lifts lightness by +0.25; we use a +0.15 floor for slack
+        assert line_l > fill_l + 0.15
+
+    def test_tap_dance_fill_yields_lighter_blue(self):
+        line = derive_accent_line("#41687F")
+        fill_l = colorsys.rgb_to_hls(*str_to_rgb("#41687F"))[1]
+        line_l = colorsys.rgb_to_hls(*str_to_rgb(line))[1]
+        # implementation lifts lightness by +0.25; we use a +0.15 floor for slack
+        assert line_l > fill_l + 0.15
+
+    def test_returns_hex_string(self):
+        line = derive_accent_line("#89511C")
+        assert line.startswith("#")
+        assert len(line) == 7

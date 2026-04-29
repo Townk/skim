@@ -22,6 +22,7 @@ from skim.application.loaders.keymap_loader import (
     _parse_c2json,
     _parse_keybard,
     _parse_vial,
+    _vial_keycode_or_none,
     load_keymap,
     load_keymap_file,
     load_keymap_from_stdin,
@@ -395,6 +396,31 @@ class TestLoadKeymap:
         assert keymap.layers[0].left.thumb.down_key == "KC_54"
 
 
+class TestVialKeycodeOrNone:
+    """Tests for _vial_keycode_or_none helper."""
+
+    def test_none_maps_to_none(self):
+        assert _vial_keycode_or_none(None) is None
+
+    def test_kc_no_maps_to_none(self):
+        assert _vial_keycode_or_none("KC_NO") is None
+
+    def test_kc_trns_maps_to_none(self):
+        assert _vial_keycode_or_none("KC_TRNS") is None
+
+    def test_kc_transparent_maps_to_none(self):
+        assert _vial_keycode_or_none("KC_TRANSPARENT") is None
+
+    def test_underscore_alias_maps_to_none(self):
+        assert _vial_keycode_or_none("_______") is None
+
+    def test_real_keycode_passes_through(self):
+        assert _vial_keycode_or_none("KC_A") == "KC_A"
+
+    def test_layer_keycode_passes_through(self):
+        assert _vial_keycode_or_none("TO(0)") == "TO(0)"
+
+
 class TestParseVialTapDance:
     """Tests that _parse_vial extracts top-level tap_dance entries."""
 
@@ -432,12 +458,14 @@ class TestParseVialTapDance:
             ],
         }
         result = _parse_vial(data)
-        assert [td.id for td in result.tap_dances] == ["0", "1", "2"]
-        assert result.tap_dances[2].tap == "KC_A"
-        assert result.tap_dances[2].hold == "KC_B"
-        assert result.tap_dances[2].double_tap == "KC_C"
-        assert result.tap_dances[2].tap_then_hold == "KC_D"
-        assert result.tap_dances[2].tapping_term == 300
+        # Index 1 (all KC_NO) is skipped; non-empty entries keep their 0-based ids.
+        assert [td.id for td in result.tap_dances] == ["0", "2"]
+        assert result.tap_dances[0].tap == "KC_Q"
+        assert result.tap_dances[1].tap == "KC_A"
+        assert result.tap_dances[1].hold == "KC_B"
+        assert result.tap_dances[1].double_tap == "KC_C"
+        assert result.tap_dances[1].tap_then_hold == "KC_D"
+        assert result.tap_dances[1].tapping_term == 300
 
     def test_kc_no_maps_to_none_on_each_field(self):
         data = {
@@ -446,11 +474,48 @@ class TestParseVialTapDance:
             "tap_dance": [["KC_NO", "KC_NO", "KC_NO", "KC_NO", 200]],
         }
         result = _parse_vial(data)
+        # Empty tap-dance (all variants None) is skipped entirely.
+        assert result.tap_dances == ()
+
+    def test_vial_tap_dance_with_at_least_one_variant_is_loaded(self):
+        data = {
+            "layout": [[["KC_A"] * 60]],
+            "version": 1,
+            "tap_dance": [["KC_Q", "KC_NO", "KC_NO", "KC_NO", 200]],
+        }
+        result = _parse_vial(data)
+        assert len(result.tap_dances) == 1
         td = result.tap_dances[0]
-        assert td.tap is None
+        assert td.tap == "KC_Q"
         assert td.hold is None
         assert td.double_tap is None
         assert td.tap_then_hold is None
+
+    def test_kc_trns_maps_to_none_in_tap_dance_field(self):
+        data = {
+            "layout": [[["KC_A"] * 60]],
+            "version": 1,
+            "tap_dance": [["KC_Q", "KC_TRNS", "KC_TRANSPARENT", "_______", 200]],
+        }
+        result = _parse_vial(data)
+        assert len(result.tap_dances) == 1
+        td = result.tap_dances[0]
+        assert td.tap == "KC_Q"
+        assert td.hold is None
+        assert td.double_tap is None
+        assert td.tap_then_hold is None
+
+    def test_all_kc_trns_aliases_skip_entire_tap_dance(self):
+        """An entry with all four variants set to KC_TRNS aliases is skipped."""
+        data = {
+            "layout": [[["KC_A"] * 60]],
+            "version": 1,
+            "tap_dance": [
+                ["KC_TRNS", "KC_TRANSPARENT", "_______", "KC_TRNS", 200],
+            ],
+        }
+        result = _parse_vial(data)
+        assert result.tap_dances == ()
 
 
 def _vial_data_with_macros(macros: list) -> dict:
@@ -468,14 +533,15 @@ class TestParseVialMacros:
     def test_empty_macro_entry(self):
         data = _vial_data_with_macros([[]])
         result = _parse_vial(data)
-        assert result.macros == (SvalboardMacro[str](id="1"),)
+        # Empty macro (no actions) is skipped entirely.
+        assert result.macros == ()
 
     def test_single_keycode_tap_action(self):
         data = _vial_data_with_macros([[["tap", "KC_A"]]])
         result = _parse_vial(data)
         assert result.macros == (
             SvalboardMacro[str](
-                id="1",
+                id="0",
                 actions=(
                     SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("KC_A",)),
                 ),
@@ -537,8 +603,8 @@ class TestParseVialMacros:
             ]
         )
         result = _parse_vial(data)
-        assert [m.id for m in result.macros] == ["1", "2", "3"]
-        assert result.macros[1].actions == ()
+        # Index 1 (empty) is skipped; non-empty entries keep their 0-based ids.
+        assert [m.id for m in result.macros] == ["0", "2"]
 
 
 class TestParseKeybardTapDance:
@@ -590,9 +656,50 @@ class TestParseKeybardTapDance:
             ],
         }
         result = _parse_keybard(data)
+        # Empty tap-dance (all variants None) is skipped entirely.
+        assert result.tap_dances == ()
+
+    def test_keybard_tap_dance_with_at_least_one_variant_is_loaded(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "tapdances": [
+                {
+                    "tdid": 5,
+                    "tap": "KC_Z",
+                    "hold": "KC_NO",
+                    "doubletap": "KC_NO",
+                    "taphold": "KC_NO",
+                    "tapms": 200,
+                }
+            ],
+        }
+        result = _parse_keybard(data)
+        assert len(result.tap_dances) == 1
         td = result.tap_dances[0]
         assert td.id == "5"
-        assert td.tap is None
+        assert td.tap == "KC_Z"
+        assert td.hold is None
+        assert td.double_tap is None
+        assert td.tap_then_hold is None
+
+    def test_kc_trns_maps_to_none_in_keybard_tap_dance(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "tapdances": [
+                {
+                    "tdid": 1,
+                    "tap": "TO(0)",
+                    "hold": "KC_TRNS",
+                    "doubletap": "KC_TRANSPARENT",
+                    "taphold": "_______",
+                    "tapms": 200,
+                }
+            ],
+        }
+        result = _parse_keybard(data)
+        assert len(result.tap_dances) == 1
+        td = result.tap_dances[0]
+        assert td.tap == "TO(0)"
         assert td.hold is None
         assert td.double_tap is None
         assert td.tap_then_hold is None
@@ -622,7 +729,7 @@ class TestParseKeybardMacros:
         result = _parse_keybard(data)
         assert len(result.macros) == 1
         macro = result.macros[0]
-        assert macro.id == "1"
+        assert macro.id == "0"
         assert len(macro.actions) == 2
         assert macro.actions[0].kind is SvalboardMacroActionKind.TAP
         assert macro.actions[0].keys == ("LSFT(KC_QUOTE)",)
@@ -633,7 +740,8 @@ class TestParseKeybardMacros:
             "macros": [{"mid": 7, "actions": []}],
         }
         result = _parse_keybard(data)
-        assert result.macros == (SvalboardMacro[str](id="8"),)
+        # Empty macro (no actions) is skipped entirely.
+        assert result.macros == ()
 
     def test_skips_entries_missing_mid(self):
         data = {
@@ -645,7 +753,8 @@ class TestParseKeybardMacros:
             ],
         }
         result = _parse_keybard(data)
-        assert [m.id for m in result.macros] == ["1", "3"]
+        # All three have empty actions → all skipped.
+        assert result.macros == ()
 
     def test_text_and_delay_actions(self):
         data = {
@@ -766,8 +875,8 @@ class TestParseC2jsonMacros:
             ],
         }
         result = _parse_c2json(data)
-        assert [m.id for m in result.macros] == ["1", "2", "3"]
-        assert result.macros[1].actions == ()
+        # Index 1 (empty) is skipped; non-empty entries keep their 0-based ids.
+        assert [m.id for m in result.macros] == ["0", "2"]
 
 
 class TestLoadKeymapPopulatesDefinitions:
@@ -797,7 +906,7 @@ class TestLoadKeymapPopulatesDefinitions:
         )
         assert keymap.macros == (
             SvalboardMacro[str](
-                id="1",
+                id="0",
                 actions=(
                     SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TEXT, text="hello"),
                 ),
@@ -826,7 +935,7 @@ class TestLoadKeymapPopulatesDefinitions:
 
         assert keymap.tap_dances[0].id == "4"
         assert keymap.tap_dances[0].tapping_term == 350
-        assert keymap.macros[0].id == "2"
+        assert keymap.macros[0].id == "1"
         assert keymap.macros[0].actions[0].keys == ("KC_X",)
 
     def test_c2json_returns_empty_definitions_by_default(self, tmp_path):
@@ -851,7 +960,9 @@ class TestLoadKeymapSampleFiles:
         assert len(keymap.tap_dances) > 0
         assert len(keymap.macros) > 0
         assert all(td.id == str(i) for i, td in enumerate(keymap.tap_dances))
-        assert all(m.id == str(i + 1) for i, m in enumerate(keymap.macros))
+        # Macros are 0-based; empty entries are skipped so ids may not be
+        # contiguous, but each id must parse as a non-negative integer.
+        assert all(int(m.id) >= 0 for m in keymap.macros)
 
     def test_keybard_sample_has_tap_dances_and_macros(self):
         path = self.SAMPLES_DIR / "keybard-sample.kbi"

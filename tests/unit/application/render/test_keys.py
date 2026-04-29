@@ -366,3 +366,5 @@ class TestKeyGhostLabelColor:
         colors = FingerClusterKeyColors(primary="#2F5E3E", accent="#AA0000")
         key = CenterKey(cluster_context, target, colors, key_layout)
         assert key.stroke_color == "#FFFFFF"
+
+

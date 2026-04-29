@@ -289,6 +289,8 @@ class DoubleDownKey(Key):
         label_width_multiplier=0.8 - 0.08,
     )
 
+    side: KeyboardSide
+
     def __init__(
         self,
         ctx: ClusterRenderContext,
@@ -304,6 +306,7 @@ class DoubleDownKey(Key):
             layout: The layout boundary for this key.
             **kwargs: Additional arguments passed to the parent Key.
         """
+        self.side = ctx.side
         fill_color = ctx.key_fill_color(key, ctx.layer_colors.dark_accent_color)
         super().__init__(
             label=key.label,

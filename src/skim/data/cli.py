@@ -125,6 +125,9 @@ class KeymapGeneratorTargets:
             used when all_layers is False. Layer indices are 1-based in
             CLI input but stored as 0-based internally. Defaults to an
             empty list.
+        show_all_legend_entries: When True, every per-layer SVG's legend
+            includes ALL parsed macros and tap-dances, not just the ones
+            used on that layer. Defaults to False.
 
     Example:
         >>> # Generate specific layers and overview
@@ -142,6 +145,7 @@ class KeymapGeneratorTargets:
     all_layers: bool = False
     overview: bool = False
     selected_layers: list[int] = field(default_factory=list)
+    show_all_legend_entries: bool = False
 
     @classmethod
     def from_args(

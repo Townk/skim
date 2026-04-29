@@ -158,7 +158,10 @@ class KeycodeLabelAdapter:
 
         macro_result, target_layer = self._parse_macro_function(keycode)
         if macro_result is not None:
-            return SvalboardTargetKey(label=macro_result, layer_switch=target_layer)
+            return SvalboardTargetKey(
+                label=macro_result,
+                layer_switch=target_layer,
+            )
 
         is_transparent = keycode in _TRANSPARENT_KEYCODES
         return SvalboardTargetKey(
