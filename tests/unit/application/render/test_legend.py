@@ -364,3 +364,31 @@ def test_all_tap_dances_empty_input():
     """all_tap_dances returns an empty list for an empty tuple."""
     result = all_tap_dances(())
     assert result == []
+
+
+def test_legend_key_label_appends_layer_number_for_layer_only_function():
+    from skim.application.render.legend import _legend_key_label
+
+    key = SvalboardTargetKey(
+        label="\U000F03FE",  # any layer-icon glyph (or a plain string for the test)
+        layer_switch=2,
+    )
+    assert _legend_key_label(key) == "\U000F03FE 2"
+
+
+def test_legend_key_label_passes_compound_label_through():
+    from skim.application.render.legend import _legend_key_label
+    from skim.domain.domain_types import SEPARATOR_CHAR
+
+    key = SvalboardTargetKey(
+        label=f"L1{SEPARATOR_CHAR}A",
+        layer_switch=1,
+    )
+    assert _legend_key_label(key) == f"L1{SEPARATOR_CHAR}A"
+
+
+def test_legend_key_label_returns_plain_label_when_no_layer_switch():
+    from skim.application.render.legend import _legend_key_label
+
+    key = SvalboardTargetKey(label="A")
+    assert _legend_key_label(key) == "A"

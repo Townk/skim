@@ -28,7 +28,7 @@ from skim.domain import (
     SvalboardMacroActionKind,
     SvalboardTapDance,
 )
-from skim.domain.domain_types import SvalboardTargetKey
+from skim.domain.domain_types import SEPARATOR_CHAR, SvalboardTargetKey
 
 
 def collect_used_ids(
@@ -212,6 +212,22 @@ ICON_TEXT_GAP = 10            # gap from icon's right edge to text's left edge
 PILL_CHROME_WIDTH = 2 * PILL_PAD_X + ICON_WIDTH + ICON_TEXT_GAP  # = 32
 
 
+def _legend_key_label(key: SvalboardTargetKey) -> str:
+    """Return the label string to display for ``key`` in the legend.
+
+    For layer-only functions (``MO(N)``, ``TO(N)``, ``TG(N)`` …), the
+    resolved label is just the layer glyph — ambiguous on its own. We
+    append the target layer number so the reader can tell which layer is
+    being switched to. Compound functions (``LT(N, KC_A)``, ``LM(N,
+    mods)``) already embed the layer digit alongside the tap key via the
+    ``|`` separator, so they pass through unchanged.
+    """
+    label = key.label
+    if key.layer_switch is not None and SEPARATOR_CHAR not in label:
+        return f"{label} {key.layer_switch}"
+    return label
+
+
 def _pill_width(label: str) -> float:
     """Compute the pill width to wrap ``label`` exactly.
 
@@ -235,7 +251,7 @@ def _macro_action_pill_labels(action: SvalboardMacroAction) -> list[str]:
         SvalboardMacroActionKind.DOWN,
         SvalboardMacroActionKind.UP,
     ):
-        return [k.label for k in action.keys]
+        return [_legend_key_label(k) for k in action.keys]
     if action.kind == SvalboardMacroActionKind.TEXT:
         return [action.text]
     if action.kind == SvalboardMacroActionKind.DELAY:
@@ -419,7 +435,7 @@ def _tap_dance_cell(
         fill="#FAFAF6", stroke=text_color, stroke_opacity=0.18,
     ))
     cell_label = Label(
-        content.label,
+        _legend_key_label(content),
         font=Font.FINGER_KEY,
         text_color=text_color,
         text_anchor="middle",
