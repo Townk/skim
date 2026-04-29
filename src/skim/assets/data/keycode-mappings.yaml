@@ -1194,46 +1194,273 @@ macro_functions:
 # Keep this sparse: keycodes whose rendered label is obvious (a letter,
 # a digit, a punctuation glyph) should NOT have an entry.
 symbol_descriptions:
+  # ---- Modifiers ----
   KC_LEFT_CTRL: "Left Ctrl"
   KC_RIGHT_CTRL: "Right Ctrl"
   KC_LEFT_SHIFT: "Left Shift"
   KC_RIGHT_SHIFT: "Right Shift"
   KC_LEFT_ALT: "Left Alt / Option"
-  KC_RIGHT_ALT: "Right Alt / Option"
+  KC_RIGHT_ALT: "Right Alt / Option (AltGr)"
   KC_LEFT_GUI: "Left GUI / Cmd / Win"
   KC_RIGHT_GUI: "Right GUI / Cmd / Win"
+
+  # ---- Essential editing / navigation keys ----
   KC_ENTER: "Enter / Return"
   KC_ESCAPE: "Escape"
   KC_TAB: "Tab"
   KC_SPACE: "Space"
-  KC_BACKSPACE: "Backspace"
-  KC_DELETE: "Delete"
-  # Function-call patterns — match the WHOLE keycode (post pre-processing).
+  KC_BACKSPACE: "Backspace (delete left)"
+  KC_DELETE: "Delete (delete right)"
+  KC_INSERT: "Insert"
+
+  # ---- Arrow keys ----
+  KC_LEFT: "Arrow Left"
+  KC_RIGHT: "Arrow Right"
+  KC_UP: "Arrow Up"
+  KC_DOWN: "Arrow Down"
+
+  # ---- Navigation cluster ----
+  KC_HOME: "Home (beginning of line)"
+  KC_END: "End (end of line)"
+  KC_PAGE_UP: "Page Up"
+  KC_PAGE_DOWN: "Page Down"
+
+  # ---- Lock keys ----
+  KC_CAPS_LOCK: "Caps Lock"
+  KC_SCROLL_LOCK: "Scroll Lock"
+  KC_NUM_LOC: "Num Lock"
+
+  # ---- System / utility ----
+  KC_PRINT_SCREEN: "Print Screen"
+  KC_PAUSE: "Pause / Break"
+  KC_APPLICATION: "Application / Menu key"
+  KC_KB_POWER: "Keyboard Power"
+  KC_SYSTEM_POWER: "System Power"
+  KC_SYSTEM_SLEEP: "System Sleep"
+  KC_SYSTEM_WAKE: "System Wake"
+  KC_EXECUTE: "Execute"
+  KC_HELP: "Help"
+  KC_MENU: "Menu"
+  KC_SELECT: "Select"
+  KC_STOP: "Stop"
+  KC_AGAIN: "Again / Redo"
+  KC_UNDO: "Undo"
+  KC_CUT: "Cut"
+  KC_COPY: "Copy"
+  KC_PASTE: "Paste"
+  KC_FIND: "Find"
+  KC_ALTERNATE_ERASE: "Alternate Erase"
+  KC_SYSTEM_REQUEST: "System Request (SysRq)"
+  KC_CANCEL: "Cancel"
+  KC_CLEAR: "Clear"
+  KC_RETURN: "Return (numpad Enter)"
+  KC_SEPARATOR: "Separator (numpad decimal separator)"
+  KC_OUT: "Exit / Out"
+  KC_OPER: "Operator (terminal)"
+  KC_CLEAR_AGAIN: "Clear Again"
+  KC_CRSEL: "CrSel (cursor select)"
+  KC_EXSEL: "ExSel (extend selection)"
+
+  # ---- Media / audio ----
+  KC_AUDIO_MUTE: "Mute"
+  KC_AUDIO_VOL_UP: "Volume Up"
+  KC_AUDIO_VOL_DOWN: "Volume Down"
+  KC_KB_MUTE: "Keyboard Mute"
+  KC_KB_VOLUME_UP: "Keyboard Volume Up"
+  KC_KB_VOLUME_DOWN: "Keyboard Volume Down"
+  KC_MEDIA_NEXT_TRACK: "Next Track"
+  KC_MEDIA_PREV_TRACK: "Previous Track"
+  KC_MEDIA_STOP: "Media Stop"
+  KC_MEDIA_PLAY_PAUSE: "Play / Pause"
+  KC_MEDIA_SELECT: "Media Select"
+  KC_MEDIA_EJECT: "Eject"
+  KC_MEDIA_FAST_FORWARD: "Fast Forward"
+  KC_MEDIA_REWIND: "Rewind"
+  KC_MAIL: "Launch Mail"
+  KC_CALCULATOR: "Launch Calculator"
+  KC_MY_COMPUTER: "My Computer"
+
+  # ---- Brightness ----
+  KC_BRIGHTNESS_UP: "Brightness Up"
+  KC_BRIGHTNESS_DOWN: "Brightness Down"
+
+  # ---- Web / browser ----
+  KC_WWW_SEARCH: "Browser Search"
+  KC_WWW_HOME: "Browser Home"
+  KC_WWW_BACK: "Browser Back"
+  KC_WWW_FORWARD: "Browser Forward"
+  KC_WWW_STOP: "Browser Stop"
+  KC_WWW_REFRESH: "Browser Refresh"
+  KC_WWW_FAVORITES: "Browser Favorites"
+
+  # ---- OS / desktop ----
+  KC_CONTROL_PANEL: "Control Panel"
+  KC_ASSISTANT: "Virtual Assistant"
+  KC_MISSION_CONTROL: "Mission Control"
+  KC_LAUNCHPAD: "Launchpad"
+
+  # ---- RGB / LED underglow ----
+  QK_UNDERGLOW_TOGGLE: "Toggle RGB underglow on/off"
+  QK_UNDERGLOW_MODE_NEXT: "RGB mode — next"
+  QK_UNDERGLOW_MODE_PREVIOUS: "RGB mode — previous"
+  QK_UNDERGLOW_HUE_UP: "RGB hue — increase"
+  QK_UNDERGLOW_HUE_DOWN: "RGB hue — decrease"
+  QK_UNDERGLOW_SATURATION_UP: "RGB saturation — increase"
+  QK_UNDERGLOW_SATURATION_DOWN: "RGB saturation — decrease"
+  QK_UNDERGLOW_VALUE_UP: "RGB brightness — increase"
+  QK_UNDERGLOW_VALUE_DOWN: "RGB brightness — decrease"
+  QK_UNDERGLOW_SPEED_UP: "RGB animation speed — increase"
+  QK_UNDERGLOW_SPEED_DOWN: "RGB animation speed — decrease"
+
+  # ---- Mouse ----
+  QK_MOUSE_BUTTON_1: "Left mouse button"
+  QK_MOUSE_BUTTON_2: "Right mouse button"
+  QK_MOUSE_BUTTON_3: "Middle mouse button"
+  QK_MOUSE_BUTTON_4: "Mouse button 4 (back)"
+  QK_MOUSE_BUTTON_5: "Mouse button 5 (forward)"
+  QK_MOUSE_CURSOR_UP: "Move mouse cursor up"
+  QK_MOUSE_CURSOR_DOWN: "Move mouse cursor down"
+  QK_MOUSE_CURSOR_LEFT: "Move mouse cursor left"
+  QK_MOUSE_CURSOR_RIGHT: "Move mouse cursor right"
+  QK_MOUSE_WHEEL_UP: "Scroll wheel up"
+  QK_MOUSE_WHEEL_DOWN: "Scroll wheel down"
+  QK_MOUSE_WHEEL_LEFT: "Scroll wheel left"
+  QK_MOUSE_WHEEL_RIGHT: "Scroll wheel right"
+  QK_MOUSE_ACCELERATION_0: "Mouse speed — slow"
+  QK_MOUSE_ACCELERATION_1: "Mouse speed — medium"
+  QK_MOUSE_ACCELERATION_2: "Mouse speed — fast"
+
+  # ---- QMK quantum ----
+  QK_CAPS_WORD_TOGGLE: "Caps Word (auto-shift next word, then revert)"
+  QK_REPEAT_KEY: "Repeat last key"
+  QK_ALT_REPEAT_KEY: "Alternate repeat of last key"
+
+  # ---- Special / transparent ----
+  KC_NO: "No key (blocked)"
+  KC_TRANSPARENT: "Transparent (pass-through to lower layer)"
+
+  # ---- Svalboard custom ----
+  SV_LEFT_DPI_INC: "Left trackball DPI — increase"
+  SV_LEFT_DPI_DEC: "Left trackball DPI — decrease"
+  SV_RIGHT_DPI_INC: "Right trackball DPI — increase"
+  SV_RIGHT_DPI_DEC: "Right trackball DPI — decrease"
+  SV_LEFT_SCROLL_TOGGLE: "Left trackball scroll mode — toggle"
+  SV_RIGHT_SCROLL_TOGGLE: "Right trackball scroll mode — toggle"
+  SV_RECALIBRATE_POINTER: "Recalibrate pointer sensor"
+  SV_MH_CHANGE_TIMEOUTS: "Change mouse-hold timeouts"
+  SV_CAPS_WORD: "Caps Word toggle"
+  SV_AXIS_SCROLL_LOCK: "Lock scroll to one axis"
+  SV_TOGGLE_23_67: "Toggle between layer groups 2/3 and 6/7"
+  SV_TOGGLE_45_67: "Toggle between layer groups 4/5 and 6/7"
+  SV_SNIPER_2: "Sniper mode — precision 2"
+  SV_SNIPER_3: "Sniper mode — precision 3"
+  SV_SNIPER_5: "Sniper mode — precision 5"
+  SV_SCROLL_HOLD: "Hold to activate scroll mode"
+  SV_SCROLL_TOGGLE: "Toggle scroll mode"
+  SV_OUTPUT_STATUS: "Output status log"
+  SV_TOGGLE_AUTOMOUSE: "Toggle auto-mouse layer"
+  SV_TURBO_SCAN: "Turbo scan mode"
+
+  # ---- Function-call patterns (macOS-style word/line navigation) ----
+  # Match the WHOLE keycode string (post pre-processing) for well-known combos.
   "A(KC_LEFT)": "Previous word"
   "A(KC_RIGHT)": "Next word"
+  "A(KC_BACKSPACE)": "Delete previous word"
+  "A(KC_DELETE)": "Delete next word"
   "G(KC_LEFT)": "Beginning of line"
   "G(KC_RIGHT)": "End of line"
+  "G(KC_UP)": "Beginning of document"
+  "G(KC_DOWN)": "End of document"
+  "G(KC_BACKSPACE)": "Delete to beginning of line"
+  "LSFT(KC_TAB)": "Reverse Tab (previous field)"
+  "G(KC_TAB)": "Switch app forward"
+  "LSG(KC_TAB)": "Switch app backward"
+  "G(KC_C)": "Copy"
+  "G(KC_V)": "Paste"
+  "G(KC_X)": "Cut"
+  "G(KC_Z)": "Undo"
+  "LSG(KC_Z)": "Redo"
+  "G(KC_A)": "Select all"
+  "G(KC_F)": "Find"
 
 # Description for keycode functions (used as wrappers). Keyed by the
 # function token (the part before the parenthesis). When a key is bound
 # to e.g. ``MO(1)``, the function ``MO`` is added to the symbol legend
 # alongside whatever its template renders.
 function_descriptions:
+  # ---- Layer functions ----
+  DF:
+    symbol: "%%nf-md-memory; %%nf-md-layers; #"
+    description: "Set default layer to # until power down"
+  PDF:
+    symbol: "%%nf-fa-floppy_disk; %%nf-md-layers; #"
+    description: "Set permanent default layer to # (persists after power down)"
   MO:
     symbol: "%%nf-md-layers_outline; #"
     description: "Change to layer # while holding"
-  TO:
-    symbol: "%%nf-md-layers; #"
-    description: "Activate layer # and turn off all others except base"
-  TG:
-    symbol: "%%nf-md-layers_triple; #"
-    description: "Toggle layer # on/off"
-  TT:
-    symbol: "%%nf-md-layers_triple_outline; #"
-    description: "Momentary on hold, toggle on multi-tap (layer #)"
+  LM:
+    symbol: "%%nf-md-layers_outline; # +mods"
+    description: "Change to layer # while holding (with modifiers)"
+  LT:
+    symbol: "%%nf-md-layers_outline; # | key"
+    description: "Tap for the bound key, hold for layer #"
   OSL:
     symbol: "%%nf-md-layers_outline;¹ #"
     description: "One-shot layer # (next key triggers it once)"
-  LT:
-    symbol: "%%nf-md-layers_outline; #"
-    description: "Tap for the bound key, hold for layer #"
+  TG:
+    symbol: "%%nf-md-layers_triple; #"
+    description: "Toggle layer # on/off"
+  TO:
+    symbol: "%%nf-md-layers; #"
+    description: "Activate layer # and turn off all others except base"
+  TT:
+    symbol: "%%nf-md-layers_triple_outline; #"
+    description: "Layer #: momentary on hold, toggle on multi-tap"
+
+  # ---- One-shot modifier ----
+  OSM:
+    symbol: "mod¹"
+    description: "One-shot modifier (next key gets the modifier once)"
+
+  # ---- Modifier-tap functions: tap for the key, hold for the modifier ----
+  LCTL_T:
+    symbol: "key | %%nf-md-apple_keyboard_control;"
+    description: "Tap for the bound key, hold for Left Ctrl"
+  LSFT_T:
+    symbol: "key | %%nf-md-apple_keyboard_shift;"
+    description: "Tap for the bound key, hold for Left Shift"
+  LALT_T:
+    symbol: "key | %%nf-md-apple_keyboard_option;"
+    description: "Tap for the bound key, hold for Left Alt"
+  LGUI_T:
+    symbol: "key | %%nf-md-apple_keyboard_command;"
+    description: "Tap for the bound key, hold for Left GUI"
+  RCTL_T:
+    symbol: "key | %%nf-md-apple_keyboard_control;"
+    description: "Tap for the bound key, hold for Right Ctrl"
+  RSFT_T:
+    symbol: "key | %%nf-md-apple_keyboard_shift;"
+    description: "Tap for the bound key, hold for Right Shift"
+  RALT_T:
+    symbol: "key | %%nf-md-apple_keyboard_option;"
+    description: "Tap for the bound key, hold for Right Alt"
+  RGUI_T:
+    symbol: "key | %%nf-md-apple_keyboard_command;"
+    description: "Tap for the bound key, hold for Right GUI"
+
+  # ---- Generic modifier-tap ----
+  MT:
+    symbol: "key | mod"
+    description: "Tap for the bound key, hold for the specified modifier"
+  CTL_T:
+    symbol: "key | %%nf-md-apple_keyboard_control;"
+    description: "Tap for the bound key, hold for Ctrl"
+  SFT_T:
+    symbol: "key | %%nf-md-apple_keyboard_shift;"
+    description: "Tap for the bound key, hold for Shift"
+  ALT_T:
+    symbol: "key | %%nf-md-apple_keyboard_option;"
+    description: "Tap for the bound key, hold for Alt"
+  GUI_T:
+    symbol: "key | %%nf-md-apple_keyboard_command;"
+    description: "Tap for the bound key, hold for GUI"
