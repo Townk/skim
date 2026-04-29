@@ -57,11 +57,12 @@ class TestCollectUsedDescriptions:
         assert "KC_A" not in sort_keys
 
     def test_collect_layer_function(self):
-        """MO(1) produces a 'MO' function entry with 'Momentary layer...' description."""
+        """MO(1) produces a 'MO' function entry with layer-# description and symbol."""
         entries = _entries(["MO(1)"])
         assert any(e.sort_key == "MO" for e in entries)
         mo_entry = next(e for e in entries if e.sort_key == "MO")
-        assert "Momentary" in mo_entry.description
+        assert "layer #" in mo_entry.description
+        assert "#" in mo_entry.display_label
 
     def test_collect_lt_function(self):
         """LT(1, KC_A) produces an 'LT' function entry."""
@@ -218,6 +219,36 @@ class TestCollectUsedDescriptions:
         assert "KC_LEFT_ALT" in sort_keys
         assert "Left Alt" in descriptions
         assert len(entries) == 2
+
+    def test_function_entry_uses_symbol_field_with_placeholder(self):
+        """A function-description entry uses its yaml ``symbol`` field
+        (with the # placeholder), not the template-resolved label."""
+        from skim.application.render.symbol_legend import collect_used_descriptions
+
+        mappings: dict = {
+            "keycodes": {
+                "KC_LEFT_ALT": "⌥",
+            },
+            "pre_processing": {},
+            "macro_functions": {
+                "MO": "%%nf-md-layers_outline; #1;",
+            },
+            "modifier_union": {},
+            "symbol_descriptions": {},
+            "function_descriptions": {
+                "MO": {
+                    "symbol": "⌥ #",
+                    "description": "Hold layer #",
+                },
+            },
+        }
+        entries = collect_used_descriptions(["MO(5)"], None, mappings)
+        mo_entries = [e for e in entries if e.sort_key == "MO"]
+        assert len(mo_entries) == 1
+        entry = mo_entries[0]
+        # display_label comes from the symbol field, not template-resolved label
+        assert entry.display_label == "⌥ #"
+        assert entry.description == "Hold layer #"
 
 
 # ---------------------------------------------------------------------------

@@ -223,7 +223,7 @@ def _collect_raw(
     pre_proc: dict[str, str] = keycode_mappings.get("pre_processing", {})
     macro_functions: dict[str, str] = keycode_mappings.get("macro_functions", {})
     symbol_desc: dict[str, str] = keycode_mappings.get("symbol_descriptions", {})
-    func_desc: dict[str, str] = keycode_mappings.get("function_descriptions", {})
+    func_desc: dict[str, str | dict] = keycode_mappings.get("function_descriptions", {})
 
     for raw in keycodes_raw:
         # Apply pre-processing normalisation
@@ -252,8 +252,14 @@ def _collect_raw(
 
             # Check function_descriptions
             if func_name in func_desc and func_name not in visited_funcs:
-                desc = func_desc[func_name]
-                label = _get_function_label(func_name, macro_functions)
+                fd_entry = func_desc[func_name]
+                if isinstance(fd_entry, dict):
+                    desc = fd_entry["description"]
+                    label = fd_entry["symbol"]
+                else:
+                    # Legacy plain-string form
+                    desc = fd_entry
+                    label = _get_function_label(func_name, macro_functions)
                 sort_k = func_name
                 if sort_k not in out:
                     out[sort_k] = SymbolLegendEntry(

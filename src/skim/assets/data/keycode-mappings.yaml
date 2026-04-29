@@ -1219,9 +1219,21 @@ symbol_descriptions:
 # to e.g. ``MO(1)``, the function ``MO`` is added to the symbol legend
 # alongside whatever its template renders.
 function_descriptions:
-  MO: "Momentary layer (hold to activate)"
-  TO: "Activate target layer"
-  TG: "Toggle layer on/off"
-  TT: "Momentary on hold, toggle on multi-tap"
-  OSL: "One-shot layer"
-  LT: "Layer-tap (tap for key, hold for layer)"
+  MO:
+    symbol: "%%nf-md-layers_outline; #"
+    description: "Change to layer # while holding"
+  TO:
+    symbol: "%%nf-md-layers; #"
+    description: "Activate layer # and turn off all others except base"
+  TG:
+    symbol: "%%nf-md-layers_triple; #"
+    description: "Toggle layer # on/off"
+  TT:
+    symbol: "%%nf-md-layers_triple_outline; #"
+    description: "Momentary on hold, toggle on multi-tap (layer #)"
+  OSL:
+    symbol: "%%nf-md-layers_outline;¹ #"
+    description: "One-shot layer # (next key triggers it once)"
+  LT:
+    symbol: "%%nf-md-layers_outline; #"
+    description: "Tap for the bound key, hold for layer #"
