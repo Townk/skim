@@ -196,20 +196,20 @@ def build_action_glyph(
 
 
 # --- Geometry constants (mirrors docs/design/layer.jsx Legend) -------------
-TAG_W = 48
+TAG_W = 56
 TAG_H = 22
 HEADER_STRIP_HEIGHT = 28
-CONTENT_STRIP_HEIGHT = 28
+CONTENT_STRIP_HEIGHT = 22
 ROW_GAP = 18
 PILL_GAP = 6
-PILL_HEIGHT = 24
-PILL_FONT_SIZE = 11
+PILL_HEIGHT = 18
+PILL_FONT_SIZE = 10
 
-PILL_PAD_X = 10               # horizontal padding inside each pill
+PILL_PAD_X = 8                # horizontal padding inside each pill
 ICON_WIDTH = 6                # visual width of action glyphs (circle r=3, etc.)
-ICON_TEXT_GAP = 12            # gap from icon's right edge to text's left edge
-                              # (≤ 1.5 × PILL_PAD_X = 15, matches user's spec)
-PILL_CHROME_WIDTH = 2 * PILL_PAD_X + ICON_WIDTH + ICON_TEXT_GAP  # = 38
+ICON_TEXT_GAP = 10            # gap from icon's right edge to text's left edge
+                              # (≤ 1.5 × PILL_PAD_X = 12)
+PILL_CHROME_WIDTH = 2 * PILL_PAD_X + ICON_WIDTH + ICON_TEXT_GAP  # = 32
 
 
 def _pill_width(label: str) -> float:
@@ -217,11 +217,11 @@ def _pill_width(label: str) -> float:
 
     The pill chrome (padding + icon + icon-to-text gap) is a fixed
     constant; the pill widens to accommodate the label's text width.
-    Approximate text width is ``len(label) * 7`` for the legend's
-    11px Roboto. Short labels still get a comfortable minimum width.
+    Approximate text width is ``len(label) * 6`` for the legend's
+    10px Roboto. Short labels still get a comfortable minimum width.
     """
-    text_width = max(len(label) * 7, 14)  # 14 = roughly two characters
-    return max(50.0, text_width + PILL_CHROME_WIDTH)
+    text_width = max(len(label) * 6, 10)  # 10 = a few characters minimum
+    return max(40.0, text_width + PILL_CHROME_WIDTH)
 
 
 def _macro_action_pill_labels(action: SvalboardMacroAction) -> list[str]:
@@ -303,12 +303,22 @@ def build_macro_row(
         x=x, y=y, width=TAG_W, height=TAG_H, rx=4, ry=4,
         fill=accent_fill, stroke=accent_line, stroke_width=1.2,
     ))
-    g.append(draw.Text(
-        f"M{macro.id}", x=x + TAG_W / 2, y=y + TAG_H / 2 + 0.5,
-        font_size=12, font_weight="700", text_anchor="middle",
-        dominant_baseline="central", font_family="'Roboto', sans-serif",
-        fill="#FFF",
-    ))
+    chip_label_text = f"%%nf-md-script_text_play_outline; {macro.id}"
+    g.append(
+        Label(
+            chip_label_text,
+            Font.FINGER_KEY,
+            text_color="#FFF",
+            background_color=accent_fill,
+            text_anchor="middle",
+            dominant_baseline="central",
+        ).build_text(
+            x + TAG_W / 2,
+            y + TAG_H / 2 + 0.5,
+            12,
+            use_system_fonts,
+        )
+    )
     name = macro.name if macro.name else f"Macro {macro.id}"
     g.append(draw.Text(
         name, x=x + TAG_W + 10, y=y + TAG_H / 2 + 0.5,
@@ -447,12 +457,22 @@ def build_tap_dance_row(
         x=x, y=y - TD_ROW_HEIGHT / 2, width=TD_NAME_W, height=TD_ROW_HEIGHT,
         rx=4, ry=4, fill="none", stroke=accent_line, stroke_width=1.2,
     ))
-    g.append(draw.Text(
-        f"T{td.id}", x=x + TAG_W / 2, y=y + 0.5,
-        font_size=12, font_weight="700", text_anchor="middle",
-        dominant_baseline="central", font_family="'Roboto', sans-serif",
-        fill="#FFF",
-    ))
+    td_chip_label_text = f"%%nf-md-keyboard_close; {td.id}"
+    g.append(
+        Label(
+            td_chip_label_text,
+            Font.FINGER_KEY,
+            text_color="#FFF",
+            background_color=accent_fill,
+            text_anchor="middle",
+            dominant_baseline="central",
+        ).build_text(
+            x + TAG_W / 2,
+            y + 0.5,
+            12,
+            use_system_fonts,
+        )
+    )
     name = td.name if td.name else f"Tap-Dance {td.id}"
     g.append(draw.Text(
         name, x=x + TAG_W + 10, y=y + 0.5, font_size=12, font_weight="500",
