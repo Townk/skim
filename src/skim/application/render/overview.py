@@ -689,6 +689,14 @@ def draw_overview(
     if legend_h > 0:
         canvas_h += legend_top_gap + legend_h
 
+    # Match top padding: layout.canvas_height ends with one m.inset of
+    # breathing room, but the top has a full `padding`. When copyright is
+    # present, copyright_extra already provides `padding` worth of bottom
+    # margin via its trailing layout.padding; otherwise we need to add the
+    # difference explicitly. (Always positive in practice — padding > inset.)
+    if not config.output.copyright:
+        canvas_h += max(0.0, padding - base_metrics.inset)
+
     d = draw.Drawing(canvas_w, canvas_h)
 
     if not use_system_fonts:
