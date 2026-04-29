@@ -52,23 +52,36 @@ def collect_used_ids(
     return macros, tap_dances
 
 
-def _sort_key(id_: str) -> tuple[int, int | str]:
-    """Numeric ids sort first (ascending) then named ids lex-ascending."""
+def _id_sort_key(id_: str) -> tuple[int, int | str]:
+    """Numeric ids sort first (ascending), then named ids lex-ascending."""
     try:
         return (0, int(id_))
     except ValueError:
         return (1, id_)
 
 
+def _named_first_sort_key(
+    entry: SvalboardMacro[SvalboardTargetKey] | SvalboardTapDance[SvalboardTargetKey],
+) -> tuple[int, int, int | str]:
+    """Sort entries with a user-defined ``name`` first, then by id.
+
+    Within each "named" / "unnamed" group, numeric ids precede named ids,
+    and within each kind they sort ascending.
+    """
+    has_no_name = 0 if entry.name else 1
+    id_kind, id_value = _id_sort_key(entry.id)
+    return (has_no_name, id_kind, id_value)
+
+
 def resolve_macros(
     used_ids: set[str],
     available: tuple[SvalboardMacro[SvalboardTargetKey], ...],
 ) -> list[SvalboardMacro[SvalboardTargetKey]]:
-    """Filter ``available`` to ``used_ids`` and sort by id."""
+    """Filter ``available`` to ``used_ids`` and sort named entries first, then by id."""
     by_id = {m.id: m for m in available}
     return sorted(
         (by_id[i] for i in used_ids if i in by_id),
-        key=lambda m: _sort_key(m.id),
+        key=_named_first_sort_key,
     )
 
 
@@ -76,26 +89,26 @@ def resolve_tap_dances(
     used_ids: set[str],
     available: tuple[SvalboardTapDance[SvalboardTargetKey], ...],
 ) -> list[SvalboardTapDance[SvalboardTargetKey]]:
-    """Filter ``available`` to ``used_ids`` and sort by id."""
+    """Filter ``available`` to ``used_ids`` and sort named entries first, then by id."""
     by_id = {t.id: t for t in available}
     return sorted(
         (by_id[i] for i in used_ids if i in by_id),
-        key=lambda t: _sort_key(t.id),
+        key=_named_first_sort_key,
     )
 
 
 def all_macros(
     macros: tuple[SvalboardMacro[SvalboardTargetKey], ...]
 ) -> list[SvalboardMacro[SvalboardTargetKey]]:
-    """Return all parsed macros sorted by id (no filter)."""
-    return sorted(macros, key=lambda m: _sort_key(m.id))
+    """Return all parsed macros sorted named-first, then by id (no filter)."""
+    return sorted(macros, key=_named_first_sort_key)
 
 
 def all_tap_dances(
     tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...]
 ) -> list[SvalboardTapDance[SvalboardTargetKey]]:
-    """Return all parsed tap-dances sorted by id (no filter)."""
-    return sorted(tap_dances, key=lambda t: _sort_key(t.id))
+    """Return all parsed tap-dances sorted named-first, then by id (no filter)."""
+    return sorted(tap_dances, key=_named_first_sort_key)
 
 
 @dataclass(frozen=True, slots=True)
@@ -295,11 +308,20 @@ def _layout_pill_lines(
 def macro_row_height(
     macro: SvalboardMacro[SvalboardTargetKey], content_width: float
 ) -> float:
-    """Total height of one macro row (header + content lines)."""
+    """Total height of one macro row.
+
+    Named macros: header strip + content lines (each pill-line is one
+    ``CONTENT_STRIP_HEIGHT`` tall).
+    Unnamed macros: just content lines — chip and first pill share the
+    first line.
+    """
     pills = _flatten_macro_pills(macro)
     indent = TAG_W + 12
     lines = _layout_pill_lines(pills, content_width - indent)
-    return HEADER_STRIP_HEIGHT + CONTENT_STRIP_HEIGHT * max(1, len(lines))
+    line_count = max(1, len(lines))
+    if macro.name:
+        return HEADER_STRIP_HEIGHT + CONTENT_STRIP_HEIGHT * line_count
+    return CONTENT_STRIP_HEIGHT * line_count
 
 
 def build_macro_row(
@@ -312,46 +334,76 @@ def build_macro_row(
     text_color: str,
     use_system_fonts: bool = False,
 ) -> draw.Group:
-    """Render a single macro row at ``(x, y)``."""
+    """Render a single macro row at ``(x, y)``.
+
+    Named macros render with a header strip (chip + name + rule) above the
+    content strip (pills).  Unnamed macros render single-line: the chip sits
+    on the left, vertically centred on the first content strip line, and pills
+    flow to the right.
+    """
     g = draw.Group()
-    # Header strip — tag chip + name + rule.
-    g.append(draw.Rectangle(
-        x=x, y=y, width=TAG_W, height=TAG_H, rx=4, ry=4,
-        fill=accent_fill, stroke=accent_line, stroke_width=1.2,
-    ))
     chip_label_text = f"%%nf-md-script_text_play_outline; {macro.id}"
-    g.append(
-        Label(
-            chip_label_text,
-            Font.FINGER_KEY,
-            text_color="#FFF",
-            background_color=accent_fill,
-            text_anchor="middle",
-            dominant_baseline="central",
-        ).build_text(
-            x + TAG_W / 2,
-            y + TAG_H / 2 + 0.5,
-            12,
-            use_system_fonts,
-        )
-    )
+    indent = TAG_W + 12
+
     if macro.name:
+        # Named layout — header strip (chip top-left at y) + content strip below.
+        g.append(draw.Rectangle(
+            x=x, y=y, width=TAG_W, height=TAG_H, rx=4, ry=4,
+            fill=accent_fill, stroke=accent_line, stroke_width=1.2,
+        ))
+        g.append(
+            Label(
+                chip_label_text,
+                Font.FINGER_KEY,
+                text_color="#FFF",
+                background_color=accent_fill,
+                text_anchor="middle",
+                dominant_baseline="central",
+            ).build_text(
+                x + TAG_W / 2,
+                y + TAG_H / 2 + 0.5,
+                12,
+                use_system_fonts,
+            )
+        )
         g.append(draw.Text(
             macro.name, x=x + TAG_W + 10, y=y + TAG_H / 2 + 0.5,
             font_size=13, font_weight="500", dominant_baseline="central",
             font_family="'Roboto', sans-serif", fill=text_color,
         ))
-    g.append(draw.Line(
-        sx=x + TAG_W, sy=y + TAG_H - 0.5,
-        ex=x + content_width, ey=y + TAG_H - 0.5,
-        stroke="#000", stroke_opacity=0.08, stroke_width=1,
-    ))
+        g.append(draw.Line(
+            sx=x + TAG_W, sy=y + TAG_H - 0.5,
+            ex=x + content_width, ey=y + TAG_H - 0.5,
+            stroke="#000", stroke_opacity=0.08, stroke_width=1,
+        ))
+        line_y = y + HEADER_STRIP_HEIGHT
+    else:
+        # Unnamed layout — chip vertically centred on the first content line.
+        chip_y = y + (CONTENT_STRIP_HEIGHT - TAG_H) / 2
+        g.append(draw.Rectangle(
+            x=x, y=chip_y, width=TAG_W, height=TAG_H, rx=4, ry=4,
+            fill=accent_fill, stroke=accent_line, stroke_width=1.2,
+        ))
+        g.append(
+            Label(
+                chip_label_text,
+                Font.FINGER_KEY,
+                text_color="#FFF",
+                background_color=accent_fill,
+                text_anchor="middle",
+                dominant_baseline="central",
+            ).build_text(
+                x + TAG_W / 2,
+                chip_y + TAG_H / 2 + 0.5,
+                12,
+                use_system_fonts,
+            )
+        )
+        line_y = y
 
     # Content strip — pills with overflow wrap.
     pills = _flatten_macro_pills(macro)
-    indent = TAG_W + 12
     lines = _layout_pill_lines(pills, content_width - indent)
-    line_y = y + HEADER_STRIP_HEIGHT
     for line in lines:
         cx = x + indent
         for kind, label, w in line:
@@ -389,6 +441,27 @@ def build_macro_row(
             )
             cx += w + PILL_GAP
         line_y += CONTENT_STRIP_HEIGHT
+    return g
+
+
+MACRO_COLUMN_HEADER_HEIGHT = 32  # space reserved for the "MACRO ACTIONS" label
+
+
+def build_macro_column_header(
+    x: float, y: float, text_color: str
+) -> draw.Group:
+    """Render the once-per-column 'MACRO ACTIONS' label.
+
+    Positioned at the indent where pills begin so the label aligns with
+    the action column rather than with the chip column.
+    """
+    g = draw.Group()
+    g.append(draw.Text(
+        "MACRO ACTIONS",
+        x=x + TAG_W + 12, y=y,
+        font_size=9, fill=text_color, letter_spacing=1.5,
+        text_anchor="start", font_family="'Roboto', sans-serif",
+    ))
     return g
 
 
@@ -535,13 +608,13 @@ def _column_widths(content_width: float) -> tuple[float, float]:
 def _macro_section_height(
     rows: list[SvalboardMacro[SvalboardTargetKey]], col_width: float
 ) -> float:
-    """Height of a macro section: title strip + rows + action-key footer.
+    """Height of a macro section: title strip + column header + rows + action-key footer.
 
     Returns 0 when ``rows`` is empty (no section to render).
     """
     if not rows:
         return 0.0
-    h = SECTION_HEADER_HEIGHT
+    h = SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT
     for r in rows:
         h += macro_row_height(r, col_width) + ROW_GAP
     h += ACTION_KEY_STRIP_HEIGHT
@@ -563,12 +636,13 @@ def legend_height(layout: LegendLayout | None, content_width: float) -> float:
             if layout.macro_right
             else 0.0
         )
-        # Title is shared (one strip above both columns); both column
-        # totals already include SECTION_HEADER_HEIGHT, so subtract one
-        # and add it back at the top.
-        inner_left = max(h_left - SECTION_HEADER_HEIGHT, 0.0)
-        inner_right = max(h_right - SECTION_HEADER_HEIGHT, 0.0) if h_right else 0.0
-        return SECTION_HEADER_HEIGHT + max(inner_left, inner_right)
+        # Title and column header are shared (one strip above both columns);
+        # both column totals already include SECTION_HEADER_HEIGHT +
+        # MACRO_COLUMN_HEADER_HEIGHT, so subtract both and add them back once.
+        shared = SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT
+        inner_left = max(h_left - shared, 0.0)
+        inner_right = max(h_right - shared, 0.0) if h_right else 0.0
+        return shared + max(inner_left, inner_right)
     if layout.tap_dances_span_columns:
         h_left = tap_dance_section_height(layout.tap_dance_left)
         h_right = (
@@ -722,7 +796,16 @@ def build_legend(
             g, x, y, content_width, macro_line,
             count=len(layout.macro_left) + len(layout.macro_right),
         )
-        rows_top = y + SECTION_HEADER_HEIGHT
+        g.append(build_macro_column_header(
+            x=x, y=y + SECTION_HEADER_HEIGHT + 12, text_color=palette.text_color,
+        ))
+        if layout.macro_right:
+            g.append(build_macro_column_header(
+                x=x + col_w + COLUMN_GAP,
+                y=y + SECTION_HEADER_HEIGHT + 12,
+                text_color=palette.text_color,
+            ))
+        rows_top = y + SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT
         end_left = _draw_macro_column(
             g, layout.macro_left, x, rows_top, col_w,
             palette.macro_color, macro_line, palette.text_color,
@@ -761,8 +844,11 @@ def build_legend(
     _draw_macro_title(
         g, x, y, col_w, macro_line, count=len(layout.macro_left),
     )
+    g.append(build_macro_column_header(
+        x=x, y=y + SECTION_HEADER_HEIGHT + 12, text_color=palette.text_color,
+    ))
     end_left = _draw_macro_column(
-        g, layout.macro_left, x, y + SECTION_HEADER_HEIGHT, col_w,
+        g, layout.macro_left, x, y + SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT, col_w,
         palette.macro_color, macro_line, palette.text_color,
         use_system_fonts=use_system_fonts,
     )

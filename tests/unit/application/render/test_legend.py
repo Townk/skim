@@ -3,14 +3,20 @@
 import drawsvg as draw
 
 from skim.application.render.legend import (
+    ACTION_KEY_STRIP_HEIGHT,
     CONTENT_STRIP_HEIGHT,
     HEADER_STRIP_HEIGHT,
+    MACRO_COLUMN_HEADER_HEIGHT,
+    ROW_GAP,
+    SECTION_HEADER_HEIGHT,
     TD_HEADER_HEIGHT,
     TD_ROW_GAP,
     TD_ROW_HEIGHT,
+    _macro_section_height,
     all_macros,
     all_tap_dances,
     build_action_glyph,
+    build_macro_column_header,
     build_macro_row,
     build_tap_dance_column_header,
     build_tap_dance_row,
@@ -119,6 +125,19 @@ def test_resolve_macros_skips_unknown_ids():
     assert [m.id for m in out] == ["0"]
 
 
+def test_resolve_macros_named_first():
+    available = (
+        _macro("0"),
+        _macro("1", name="Print"),
+        _macro("2"),
+        _macro("3", name="Sign-off"),
+    )
+    used = {"0", "1", "2", "3"}
+    out = resolve_macros(used, available)
+    # Named first (id-sorted within group), then unnamed (id-sorted).
+    assert [m.id for m in out] == ["1", "3", "0", "2"]
+
+
 def test_resolve_tap_dances_same_rules():
     available = (_td("0"), _td("1"), _td("2"))
     used = {"0", "2"}
@@ -221,21 +240,35 @@ def _macro_with_actions(*kinds_and_keys) -> SvalboardMacro:
 
 
 def test_macro_row_height_no_overflow():
+    # Unnamed macro — no header strip, just one content line.
     macro = _macro_with_actions(
         (SvalboardMacroActionKind.TAP, "A"),
         (SvalboardMacroActionKind.TAP, "B"),
     )
     h = macro_row_height(macro, content_width=600)
-    assert h == HEADER_STRIP_HEIGHT + CONTENT_STRIP_HEIGHT
+    assert h == CONTENT_STRIP_HEIGHT
 
 
 def test_macro_row_height_two_content_lines_when_overflow():
     long_macro = _macro_with_actions(
         *(((SvalboardMacroActionKind.TAP, "K"),) * 30)
     )
-    # Tight column → at least 2 content lines.
+    # Unnamed macro, tight column → at least 2 content lines (no header strip).
     h = macro_row_height(long_macro, content_width=120)
-    assert h >= HEADER_STRIP_HEIGHT + 2 * CONTENT_STRIP_HEIGHT
+    assert h >= 2 * CONTENT_STRIP_HEIGHT
+
+
+def test_macro_row_height_no_name_omits_header_strip():
+    macro = _macro_with_actions((SvalboardMacroActionKind.TAP, "A"))
+    h = macro_row_height(macro, content_width=600)
+    assert h == CONTENT_STRIP_HEIGHT
+
+
+def test_macro_row_height_named_includes_header_strip():
+    macro = _macro_with_actions((SvalboardMacroActionKind.TAP, "A"))
+    macro_named = SvalboardMacro(id=macro.id, actions=macro.actions, name="Print")
+    h = macro_row_height(macro_named, content_width=600)
+    assert h == HEADER_STRIP_HEIGHT + CONTENT_STRIP_HEIGHT
 
 
 def test_build_macro_row_returns_group():
@@ -392,3 +425,21 @@ def test_legend_key_label_returns_plain_label_when_no_layer_switch():
 
     key = SvalboardTargetKey(label="A")
     assert _legend_key_label(key) == "A"
+
+
+def test_build_macro_column_header_returns_group():
+    g = build_macro_column_header(x=0, y=0, text_color="#000")
+    assert isinstance(g, draw.Group)
+
+
+def test_macro_section_height_includes_column_header(palette):
+    macros = [_macro("0", name="Print")]
+    h = _macro_section_height(macros, col_width=600)
+    expected = (
+        SECTION_HEADER_HEIGHT
+        + MACRO_COLUMN_HEADER_HEIGHT
+        + macro_row_height(macros[0], 600)
+        + ROW_GAP
+        + ACTION_KEY_STRIP_HEIGHT
+    )
+    assert h == expected
