@@ -322,6 +322,7 @@ def _draw_layer(
             y=legend_top,
             content_width=content_width,
             palette=config.output.style.palette,
+            use_system_fonts=use_system_fonts,
         )
         if legend_group is not None:
             d.append(legend_group)

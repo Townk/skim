@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 import drawsvg as draw
 
 from skim.application.render.styling import derive_accent_line
+from skim.application.render.text import Font, Label
 from skim.data import Palette, SvalboardLayout
 from skim.domain import (
     SvalboardMacro,
@@ -273,6 +274,7 @@ def build_macro_row(
     accent_fill: str,
     accent_line: str,
     text_color: str,
+    use_system_fonts: bool = False,
 ) -> draw.Group:
     """Render a single macro row at ``(x, y)``."""
     g = draw.Group()
@@ -317,13 +319,19 @@ def build_macro_row(
             g.append(build_action_glyph(
                 kind, cx=cx + 9, cy=line_y + CONTENT_STRIP_HEIGHT / 2, color=text_color,
             ))
-            # Label
-            g.append(draw.Text(
-                label, x=cx + (w + 14) / 2 + 4,
+            # Label — use Label machinery so %%nf-*; glyph aliases are resolved.
+            pill_label = Label(
+                label,
+                font=Font.FINGER_KEY,
+                text_color=text_color,
+                text_anchor="middle",
+                dominant_baseline="central",
+            )
+            g.append(pill_label.build_text(
+                x=cx + (w + 14) / 2 + 4,
                 y=line_y + CONTENT_STRIP_HEIGHT / 2 + 0.5,
-                font_size=PILL_FONT_SIZE, fill=text_color,
-                text_anchor="middle", dominant_baseline="central",
-                font_family="'Roboto', sans-serif",
+                font_size=PILL_FONT_SIZE,
+                use_system_fonts=use_system_fonts,
             ))
             cx += w + PILL_GAP
         line_y += CONTENT_STRIP_HEIGHT
@@ -354,6 +362,7 @@ def tap_dance_section_height(
 def _tap_dance_cell(
     x: float, y: float, content: SvalboardTargetKey | None,
     text_color: str,
+    use_system_fonts: bool = False,
 ) -> draw.Group:
     """Render one of the four variant cells (TAP, HOLD, DOUBLE-TAP, TAP&HOLD).
 
@@ -371,10 +380,17 @@ def _tap_dance_cell(
         x=x, y=y - 11, width=80, height=22, rx=4, ry=4,
         fill="#FAFAF6", stroke=text_color, stroke_opacity=0.18,
     ))
-    g.append(draw.Text(
-        content.label, x=x + 40, y=y + 0.5, font_size=12, fill=text_color,
-        text_anchor="middle", dominant_baseline="central",
-        font_family="'Roboto', sans-serif",
+    cell_label = Label(
+        content.label,
+        font=Font.FINGER_KEY,
+        text_color=text_color,
+        text_anchor="middle",
+        dominant_baseline="central",
+    )
+    g.append(cell_label.build_text(
+        x=x + 40, y=y + 0.5,
+        font_size=12,
+        use_system_fonts=use_system_fonts,
     ))
     return g
 
@@ -387,6 +403,7 @@ def build_tap_dance_row(
     accent_fill: str,
     accent_line: str,
     text_color: str,
+    use_system_fonts: bool = False,
 ) -> draw.Group:
     """Render a single tap-dance row at ``(x, y)``.
 
@@ -418,7 +435,7 @@ def build_tap_dance_row(
     cells_x = x + TD_NAME_W + 12
     for i, variant in enumerate((td.tap, td.hold, td.double_tap, td.tap_then_hold)):
         cell_x = cells_x + i * TD_CELL_W + TD_CELL_W / 2 - 40
-        g.append(_tap_dance_cell(cell_x, y, variant, text_color))
+        g.append(_tap_dance_cell(cell_x, y, variant, text_color, use_system_fonts))
     return g
 
 
@@ -571,6 +588,7 @@ def _draw_macro_column(
     accent_fill: str,
     accent_line: str,
     text_color: str,
+    use_system_fonts: bool = False,
 ) -> float:
     """Stamp ``rows`` into one column starting at ``start_y``.
 
@@ -582,7 +600,7 @@ def _draw_macro_column(
         g.append(build_macro_row(
             m, x=col_x, y=cursor, content_width=col_w,
             accent_fill=accent_fill, accent_line=accent_line,
-            text_color=text_color,
+            text_color=text_color, use_system_fonts=use_system_fonts,
         ))
         cursor += macro_row_height(m, col_w) + ROW_GAP
     return cursor
@@ -597,6 +615,7 @@ def _draw_td_column(
     accent_fill: str,
     accent_line: str,
     text_color: str,
+    use_system_fonts: bool = False,
 ) -> None:
     g.append(build_tap_dance_column_header(
         x=col_x, y=start_y + 12, text_color=text_color,
@@ -607,7 +626,7 @@ def _draw_td_column(
             t, x=col_x, y=cursor + TD_ROW_HEIGHT / 2,
             column_width=col_w,
             accent_fill=accent_fill, accent_line=accent_line,
-            text_color=text_color,
+            text_color=text_color, use_system_fonts=use_system_fonts,
         ))
         cursor += TD_ROW_HEIGHT + TD_ROW_GAP
 
@@ -618,6 +637,7 @@ def build_legend(
     y: float,
     content_width: float,
     palette: Palette,
+    use_system_fonts: bool = False,
 ) -> draw.Group | None:
     """Render the full legend block at ``(x, y)``.
 
@@ -639,10 +659,12 @@ def build_legend(
         end_left = _draw_macro_column(
             g, layout.macro_left, x, rows_top, col_w,
             palette.macro_color, macro_line, palette.text_color,
+            use_system_fonts=use_system_fonts,
         )
         end_right = _draw_macro_column(
             g, layout.macro_right, x + col_w + COLUMN_GAP, rows_top, col_w,
             palette.macro_color, macro_line, palette.text_color,
+            use_system_fonts=use_system_fonts,
         )
         g.append(_action_key_strip(
             x=x, y=max(end_left, end_right), text_color=palette.text_color,
@@ -658,11 +680,13 @@ def build_legend(
         _draw_td_column(
             g, layout.tap_dance_left, x, rows_top, col_w,
             palette.tap_dance_color, td_line, palette.text_color,
+            use_system_fonts=use_system_fonts,
         )
         if layout.tap_dance_right:
             _draw_td_column(
                 g, layout.tap_dance_right, x + col_w + COLUMN_GAP, rows_top, col_w,
                 palette.tap_dance_color, td_line, palette.text_color,
+                use_system_fonts=use_system_fonts,
             )
         return g
 
@@ -673,6 +697,7 @@ def build_legend(
     end_left = _draw_macro_column(
         g, layout.macro_left, x, y + SECTION_HEADER_HEIGHT, col_w,
         palette.macro_color, macro_line, palette.text_color,
+        use_system_fonts=use_system_fonts,
     )
     g.append(_action_key_strip(x=x, y=end_left, text_color=palette.text_color))
 
@@ -684,5 +709,6 @@ def build_legend(
         g, layout.tap_dance_left, x + col_w + COLUMN_GAP,
         y + SECTION_HEADER_HEIGHT, col_w,
         palette.tap_dance_color, td_line, palette.text_color,
+        use_system_fonts=use_system_fonts,
     )
     return g
