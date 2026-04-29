@@ -335,12 +335,12 @@ def build_macro_row(
             use_system_fonts,
         )
     )
-    name = macro.name if macro.name else f"Macro {macro.id}"
-    g.append(draw.Text(
-        name, x=x + TAG_W + 10, y=y + TAG_H / 2 + 0.5,
-        font_size=13, font_weight="500", dominant_baseline="central",
-        font_family="'Roboto', sans-serif", fill=text_color,
-    ))
+    if macro.name:
+        g.append(draw.Text(
+            macro.name, x=x + TAG_W + 10, y=y + TAG_H / 2 + 0.5,
+            font_size=13, font_weight="500", dominant_baseline="central",
+            font_family="'Roboto', sans-serif", fill=text_color,
+        ))
     g.append(draw.Line(
         sx=x + TAG_W, sy=y + TAG_H - 0.5,
         ex=x + content_width, ey=y + TAG_H - 0.5,
@@ -464,14 +464,17 @@ def build_tap_dance_row(
     ``y`` is the vertical centre of the row.
     """
     g = draw.Group()
-    # Title chip — left half accent fill, full chip outlined.
+    # Title chip — fixed-width filled tag on the left. When a name is set,
+    # an outlined rectangle extends to the right to surround the name.
     g.append(draw.Rectangle(
         x=x, y=y - TD_ROW_HEIGHT / 2, width=TAG_W, height=TD_ROW_HEIGHT,
         fill=accent_fill,
     ))
+    chip_outline_width = TD_NAME_W if td.name else TAG_W
     g.append(draw.Rectangle(
-        x=x, y=y - TD_ROW_HEIGHT / 2, width=TD_NAME_W, height=TD_ROW_HEIGHT,
-        rx=4, ry=4, fill="none", stroke=accent_line, stroke_width=1.2,
+        x=x, y=y - TD_ROW_HEIGHT / 2, width=chip_outline_width,
+        height=TD_ROW_HEIGHT, rx=4, ry=4,
+        fill="none", stroke=accent_line, stroke_width=1.2,
     ))
     td_chip_label_text = f"%%nf-md-keyboard_close; {td.id}"
     g.append(
@@ -489,12 +492,12 @@ def build_tap_dance_row(
             use_system_fonts,
         )
     )
-    name = td.name if td.name else f"Tap-Dance {td.id}"
-    g.append(draw.Text(
-        name, x=x + TAG_W + 10, y=y + 0.5, font_size=12, font_weight="500",
-        text_anchor="start", dominant_baseline="central",
-        font_family="'Roboto', sans-serif", fill=text_color,
-    ))
+    if td.name:
+        g.append(draw.Text(
+            td.name, x=x + TAG_W + 10, y=y + 0.5, font_size=12, font_weight="500",
+            text_anchor="start", dominant_baseline="central",
+            font_family="'Roboto', sans-serif", fill=text_color,
+        ))
     # Four variant cells.
     cells_x = x + TD_NAME_W + 12
     for i, variant in enumerate((td.tap, td.hold, td.double_tap, td.tap_then_hold)):
