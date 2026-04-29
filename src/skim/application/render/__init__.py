@@ -251,6 +251,7 @@ def _draw_layer(
     if not use_system_fonts:
         font_analyzer = FontUsageAnalyzer()
         font_analyzer.analyze_keymap(labels_keymap, layer_title, config.output.copyright)
+        font_analyzer.analyze_legend(macros, tap_dances)
 
         font_subsetter = FontSubsetter(font_analyzer)
         subsetted_css = font_subsetter.generate_subsetted_css()
