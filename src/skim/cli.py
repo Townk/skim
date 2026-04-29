@@ -224,6 +224,16 @@ def doctor() -> None:
     default=False,
     help="Omit the symbol legend from the rendered SVGs.",
 )
+@click.option(
+    "--symbol-legend-flow",
+    type=click.Choice(["row", "column"], case_sensitive=False),
+    default=None,
+    help=(
+        "Flow direction for the symbol legend table. "
+        "'row' fills rows first; 'column' fills columns first. "
+        "Default: column."
+    ),
+)
 @click.argument("stdin_marker", required=False, type=click.STRING)
 def generate(
     config: Path | None,
@@ -236,6 +246,7 @@ def generate(
     render_engine: str | None,
     no_special_keys: bool,
     no_symbols: bool,
+    symbol_legend_flow: str | None,
     stdin_marker: str | None,
 ) -> None:
     """Generate keymap visualization images.
@@ -270,6 +281,7 @@ def generate(
             targets,
             show_special_keys_legend=not no_special_keys,
             show_symbol_legend=not no_symbols,
+            symbol_legend_flow=symbol_legend_flow,
         )
     except click.Abort as e:
         click.echo(f"Aborted: {e}", err=True)

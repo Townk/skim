@@ -32,6 +32,7 @@ from .config import (
     Spacing,
     SplitSidePosition,
     Style,
+    SymbolLegendFlow,
 )
 from .keyboard import (
     ClusterT,
@@ -66,6 +67,7 @@ __all__ = [
     "Spacing",
     "SplitSidePosition",
     "Style",
+    "SymbolLegendFlow",
     "ClusterT",
     "FingerCluster",
     "SplitSide",

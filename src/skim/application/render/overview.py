@@ -951,6 +951,7 @@ def draw_overview(
             content_width=legend_content_width,
             palette=palette,
             use_system_fonts=use_system_fonts,
+            flow=config.output.style.symbol_legend_flow.value,
         )
         if sym_group is not None:
             d.append(sym_group)

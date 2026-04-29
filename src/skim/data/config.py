@@ -668,6 +668,25 @@ Example:
 """
 
 
+class SymbolLegendFlow(str, Enum):
+    """Flow direction for the symbol legend's multi-column layout.
+
+    Attributes:
+        ROW_MAJOR: Entries fill left-to-right in the top row first, then
+            drop to the next row.
+        COLUMN_MAJOR: Entries fill top-to-bottom in the leftmost column
+            first, then move to the next column. This is the default.
+    """
+
+    ROW_MAJOR = "row"
+    COLUMN_MAJOR = "column"
+
+
+SymbolLegendFlowStr = Annotated[
+    SymbolLegendFlow, BeforeValidator(lambda v: SymbolLegendFlow(v))
+]
+
+
 class Style(BaseModel):
     """Visual styling configuration for keymap images.
 
@@ -699,6 +718,10 @@ class Style(BaseModel):
             a symbol legend describing the non-obvious glyphs used on
             the layer. The overview includes symbols across all rendered
             layers. Set False to omit the symbol legend entirely.
+        symbol_legend_flow: Flow direction for the symbol legend's
+            multi-column layout. ``COLUMN_MAJOR`` (default) fills each
+            column top-to-bottom before moving to the next. ``ROW_MAJOR``
+            fills each row left-to-right before dropping to the next row.
 
     Example:
         >>> style = Style(
@@ -721,6 +744,7 @@ class Style(BaseModel):
     show_transparent_fallthrough: bool = True
     show_special_keys_legend: bool = True
     show_symbol_legend: bool = True
+    symbol_legend_flow: SymbolLegendFlowStr = Field(default=SymbolLegendFlow.COLUMN_MAJOR)
 
 
 class Output(BaseModel):

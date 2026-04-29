@@ -796,6 +796,17 @@ class OutputTab(Widget):
                         id="show-symbol-legend",
                         help_key="output-style-show-symbol-legend",
                     )
+                with Horizontal(classes="field-row"):
+                    yield Label("Symbol legend flow:", classes="field-label")
+                    yield SkimSelect(
+                        options=[
+                            ("Column-major (top-to-bottom)", "column"),
+                            ("Row-major (left-to-right)", "row"),
+                        ],
+                        value=style.get("symbol_legend_flow", "column"),
+                        id="symbol-legend-flow",
+                        help_key="output-style-symbol-legend-flow",
+                    )
 
             # --- Palette section ---
             with Vertical(classes="section"):
@@ -1015,3 +1026,5 @@ class OutputTab(Widget):
     def on_select_changed(self, event: SkimSelect.Changed) -> None:
         if event.select.id == "hold-symbol-position" and event.value is not SkimSelect.BLANK:
             self.config_data["output"]["style"]["hold_symbol_position"] = str(event.value)
+        if event.select.id == "symbol-legend-flow" and event.value is not SkimSelect.BLANK:
+            self.config_data["output"]["style"]["symbol_legend_flow"] = str(event.value)

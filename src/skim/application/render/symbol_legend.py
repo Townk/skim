@@ -642,8 +642,28 @@ def build_symbol_legend(
     content_width: float,
     palette: object,  # Palette (avoid circular import by keeping loose type)
     use_system_fonts: bool = False,
+    flow: str = "column",
 ) -> draw.Group | None:
     """Render the symbol legend block at ``(x, y)``.
+
+    Parameters
+    ----------
+    entries:
+        Legend entries to render.
+    x, y:
+        Top-left origin of the block.
+    content_width:
+        Available horizontal space for the legend.
+    palette:
+        A :class:`~skim.data.Palette` instance supplying text colors.
+    use_system_fonts:
+        When ``True``, reference system font families instead of embedding
+        fonts in the SVG.
+    flow:
+        Layout order for entries within the multi-column grid.
+        ``"row"`` fills rows left-to-right (row-major order).
+        ``"column"`` fills columns top-to-bottom (column-major order,
+        the default).
 
     Returns ``None`` when ``entries`` is empty.
     """
@@ -686,11 +706,17 @@ def build_symbol_legend(
         stroke=accent_line, stroke_opacity=0.5, stroke_width=1.2,
     ))
 
-    # Entries in row-major column flow — inline ACTION-KEY style (no surrounding box)
+    # Entries — inline ACTION-KEY style (no surrounding box)
+    n = len(entries)
+    row_count = (n + col_count - 1) // col_count
     content_y = y + _SYMBOL_HEADER_HEIGHT
     for idx, entry in enumerate(entries):
-        col = idx % col_count
-        row = idx // col_count
+        if flow == "row":
+            col = idx % col_count
+            row = idx // col_count
+        else:  # column-major
+            col = idx // row_count
+            row = idx % row_count
         # Column x: evenly distribute
         col_x = x + col * (entry_w + _COLUMN_GAP)
         row_y = content_y + row * (_ENTRY_ROW_HEIGHT + _ROW_GAP)

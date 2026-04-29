@@ -63,6 +63,7 @@ def _get_config(
     keymap_for_defaults: Path | None = None,
     show_special_keys_legend: bool = True,
     show_symbol_legend: bool = True,
+    symbol_legend_flow: str | None = None,
 ) -> SkimConfig:
     """Load and enhance configuration with generated gradients.
 
@@ -79,11 +80,15 @@ def _get_config(
             to derive default ``keyboard.layers`` and ``palette.layers`` so the
             generator behaves like the configurator does for an unconfigured
             keymap. Ignored when ``config_path`` is provided.
+        symbol_legend_flow: Override for the symbol legend flow direction
+            (``"row"`` or ``"column"``).  ``None`` means use the config value.
 
     Returns:
         A SkimConfig instance with all layer colors having gradient tuples
         populated.
     """
+    from skim.data import SymbolLegendFlow
+
     config: SkimConfig
     if config_path is None and keymap_for_defaults is not None and keymap_for_defaults.is_file():
         config = _derive_default_config_from_keymap(keymap_for_defaults)
@@ -97,15 +102,16 @@ def _get_config(
         for layer in config.output.style.palette.layers
     )
 
-    new_palette = config.output.style.palette.model_copy(update={"layers": new_layers})
-    new_style = config.output.style.model_copy(
-        update={
-            "palette": new_palette,
-            "use_system_fonts": use_system_fonts,
-            "show_special_keys_legend": show_special_keys_legend,
-            "show_symbol_legend": show_symbol_legend,
-        }
-    )
+    style_updates: dict = {
+        "palette": config.output.style.palette.model_copy(update={"layers": new_layers}),
+        "use_system_fonts": use_system_fonts,
+        "show_special_keys_legend": show_special_keys_legend,
+        "show_symbol_legend": show_symbol_legend,
+    }
+    if symbol_legend_flow is not None:
+        style_updates["symbol_legend_flow"] = SymbolLegendFlow(symbol_legend_flow)
+
+    new_style = config.output.style.model_copy(update=style_updates)
     new_output = config.output.model_copy(update={"style": new_style})
     return config.model_copy(update={"output": new_output})
 
@@ -161,6 +167,7 @@ def generate_keymap(
     targets: KeymapGeneratorTargets,
     show_special_keys_legend: bool = True,
     show_symbol_legend: bool = True,
+    symbol_legend_flow: str | None = None,
 ) -> None:
     """Generate keymap visualization images.
 
@@ -195,6 +202,7 @@ def generate_keymap(
         keymap_for_defaults=keymap_for_defaults,
         show_special_keys_legend=show_special_keys_legend,
         show_symbol_legend=show_symbol_legend,
+        symbol_legend_flow=symbol_legend_flow,
     )
     input_keymap = _get_input_keymap(inputs, config)
     keymap = _resolve_keymap(config, input_keymap)

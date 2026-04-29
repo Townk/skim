@@ -369,6 +369,7 @@ def _draw_layer(
             content_width=content_width,
             palette=config.output.style.palette,
             use_system_fonts=use_system_fonts,
+            flow=config.output.style.symbol_legend_flow.value,
         )
         if sym_group is not None:
             d.append(sym_group)

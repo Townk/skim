@@ -424,3 +424,152 @@ class TestBuildSymbolLegend:
         assert g is not None
         svg_str = self._to_svg(g)
         assert "Left Ctrl" in svg_str
+
+
+# ---------------------------------------------------------------------------
+# Flow direction tests
+# ---------------------------------------------------------------------------
+
+def _make_flow_entries(n: int) -> list:
+    """Build n synthetic SymbolLegendEntry objects for layout testing."""
+    from skim.application.render.symbol_legend import SymbolLegendEntry
+    return [
+        SymbolLegendEntry(
+            display_label=str(i),
+            description=f"Entry {i}",
+            sort_key=str(i),
+        )
+        for i in range(n)
+    ]
+
+
+def _flow_digit_positions(group) -> dict[int, tuple[float, float]]:
+    """Walk a draw.Group and return {digit_value: (x, y)} for each display-label
+    Text whose ``escaped_text`` is a single digit (the glyph cell)."""
+    import drawsvg as draw
+
+    pos: dict[int, tuple[float, float]] = {}
+    for child in group.children:
+        if isinstance(child, draw.Text):
+            text = getattr(child, "escaped_text", None) or ""
+            if text.isdigit():
+                pos[int(text)] = (float(child.args["x"]), float(child.args["y"]))
+    return pos
+
+
+def _legend_width_for_n_cols(n_cols: int, entries: list) -> float:
+    """Return a content_width that results in exactly ``n_cols`` columns."""
+    from skim.application.render.symbol_legend import (
+        _COLUMN_GAP,
+        _DESC_FONT_SIZE,
+        _ENTRY_RIGHT_PAD,
+        _GLYPH_DESC_GAP,
+        _SYMBOL_FONT_SIZE,
+        _measure_label_width,
+    )
+
+    max_glyph_w = max(_measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries)
+    max_desc_w = max(_measure_label_width(e.description, _DESC_FONT_SIZE) for e in entries)
+    entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + _ENTRY_RIGHT_PAD
+    # midpoint of the valid range for exactly n_cols columns
+    min_w = n_cols * (entry_w + _COLUMN_GAP) - _COLUMN_GAP
+    max_w = (n_cols + 1) * (entry_w + _COLUMN_GAP) - _COLUMN_GAP
+    return (min_w + max_w) / 2.0
+
+
+class TestSymbolLegendFlow:
+    """Tests for the flow= parameter of build_symbol_legend."""
+
+    def _palette(self):
+        return Palette()
+
+    def test_build_symbol_legend_column_major_layout(self):
+        """Column-major flow places entries top-to-bottom in the first column.
+
+        With 5 entries and col_count=3 the layout should be:
+          col0: entries[0], entries[1]
+          col1: entries[2], entries[3]
+          col2: entries[4]
+
+        So entry[1] is BELOW entry[0] (same x, larger y),
+        and entry[2] is to the RIGHT of entry[0] (larger x, same y as entry[0]).
+        """
+        entries = _make_flow_entries(5)
+        # Force col_count=3 so row_count=2 and the two flows differ
+        width = _legend_width_for_n_cols(3, entries)
+        g = build_symbol_legend(entries, 0, 0, width, self._palette(), flow="column")
+        assert g is not None
+
+        digit_pos = _flow_digit_positions(g)
+        assert len(digit_pos) == 5, f"Expected 5 digit labels, got {len(digit_pos)}: {digit_pos}"
+
+        # entry[1] must be directly below entry[0] (same col → same x, larger y)
+        assert digit_pos[0][0] == digit_pos[1][0], (
+            "Column-major: entries 0 and 1 should share the same x (same column)"
+        )
+        assert digit_pos[1][1] > digit_pos[0][1], (
+            "Column-major: entry 1 should be below entry 0"
+        )
+
+        # entry[2] must be to the right of entry[0] (next col → larger x, same row)
+        assert digit_pos[2][0] > digit_pos[0][0], (
+            "Column-major: entry 2 should be to the right of entry 0"
+        )
+        assert digit_pos[2][1] == digit_pos[0][1], (
+            "Column-major: entries 0 and 2 should share the same y (top row)"
+        )
+
+    def test_build_symbol_legend_row_major_layout(self):
+        """Row-major flow places entries left-to-right in the first row.
+
+        With 5 entries and col_count=3 the layout should be:
+          row0: entries[0], entries[1], entries[2]
+          row1: entries[3], entries[4]
+
+        So entry[1] is to the RIGHT of entry[0] (same y, larger x),
+        and entry[3] is BELOW entry[0] (same x, larger y).
+        """
+        entries = _make_flow_entries(5)
+        # Force col_count=3 so row_count=2 and the two flows differ
+        width = _legend_width_for_n_cols(3, entries)
+        g = build_symbol_legend(entries, 0, 0, width, self._palette(), flow="row")
+        assert g is not None
+
+        digit_pos = _flow_digit_positions(g)
+        assert len(digit_pos) == 5, f"Expected 5 digit labels, got {len(digit_pos)}: {digit_pos}"
+
+        # entry[1] must be to the right of entry[0] (same row)
+        assert digit_pos[1][0] > digit_pos[0][0], (
+            "Row-major: entry 1 should be to the right of entry 0"
+        )
+        assert digit_pos[1][1] == digit_pos[0][1], (
+            "Row-major: entries 0 and 1 should share the same y (top row)"
+        )
+
+        # entry[3] must be below entry[0] (wrapped to next row)
+        assert digit_pos[3][1] > digit_pos[0][1], (
+            "Row-major: entry 3 should be below entry 0"
+        )
+        assert digit_pos[3][0] == digit_pos[0][0], (
+            "Row-major: entries 0 and 3 should share the same x (leftmost column)"
+        )
+
+    def test_column_major_and_row_major_differ(self):
+        """The two flows must produce different orderings for the same entries."""
+        entries = _make_flow_entries(6)
+        # 6 entries with 3 cols → row_count=2; both modes visit same cells but in
+        # different order — positions will differ for entries 1 and 2 at minimum.
+        width = _legend_width_for_n_cols(3, entries)
+        g_col = build_symbol_legend(entries, 0, 0, width, self._palette(), flow="column")
+        g_row = build_symbol_legend(entries, 0, 0, width, self._palette(), flow="row")
+        assert g_col is not None
+        assert g_row is not None
+
+        col_pos = _flow_digit_positions(g_col)
+        row_pos = _flow_digit_positions(g_row)
+        assert len(col_pos) == 6
+        assert len(row_pos) == 6
+        # At least one entry must have a different position in the two flows
+        assert any(col_pos[i] != row_pos[i] for i in range(6)), (
+            "Column-major and row-major should produce different orderings for 6 entries"
+        )
