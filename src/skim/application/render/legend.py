@@ -19,7 +19,8 @@ from dataclasses import dataclass, field
 
 import drawsvg as draw
 
-from skim.data import SvalboardLayout
+from skim.application.render.styling import derive_accent_line
+from skim.data import Palette, SvalboardLayout
 from skim.domain import (
     SvalboardMacro,
     SvalboardMacroAction,
@@ -427,4 +428,255 @@ def build_tap_dance_column_header(
             y=y, font_size=9, fill=text_color, letter_spacing=1.5,
             text_anchor="middle", font_family="'Roboto', sans-serif",
         ))
+    return g
+
+
+# --- Top-level legend renderer -----------------------------------------------
+SECTION_HEADER_HEIGHT = 32
+COLUMN_GAP = 40
+ACTION_KEY_STRIP_HEIGHT = 22
+
+
+def _column_widths(content_width: float) -> tuple[float, float]:
+    col = (content_width - COLUMN_GAP) / 2
+    return col, col
+
+
+def _macro_section_height(
+    rows: list[SvalboardMacro[SvalboardTargetKey]], col_width: float
+) -> float:
+    """Height of a macro section: title strip + rows + action-key footer.
+
+    Returns 0 when ``rows`` is empty (no section to render).
+    """
+    if not rows:
+        return 0.0
+    h = SECTION_HEADER_HEIGHT
+    for r in rows:
+        h += macro_row_height(r, col_width) + ROW_GAP
+    h += ACTION_KEY_STRIP_HEIGHT
+    return h
+
+
+def legend_height(layout: LegendLayout | None, content_width: float) -> float:
+    """Total intrinsic height of the legend block.
+
+    Returns 0 when ``layout is None`` (no specials on this layer).
+    """
+    if layout is None:
+        return 0.0
+    col_w, _ = _column_widths(content_width)
+    if layout.macros_span_columns:
+        h_left = _macro_section_height(layout.macro_left, col_w)
+        h_right = (
+            _macro_section_height(layout.macro_right, col_w)
+            if layout.macro_right
+            else 0.0
+        )
+        # Title is shared (one strip above both columns); both column
+        # totals already include SECTION_HEADER_HEIGHT, so subtract one
+        # and add it back at the top.
+        inner_left = max(h_left - SECTION_HEADER_HEIGHT, 0.0)
+        inner_right = max(h_right - SECTION_HEADER_HEIGHT, 0.0) if h_right else 0.0
+        return SECTION_HEADER_HEIGHT + max(inner_left, inner_right)
+    if layout.tap_dances_span_columns:
+        h_left = tap_dance_section_height(layout.tap_dance_left)
+        h_right = (
+            tap_dance_section_height(layout.tap_dance_right)
+            if layout.tap_dance_right
+            else 0.0
+        )
+        return SECTION_HEADER_HEIGHT + max(h_left, h_right)
+    # Both present — independent columns.
+    h_macros = _macro_section_height(layout.macro_left, col_w)
+    h_tds = SECTION_HEADER_HEIGHT + tap_dance_section_height(layout.tap_dance_left)
+    return max(h_macros, h_tds)
+
+
+def _draw_macro_title(
+    g: draw.Group, x: float, y: float, width: float, accent_line: str, count: int,
+) -> None:
+    g.append(draw.Text(
+        "MACROS", x=x, y=y + 12, font_size=11, font_weight="700",
+        letter_spacing=3, text_anchor="start",
+        font_family="'Roboto', sans-serif", fill=accent_line,
+    ))
+    g.append(draw.Text(
+        f"{count} ENTRIES", x=x + width, y=y + 12, font_size=10,
+        text_anchor="end", fill="#888", font_weight="400", letter_spacing=1,
+        font_family="'Roboto', sans-serif",
+    ))
+    g.append(draw.Line(
+        sx=x, sy=y + 20, ex=x + width, ey=y + 20,
+        stroke=accent_line, stroke_opacity=0.5, stroke_width=1.2,
+    ))
+
+
+def _draw_td_title(
+    g: draw.Group, x: float, y: float, width: float, accent_line: str, count: int,
+) -> None:
+    g.append(draw.Text(
+        "TAP-DANCE", x=x, y=y + 12, font_size=11, font_weight="700",
+        letter_spacing=3, text_anchor="start",
+        font_family="'Roboto', sans-serif", fill=accent_line,
+    ))
+    g.append(draw.Text(
+        f"{count} ENTRIES", x=x + width, y=y + 12, font_size=10,
+        text_anchor="end", fill="#888", font_weight="400", letter_spacing=1,
+        font_family="'Roboto', sans-serif",
+    ))
+    g.append(draw.Line(
+        sx=x, sy=y + 20, ex=x + width, ey=y + 20,
+        stroke=accent_line, stroke_opacity=0.5, stroke_width=1.2,
+    ))
+
+
+def _action_key_strip(x: float, y: float, text_color: str) -> draw.Group:
+    """The 'tap | press | release | text | delay' key below macros."""
+    g = draw.Group()
+    g.append(draw.Text(
+        "ACTION KEY", x=x, y=y + 6, font_size=9, fill="#999", letter_spacing=1.5,
+        dominant_baseline="central", font_family="'Roboto', sans-serif",
+    ))
+    cx = x + 90
+    items = [
+        (SvalboardMacroActionKind.TAP, "tap"),
+        (SvalboardMacroActionKind.DOWN, "press"),
+        (SvalboardMacroActionKind.UP, "release"),
+        (SvalboardMacroActionKind.TEXT, "text"),
+        (SvalboardMacroActionKind.DELAY, "delay"),
+    ]
+    for kind, label in items:
+        g.append(build_action_glyph(kind, cx=cx + 6, cy=y + 6, color=text_color))
+        g.append(draw.Text(
+            label, x=cx + 16, y=y + 6, font_size=10, fill="#666",
+            dominant_baseline="central", font_family="'Roboto', sans-serif",
+        ))
+        cx += 14 + len(label) * 6 + 14
+    return g
+
+
+def _draw_macro_column(
+    g: draw.Group,
+    rows: list[SvalboardMacro[SvalboardTargetKey]],
+    col_x: float,
+    start_y: float,
+    col_w: float,
+    accent_fill: str,
+    accent_line: str,
+    text_color: str,
+) -> float:
+    """Stamp ``rows`` into one column starting at ``start_y``.
+
+    Returns the y position immediately after the last row (no action-key
+    footer applied here — the caller emits a single shared footer).
+    """
+    cursor = start_y
+    for m in rows:
+        g.append(build_macro_row(
+            m, x=col_x, y=cursor, content_width=col_w,
+            accent_fill=accent_fill, accent_line=accent_line,
+            text_color=text_color,
+        ))
+        cursor += macro_row_height(m, col_w) + ROW_GAP
+    return cursor
+
+
+def _draw_td_column(
+    g: draw.Group,
+    rows: list[SvalboardTapDance[SvalboardTargetKey]],
+    col_x: float,
+    start_y: float,
+    col_w: float,
+    accent_fill: str,
+    accent_line: str,
+    text_color: str,
+) -> None:
+    g.append(build_tap_dance_column_header(
+        x=col_x, y=start_y + 12, text_color=text_color,
+    ))
+    cursor = start_y + TD_HEADER_HEIGHT
+    for t in rows:
+        g.append(build_tap_dance_row(
+            t, x=col_x, y=cursor + TD_ROW_HEIGHT / 2,
+            column_width=col_w,
+            accent_fill=accent_fill, accent_line=accent_line,
+            text_color=text_color,
+        ))
+        cursor += TD_ROW_HEIGHT + TD_ROW_GAP
+
+
+def build_legend(
+    layout: LegendLayout | None,
+    x: float,
+    y: float,
+    content_width: float,
+    palette: Palette,
+) -> draw.Group | None:
+    """Render the full legend block at ``(x, y)``.
+
+    Returns ``None`` when ``layout`` is ``None`` (no specials on the layer).
+    """
+    if layout is None:
+        return None
+    macro_line = derive_accent_line(palette.macro_color)
+    td_line = derive_accent_line(palette.tap_dance_color)
+    col_w, _ = _column_widths(content_width)
+    g = draw.Group()
+
+    if layout.macros_span_columns:
+        _draw_macro_title(
+            g, x, y, content_width, macro_line,
+            count=len(layout.macro_left) + len(layout.macro_right),
+        )
+        rows_top = y + SECTION_HEADER_HEIGHT
+        end_left = _draw_macro_column(
+            g, layout.macro_left, x, rows_top, col_w,
+            palette.macro_color, macro_line, palette.text_color,
+        )
+        end_right = _draw_macro_column(
+            g, layout.macro_right, x + col_w + COLUMN_GAP, rows_top, col_w,
+            palette.macro_color, macro_line, palette.text_color,
+        )
+        g.append(_action_key_strip(
+            x=x, y=max(end_left, end_right), text_color=palette.text_color,
+        ))
+        return g
+
+    if layout.tap_dances_span_columns:
+        _draw_td_title(
+            g, x, y, content_width, td_line,
+            count=len(layout.tap_dance_left) + len(layout.tap_dance_right),
+        )
+        rows_top = y + SECTION_HEADER_HEIGHT
+        _draw_td_column(
+            g, layout.tap_dance_left, x, rows_top, col_w,
+            palette.tap_dance_color, td_line, palette.text_color,
+        )
+        if layout.tap_dance_right:
+            _draw_td_column(
+                g, layout.tap_dance_right, x + col_w + COLUMN_GAP, rows_top, col_w,
+                palette.tap_dance_color, td_line, palette.text_color,
+            )
+        return g
+
+    # Both present — independent columns.
+    _draw_macro_title(
+        g, x, y, col_w, macro_line, count=len(layout.macro_left),
+    )
+    end_left = _draw_macro_column(
+        g, layout.macro_left, x, y + SECTION_HEADER_HEIGHT, col_w,
+        palette.macro_color, macro_line, palette.text_color,
+    )
+    g.append(_action_key_strip(x=x, y=end_left, text_color=palette.text_color))
+
+    _draw_td_title(
+        g, x + col_w + COLUMN_GAP, y, col_w, td_line,
+        count=len(layout.tap_dance_left),
+    )
+    _draw_td_column(
+        g, layout.tap_dance_left, x + col_w + COLUMN_GAP,
+        y + SECTION_HEADER_HEIGHT, col_w,
+        palette.tap_dance_color, td_line, palette.text_color,
+    )
     return g

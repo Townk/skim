@@ -288,3 +288,50 @@ def test_build_tap_dance_row_handles_none_variants():
 def test_build_tap_dance_column_header_returns_group():
     g = build_tap_dance_column_header(x=0, y=0, text_color="#000")
     assert isinstance(g, draw.Group)
+
+
+import pytest  # noqa: E402
+
+from skim.application.render.legend import build_legend, legend_height  # noqa: E402
+from skim.data import Palette  # noqa: E402
+
+
+@pytest.fixture
+def palette():
+    return Palette()
+
+
+def test_legend_height_zero_when_no_specials(palette):
+    layout = plan_layout([], [])
+    assert legend_height(layout, content_width=1200) == 0.0
+
+
+def test_build_legend_returns_none_when_no_specials(palette):
+    layout = plan_layout([], [])
+    assert build_legend(layout, x=0, y=0, content_width=1200, palette=palette) is None
+
+
+def test_legend_height_grows_with_macro_overflow(palette):
+    short = _macro_with_actions((SvalboardMacroActionKind.TAP, "A"))
+    long_ = _macro_with_actions(*(((SvalboardMacroActionKind.TAP, "K"),) * 30))
+    layout_a = plan_layout([short], [])
+    layout_b = plan_layout([long_], [])
+    h_a = legend_height(layout_a, content_width=1200)
+    h_b = legend_height(layout_b, content_width=200)
+    assert h_b > h_a
+
+
+def test_build_legend_macros_only_returns_group(palette):
+    """When only macros present, returns a Group with the section header
+    spanning both columns and rows balanced."""
+    macros = [_macro(str(i)) for i in range(3)]
+    layout = plan_layout(macros, [])
+    g = build_legend(layout, x=0, y=0, content_width=1200, palette=palette)
+    assert isinstance(g, draw.Group)
+
+
+def test_build_legend_both_returns_group(palette):
+    """When both types present, returns a Group with two columns."""
+    layout = plan_layout([_macro("0")], [_td("0")])
+    g = build_legend(layout, x=0, y=0, content_width=1200, palette=palette)
+    assert isinstance(g, draw.Group)
