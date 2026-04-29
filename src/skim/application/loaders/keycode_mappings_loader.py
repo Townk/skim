@@ -29,6 +29,47 @@ import yaml
 from skim.assets import ASSETS
 from skim.data import KeycodeMappings, Keycodes
 
+_UNCATEGORIZED = "(uncategorized)"
+
+
+def _flatten_descriptions(
+    raw: dict,
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Flatten a possibly-nested descriptions dict into a flat mapping and a
+    category map.
+
+    Supports two formats:
+
+    * **Flat** ``{keycode: description}`` — all entries are assigned to the
+      ``"(uncategorized)"`` category.
+    * **Nested** ``{category_name: {keycode: description}}`` — each keycode is
+      assigned to its category.  A mix is allowed: top-level ``str`` values
+      are treated as uncategorized entries.
+
+    Returns
+    -------
+    tuple[dict[str, str], dict[str, str]]
+        ``(flat, categories)`` where *flat* maps each keycode to its
+        description string and *categories* maps each keycode to its category
+        name.
+    """
+    flat: dict[str, str] = {}
+    categories: dict[str, str] = {}
+
+    for key, value in raw.items():
+        if isinstance(value, dict):
+            # Nested format: key is the category name, value is {kc: desc}.
+            category_name = key
+            for keycode, desc in value.items():
+                flat[keycode] = desc
+                categories[keycode] = category_name
+        else:
+            # Flat format: key is the keycode, value is the description string.
+            flat[key] = value
+            categories[key] = _UNCATEGORIZED
+
+    return flat, categories
+
 
 @lru_cache(maxsize=1)
 def load_keycode_mappings(keycodes_config: Keycodes) -> KeycodeMappings:
@@ -48,6 +89,10 @@ def load_keycode_mappings(keycodes_config: Keycodes) -> KeycodeMappings:
         - ``pre_processing``: Keycode normalization rules
         - ``macro_functions``: Macro template definitions
         - ``modifier_union``: Modifier constant mappings
+        - ``symbol_descriptions``: Flat keycode-to-description map
+        - ``symbol_categories``: Keycode-to-category-name map
+        - ``function_descriptions``: Flat function-name-to-description map
+        - ``function_categories``: Function-name-to-category-name map
     """
     mapping_path = ASSETS.keycode_mappings
     mapping = yaml.safe_load(mapping_path.read_text())
@@ -55,4 +100,17 @@ def load_keycode_mappings(keycodes_config: Keycodes) -> KeycodeMappings:
         mapping["pre_processing"][keycode.keycode] = keycode.target
     for keycode in keycodes_config.overrides:
         mapping["keycodes"][keycode.keycode] = keycode.target
+
+    # Flatten nested symbol_descriptions and function_descriptions, building
+    # parallel category maps for use by the symbol legend renderer.
+    raw_symbol = mapping.get("symbol_descriptions", {})
+    flat_symbol, sym_cats = _flatten_descriptions(raw_symbol)
+    mapping["symbol_descriptions"] = flat_symbol
+    mapping["symbol_categories"] = sym_cats
+
+    raw_func = mapping.get("function_descriptions", {})
+    flat_func, func_cats = _flatten_descriptions(raw_func)
+    mapping["function_descriptions"] = flat_func
+    mapping["function_categories"] = func_cats
+
     return MappingProxyType(mapping)
