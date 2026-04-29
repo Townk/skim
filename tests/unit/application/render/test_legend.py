@@ -3,11 +3,11 @@
 import drawsvg as draw
 
 from skim.application.render.legend import (
+    ACTION_KEY_PRE_GAP,
     ACTION_KEY_STRIP_HEIGHT,
     CONTENT_STRIP_HEIGHT,
     HEADER_STRIP_HEIGHT,
     MACRO_COLUMN_HEADER_HEIGHT,
-    ROW_GAP,
     SECTION_HEADER_HEIGHT,
     TD_HEADER_HEIGHT,
     TD_ROW_GAP,
@@ -439,7 +439,7 @@ def test_macro_section_height_includes_column_header(palette):
         SECTION_HEADER_HEIGHT
         + MACRO_COLUMN_HEADER_HEIGHT
         + macro_row_height(macros[0], 600)
-        + ROW_GAP
+        + ACTION_KEY_PRE_GAP
         + ACTION_KEY_STRIP_HEIGHT
     )
     assert h == expected

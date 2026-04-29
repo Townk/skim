@@ -213,7 +213,7 @@ TAG_W = 56
 TAG_H = 22
 HEADER_STRIP_HEIGHT = 28
 CONTENT_STRIP_HEIGHT = 22
-ROW_GAP = 6
+ROW_GAP = 9
 PILL_GAP = 6
 PILL_HEIGHT = 18
 PILL_FONT_SIZE = 10
@@ -477,7 +477,7 @@ def build_macro_column_header(
 
 # --- Tap-dance geometry constants -------------------------------------------
 TD_ROW_HEIGHT = 22
-TD_ROW_GAP = 6
+TD_ROW_GAP = 9
 TD_HEADER_HEIGHT = 32  # space reserved for the "TAP HOLD DOUBLE-TAP …" labels
 TD_NAME_W = 200
 TD_CELL_W = 110
@@ -620,6 +620,7 @@ def build_tap_dance_column_header(
 SECTION_HEADER_HEIGHT = 32
 COLUMN_GAP = 40
 ACTION_KEY_STRIP_HEIGHT = 22
+ACTION_KEY_PRE_GAP = 18  # gap between last macro row and action-key strip
 
 
 def _column_widths(content_width: float) -> tuple[float, float]:
@@ -637,9 +638,11 @@ def _macro_section_height(
     if not rows:
         return 0.0
     h = SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT
-    for r in rows:
-        h += macro_row_height(r, col_width) + ROW_GAP
-    h += ACTION_KEY_STRIP_HEIGHT
+    for i, r in enumerate(rows):
+        if i > 0:
+            h += ROW_GAP
+        h += macro_row_height(r, col_width)
+    h += ACTION_KEY_PRE_GAP + ACTION_KEY_STRIP_HEIGHT
     return h
 
 
@@ -759,13 +762,15 @@ def _draw_macro_column(
     footer applied here — the caller emits a single shared footer).
     """
     cursor = start_y
-    for m in rows:
+    for i, m in enumerate(rows):
+        if i > 0:
+            cursor += ROW_GAP
         g.append(build_macro_row(
             m, x=col_x, y=cursor, content_width=col_w,
             accent_fill=accent_fill, accent_line=accent_line,
             text_color=text_color, use_system_fonts=use_system_fonts,
         ))
-        cursor += macro_row_height(m, col_w) + ROW_GAP
+        cursor += macro_row_height(m, col_w)
     return cursor
 
 
@@ -854,7 +859,8 @@ def build_legend(
             use_system_fonts=use_system_fonts,
         )
         g.append(_action_key_strip(
-            x=x, y=max(end_left, end_right), text_color=palette.text_color,
+            x=x, y=max(end_left, end_right) + ACTION_KEY_PRE_GAP,
+            text_color=palette.text_color,
         ))
         return g
 
@@ -894,7 +900,9 @@ def build_legend(
         palette.macro_color, macro_line, palette.text_color,
         use_system_fonts=use_system_fonts,
     )
-    g.append(_action_key_strip(x=x, y=end_left, text_color=palette.text_color))
+    g.append(_action_key_strip(
+        x=x, y=end_left + ACTION_KEY_PRE_GAP, text_color=palette.text_color,
+    ))
 
     _draw_td_title(
         g, x + col_w + COLUMN_GAP, y, col_w, td_line,
