@@ -225,6 +225,17 @@ ICON_TEXT_GAP = 10            # gap from icon's right edge to text's left edge
 PILL_CHROME_WIDTH = 2 * PILL_PAD_X + ICON_WIDTH + ICON_TEXT_GAP  # = 32
 
 
+def _one_line(text: str) -> str:
+    """Collapse newlines to spaces so legend pills/cells stay single-line.
+
+    Multi-line key labels (and macro text actions) work fine on the
+    keymap proper but break legend rendering — the chip/cell is sized
+    for one line of text and additional lines spill outside the rounded
+    rect. The legend treats labels as inline strings.
+    """
+    return text.replace("\n", " ")
+
+
 def _legend_key_label(key: SvalboardTargetKey) -> str:
     """Return the label string to display for ``key`` in the legend.
 
@@ -234,8 +245,10 @@ def _legend_key_label(key: SvalboardTargetKey) -> str:
     being switched to. Compound functions (``LT(N, KC_A)``, ``LM(N,
     mods)``) already embed the layer digit alongside the tap key via the
     ``|`` separator, so they pass through unchanged.
+
+    Newlines are collapsed to spaces — see :func:`_one_line`.
     """
-    label = key.label
+    label = _one_line(key.label)
     if key.layer_switch is not None and SEPARATOR_CHAR not in label:
         return f"{label} {key.layer_switch}"
     return label
@@ -276,7 +289,7 @@ def _macro_action_pill_labels(action: SvalboardMacroAction) -> list[str]:
     ):
         return [_legend_key_label(k) for k in action.keys]
     if action.kind == SvalboardMacroActionKind.TEXT:
-        return [action.text]
+        return [_one_line(action.text)]
     if action.kind == SvalboardMacroActionKind.DELAY:
         return [f"{action.duration_ms}ms"]
     return []
