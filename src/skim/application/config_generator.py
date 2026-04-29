@@ -313,7 +313,25 @@ class ConfigGenerator:
     def _build_keycode_overrides(
         self, custom_keycodes: list[dict[str, str]]
     ) -> list[dict[str, str]]:
-        """Build keycodes.overrides from custom keycode definitions."""
+        """Build keycodes.overrides from custom keycode definitions.
+
+        Skips the ``name → short_name`` override when ``name`` already
+        has a curated mapping in the bundled ``keycode-mappings.yaml`` —
+        the curated label takes precedence so custom keycodes that
+        happen to be named after a built-in (e.g. ``RSA(KC_NONUS_BSLASH)``)
+        keep their polished label. The ``USER##`` alias indirection is
+        still emitted so the user's custom slot resolves to whatever the
+        merged map renders for ``name`` (curated or custom).
+
+        Users who genuinely want to override a curated keycode can do so
+        explicitly via ``keycodes.overrides`` in their skim config — those
+        are merged after this layer and always win.
+        """
+        from skim.assets import ASSETS
+
+        bundled_mapping = yaml.safe_load(ASSETS.keycode_mappings.read_text())
+        bundled_keycodes = set(bundled_mapping.get("keycodes", {}).keys())
+
         overrides = []
         for idx, item in enumerate(custom_keycodes):
             name = item.get("name", "")
@@ -322,7 +340,8 @@ class ConfigGenerator:
                 continue
 
             short_name = re.sub(r"\s+", " ", short_name).strip()
-            overrides.append({"keycode": name, "target": short_name})
+            if name not in bundled_keycodes:
+                overrides.append({"keycode": name, "target": short_name})
             overrides.append({"keycode": f"USER{idx:02d}", "target": f"@@{name};"})
 
         return overrides

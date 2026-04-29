@@ -773,12 +773,19 @@ class TestWithSampleKeybard:
         assert "Nav" in layer_names
 
     def test_sample_extracts_custom_keycodes(self, sample_keybard):
-        """Custom keycodes from sample are present in overrides."""
+        """Custom keycodes from sample are read; the USER## alias
+        indirection lands in overrides for every entry. Names that are
+        already curated in keycode-mappings.yaml (like SV_LEFT_DPI_INC)
+        are NOT re-overridden — the curated label takes precedence."""
         generator = ConfigGenerator()
         result = generator.generate_from_keybard(sample_keybard)
         parsed = yaml.safe_load(result)
         keycode_names = [o["keycode"] for o in parsed["keycodes"]["overrides"]]
-        assert "SV_LEFT_DPI_INC" in keycode_names
+        # USER## indirection is always emitted, so the bootstrap clearly
+        # processed the custom_keycodes array.
+        assert "USER00" in keycode_names
+        # Curated names are NOT overridden — keeps the polished label.
+        assert "SV_LEFT_DPI_INC" not in keycode_names
 
     def test_sample_with_color_adjustments(self, sample_keybard):
         """Color adjustments apply without errors on real data."""
