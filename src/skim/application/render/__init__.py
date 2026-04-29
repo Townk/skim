@@ -24,7 +24,7 @@ from skim.data import (
     SvalboardKeymap,
     SvalboardLayout,
 )
-from skim.domain import KeyboardSide, SvalboardTargetKey
+from skim.domain import KeyboardSide, SvalboardMacro, SvalboardTapDance, SvalboardTargetKey
 
 from .components import FingerClusterComponent, ThumbClusterComponent
 from .context import RenderContext
@@ -40,6 +40,8 @@ def _draw_layer(
     config_position: int,
     qmk_index: int,
     header_dims: HeaderDims,
+    macros: tuple[SvalboardMacro[SvalboardTargetKey], ...] = (),
+    tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...] = (),
 ) -> draw.Drawing:
     use_system_fonts = config.output.style.use_system_fonts
     render_context = RenderContext(
@@ -318,7 +320,9 @@ def draw_keymap(
     header_dims = compute_header_dims(config, keymap)
     for qmk_idx, pos, layer in _selected_layers(keymap, targets, config):
         keymap_images[f"keymap-layer-{qmk_idx}"] = _draw_layer(
-            config, layer, pos, qmk_idx, header_dims
+            config, layer, pos, qmk_idx, header_dims,
+            macros=keymap.macros,
+            tap_dances=keymap.tap_dances,
         )
 
     if targets.overview:
