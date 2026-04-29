@@ -432,12 +432,14 @@ class TestParseVialTapDance:
             ],
         }
         result = _parse_vial(data)
-        assert [td.id for td in result.tap_dances] == ["0", "1", "2"]
-        assert result.tap_dances[2].tap == "KC_A"
-        assert result.tap_dances[2].hold == "KC_B"
-        assert result.tap_dances[2].double_tap == "KC_C"
-        assert result.tap_dances[2].tap_then_hold == "KC_D"
-        assert result.tap_dances[2].tapping_term == 300
+        # Index 1 (all KC_NO) is skipped; non-empty entries keep their 0-based ids.
+        assert [td.id for td in result.tap_dances] == ["0", "2"]
+        assert result.tap_dances[0].tap == "KC_Q"
+        assert result.tap_dances[1].tap == "KC_A"
+        assert result.tap_dances[1].hold == "KC_B"
+        assert result.tap_dances[1].double_tap == "KC_C"
+        assert result.tap_dances[1].tap_then_hold == "KC_D"
+        assert result.tap_dances[1].tapping_term == 300
 
     def test_kc_no_maps_to_none_on_each_field(self):
         data = {
@@ -446,8 +448,19 @@ class TestParseVialTapDance:
             "tap_dance": [["KC_NO", "KC_NO", "KC_NO", "KC_NO", 200]],
         }
         result = _parse_vial(data)
+        # Empty tap-dance (all variants None) is skipped entirely.
+        assert result.tap_dances == ()
+
+    def test_vial_tap_dance_with_at_least_one_variant_is_loaded(self):
+        data = {
+            "layout": [[["KC_A"] * 60]],
+            "version": 1,
+            "tap_dance": [["KC_Q", "KC_NO", "KC_NO", "KC_NO", 200]],
+        }
+        result = _parse_vial(data)
+        assert len(result.tap_dances) == 1
         td = result.tap_dances[0]
-        assert td.tap is None
+        assert td.tap == "KC_Q"
         assert td.hold is None
         assert td.double_tap is None
         assert td.tap_then_hold is None
@@ -591,9 +604,28 @@ class TestParseKeybardTapDance:
             ],
         }
         result = _parse_keybard(data)
+        # Empty tap-dance (all variants None) is skipped entirely.
+        assert result.tap_dances == ()
+
+    def test_keybard_tap_dance_with_at_least_one_variant_is_loaded(self):
+        data = {
+            "keymap": [["KC_A"] * 60],
+            "tapdances": [
+                {
+                    "tdid": 5,
+                    "tap": "KC_Z",
+                    "hold": "KC_NO",
+                    "doubletap": "KC_NO",
+                    "taphold": "KC_NO",
+                    "tapms": 200,
+                }
+            ],
+        }
+        result = _parse_keybard(data)
+        assert len(result.tap_dances) == 1
         td = result.tap_dances[0]
         assert td.id == "5"
-        assert td.tap is None
+        assert td.tap == "KC_Z"
         assert td.hold is None
         assert td.double_tap is None
         assert td.tap_then_hold is None

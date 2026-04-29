@@ -83,7 +83,11 @@ def _vial_keycode_or_none(value: Any) -> str | None:
 
 
 def _parse_vial_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
-    """Parse the top-level ``tap_dance`` array if present."""
+    """Parse the top-level ``tap_dance`` array if present.
+
+    Entries with all four variants set to None (i.e. all `KC_NO` in source)
+    are silently skipped.
+    """
     raw = data.get("tap_dance")
     if not isinstance(raw, list):
         return ()
@@ -91,21 +95,26 @@ def _parse_vial_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
     for index, row in enumerate(raw):
         if not isinstance(row, list) or len(row) < 5:
             continue
-        tap_dances.append(
-            SvalboardTapDance[str](
-                id=str(index),
-                tap=_vial_keycode_or_none(row[0]),
-                hold=_vial_keycode_or_none(row[1]),
-                double_tap=_vial_keycode_or_none(row[2]),
-                tap_then_hold=_vial_keycode_or_none(row[3]),
-                tapping_term=int(row[4]),
-            )
+        td = SvalboardTapDance[str](
+            id=str(index),
+            tap=_vial_keycode_or_none(row[0]),
+            hold=_vial_keycode_or_none(row[1]),
+            double_tap=_vial_keycode_or_none(row[2]),
+            tap_then_hold=_vial_keycode_or_none(row[3]),
+            tapping_term=int(row[4]),
         )
+        if td.tap is None and td.hold is None and td.double_tap is None and td.tap_then_hold is None:
+            continue
+        tap_dances.append(td)
     return tuple(tap_dances)
 
 
 def _parse_keybard_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
-    """Parse the top-level ``tapdances`` array if present."""
+    """Parse the top-level ``tapdances`` array if present.
+
+    Entries with all four variants set to None (i.e. all `KC_NO` in source)
+    are silently skipped.
+    """
     raw = data.get("tapdances")
     if not isinstance(raw, list):
         return ()
@@ -113,16 +122,17 @@ def _parse_keybard_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
     for entry in raw:
         if not isinstance(entry, dict) or "tdid" not in entry:
             continue
-        tap_dances.append(
-            SvalboardTapDance[str](
-                id=str(entry["tdid"]),
-                tap=_vial_keycode_or_none(entry.get("tap")),
-                hold=_vial_keycode_or_none(entry.get("hold")),
-                double_tap=_vial_keycode_or_none(entry.get("doubletap")),
-                tap_then_hold=_vial_keycode_or_none(entry.get("taphold")),
-                tapping_term=int(entry.get("tapms", 200)),
-            )
+        td = SvalboardTapDance[str](
+            id=str(entry["tdid"]),
+            tap=_vial_keycode_or_none(entry.get("tap")),
+            hold=_vial_keycode_or_none(entry.get("hold")),
+            double_tap=_vial_keycode_or_none(entry.get("doubletap")),
+            tap_then_hold=_vial_keycode_or_none(entry.get("taphold")),
+            tapping_term=int(entry.get("tapms", 200)),
         )
+        if td.tap is None and td.hold is None and td.double_tap is None and td.tap_then_hold is None:
+            continue
+        tap_dances.append(td)
     return tuple(tap_dances)
 
 
