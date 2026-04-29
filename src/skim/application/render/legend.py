@@ -212,30 +212,15 @@ ICON_TEXT_GAP = 10            # gap from icon's right edge to text's left edge
 PILL_CHROME_WIDTH = 2 * PILL_PAD_X + ICON_WIDTH + ICON_TEXT_GAP  # = 32
 
 
-def _label_visible_width(label: str, font_size: float) -> float:
-    """Approximate the rendered pixel width of ``label`` at ``font_size``.
-
-    Uses :class:`Label`'s parsed parts so that ``%%nf-md-…;`` aliases —
-    which collapse to a single glyph at render time — count as one
-    character, not as their alias-string length.
-    """
-    parsed = Label(label, Font.FINGER_KEY, text_color="#000")
-    width = 0.0
-    for part in parsed.parts:
-        per_char = font_size * (0.7 if part.font == Font.SYMBOLS else 0.55)
-        width += len(part.text) * per_char
-    return width
-
-
 def _pill_width(label: str) -> float:
     """Compute the pill width to wrap ``label`` exactly.
 
-    The pill chrome (padding + icon + icon-to-text gap) is a fixed
-    constant; the pill widens to accommodate the label's rendered
-    width. Empty/very-short labels still get a small minimum so the
-    pill is visually a pill.
+    Uses :meth:`Label.measure_width` (PIL-based actual font metrics) so
+    each pill is sized to its rendered glyph width, not the alias-string
+    length.
     """
-    text_width = max(_label_visible_width(label, PILL_FONT_SIZE), 8.0)
+    text_width = Label(label, Font.FINGER_KEY, text_color="#000").measure_width(PILL_FONT_SIZE)
+    text_width = max(text_width, 8.0)
     return max(28.0, text_width + PILL_CHROME_WIDTH)
 
 
