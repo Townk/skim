@@ -213,7 +213,7 @@ TAG_W = 56
 TAG_H = 22
 HEADER_STRIP_HEIGHT = 28
 CONTENT_STRIP_HEIGHT = 22
-ROW_GAP = 18
+ROW_GAP = 6
 PILL_GAP = 6
 PILL_HEIGHT = 18
 PILL_FONT_SIZE = 10
@@ -477,7 +477,7 @@ def build_macro_column_header(
 
 # --- Tap-dance geometry constants -------------------------------------------
 TD_ROW_HEIGHT = 22
-TD_ROW_GAP = 16
+TD_ROW_GAP = 6
 TD_HEADER_HEIGHT = 32  # space reserved for the "TAP HOLD DOUBLE-TAP …" labels
 TD_NAME_W = 200
 TD_CELL_W = 110
