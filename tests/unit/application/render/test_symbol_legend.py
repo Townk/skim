@@ -157,6 +157,68 @@ class TestCollectUsedDescriptions:
         assert len(osl_entries) == 1
         assert "One-shot" in osl_entries[0].description
 
+    def test_collect_function_call_pattern_match(self):
+        """A function-call pattern in symbol_descriptions matches the whole
+        keycode and does NOT recurse into args."""
+        from skim.application.render.symbol_legend import collect_used_descriptions
+
+        mappings: dict = {
+            "keycodes": {
+                "KC_LEFT": "←",
+                "KC_LEFT_ALT": "%%nf-md-apple_keyboard_option;",
+            },
+            "pre_processing": {},
+            "macro_functions": {
+                "A": "@@KC_LEFT_ALT; @0;",
+            },
+            "modifier_union": {},
+            "symbol_descriptions": {
+                "A(KC_LEFT)": "Previous word",
+                "KC_LEFT_ALT": "Left Alt",
+            },
+            "function_descriptions": {},
+        }
+        entries = collect_used_descriptions(["A(KC_LEFT)"], None, mappings)
+        # ONE entry for the whole function-call pattern; NOT two separate entries
+        assert len(entries) == 1
+        assert entries[0].description == "Previous word"
+        assert entries[0].sort_key == "A(KC_LEFT)"
+        # No "Left Alt" entry from recursion
+        assert not any(e.description == "Left Alt" for e in entries)
+
+    def test_collect_function_call_no_pattern_recurses(self):
+        """A function-call NOT in symbol_descriptions falls back to
+        function_descriptions + recursion into args."""
+        from skim.application.render.symbol_legend import collect_used_descriptions
+
+        mappings: dict = {
+            "keycodes": {
+                "KC_LEFT_ALT": "%%nf-md-apple_keyboard_option;",
+                "KC_LEFT_CTRL": "⌃",
+            },
+            "pre_processing": {},
+            "macro_functions": {
+                "LCTL": "@@KC_LEFT_CTRL; @0;",
+            },
+            "modifier_union": {},
+            "symbol_descriptions": {
+                "KC_LEFT_ALT": "Left Alt",
+            },
+            "function_descriptions": {
+                "LCTL": "Hold control",
+            },
+        }
+        entries = collect_used_descriptions(["LCTL(KC_LEFT_ALT)"], None, mappings)
+        sort_keys = {e.sort_key for e in entries}
+        descriptions = {e.description for e in entries}
+        # Function entry from function_descriptions
+        assert "LCTL" in sort_keys
+        assert "Hold control" in descriptions
+        # Atomic entry from recursion into args
+        assert "KC_LEFT_ALT" in sort_keys
+        assert "Left Alt" in descriptions
+        assert len(entries) == 2
+
 
 # ---------------------------------------------------------------------------
 # symbol_legend_height tests

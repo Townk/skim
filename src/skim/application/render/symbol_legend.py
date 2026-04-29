@@ -13,6 +13,10 @@ chain; both the original name and every step in the chain are checked
 against ``symbol_descriptions``.  Function names are checked against
 ``function_descriptions``.
 
+``symbol_descriptions`` may also contain function-call patterns (e.g.
+``A(KC_LEFT)``).  When a keycode matches such a pattern, a single
+legend entry is produced and no recursive expansion is performed.
+
 Public entry point: :func:`collect_used_descriptions`.
 """
 
@@ -136,6 +140,61 @@ def _parse_function_args(args_str: str) -> list[str]:
     return args
 
 
+def _resolve_display_label(
+    keycode: str,
+    keycodes_dict: dict[str, str],
+    macro_functions: dict[str, str],
+) -> str:
+    """Resolve a keycode (atomic or function-call) to its display label string.
+
+    This is a lightweight resolver that works without a full ``Keyboard``
+    config.  For function-call forms it expands the macro_functions template,
+    substituting ``@@KEY;`` alias references and ``@N;`` argument placeholders.
+    Layer-number placeholders (``#N;``) are left as-is (rare for display use).
+
+    Returns the resolved label, or ``keycode`` itself as a fallback.
+    """
+    # Apply alias chain for atomic keycodes
+    func_match = _FUNC_RE.match(keycode)
+    if func_match:
+        func_name = func_match.group(1)
+        args_str = func_match.group(2)
+        template = macro_functions.get(func_name)
+        if template is None:
+            return keycode
+        args = _parse_function_args(args_str)
+        # Substitute @N; argument placeholders
+        def _sub_arg(m: re.Match[str]) -> str:
+            idx = int(m.group(1))
+            if idx >= len(args):
+                return ""
+            return _resolve_display_label(args[idx], keycodes_dict, macro_functions)
+
+        result = re.sub(r"@(\d+);", _sub_arg, template)
+        # Resolve @@KEY; alias references
+        def _sub_alias(m: re.Match[str]) -> str:
+            key = m.group(1)
+            label = keycodes_dict.get(key, key)
+            # Follow one level of alias if needed
+            nested = _ALIAS_RE.fullmatch(label.strip())
+            if nested:
+                label = keycodes_dict.get(nested.group(1), nested.group(1))
+            return label
+
+        result = re.sub(r"@@([A-Z0-9_]+);", _sub_alias, result)
+        # Drop |; separator (tap/hold — keep only first part for legend display)
+        if "|;" in result:
+            result = result.split("|;")[0].strip()
+        return result.strip()
+
+    # Atomic keycode — resolve through alias chain
+    chain = _resolve_aliases(keycode, keycodes_dict)
+    canonical = chain[-1]
+    raw_label = keycodes_dict.get(canonical, canonical)
+    display = re.sub(r"@@[A-Z0-9_]+;", "", raw_label).strip()
+    return display if display else keycode
+
+
 def _collect_raw(
     keycodes_raw: Iterable[str],
     keymap: SvalboardKeymap[str] | SvalboardKeymap[SvalboardTargetKey] | None,
@@ -169,6 +228,21 @@ def _collect_raw(
     for raw in keycodes_raw:
         # Apply pre-processing normalisation
         keycode = pre_proc.get(raw, raw)
+
+        # --- Check the WHOLE keycode against symbol_descriptions first ---
+        # This handles both atomic matches AND function-call patterns like
+        # "A(KC_LEFT)" that are listed verbatim in symbol_descriptions.
+        if keycode in symbol_desc:
+            desc = symbol_desc[keycode]
+            display = _resolve_display_label(keycode, keycodes_dict, macro_functions)
+            sort_k = keycode
+            if sort_k not in out:
+                out[sort_k] = SymbolLegendEntry(
+                    display_label=display,
+                    description=desc,
+                    sort_key=sort_k,
+                )
+            continue  # Do NOT recurse — one entry for the whole pattern
 
         # --- Function call? ---
         func_match = _FUNC_RE.match(keycode)
@@ -285,11 +359,10 @@ def collect_used_descriptions(
 # Geometry constants
 _SYMBOL_HEADER_HEIGHT = 28
 _ENTRY_ROW_HEIGHT = 22
-_SYMBOL_CELL_MIN_W = 40.0
-_SYMBOL_FONT_SIZE = 11
-_DESC_FONT_SIZE = 11
+_SYMBOL_FONT_SIZE = 10
+_DESC_FONT_SIZE = 10
 _COLUMN_GAP = 40.0
-_SYMBOL_DESC_GAP = 10.0   # gap between symbol cell and description text
+_GLYPH_DESC_GAP = 6.0    # gap between glyph cell and description text
 _ROW_GAP = 4.0
 
 
@@ -317,17 +390,16 @@ def symbol_legend_height(
     if not entries:
         return 0.0
 
-    # Estimate column count
-    max_symbol_w = max(
+    # Uniform glyph cell width = widest glyph across all entries
+    max_glyph_w = max(
         _measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries
     )
-    symbol_cell_w = max(_SYMBOL_CELL_MIN_W, max_symbol_w + 8.0)
 
-    # Estimate description width
+    # Description text widths (per-entry, using the widest for column sizing)
     desc_font = Font.FINGER_KEY.load(_DESC_FONT_SIZE)
     max_desc_w = max(desc_font.getlength(e.description) for e in entries)
 
-    entry_w = symbol_cell_w + _SYMBOL_DESC_GAP + max_desc_w
+    entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + 14.0  # 14px right pad
     col_count = max(1, int((content_width + _COLUMN_GAP) / (entry_w + _COLUMN_GAP)))
     row_count = (len(entries) + col_count - 1) // col_count
 
@@ -355,16 +427,15 @@ def build_symbol_legend(
     text_color = palette.text_color
     accent_line = "#888888"  # neutral-gray, independent of any per-layer color
 
-    # Compute layout geometry
-    max_symbol_w = max(
+    # Compute layout geometry — inline style (no surrounding rectangle)
+    max_glyph_w = max(
         _measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries
     )
-    symbol_cell_w = max(_SYMBOL_CELL_MIN_W, max_symbol_w + 8.0)
 
     desc_font_obj = Font.FINGER_KEY.load(_DESC_FONT_SIZE)
     max_desc_w = max(desc_font_obj.getlength(e.description) for e in entries)
 
-    entry_w = symbol_cell_w + _SYMBOL_DESC_GAP + max_desc_w
+    entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + 14.0  # 14px right pad
     col_count = max(1, int((content_width + _COLUMN_GAP) / (entry_w + _COLUMN_GAP)))
 
     g = draw.Group()
@@ -392,7 +463,7 @@ def build_symbol_legend(
         stroke=accent_line, stroke_opacity=0.5, stroke_width=1.2,
     ))
 
-    # Entries in row-major column flow
+    # Entries in row-major column flow — inline ACTION-KEY style (no surrounding box)
     content_y = y + _SYMBOL_HEADER_HEIGHT
     for idx, entry in enumerate(entries):
         col = idx % col_count
@@ -402,32 +473,25 @@ def build_symbol_legend(
         row_y = content_y + row * (_ENTRY_ROW_HEIGHT + _ROW_GAP)
         cell_mid_y = row_y + _ENTRY_ROW_HEIGHT / 2
 
-        # Symbol cell background (pill)
-        g.append(draw.Rectangle(
-            x=col_x, y=row_y + (_ENTRY_ROW_HEIGHT - 18) / 2,
-            width=symbol_cell_w, height=18, rx=4, ry=4,
-            fill="#FAFAF6", stroke=text_color, stroke_opacity=0.18,
-        ))
-        # Symbol label centred in cell
+        # Symbol glyph — centred within the uniform glyph cell
         g.append(
             Label(
                 entry.display_label,
                 Font.FINGER_KEY,
                 text_color=text_color,
-                background_color="#FAFAF6",
                 text_anchor="middle",
                 dominant_baseline="central",
             ).build_text(
-                col_x + symbol_cell_w / 2,
+                col_x + max_glyph_w / 2,
                 cell_mid_y + 0.5,
                 _SYMBOL_FONT_SIZE,
                 use_system_fonts,
             )
         )
-        # Description text
+        # Description text — left-aligned immediately after the glyph cell
         g.append(draw.Text(
             entry.description,
-            x=col_x + symbol_cell_w + _SYMBOL_DESC_GAP,
+            x=col_x + max_glyph_w + _GLYPH_DESC_GAP,
             y=cell_mid_y + 0.5,
             font_size=_DESC_FONT_SIZE,
             dominant_baseline="central",

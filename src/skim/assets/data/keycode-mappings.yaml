@@ -1208,6 +1208,11 @@ symbol_descriptions:
   KC_SPACE: "Space"
   KC_BACKSPACE: "Backspace"
   KC_DELETE: "Delete"
+  # Function-call patterns — match the WHOLE keycode (post pre-processing).
+  "A(KC_LEFT)": "Previous word"
+  "A(KC_RIGHT)": "Next word"
+  "G(KC_LEFT)": "Beginning of line"
+  "G(KC_RIGHT)": "End of line"
 
 # Description for keycode functions (used as wrappers). Keyed by the
 # function token (the part before the parenthesis). When a key is bound
