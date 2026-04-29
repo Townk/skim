@@ -460,3 +460,20 @@ class TestSpecialIdDetection:
         result = adapter.transform("MO(1)")
         assert result.macro_id is None
         assert result.tap_dance_id is None
+
+    def test_vial_macro_shorthand_carries_macro_id(self):
+        adapter = make_adapter(make_mappings(keycodes={}))
+        result = adapter.transform("M1")
+        assert result.macro_id == "1"
+        assert result.tap_dance_id is None
+
+    def test_vial_macro_shorthand_higher_number(self):
+        adapter = make_adapter(make_mappings(keycodes={}))
+        result = adapter.transform("M21")
+        assert result.macro_id == "21"
+
+    def test_mod_keycode_does_not_match_vial_macro(self):
+        """``MOD_LCTL`` should NOT be detected as a Vial macro."""
+        adapter = make_adapter(make_mappings(keycodes={}))
+        result = adapter.transform("MOD_LCTL")
+        assert result.macro_id is None

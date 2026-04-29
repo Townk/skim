@@ -66,11 +66,17 @@ _TRANSPARENT_KEYCODES = frozenset({"KC_TRANSPARENT", "KC_TRNS", "_______"})
 """QMK keycodes that mark a key as falling through to a lower layer."""
 
 _TAP_DANCE_RE = re.compile(r"^TD\((\w+)\)$")
-_MACRO_RE = re.compile(r"^MACRO_(\w+)$")
+_MACRO_QMK_RE = re.compile(r"^MACRO_(\w+)$")
+_MACRO_VIAL_RE = re.compile(r"^M(\d+)$")
 
 
 def _detect_special_ids(keycode: str) -> tuple[str | None, str | None]:
     """Return (macro_id, tap_dance_id) for special-key keycodes.
+
+    Recognises three special-key forms:
+    - ``TD(N)`` / ``TD(NAME)``      → tap-dance reference
+    - ``MACRO_N`` / ``MACRO_NAME``  → QMK-style macro reference
+    - ``Mn``                         → Vial-style macro reference (1-based)
 
     Detected before any pre-processing or label resolution so the
     structured signal survives whatever label the user maps the keycode
@@ -79,9 +85,12 @@ def _detect_special_ids(keycode: str) -> tuple[str | None, str | None]:
     td_match = _TAP_DANCE_RE.fullmatch(keycode)
     if td_match:
         return None, td_match.group(1)
-    macro_match = _MACRO_RE.fullmatch(keycode)
-    if macro_match:
-        return macro_match.group(1), None
+    qmk_match = _MACRO_QMK_RE.fullmatch(keycode)
+    if qmk_match:
+        return qmk_match.group(1), None
+    vial_match = _MACRO_VIAL_RE.fullmatch(keycode)
+    if vial_match:
+        return vial_match.group(1), None
     return None, None
 
 
