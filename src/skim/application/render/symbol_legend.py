@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 
 import drawsvg as draw
 
+from skim.application.render.legend import _legend_key_label
 from skim.application.render.text import Font, Label, TextPart
 from skim.data import KeycodeMappings, SvalboardKeymap
 from skim.domain import SEPARATOR_CHAR, SvalboardTargetKey
@@ -143,6 +144,57 @@ def _resolve_description(
     # @@KEYCODE; → resolved symbol via the adapter
     text = adapter._resolve_label_reference(text, set())
     return text
+
+
+def _is_per_instance_description(desc: str) -> bool:
+    """Return True iff ``desc`` contains any ``@N;`` placeholder.
+
+    When a description contains ``@N;`` placeholders, each unique
+    (function, args) combination produces its own legend entry instead
+    of a single generic entry per function name.
+    """
+    return bool(re.search(r"@\d+;", desc))
+
+
+def _resolve_description_generic(
+    raw: str,
+    adapter: KeycodeLabelAdapter,
+) -> str:
+    """Resolve a generic function description.
+
+    Both ``@N;`` and ``#N;`` are replaced with the literal ``#``; ``|;``
+    becomes :data:`~skim.domain.SEPARATOR_CHAR`; ``@@KEYCODE;`` references
+    are resolved through the adapter's alias chain.
+    """
+    text = re.sub(r"[@#]\d+;", "#", raw)
+    text = text.replace("|;", SEPARATOR_CHAR)
+    return adapter._resolve_label_reference(text, set())
+
+
+def _resolve_description_per_instance(
+    raw: str,
+    args: list[str],
+    adapter: KeycodeLabelAdapter,
+) -> str:
+    """Resolve a per-instance function description.
+
+    ``#N;`` → literal ``#``; ``@N;`` → the recursively-resolved label of
+    ``args[N]``; ``|;`` → :data:`~skim.domain.SEPARATOR_CHAR`; ``@@KEYCODE;``
+    references are resolved through the adapter's alias chain.
+    """
+    # #N; → literal "#"
+    text = re.sub(r"#\d+;", "#", raw)
+
+    # @N; → recursively-resolved arg label
+    def _replace_at(match: re.Match) -> str:
+        idx = int(match.group(1))
+        if idx >= len(args):
+            return ""
+        return adapter._resolve_keycode_argument(args, idx)
+
+    text = re.sub(r"@(\d+);", _replace_at, text)
+    text = text.replace("|;", SEPARATOR_CHAR)
+    return adapter._resolve_label_reference(text, set())
 
 
 def _function_display_label(
@@ -326,19 +378,39 @@ def _collect_raw(
                 fd_entry = func_desc[func_name]
                 raw_desc = fd_entry["description"] if isinstance(fd_entry, dict) else fd_entry
                 adapter = KeycodeLabelAdapter(Keyboard(), keycode_mappings)
-                desc = _resolve_description(raw_desc, adapter)
-                label = _function_display_label(
-                    func_name, macro_functions, keycode_mappings
-                )
-                sort_k = func_name
-                if sort_k not in out:
-                    out[sort_k] = SymbolLegendEntry(
-                        display_label=label,
-                        description=desc,
-                        sort_key=sort_k,
-                    )
 
-            # Recurse into args
+                if _is_per_instance_description(raw_desc):
+                    # Per-instance mode: one entry per unique (func, args).
+                    inst_args = _parse_function_args(args_str)
+                    desc = _resolve_description_per_instance(raw_desc, inst_args, adapter)
+                    target_key = adapter.transform(keycode)
+                    display_label = _legend_key_label(target_key)
+                    sort_k = keycode  # e.g. "MO(5)" — one entry per unique call
+                    if sort_k not in out:
+                        out[sort_k] = SymbolLegendEntry(
+                            display_label=display_label,
+                            description=desc,
+                            sort_key=sort_k,
+                        )
+                    # Do NOT recurse — description covers the function as a whole.
+                    continue
+                else:
+                    # Generic mode: one entry per function name (deduped).
+                    desc = _resolve_description_generic(raw_desc, adapter)
+                    label = _function_display_label(
+                        func_name, macro_functions, keycode_mappings
+                    )
+                    sort_k = func_name
+                    if sort_k not in out:
+                        out[sort_k] = SymbolLegendEntry(
+                            display_label=label,
+                            description=desc,
+                            sort_key=sort_k,
+                        )
+                    # Fall through to recurse into args below.
+
+            # Recurse into args (no function_descriptions entry, already visited,
+            # or generic-mode entry that may have described-atomic args).
             args = _parse_function_args(args_str)
             _collect_raw(args, keymap, keycode_mappings, out, visited_funcs)
             continue

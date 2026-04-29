@@ -314,6 +314,57 @@ class TestSymbolLegendHeight:
 
 
 # ---------------------------------------------------------------------------
+# Per-instance description tests
+# ---------------------------------------------------------------------------
+
+def _mappings_with_function_description(func: str, description: str):
+    """Return a copy of real keycode mappings with one function_descriptions entry
+    overridden to ``description``."""
+    from types import MappingProxyType
+
+    base = load_keycode_mappings(SkimConfig().keycodes)
+    raw = dict(base)
+    raw["function_descriptions"] = dict(raw.get("function_descriptions", {}))
+    raw["function_descriptions"][func] = description
+    return MappingProxyType(raw)
+
+
+def test_description_with_at_placeholder_produces_per_instance_entries():
+    """When function_descriptions[FUNC] contains @N;, each unique arg
+    combination produces its own entry."""
+    mappings = _mappings_with_function_description("MO", "Hold for layer @0;")
+    keycodes = ["MO(1)", "MO(2)", "MO(2)"]  # MO(2) repeats — should still dedupe.
+    entries = collect_used_descriptions(keycodes, None, mappings)
+    mo_entries = [e for e in entries if "MO" in e.sort_key]
+    assert len(mo_entries) == 2  # one per unique args
+    descs = sorted(e.description for e in mo_entries)
+    assert "Hold for layer 1" in descs[0]
+    assert "Hold for layer 2" in descs[1]
+
+
+def test_description_with_only_hash_placeholder_dedupes():
+    """When function_descriptions[FUNC] uses only #N; or no placeholders,
+    all uses dedupe to one entry."""
+    mappings = _mappings_with_function_description("MO", "Hold for layer #0;")
+    keycodes = ["MO(1)", "MO(2)", "MO(5)"]
+    entries = collect_used_descriptions(keycodes, None, mappings)
+    mo_entries = [e for e in entries if e.sort_key == "MO"]
+    assert len(mo_entries) == 1
+    assert "layer #" in mo_entries[0].description
+
+
+def test_description_mixed_at_and_hash():
+    """Mixed @N; and #N; → per-instance mode; @N; resolves, #N; stays as #."""
+    mappings = _mappings_with_function_description(
+        "MO", "Layer @0; pattern: #0;"
+    )
+    entries = collect_used_descriptions(["MO(7)"], None, mappings)
+    mo_entries = [e for e in entries if "MO" in e.sort_key]
+    assert len(mo_entries) == 1
+    assert "Layer 7 pattern: #" in mo_entries[0].description
+
+
+# ---------------------------------------------------------------------------
 # build_symbol_legend tests
 # ---------------------------------------------------------------------------
 
