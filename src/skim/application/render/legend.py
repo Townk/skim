@@ -328,7 +328,7 @@ def build_macro_row(
     g.append(draw.Line(
         sx=x + TAG_W, sy=y + TAG_H - 0.5,
         ex=x + content_width, ey=y + TAG_H - 0.5,
-        stroke=accent_line, stroke_opacity=0.55, stroke_width=1,
+        stroke="#000", stroke_opacity=0.08, stroke_width=1,
     ))
 
     # Content strip — pills with overflow wrap.
