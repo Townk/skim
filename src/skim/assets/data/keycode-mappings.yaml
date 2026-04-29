@@ -502,6 +502,7 @@ keycodes:
   USER18: "@@SV_TOGGLE_AUTOMOUSE;"
 
   # Macro Keys
+  M0: "%%nf-md-script_text_play_outline; 0"
   M1: "%%nf-md-script_text_play_outline; 1"
   M2: "%%nf-md-script_text_play_outline; 2"
   M3: "%%nf-md-script_text_play_outline; 3"
@@ -551,7 +552,6 @@ keycodes:
   M47: "%%nf-md-script_text_play_outline; 47"
   M48: "%%nf-md-script_text_play_outline; 48"
   M49: "%%nf-md-script_text_play_outline; 49"
-  M50: "%%nf-md-script_text_play_outline; 50"
 
   TD0: "%%nf-md-keyboard_close; 0"
   TD1: "%%nf-md-keyboard_close; 1"
