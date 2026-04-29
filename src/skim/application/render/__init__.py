@@ -30,6 +30,8 @@ from .components import FingerClusterComponent, ThumbClusterComponent
 from .context import RenderContext
 from .layout import Boundary, KeymapLayout
 from .legend import (
+    all_macros,
+    all_tap_dances,
     build_legend,
     collect_used_ids,
     legend_height,
@@ -50,6 +52,7 @@ def _draw_layer(
     header_dims: HeaderDims,
     macros: tuple[SvalboardMacro[SvalboardTargetKey], ...] = (),
     tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...] = (),
+    show_all_legend_entries: bool = False,
 ) -> draw.Drawing:
     use_system_fonts = config.output.style.use_system_fonts
     render_context = RenderContext(
@@ -194,9 +197,13 @@ def _draw_layer(
     )
 
     # Plan the legend and reserve its vertical space.
-    used_macro_ids, used_td_ids = collect_used_ids(layer)
-    macro_entries = resolve_macros(used_macro_ids, macros)
-    td_entries = resolve_tap_dances(used_td_ids, tap_dances)
+    if show_all_legend_entries:
+        macro_entries = all_macros(macros)
+        td_entries = all_tap_dances(tap_dances)
+    else:
+        used_macro_ids, used_td_ids = collect_used_ids(layer)
+        macro_entries = resolve_macros(used_macro_ids, macros)
+        td_entries = resolve_tap_dances(used_td_ids, tap_dances)
     legend_plan = plan_layout(macro_entries, td_entries)
 
     legend_top_gap = 36.0
@@ -359,6 +366,7 @@ def draw_keymap(
             config, layer, pos, qmk_idx, header_dims,
             macros=keymap.macros,
             tap_dances=keymap.tap_dances,
+            show_all_legend_entries=targets.show_all_legend_entries,
         )
 
     if targets.overview:

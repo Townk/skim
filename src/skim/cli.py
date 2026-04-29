@@ -209,6 +209,13 @@ def doctor() -> None:
     is_flag=True,
     help="Overwrite existing files without confirmation.",
 )
+@click.option(
+    "--legend-all",
+    is_flag=True,
+    default=False,
+    help="Show all parsed macros / tap-dances in every layer's legend, "
+         "not just the ones used on that layer.",
+)
 @click.argument("stdin_marker", required=False, type=click.STRING)
 def generate(
     config: Path | None,
@@ -219,6 +226,7 @@ def generate(
     force: bool,
     use_system_fonts: bool,
     render_engine: str | None,
+    legend_all: bool,
     stdin_marker: str | None,
 ) -> None:
     """Generate keymap visualization images.
@@ -246,7 +254,13 @@ def generate(
         inputs = InputFiles(config, keymap, stdin_marker == "-")
         engine = RenderEngine(render_engine) if render_engine else None
         outputs = OutputFiles(output_dir, output_format, force, use_system_fonts, engine)
-        targets = KeymapGeneratorTargets.from_args(layer, partial(click.echo, err=True))
+        base_targets = KeymapGeneratorTargets.from_args(layer, partial(click.echo, err=True))
+        targets = KeymapGeneratorTargets(
+            all_layers=base_targets.all_layers,
+            overview=base_targets.overview,
+            selected_layers=base_targets.selected_layers,
+            show_all_legend_entries=legend_all,
+        )
         generate_keymap(inputs, outputs, targets)
     except click.Abort as e:
         click.echo(f"Aborted: {e}", err=True)
