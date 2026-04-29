@@ -468,14 +468,15 @@ class TestParseVialMacros:
     def test_empty_macro_entry(self):
         data = _vial_data_with_macros([[]])
         result = _parse_vial(data)
-        assert result.macros == (SvalboardMacro[str](id="1"),)
+        # Empty macro (no actions) is skipped entirely.
+        assert result.macros == ()
 
     def test_single_keycode_tap_action(self):
         data = _vial_data_with_macros([[["tap", "KC_A"]]])
         result = _parse_vial(data)
         assert result.macros == (
             SvalboardMacro[str](
-                id="1",
+                id="0",
                 actions=(
                     SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TAP, keys=("KC_A",)),
                 ),
@@ -537,8 +538,8 @@ class TestParseVialMacros:
             ]
         )
         result = _parse_vial(data)
-        assert [m.id for m in result.macros] == ["1", "2", "3"]
-        assert result.macros[1].actions == ()
+        # Index 1 (empty) is skipped; non-empty entries keep their 0-based ids.
+        assert [m.id for m in result.macros] == ["0", "2"]
 
 
 class TestParseKeybardTapDance:
@@ -622,7 +623,7 @@ class TestParseKeybardMacros:
         result = _parse_keybard(data)
         assert len(result.macros) == 1
         macro = result.macros[0]
-        assert macro.id == "1"
+        assert macro.id == "0"
         assert len(macro.actions) == 2
         assert macro.actions[0].kind is SvalboardMacroActionKind.TAP
         assert macro.actions[0].keys == ("LSFT(KC_QUOTE)",)
@@ -633,7 +634,8 @@ class TestParseKeybardMacros:
             "macros": [{"mid": 7, "actions": []}],
         }
         result = _parse_keybard(data)
-        assert result.macros == (SvalboardMacro[str](id="8"),)
+        # Empty macro (no actions) is skipped entirely.
+        assert result.macros == ()
 
     def test_skips_entries_missing_mid(self):
         data = {
@@ -645,7 +647,8 @@ class TestParseKeybardMacros:
             ],
         }
         result = _parse_keybard(data)
-        assert [m.id for m in result.macros] == ["1", "3"]
+        # All three have empty actions → all skipped.
+        assert result.macros == ()
 
     def test_text_and_delay_actions(self):
         data = {
@@ -766,8 +769,8 @@ class TestParseC2jsonMacros:
             ],
         }
         result = _parse_c2json(data)
-        assert [m.id for m in result.macros] == ["1", "2", "3"]
-        assert result.macros[1].actions == ()
+        # Index 1 (empty) is skipped; non-empty entries keep their 0-based ids.
+        assert [m.id for m in result.macros] == ["0", "2"]
 
 
 class TestLoadKeymapPopulatesDefinitions:
@@ -797,7 +800,7 @@ class TestLoadKeymapPopulatesDefinitions:
         )
         assert keymap.macros == (
             SvalboardMacro[str](
-                id="1",
+                id="0",
                 actions=(
                     SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TEXT, text="hello"),
                 ),
@@ -826,7 +829,7 @@ class TestLoadKeymapPopulatesDefinitions:
 
         assert keymap.tap_dances[0].id == "4"
         assert keymap.tap_dances[0].tapping_term == 350
-        assert keymap.macros[0].id == "2"
+        assert keymap.macros[0].id == "1"
         assert keymap.macros[0].actions[0].keys == ("KC_X",)
 
     def test_c2json_returns_empty_definitions_by_default(self, tmp_path):
@@ -851,7 +854,9 @@ class TestLoadKeymapSampleFiles:
         assert len(keymap.tap_dances) > 0
         assert len(keymap.macros) > 0
         assert all(td.id == str(i) for i, td in enumerate(keymap.tap_dances))
-        assert all(m.id == str(i + 1) for i, m in enumerate(keymap.macros))
+        # Macros are 0-based; empty entries are skipped so ids may not be
+        # contiguous, but each id must parse as a non-negative integer.
+        assert all(int(m.id) >= 0 for m in keymap.macros)
 
     def test_keybard_sample_has_tap_dances_and_macros(self):
         path = self.SAMPLES_DIR / "keybard-sample.kbi"

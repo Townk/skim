@@ -1040,7 +1040,7 @@ class TestGenerateFromKeymapMacrosAndTapDances:
 
         macros = config["keycodes"]["macros"]
         assert len(macros) == 1
-        assert macros[0]["id"] == "1"
+        assert macros[0]["id"] == "0"
         assert macros[0]["name"] is None
         assert macros[0]["preview"] == '%%nf-md-text_recognition; "hello"'
 
@@ -1066,9 +1066,9 @@ class TestGenerateFromKeymapMacrosAndTapDances:
         yaml_out = ConfigGenerator().generate_from_keymap(json.dumps(data))
         config = yaml.safe_load(yaml_out)
 
-        # Empty entries skipped; non-empty kept with their original ids
+        # Empty entries skipped; non-empty kept with their original 0-based ids.
         assert [td["id"] for td in config["keycodes"]["tap_dances"]] == ["1"]
-        assert [m["id"] for m in config["keycodes"]["macros"]] == ["2"]
+        assert [m["id"] for m in config["keycodes"]["macros"]] == ["1"]
 
     def test_c2json_without_macros_yields_empty_lists(self):
         import json
@@ -1109,7 +1109,7 @@ class TestGenerateFromKeybardMacrosAndTapDances:
 
         macros = config["keycodes"]["macros"]
         assert len(macros) == 1
-        assert macros[0]["id"] == "2"
+        assert macros[0]["id"] == "1"
         assert macros[0]["preview"] == "↓↑ X"
 
         tap_dances = config["keycodes"]["tap_dances"]

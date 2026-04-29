@@ -129,7 +129,8 @@ def _parse_keybard_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
 def _parse_keybard_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
     """Parse the top-level ``macros`` array if present.
 
-    IDs are 1-based (``mid + 1``) to match the Vial UI labelling (Macro 1–50).
+    IDs are 0-based, matching how keycodes reference macros (``M0`` → first
+    macro). Entries with no actions are silently skipped.
     """
     raw = data.get("macros")
     if not isinstance(raw, list):
@@ -141,10 +142,13 @@ def _parse_keybard_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
         mid = entry["mid"]
         if not isinstance(mid, int):
             continue
+        parsed_actions = _parse_vial_macro_actions(entry.get("actions", []))
+        if not parsed_actions:
+            continue
         macros.append(
             SvalboardMacro[str](
-                id=str(mid + 1),
-                actions=_parse_vial_macro_actions(entry.get("actions", [])),
+                id=str(mid),
+                actions=parsed_actions,
             )
         )
     return tuple(macros)
@@ -193,15 +197,19 @@ def _parse_c2json_macro_actions(raw: Any) -> tuple[SvalboardMacroAction[str], ..
 def _parse_c2json_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
     """Parse the optional top-level ``macros`` array if present.
 
-    IDs are 1-based to match the Vial UI labelling (Macro 1–50).
+    IDs are 0-based, matching how keycodes reference macros (``M0`` → first
+    macro). Entries with no actions are silently skipped.
     """
     raw = data.get("macros")
     if not isinstance(raw, list):
         return ()
-    return tuple(
-        SvalboardMacro[str](id=str(index), actions=_parse_c2json_macro_actions(actions))
-        for index, actions in enumerate(raw, start=1)
-    )
+    macros: list[SvalboardMacro[str]] = []
+    for index, actions in enumerate(raw):
+        parsed_actions = _parse_c2json_macro_actions(actions)
+        if not parsed_actions:
+            continue
+        macros.append(SvalboardMacro[str](id=str(index), actions=parsed_actions))
+    return tuple(macros)
 
 
 def _parse_vial_action(raw: Any) -> SvalboardMacroAction[str] | None:
@@ -239,15 +247,19 @@ def _parse_vial_macro_actions(raw: Any) -> tuple[SvalboardMacroAction[str], ...]
 def _parse_vial_macros(data: Any) -> tuple[SvalboardMacro[str], ...]:
     """Parse the top-level ``macro`` array if present.
 
-    IDs are 1-based to match the Vial UI labelling (Macro 1–50).
+    IDs are 0-based, matching how keycodes reference macros (``M0`` → first
+    macro). Entries with no actions are silently skipped.
     """
     raw = data.get("macro")
     if not isinstance(raw, list):
         return ()
-    return tuple(
-        SvalboardMacro[str](id=str(index), actions=_parse_vial_macro_actions(actions))
-        for index, actions in enumerate(raw, start=1)
-    )
+    macros: list[SvalboardMacro[str]] = []
+    for index, actions in enumerate(raw):
+        parsed_actions = _parse_vial_macro_actions(actions)
+        if not parsed_actions:
+            continue
+        macros.append(SvalboardMacro[str](id=str(index), actions=parsed_actions))
+    return tuple(macros)
 
 
 def _parse_vial(data: Any) -> ParsedKeymap:
