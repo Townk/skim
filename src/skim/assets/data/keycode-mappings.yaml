@@ -1391,32 +1391,18 @@ function_descriptions:
   # Layer functions only — tap-hold combinations (LT, modifier-tap *_T,
   # generic MT) are intentionally NOT described here. The user can read
   # those keys directly from the rendered tap|hold label.
-  DF:
-    symbol: "%%nf-md-memory; %%nf-md-layers; #"
-    description: "Set default layer to # until power down"
-  PDF:
-    symbol: "%%nf-fa-floppy_disk; %%nf-md-layers; #"
-    description: "Set permanent default layer to # (persists after power down)"
-  MO:
-    symbol: "%%nf-md-layers_outline; #"
-    description: "Change to layer # while holding"
-  LM:
-    symbol: "%%nf-md-layers_outline; # +mods"
-    description: "Change to layer # while holding (with modifiers)"
-  OSL:
-    symbol: "%%nf-md-layers_outline;¹ #"
-    description: "One-shot layer # (next key triggers it once)"
-  TG:
-    symbol: "%%nf-md-layers_triple; #"
-    description: "Toggle layer # on/off"
-  TO:
-    symbol: "%%nf-md-layers; #"
-    description: "Activate layer # and turn off all others except base"
-  TT:
-    symbol: "%%nf-md-layers_triple_outline; #"
-    description: "Layer #: momentary on hold, toggle on multi-tap"
+  #
+  # The display symbol is derived automatically from the macro_functions
+  # template via the label adapter (``#`` is used as the layer-arg
+  # placeholder). No ``symbol`` field is needed here.
+  DF: "Set default layer to # until power down"
+  PDF: "Set permanent default layer to # (persists after power down)"
+  MO: "Change to layer # while holding"
+  LM: "Change to layer # while holding (with modifiers)"
+  OSL: "One-shot layer # (next key triggers it once)"
+  TG: "Toggle layer # on/off"
+  TO: "Activate layer # and turn off all others except base"
+  TT: "Layer #: momentary on hold, toggle on multi-tap"
 
   # One-shot modifier — describes the one-shot mechanic (not tap-hold).
-  OSM:
-    symbol: "mod¹"
-    description: "One-shot modifier (next key gets the modifier once)"
+  OSM: "One-shot modifier (next key gets the modifier once)"

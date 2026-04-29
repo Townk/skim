@@ -225,34 +225,35 @@ class TestCollectUsedDescriptions:
         assert "Left Alt" in descriptions
         assert len(entries) == 2
 
-    def test_function_entry_uses_symbol_field_with_placeholder(self):
-        """A function-description entry uses its yaml ``symbol`` field
-        (with the # placeholder), not the template-resolved label."""
+    def test_function_display_label_derived_from_template(self):
+        """A function-description entry derives its display_label from the
+        macro_functions template via the label adapter (``#`` as layer arg).
+
+        When the template has no layer placeholder the adapter appends `` #``
+        for layer functions so the legend reader knows a layer arg is involved.
+        """
         from skim.application.render.symbol_legend import collect_used_descriptions
 
         mappings: dict = {
-            "keycodes": {
-                "KC_LEFT_ALT": "⌥",
-            },
+            "keycodes": {},
             "pre_processing": {},
             "macro_functions": {
-                "MO": "%%nf-md-layers_outline; #1;",
+                # Template has no #N; placeholder — layer shown as icon only.
+                "MO": "%%nf-md-layers_outline;",
             },
             "modifier_union": {},
             "symbol_descriptions": {},
             "function_descriptions": {
-                "MO": {
-                    "symbol": "⌥ #",
-                    "description": "Hold layer #",
-                },
+                "MO": "Hold layer #",
             },
         }
         entries = collect_used_descriptions(["MO(5)"], None, mappings)
         mo_entries = [e for e in entries if e.sort_key == "MO"]
         assert len(mo_entries) == 1
         entry = mo_entries[0]
-        # display_label comes from the symbol field, not template-resolved label
-        assert entry.display_label == "⌥ #"
+        # display_label is derived from the template + ``#`` appended for layer functions
+        assert "%%nf-md-layers_outline;" in entry.display_label
+        assert "#" in entry.display_label
         assert entry.description == "Hold layer #"
 
 

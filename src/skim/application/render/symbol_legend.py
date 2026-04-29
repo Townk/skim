@@ -30,7 +30,7 @@ import drawsvg as draw
 
 from skim.application.render.text import Font, Label, TextPart
 from skim.data import KeycodeMappings, SvalboardKeymap
-from skim.domain import SvalboardTargetKey
+from skim.domain import SEPARATOR_CHAR, SvalboardTargetKey
 
 # ---------------------------------------------------------------------------
 # Data types
@@ -41,6 +41,13 @@ _FUNC_RE = re.compile(r"^([A-Z][A-Z0-9_]*)\((.+)\)$")
 
 _ALIAS_RE = re.compile(r"@@([A-Z0-9_]+);")
 """Match ``@@KEYCODE;`` alias references inside a label string."""
+
+_LAYER_FUNCTION_NAMES = frozenset(
+    {"DF", "PDF", "MO", "LM", "LT", "OSL", "TG", "TO", "TT"}
+)
+"""Layer-switching function names for which a ``#`` layer-arg indicator is
+appended to the display label when the rendered result doesn't already
+contain one."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,27 +100,48 @@ def _resolve_aliases(
     return chain
 
 
-def _get_function_label(
+def _count_placeholders(template: str) -> int:
+    """Count ``@N;`` and ``#N;`` placeholders in a function template."""
+    return len(re.findall(r"[@#]\d+;", template))
+
+
+def _function_display_label(
     func_name: str,
     macro_functions: dict[str, str],
+    keycode_mappings: KeycodeMappings,
 ) -> str:
-    """Return a display label for a function (the non-argument part of the template).
+    """Render the display symbol for a function-description entry.
 
-    We strip ``@N;`` and ``#N;`` placeholders and ``|;`` separators from
-    the template, then keep only ``%%...;`` nerd-font glyph tokens and any
-    remaining plain text.  If nothing meaningful is left, fall back to the
-    function name itself.
+    Builds a synthetic keycode (``MO(#)``, ``LM(#,KC_NO)``, …) and runs
+    it through the standard label adapter so glyphs render exactly as they
+    do on a key.  ``#`` is used as the layer-arg placeholder.
+
+    For layer functions, when the resolved label contains no layer reference
+    (no ``#`` character and no separator), ``#`` is appended so the legend
+    reader sees that a layer arg is part of the function.
     """
-    template = macro_functions.get(func_name)
-    if not template:
-        return func_name
+    from skim.data import Keyboard
+    from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
 
-    # Remove placeholders and separators
-    cleaned = re.sub(r"[#@]\d+;", "", template)
-    cleaned = cleaned.replace("|;", "").strip()
+    adapter = KeycodeLabelAdapter(Keyboard(), keycode_mappings)
 
-    # If the cleaned template has content, use it; otherwise use func_name
-    return cleaned if cleaned else func_name
+    template = macro_functions.get(func_name, "")
+    arg_count = max(1, _count_placeholders(template))
+    args = ["#"] + ["KC_NO"] * (arg_count - 1)
+    synthetic = f"{func_name}({','.join(args)})"
+    result = adapter.transform(synthetic)
+    label = result.label or ""
+
+    # If this is a layer function but the rendered label has no layer
+    # reference, append ``#`` so the legend shows it takes a layer arg.
+    if (
+        func_name in _LAYER_FUNCTION_NAMES
+        and "#" not in label
+        and SEPARATOR_CHAR not in label
+    ):
+        label = f"{label} #" if label else "#"
+
+    return label
 
 
 def _parse_function_args(args_str: str) -> list[str]:
@@ -253,13 +281,10 @@ def _collect_raw(
             # Check function_descriptions
             if func_name in func_desc and func_name not in visited_funcs:
                 fd_entry = func_desc[func_name]
-                if isinstance(fd_entry, dict):
-                    desc = fd_entry["description"]
-                    label = fd_entry["symbol"]
-                else:
-                    # Legacy plain-string form
-                    desc = fd_entry
-                    label = _get_function_label(func_name, macro_functions)
+                desc = fd_entry["description"] if isinstance(fd_entry, dict) else fd_entry
+                label = _function_display_label(
+                    func_name, macro_functions, keycode_mappings
+                )
                 sort_k = func_name
                 if sort_k not in out:
                     out[sort_k] = SymbolLegendEntry(
