@@ -39,6 +39,13 @@ from .indicators import (
     _thumb_cluster_offset,
 )
 from .layout import Boundary, KeymapLayoutMetrics
+from .legend import (
+    all_macros,
+    all_tap_dances,
+    build_legend,
+    legend_height,
+    plan_layout,
+)
 from .overview_layout import (
     _BADGE_PADDING_LEFT,
     _BADGE_PADDING_RIGHT,
@@ -667,6 +674,18 @@ def draw_overview(
     padding = layout.padding
     margin = base_metrics.margin
 
+    # Plan and reserve space for the macros/TDs legend at the bottom.
+    macro_entries = all_macros(keymap.macros)
+    td_entries = all_tap_dances(keymap.tap_dances)
+    legend_plan = plan_layout(macro_entries, td_entries)
+    legend_top_gap = 36.0
+    legend_content_width = canvas_w - 2 * padding
+    legend_h = legend_height(legend_plan, legend_content_width)
+    keyboard_section_bottom = canvas_h - copyright_extra
+    legend_top = keyboard_section_bottom + legend_top_gap if legend_h > 0 else None
+    if legend_h > 0:
+        canvas_h += legend_top_gap + legend_h
+
     d = draw.Drawing(canvas_w, canvas_h)
 
     if not use_system_fonts:
@@ -856,6 +875,19 @@ def draw_overview(
             path.args["stroke-linecap"] = "round"
             path.args["opacity"] = 0.7
             d.append(path)
+
+    # Macro/TD legend
+    if legend_plan is not None and legend_top is not None:
+        legend_group = build_legend(
+            layout=legend_plan,
+            x=padding,
+            y=legend_top,
+            content_width=legend_content_width,
+            palette=palette,
+            use_system_fonts=use_system_fonts,
+        )
+        if legend_group is not None:
+            d.append(legend_group)
 
     # Copyright
     if config.output.copyright:
