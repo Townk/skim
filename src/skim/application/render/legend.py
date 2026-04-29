@@ -531,19 +531,25 @@ def build_tap_dance_row(
     accent_line: str,
     text_color: str,
     use_system_fonts: bool = False,
+    name_column_width: float = TD_NAME_W - TAG_W,
 ) -> draw.Group:
     """Render a single tap-dance row at ``(x, y)``.
 
     ``y`` is the vertical centre of the row.
+    ``name_column_width`` is the width reserved between the chip and the
+    variant cells for the optional name. Pass ``0`` when the entire
+    tap-dance section has no titled entries to render variant cells flush
+    against the chip.
     """
     g = draw.Group()
+    cells_offset = TAG_W + name_column_width
     # Title chip — fixed-width filled tag on the left. When a name is set,
     # an outlined rectangle extends to the right to surround the name.
     g.append(draw.Rectangle(
         x=x, y=y - TD_ROW_HEIGHT / 2, width=TAG_W, height=TD_ROW_HEIGHT,
         fill=accent_fill,
     ))
-    chip_outline_width = TD_NAME_W if td.name else TAG_W
+    chip_outline_width = cells_offset if td.name else TAG_W
     g.append(draw.Rectangle(
         x=x, y=y - TD_ROW_HEIGHT / 2, width=chip_outline_width,
         height=TD_ROW_HEIGHT, rx=4, ry=4,
@@ -572,7 +578,7 @@ def build_tap_dance_row(
             font_family="'Roboto', sans-serif", fill=text_color,
         ))
     # Four variant cells.
-    cells_x = x + TD_NAME_W + 12
+    cells_x = x + cells_offset + 12
     for i, variant in enumerate((td.tap, td.hold, td.double_tap, td.tap_then_hold)):
         cell_x = cells_x + i * TD_CELL_W + TD_CELL_W / 2 - 40
         g.append(_tap_dance_cell(cell_x, y, variant, text_color, use_system_fonts))
@@ -580,11 +586,17 @@ def build_tap_dance_row(
 
 
 def build_tap_dance_column_header(
-    x: float, y: float, text_color: str
+    x: float, y: float, text_color: str,
+    name_column_width: float = TD_NAME_W - TAG_W,
 ) -> draw.Group:
-    """Render the once-per-column TAP/HOLD/DOUBLE-TAP/TAP&HOLD strip."""
+    """Render the once-per-column TAP/HOLD/DOUBLE-TAP/TAP&HOLD strip.
+
+    ``name_column_width`` should match the value passed to
+    :func:`build_tap_dance_row` so the column labels align with their
+    cells.
+    """
     g = draw.Group()
-    cells_x = x + TD_NAME_W + 12
+    cells_x = x + TAG_W + name_column_width + 12
     for i, label in enumerate(("TAP", "HOLD", "DOUBLE-TAP", "TAP & HOLD")):
         g.append(draw.Text(
             label, x=cells_x + i * TD_CELL_W + TD_CELL_W / 2,
@@ -747,6 +759,18 @@ def _draw_macro_column(
     return cursor
 
 
+def _td_name_column_width(
+    *row_groups: list[SvalboardTapDance[SvalboardTargetKey]],
+) -> float:
+    """Reserve the name area only when at least one row has a name.
+
+    All passed groups share the same compact decision so left/right
+    columns of a span-columns section align consistently.
+    """
+    has_any_name = any(td.name for group in row_groups for td in group)
+    return (TD_NAME_W - TAG_W) if has_any_name else 0.0
+
+
 def _draw_td_column(
     g: draw.Group,
     rows: list[SvalboardTapDance[SvalboardTargetKey]],
@@ -757,9 +781,11 @@ def _draw_td_column(
     accent_line: str,
     text_color: str,
     use_system_fonts: bool = False,
+    name_column_width: float = TD_NAME_W - TAG_W,
 ) -> None:
     g.append(build_tap_dance_column_header(
         x=col_x, y=start_y + 12, text_color=text_color,
+        name_column_width=name_column_width,
     ))
     cursor = start_y + TD_HEADER_HEIGHT
     for t in rows:
@@ -768,6 +794,7 @@ def _draw_td_column(
             column_width=col_w,
             accent_fill=accent_fill, accent_line=accent_line,
             text_color=text_color, use_system_fonts=use_system_fonts,
+            name_column_width=name_column_width,
         ))
         cursor += TD_ROW_HEIGHT + TD_ROW_GAP
 
@@ -827,16 +854,21 @@ def build_legend(
             count=len(layout.tap_dance_left) + len(layout.tap_dance_right),
         )
         rows_top = y + SECTION_HEADER_HEIGHT
+        td_name_w = _td_name_column_width(
+            layout.tap_dance_left, layout.tap_dance_right,
+        )
         _draw_td_column(
             g, layout.tap_dance_left, x, rows_top, col_w,
             palette.tap_dance_color, td_line, palette.text_color,
             use_system_fonts=use_system_fonts,
+            name_column_width=td_name_w,
         )
         if layout.tap_dance_right:
             _draw_td_column(
                 g, layout.tap_dance_right, x + col_w + COLUMN_GAP, rows_top, col_w,
                 palette.tap_dance_color, td_line, palette.text_color,
                 use_system_fonts=use_system_fonts,
+                name_column_width=td_name_w,
             )
         return g
 
@@ -858,10 +890,12 @@ def build_legend(
         g, x + col_w + COLUMN_GAP, y, col_w, td_line,
         count=len(layout.tap_dance_left),
     )
+    td_name_w = _td_name_column_width(layout.tap_dance_left)
     _draw_td_column(
         g, layout.tap_dance_left, x + col_w + COLUMN_GAP,
         y + SECTION_HEADER_HEIGHT, col_w,
         palette.tap_dance_color, td_line, palette.text_color,
         use_system_fonts=use_system_fonts,
+        name_column_width=td_name_w,
     )
     return g
