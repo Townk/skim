@@ -563,9 +563,12 @@ def symbol_legend_height(
         _measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries
     )
 
-    # Description text widths (per-entry, using the widest for column sizing)
-    desc_font = Font.FINGER_KEY.load(_DESC_FONT_SIZE)
-    max_desc_w = max(desc_font.getlength(e.description) for e in entries)
+    # Description text widths — use the same Label-parts-aware measurement
+    # as the glyph column so NerdFont/symbol fragments and other non-BMP
+    # codepoints in resolved descriptions are sized correctly.
+    max_desc_w = max(
+        _measure_label_width(e.description, _DESC_FONT_SIZE) for e in entries
+    )
 
     entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + _ENTRY_RIGHT_PAD
     col_count = max(1, int((content_width + _COLUMN_GAP) / (entry_w + _COLUMN_GAP)))
@@ -600,8 +603,9 @@ def build_symbol_legend(
         _measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries
     )
 
-    desc_font_obj = Font.FINGER_KEY.load(_DESC_FONT_SIZE)
-    max_desc_w = max(desc_font_obj.getlength(e.description) for e in entries)
+    max_desc_w = max(
+        _measure_label_width(e.description, _DESC_FONT_SIZE) for e in entries
+    )
 
     entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + _ENTRY_RIGHT_PAD
     col_count = max(1, int((content_width + _COLUMN_GAP) / (entry_w + _COLUMN_GAP)))
