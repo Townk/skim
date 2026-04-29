@@ -164,6 +164,33 @@ keycodes:
   KC_ACCEL1: "@@QK_MOUSE_ACCELERATION_1;"
   KC_ACCEL2: "@@QK_MOUSE_ACCELERATION_2;"
 
+  # LED Underglow keys
+  QK_UNDERGLOW_TOGGLE: "%%nf-md-led_on; ⏻"
+  RGB_TOG: "@@QK_UNDERGLOW_TOGGLE;"
+  QK_UNDERGLOW_MODE_NEXT: "%%nf-md-led_off; →"
+  RGB_MOD: "@@QK_UNDERGLOW_MODE_NEXT;"
+  RGB_MODE_FORWARD: "@@QK_UNDERGLOW_MODE_NEXT;"
+  QK_UNDERGLOW_MODE_PREVIOUS: "%%nf-md-led_off; ←"
+  RGB_RMOD: "@@QK_UNDERGLOW_MODE_PREVIOUS;"
+  RGB_MODE_REVERSE: "@@QK_UNDERGLOW_MODE_PREVIOUS;"
+  QK_UNDERGLOW_HUE_UP: "H %%nf-cod-symbol_color; ↑"
+  RGB_HUI: "@@QK_UNDERGLOW_HUE_UP;"
+  QK_UNDERGLOW_HUE_DOWN: "H %%nf-cod-symbol_color; ↓"
+  RGB_HUD: "@@QK_UNDERGLOW_HUE_DOWN;"
+  QK_UNDERGLOW_SATURATION_UP: "S %%nf-cod-symbol_color; ↑"
+  RGB_SAI: "@@QK_UNDERGLOW_SATURATION_UP;"
+  QK_UNDERGLOW_SATURATION_DOWN: "S %%nf-cod-symbol_color; ↓"
+  RGB_SAD: "@@QK_UNDERGLOW_SATURATION_DOWN;"
+  QK_UNDERGLOW_VALUE_UP: "V %%nf-cod-symbol_color; ↑"
+  RGB_VAI: "@@QK_UNDERGLOW_VALUE_UP;"
+  QK_UNDERGLOW_VALUE_DOWN: "V %%nf-cod-symbol_color; ↓"
+  RGB_VAD: "@@QK_UNDERGLOW_VALUE_DOWN;"
+  QK_UNDERGLOW_SPEED_UP: "%%nf-md-led_on; %%nf-md-speedometer; ↑"
+  RGB_SPI: "@@QK_UNDERGLOW_SPEED_UP;"
+  QK_UNDERGLOW_SPEED_DOWN: "%%nf-md-led_on; %%nf-md-speedometer; ↓"
+  RGB_SPD: "@@QK_UNDERGLOW_SPEED_DOWN;"
+  
+
   # Punctuation and symbols
   KC_ENTER: "%%nf-md-keyboard_return;"
   KC_ENT: "@@KC_ENTER;"
@@ -453,11 +480,11 @@ keycodes:
   KC_QUES: "@@KC_QUESTION;"
 
   # QMK Quantum keycodes
-  QK_CAPS_WORD_TOGGLE: "%%nf-md-apple_keyboard_caps;"
-  CW_TOGG: "%%nf-md-apple_keyboard_caps;"
-  QK_REPEAT_KEY: "%%nf-fa-repeat; REP"
+  QK_CAPS_WORD_TOGGLE: "@@KC_CAPS_LOCK; ʷ"
+  CW_TOGG: "@@QK_CAPS_WORD_TOGGLE;"
+  QK_REPEAT_KEY: "%%nf-fa-repeat;"
   QK_REP: "@@QK_REPEAT_KEY;"
-  QK_ALT_REPEAT_KEY: "@@QK_REPEAT_KEY;'"
+  QK_ALT_REPEAT_KEY: "@@QK_REPEAT_KEY; ′"
   QK_ALT_REP: "@@QK_ALT_REPEAT_KEY;"
 
   # Svalboard keys
@@ -473,33 +500,39 @@ keycodes:
   SV_RIGHT_DPI_DEC: "R %%nf-md-mouse_move_down;"
   SV_RDPD: "@@SV_RIGHT_DPI_DEC;"
   USER03: "@@SV_RIGHT_DPI_DEC;"
-  SV_LEFT_SCROLL_TOGGLE: "L %%nf-md-mouse_move_vertical;%%nf-md-toggle_switch_off_outline;"
+  SV_LEFT_SCROLL_TOGGLE: "L %%nf-md-mouse_move_vertical; ⏻"
   USER04: "@@SV_LEFT_SCROLL_TOGGLE;"
-  SV_RIGHT_SCROLL_TOGGLE: "R %%nf-md-mouse_move_vertical;%%nf-md-toggle_switch_off_outline;"
+  SV_RIGHT_SCROLL_TOGGLE: "R %%nf-md-mouse_move_vertical; ⏻"
   USER05: "@@SV_RIGHT_SCROLL_TOGGLE;"
   SV_RECALIBRATE_POINTER: "%%nf-md-tune_vertical; %%nf-fa-arrow_pointer;"
   USER06: "@@SV_RECALIBRATE_POINTER;"
-  SV_MH_CHANGE_TIMEOUTS: "%%nf-md-mouse;%%nf-weather-time_9;"
+  SV_MH_CHANGE_TIMEOUTS: "%%nf-md-mouse; %%nf-weather-time_9;"
   USER07: "@@SV_MH_CHANGE_TIMEOUTS;"
-  SV_CAPS_WORD: "@@KC_CAPS; W"
-  USER08: "@@SV_CAPS_WORD;"
-  SV_AXIS_SCROLL_LOCK: "%%nf-md-mouse_move_vertical;%%nf-oct-lock;"
+  SV_CAPS_WORD: "@@QK_CAPS_WORD_TOGGLE;"
+  USER08: "@@QK_CAPS_WORD_TOGGLE;"
+  SV_AXIS_SCROLL_LOCK: "%%nf-md-mouse_move_vertical; %%nf-oct-lock;"
   USER09: "@@SV_AXIS_SCROLL_LOCK;"
-  SV_SNIPER_2: "%%nf-md-crosshairs;2"
+  SV_TOGGLE_23_67: "%%nf-cod-layers; ²³" # " ²³"
+  USER10: "@@SV_TOGGLE_23_67;"
+  SV_TOGGLE_45_67: "%%nf-cod-layers; ⁴⁵" # " ⁴⁵"
+  USER11: "@@SV_TOGGLE_45_67;"
+  SV_SNIPER_2: "%%nf-md-crosshairs; ²"
   USER12: "@@SV_SNIPER_2;"
-  SV_SNIPER_3: "%%nf-md-crosshairs;3"
+  SV_SNIPER_3: "%%nf-md-crosshairs; ³"
   USER13: "@@SV_SNIPER_3;"
-  SV_SNIPER_5: "%%nf-md-crosshairs;5"
+  SV_SNIPER_5: "%%nf-md-crosshairs; ⁵"
   USER14: "@@SV_SNIPER_5;"
-  SV_SCROLL_HOLD: "%%nf-oct-pin;%%nf-md-mouse_move_vertical;"
+  SV_SCROLL_HOLD: "%%nf-oct-pin; %%nf-md-mouse_move_vertical;"
   USER15: "@@SV_SCROLL_HOLD;"
-  SV_SCROLL_TOGGLE: "%%nf-md-mouse_move_vertical;%%nf-md-toggle_switch_off_outline;"
+  SV_SCROLL_TOGGLE: "%%nf-md-mouse_move_vertical; %%nf-md-toggle_switch_off_outline;"
   USER16: "@@SV_SCROLL_TOGGLE;"
   SV_OUTPUT_STATUS: "%%nf-oct-log;"
   SV_SOUT: "@@SV_OUTPUT_STATUS;"
   USER17: "@@SV_OUTPUT_STATUS;"
-  SV_TOGGLE_AUTOMOUSE: "%%nf-md-mouse;"
+  SV_TOGGLE_AUTOMOUSE: "%%nf-md-auto_fix; %%nf-md-mouse;"
   USER18: "@@SV_TOGGLE_AUTOMOUSE;"
+  SV_TURBO_SCAN: "%%nf-md-data_matrix_scan;"
+  USER19: "@@SV_TURBO_SCAN;"
 
   # Macro Keys
   M0: "%%nf-md-script_text_play_outline; 0"
@@ -1113,31 +1146,31 @@ macro_functions:
   RSAG_T: "@@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI;|;@0;"
   MEH_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT;|;@0;"
   HYPR_T: "@@KC_LEFT_CTRL; @@KC_LEFT_SHIFT; @@KC_LEFT_ALT; @@KC_LEFT_GUI;|;@0;"
-  DF: "%%nf-md-memory; %%nf-md-layers;" # 󰍛 󰌨 3 - Swap default layer until power down
-  PDF: "%%nf-fa-floppy_disk; %%nf-md-layers;" #  󰌨 4 - Make permanent default layer (persist after power down)
-  MO: "%%nf-md-layers_outline;" # 󰧾 5 - Momentary layer
-  LM: "@1; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
-  LT: "%%nf-md-layers_outline;|;@1;" # 󰧾 11 - Tap-hold layer or key
-  OSL: "%%nf-md-layers_outline;¹" # 󰧾¹ 2 - One-shot layer
-  TG: "%%nf-md-layers_triple;" # 󰽘 9 - Toggle layer on or off
-  TO: "%%nf-md-layers;" # 󰌨 13 - Turn on target layer and off all other layer except base
-  TT: "%%nf-md-layers_triple_outline;" # 󰽙 16 - Momentary layer on hold, toggle on multi-tap
-  LT0: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT1: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT2: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT3: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT4: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT5: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT6: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT7: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT8: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT9: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT10: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT11: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT12: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT13: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT14: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
-  LT15: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 - Tap-hold layer or key
+  DF: "%%nf-md-layers;" # "󰌨 3" - Swap default layer until power down
+  PDF: "%%nf-md-layers_edit;" # "󱢒 4" - Make permanent default layer (persist after power down)
+  MO: "%%nf-md-layers_outline;" # "󰧾 5" - Momentary layer
+  LM: "@1; %%nf-md-layers_outline;" # "⌘ 󰧾 7" - Momentary layer with modifiers
+  LT: "%%nf-md-layers_outline;|;@1;" # "󰧾 11 | ⌘" - Tap-hold layer or key
+  OSL: "%%nf-md-layers_outline; ¹" # "󰧾 ¹ 2" - One-shot layer
+  TG: "%%nf-md-layers_plus;" # "󰹍 9" - Toggle layer on or off
+  TO: "%%nf-md-layers;" # "󰹌 13" - Turn on target layer and off all other layer except base
+  TT: "%%nf-md-layers_outline;,%%nf-md-layers_plus; " # "󰧾,󰹍 16" - Momentary layer on hold, toggle on multi-tap
+  LT0: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT1: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT2: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT3: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT4: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT5: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT6: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT7: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT8: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT9: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT10: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT11: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT12: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT13: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT14: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
+  LT15: "%%nf-md-layers_outline;|;@0;" # 󰧾 11 | ⌘ - Tap-hold layer or key
   LM0: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
   LM1: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
   LM2: "@0; %%nf-md-layers_outline;" # 󰧾 7 - Momentary layer with modifiers
