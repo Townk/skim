@@ -34,6 +34,9 @@ from skim.application.render.text import Font, Label, TextPart
 from skim.data import KeycodeMappings, SvalboardKeymap
 from skim.domain import SEPARATOR_CHAR, SvalboardTargetKey
 
+_TRANSPARENT_KEYCODES = frozenset({"KC_TRANSPARENT", "KC_TRNS", "_______"})
+_TRANSPARENT_GLYPH = "⛛"
+
 if TYPE_CHECKING:
     from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
 
@@ -349,6 +352,22 @@ def _collect_raw(
         # Apply pre-processing normalisation
         keycode = pre_proc.get(raw, raw)
 
+        # --- Special-case the transparent family ---
+        # ``KC_TRANSPARENT``, ``KC_TRNS`` and ``_______`` all resolve to
+        # an empty label in keycode-mappings.yaml (rendered as nothing
+        # on the key — the layer-0 fallthrough fills the slot). For the
+        # legend, collapse all three to a single entry with the
+        # Vial-style ⛛ glyph and the description on KC_TRANSPARENT.
+        if keycode in _TRANSPARENT_KEYCODES:
+            sort_k = "KC_TRANSPARENT"
+            if sort_k not in out and "KC_TRANSPARENT" in symbol_desc:
+                out[sort_k] = SymbolLegendEntry(
+                    display_label=_TRANSPARENT_GLYPH,
+                    description=symbol_desc["KC_TRANSPARENT"],
+                    sort_key=sort_k,
+                )
+            continue
+
         # --- Check the WHOLE keycode against symbol_descriptions first ---
         # This handles both atomic matches AND function-call patterns like
         # "A(KC_LEFT)" that are listed verbatim in symbol_descriptions.
@@ -506,12 +525,13 @@ def collect_used_descriptions(
 
 # Geometry constants
 _SYMBOL_HEADER_HEIGHT = 28
-_ENTRY_ROW_HEIGHT = 22
+_ENTRY_ROW_HEIGHT = 16
 _SYMBOL_FONT_SIZE = 10
 _DESC_FONT_SIZE = 10
-_COLUMN_GAP = 40.0
+_COLUMN_GAP = 18.0
 _GLYPH_DESC_GAP = 6.0    # gap between glyph cell and description text
-_ROW_GAP = 4.0
+_ROW_GAP = 1.0
+_ENTRY_RIGHT_PAD = 6.0   # pad between adjacent column entries
 
 
 def _measure_label_width(label: str, font_size: float) -> float:
@@ -547,7 +567,7 @@ def symbol_legend_height(
     desc_font = Font.FINGER_KEY.load(_DESC_FONT_SIZE)
     max_desc_w = max(desc_font.getlength(e.description) for e in entries)
 
-    entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + 14.0  # 14px right pad
+    entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + _ENTRY_RIGHT_PAD
     col_count = max(1, int((content_width + _COLUMN_GAP) / (entry_w + _COLUMN_GAP)))
     row_count = (len(entries) + col_count - 1) // col_count
 
@@ -583,7 +603,7 @@ def build_symbol_legend(
     desc_font_obj = Font.FINGER_KEY.load(_DESC_FONT_SIZE)
     max_desc_w = max(desc_font_obj.getlength(e.description) for e in entries)
 
-    entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + 14.0  # 14px right pad
+    entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + _ENTRY_RIGHT_PAD
     col_count = max(1, int((content_width + _COLUMN_GAP) / (entry_w + _COLUMN_GAP)))
 
     g = draw.Group()
@@ -593,18 +613,11 @@ def build_symbol_legend(
     )
 
     # Section header
-    n = len(entries)
     g.append(draw.Text(
         "SYMBOLS",
         x=x, y=y + 12,
         font_size=11, font_weight="700", letter_spacing=3,
         text_anchor="start", font_family=label_font, fill=accent_line,
-    ))
-    g.append(draw.Text(
-        f"{n} {'ENTRY' if n == 1 else 'ENTRIES'}",
-        x=x + content_width, y=y + 12,
-        font_size=10, text_anchor="end", fill="#888", font_weight="400",
-        letter_spacing=1, font_family=label_font,
     ))
     g.append(draw.Line(
         sx=x, sy=y + 20, ex=x + content_width, ey=y + 20,

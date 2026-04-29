@@ -1336,7 +1336,8 @@ symbol_descriptions:
   QK_ALT_REPEAT_KEY: "Alternate repeat of last key"
 
   # ---- Special / transparent ----
-  KC_NO: "No key (blocked)"
+  # KC_NO is intentionally not described — blocked slots are obvious from
+  # the (empty) keymap rendering, no need to clutter the legend.
   KC_TRANSPARENT: "Transparent (pass-through to lower layer)"
 
   # ---- Svalboard custom ----

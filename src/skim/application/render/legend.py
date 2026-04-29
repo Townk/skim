@@ -666,11 +666,6 @@ def _draw_macro_title(
         letter_spacing=3, text_anchor="start",
         font_family="'Roboto', sans-serif", fill=accent_line,
     ))
-    g.append(draw.Text(
-        f"{count} ENTRIES", x=x + width, y=y + 12, font_size=10,
-        text_anchor="end", fill="#888", font_weight="400", letter_spacing=1,
-        font_family="'Roboto', sans-serif",
-    ))
     g.append(draw.Line(
         sx=x, sy=y + 20, ex=x + width, ey=y + 20,
         stroke=accent_line, stroke_opacity=0.5, stroke_width=1.2,
@@ -684,11 +679,6 @@ def _draw_td_title(
         "TAP-DANCE", x=x, y=y + 12, font_size=11, font_weight="700",
         letter_spacing=3, text_anchor="start",
         font_family="'Roboto', sans-serif", fill=accent_line,
-    ))
-    g.append(draw.Text(
-        f"{count} ENTRIES", x=x + width, y=y + 12, font_size=10,
-        text_anchor="end", fill="#888", font_weight="400", letter_spacing=1,
-        font_family="'Roboto', sans-serif",
     ))
     g.append(draw.Line(
         sx=x, sy=y + 20, ex=x + width, ey=y + 20,
