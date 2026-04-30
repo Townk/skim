@@ -38,6 +38,7 @@ from skim.domain.adapters import KeycodeLabelAdapter, KeymapTargetAdapter
 from .exporter import save_drawings
 from .loaders import load_keycode_mappings, load_keymap, load_skim_config
 from .render import draw_keymap, make_gradient
+from .render.styling import adjust_color
 
 logger = logging.getLogger(__name__)
 """Module-level logger for keymap generation operations."""
@@ -75,6 +76,8 @@ def _get_config(
     show_symbol_legend: bool = True,
     symbol_legend_flow: str | None = None,
     title_override: str | None = None,
+    adjust_lightness: float | None = None,
+    adjust_saturation: float | None = None,
 ) -> SkimConfig:
     """Load and enhance configuration with generated gradients.
 
@@ -106,9 +109,23 @@ def _get_config(
     else:
         config = load_skim_config(config_path)
 
+    apply_color_adjust = config_path is None and (
+        adjust_lightness is not None or adjust_saturation is not None
+    )
+
+    def _maybe_adjust(color: str) -> str:
+        if not apply_color_adjust:
+            return color
+        return adjust_color(color, adjust_lightness, adjust_saturation)
+
     new_layers = tuple(
-        layer.model_copy(update={"gradient": make_gradient(layer.base_color, layer.color_index)})
-        if layer.gradient is None
+        layer.model_copy(
+            update={
+                "base_color": _maybe_adjust(layer.base_color),
+                "gradient": make_gradient(_maybe_adjust(layer.base_color), layer.color_index),
+            }
+        )
+        if layer.gradient is None or apply_color_adjust
         else layer
         for layer in config.output.style.palette.layers
     )
@@ -189,6 +206,8 @@ def generate_keymap(
     show_symbol_legend: bool = True,
     symbol_legend_flow: str | None = None,
     title: str | None = None,
+    adjust_lightness: float | None = None,
+    adjust_saturation: float | None = None,
 ) -> None:
     """Generate keymap visualization images.
 
@@ -225,6 +244,8 @@ def generate_keymap(
         show_symbol_legend=show_symbol_legend,
         symbol_legend_flow=symbol_legend_flow,
         title_override=title,
+        adjust_lightness=adjust_lightness,
+        adjust_saturation=adjust_saturation,
     )
     input_keymap = _get_input_keymap(inputs, config)
     keymap = _resolve_keymap(config, input_keymap)

@@ -242,6 +242,25 @@ def doctor() -> None:
     default=None,
     help="Override the overview keymap title (output.keymap_title).",
 )
+@click.option(
+    "--adjust-lightness",
+    "-L",
+    type=float,
+    default=None,
+    help=(
+        "Target lightness (0.0-1.0) applied to every layer base colour. "
+        "Ignored when --config is provided."
+    ),
+)
+@click.option(
+    "--adjust-saturation",
+    "-S",
+    type=float,
+    default=None,
+    help=(
+        "Cap saturation (0.0-1.0) on every layer base colour. Ignored when --config is provided."
+    ),
+)
 @click.argument("stdin_marker", required=False, type=click.STRING)
 def generate(
     config: Path | None,
@@ -256,6 +275,8 @@ def generate(
     no_symbols: bool,
     symbol_legend_flow: str | None,
     title: str | None,
+    adjust_lightness: float | None,
+    adjust_saturation: float | None,
     stdin_marker: str | None,
 ) -> None:
     """Generate keymap visualization images.
@@ -284,6 +305,11 @@ def generate(
         engine = RenderEngine(render_engine) if render_engine else None
         outputs = OutputFiles(output_dir, output_format, force, use_system_fonts, engine)
         targets = KeymapGeneratorTargets.from_args(layer, partial(click.echo, err=True))
+        if config is not None and (adjust_lightness is not None or adjust_saturation is not None):
+            click.echo(
+                "Note: --adjust-lightness/--adjust-saturation are ignored when --config is provided.",
+                err=True,
+            )
         generate_keymap(
             inputs,
             outputs,
@@ -292,6 +318,8 @@ def generate(
             show_symbol_legend=not no_symbols,
             symbol_legend_flow=symbol_legend_flow,
             title=title,
+            adjust_lightness=adjust_lightness,
+            adjust_saturation=adjust_saturation,
         )
     except click.Abort as e:
         click.echo(f"Aborted: {e}", err=True)
