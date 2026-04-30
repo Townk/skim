@@ -62,7 +62,11 @@ class CairoImageExporter:
     def _convert_drawing_text_to_paths(
         self, drawing: draw.Drawing, use_system_fonts: bool = False
     ) -> draw.Drawing:
-        new_drawing = draw.Drawing(drawing.width, drawing.height)
+        # Preserve any svg_args set on the source drawing (notably ``viewBox``,
+        # which the renderer uses to keep the natural coordinate system while
+        # presenting the SVG at the user-requested width/height).
+        svg_args = dict(getattr(drawing, "svg_args", {}) or {})
+        new_drawing = draw.Drawing(drawing.width, drawing.height, **svg_args)
 
         for element in drawing.elements:
             converted = self._convert_element(element, use_system_fonts)

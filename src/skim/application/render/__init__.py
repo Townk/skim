@@ -247,8 +247,14 @@ def _draw_layer(
         canvas_height += legend_block_h + bottom_inset
     canvas_height += copyright_extra
 
-    # Create drawing
-    d = draw.Drawing(canvas_width, canvas_height)
+    # The natural canvas may grow past the user-requested width — horizontal
+    # indicator offsets push the right edge out beyond ``m.width``. Honour the
+    # user's request by setting the SVG's ``width`` to the configured value
+    # and scaling the height proportionally; the natural coordinates stay in
+    # ``viewBox`` so the layout itself is untouched.
+    display_w = m.width
+    display_h = canvas_height * (display_w / canvas_width) if canvas_width else canvas_height
+    d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_width} {canvas_height}")
 
     # Layer title
     layer_title = (

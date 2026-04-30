@@ -819,7 +819,14 @@ def draw_overview(
     if not config.output.copyright and not routing_provides_buffer:
         canvas_h += max(0.0, padding - base_metrics.inset)
 
-    d = draw.Drawing(canvas_w, canvas_h)
+    # The natural canvas may grow past the user-requested width (the connector
+    # router reserves columns to the right of the cluster area). Honour the
+    # user's request by setting the SVG's ``width`` to the configured value
+    # and scaling the height proportionally; natural coordinates live in
+    # ``viewBox`` so the layout itself is untouched.
+    display_w = config.output.layout.width
+    display_h = canvas_h * (display_w / canvas_w) if canvas_w else canvas_h
+    d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
 
     if not use_system_fonts:
         for font in Font:
