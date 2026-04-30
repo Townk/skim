@@ -211,10 +211,19 @@ class TestKeymapGeneratorTargetsFromArgsKeywords:
         assert targets.selected_layers == []
 
     def test_all_keyword_returns_immediately(self):
-        """'all' keyword sets both and returns immediately."""
+        """'all' keyword sets every target except the combined special-keys image.
+
+        The macros and tap-dances images already cover that content
+        individually, so generating the combined image too would be
+        redundant; users who specifically want it must opt in with
+        ``-l special-keys``.
+        """
         targets = KeymapGeneratorTargets.from_args(("all",))
         assert targets.all_layers is True
         assert targets.overview is True
+        assert targets.macros is True
+        assert targets.tap_dances is True
+        assert targets.special_keys is False
         assert targets.selected_layers == []
 
     def test_all_keyword_ignores_subsequent_args(self):
@@ -222,7 +231,73 @@ class TestKeymapGeneratorTargetsFromArgsKeywords:
         targets = KeymapGeneratorTargets.from_args(("all", "1", "2", "overview"))
         assert targets.all_layers is True
         assert targets.overview is True
+        assert targets.macros is True
+        assert targets.tap_dances is True
+        assert targets.special_keys is False
         assert targets.selected_layers == []
+
+    def test_all_keyword_does_not_set_special_keys_implicitly(self):
+        """``-l all -l special-keys`` is the only way to combine all + combined."""
+        # ``all`` returns immediately, so a trailing ``special-keys`` is ignored.
+        only_all = KeymapGeneratorTargets.from_args(("all",))
+        assert only_all.special_keys is False
+        # Reordering forces the parser to honour ``special-keys`` separately
+        # because ``all`` has not been seen yet.
+        with_special = KeymapGeneratorTargets.from_args(("special-keys", "all"))
+        assert with_special.special_keys is False  # 'all' wins, returns early
+        # The supported way to get every image is to enumerate explicitly.
+        explicit = KeymapGeneratorTargets.from_args(
+            ("all-layers", "overview", "macros", "tap-dances", "special-keys")
+        )
+        assert explicit.all_layers is True
+        assert explicit.overview is True
+        assert explicit.macros is True
+        assert explicit.tap_dances is True
+        assert explicit.special_keys is True
+
+    def test_macros_keyword(self):
+        """'macros' sets macros=True without affecting other targets."""
+        targets = KeymapGeneratorTargets.from_args(("macros",))
+        assert targets.macros is True
+        assert targets.tap_dances is False
+        assert targets.special_keys is False
+        assert targets.overview is False
+        assert targets.all_layers is False
+
+    def test_tap_dances_keyword(self):
+        """'tap-dances' sets tap_dances=True without affecting other targets."""
+        targets = KeymapGeneratorTargets.from_args(("tap-dances",))
+        assert targets.tap_dances is True
+        assert targets.macros is False
+        assert targets.special_keys is False
+
+    def test_special_keys_keyword(self):
+        """'special-keys' sets special_keys=True without affecting other targets."""
+        targets = KeymapGeneratorTargets.from_args(("special-keys",))
+        assert targets.special_keys is True
+        assert targets.macros is False
+        assert targets.tap_dances is False
+
+    def test_special_key_targets_combine_with_layers(self):
+        """The new tokens compose freely with layer numbers and overview."""
+        targets = KeymapGeneratorTargets.from_args(
+            ("1", "macros", "tap-dances", "special-keys", "overview")
+        )
+        assert targets.selected_layers == [1]
+        assert targets.macros is True
+        assert targets.tap_dances is True
+        assert targets.special_keys is True
+        assert targets.overview is True
+        assert targets.all_layers is False
+
+    def test_default_targets_omit_special_keys_images(self):
+        """No -l should keep the today's behavior: every layer + overview only."""
+        targets = KeymapGeneratorTargets.from_args(())
+        assert targets.all_layers is True
+        assert targets.overview is True
+        assert targets.macros is False
+        assert targets.tap_dances is False
+        assert targets.special_keys is False
 
     def test_overview_with_layers(self):
         """Overview can be combined with specific layers."""

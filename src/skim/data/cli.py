@@ -141,6 +141,9 @@ class KeymapGeneratorTargets:
 
     all_layers: bool = False
     overview: bool = False
+    macros: bool = False
+    tap_dances: bool = False
+    special_keys: bool = False
     selected_layers: list[int] = field(default_factory=list)
 
     @classmethod
@@ -199,6 +202,9 @@ class KeymapGeneratorTargets:
 
         all_layers = False
         overview = False
+        macros = False
+        tap_dances = False
+        special_keys = False
         selected_layers: list[int] = []
 
         for token in tokens:
@@ -207,14 +213,30 @@ class KeymapGeneratorTargets:
 
             match token:
                 case "all":
+                    # Skip the combined ``special-keys`` image: the
+                    # macros and tap-dances images already show the
+                    # same content individually, so generating both
+                    # would be redundant. Users who want the combined
+                    # layout can still opt in via ``-l special-keys``.
                     return KeymapGeneratorTargets(
-                        all_layers=True, overview=True, selected_layers=[]
+                        all_layers=True,
+                        overview=True,
+                        macros=True,
+                        tap_dances=True,
+                        special_keys=False,
+                        selected_layers=[],
                     )
                 case "all-layers":
                     all_layers = True
                     selected_layers.clear()
                 case "overview":
                     overview = True
+                case "macros":
+                    macros = True
+                case "tap-dances":
+                    tap_dances = True
+                case "special-keys":
+                    special_keys = True
                 case _ if "-" in token:
                     try:
                         start_str, end_str = token.split("-")
@@ -231,4 +253,11 @@ class KeymapGeneratorTargets:
                     except ValueError:
                         logger(f"Skipping invalid layer selection: {token} ...")
 
-        return cls(all_layers, overview, selected_layers)
+        return cls(
+            all_layers=all_layers,
+            overview=overview,
+            macros=macros,
+            tap_dances=tap_dances,
+            special_keys=special_keys,
+            selected_layers=selected_layers,
+        )

@@ -14,7 +14,11 @@ keymap data into SVG drawings. It handles:
 - Geometry and shape generation
 """
 
+import logging
+
 import drawsvg as draw
+
+logger = logging.getLogger(__name__)
 
 from skim.assets import ASSETS
 from skim.data import (
@@ -39,6 +43,11 @@ from .legend import (
     resolve_tap_dances,
 )
 from .overview import HeaderDims, compute_header_dims, draw_overview
+from .special_keys_image import (
+    draw_macros_image,
+    draw_special_keys_image,
+    draw_tap_dances_image,
+)
 from .styling import make_gradient
 from .symbol_legend import (
     build_symbol_legend,
@@ -443,6 +452,44 @@ def draw_keymap(
             keymap,
             raw_keymap=raw_keymap,
             keycode_mappings=keycode_mappings,
+        )
+
+    has_macros = bool(keymap.macros)
+    has_tap_dances = bool(keymap.tap_dances)
+
+    if targets.macros:
+        if has_macros:
+            keymap_images["keymap-macros"] = draw_macros_image(config, keymap)
+        else:
+            logger.warning("Skipping macros image: no macros are defined in the keymap.")
+
+    if targets.tap_dances:
+        if has_tap_dances:
+            keymap_images["keymap-tap-dances"] = draw_tap_dances_image(config, keymap)
+        else:
+            logger.warning("Skipping tap-dances image: no tap-dances are defined in the keymap.")
+
+    if targets.special_keys:
+        if has_macros or has_tap_dances:
+            keymap_images["keymap-special-keys"] = draw_special_keys_image(config, keymap)
+        else:
+            logger.warning(
+                "Skipping special-keys image: no macros nor tap-dances are defined in the keymap."
+            )
+
+    # If the only thing the user asked for were special-key images and the
+    # keymap has neither macros nor tap-dances, surface a single overall
+    # warning so the message lands even when individual per-image warnings
+    # blur together.
+    only_special_keys_requested = (
+        not targets.selected_layers
+        and not targets.all_layers
+        and not targets.overview
+        and (targets.macros or targets.tap_dances or targets.special_keys)
+    )
+    if only_special_keys_requested and not keymap_images:
+        logger.warning(
+            "No macros nor tap-dances are defined in the keymap; no images will be created."
         )
 
     return keymap_images

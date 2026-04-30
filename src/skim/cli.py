@@ -189,7 +189,10 @@ def doctor() -> None:
     "--layer",
     "-l",
     multiple=True,
-    help="Layers to generate (all, all-layers, overview, N, N-M).",
+    help=(
+        "Layers/images to generate (all, all-layers, overview, macros, "
+        "tap-dances, special-keys, N, N-M)."
+    ),
 )
 @click.option(
     "--use-system-fonts",
@@ -318,11 +321,17 @@ def generate(
     \b
     Layer selection examples:
         -l overview       Generate only the overview image
+        -l macros         Generate only the macros image
+        -l tap-dances     Generate only the tap-dances image
+        -l special-keys   Generate only the macros + tap-dances combined image
         -l 1              Generate only layer 1
         -l 1-3            Generate layers 1, 2, and 3
         -l 1 -l 3 -l 5    Generate layers 1, 3, and 5
-        -l all            Generate all individual layers
-        (no -l)           Generate all layers plus overview
+        -l all-layers     Generate every individual layer
+        -l all            Generate every layer + overview + macros + tap-dances
+                          (skips the combined special-keys image; opt in
+                          explicitly with -l special-keys)
+        (no -l)           Generate every layer plus overview
     """
 
     try:

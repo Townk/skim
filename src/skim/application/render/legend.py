@@ -838,19 +838,23 @@ def _tap_dance_cell(
     text_color: str,
     geom: _LegendGeometry,
     use_system_fonts: bool = False,
+    inner_width: float | None = None,
 ) -> draw.Group:
     """Render one of the four variant cells (TAP, HOLD, DOUBLE-TAP, TAP&HOLD).
 
-    ``y`` is the vertical centre of the cell. An empty (``None``) cell
-    renders as a dashed placeholder rect.
+    ``y`` is the vertical centre of the cell. ``x`` is the left edge of the
+    inner rect. ``inner_width`` overrides the rect width (and label centre)
+    when the caller stretches cells to fill a wider column. An empty
+    (``None``) cell renders as a dashed placeholder rect.
     """
+    rect_w = inner_width if inner_width is not None else geom.td_cell_inner_w
     g = draw.Group()
     if content is None:
         g.append(
             draw.Rectangle(
                 x=x,
                 y=y - geom.td_cell_half_height,
-                width=geom.td_cell_inner_w,
+                width=rect_w,
                 height=geom.td_row_height,
                 rx=geom.pill_corner_radius,
                 ry=geom.pill_corner_radius,
@@ -865,7 +869,7 @@ def _tap_dance_cell(
         draw.Rectangle(
             x=x,
             y=y - geom.td_cell_half_height,
-            width=geom.td_cell_inner_w,
+            width=rect_w,
             height=geom.td_row_height,
             rx=geom.pill_corner_radius,
             ry=geom.pill_corner_radius,
@@ -883,7 +887,7 @@ def _tap_dance_cell(
     )
     g.append(
         cell_label.build_text(
-            x=x + geom.td_cell_label_half_width,
+            x=x + rect_w / 2,
             y=y + geom.tag_inner_text_baseline_offset,
             font_size=geom.td_cell_label_font_size,
             use_system_fonts=use_system_fonts,
@@ -903,6 +907,7 @@ def build_tap_dance_row(
     use_system_fonts: bool = False,
     name_column_width: float | None = None,
     doc_width: float = 1600.0,
+    cell_width: float | None = None,
 ) -> draw.Group:
     """Render a single tap-dance row at ``(x, y)``.
 
@@ -911,10 +916,15 @@ def build_tap_dance_row(
     variant cells for the optional name. Pass ``0`` when the entire
     tap-dance section has no titled entries to render variant cells flush
     against the chip. Defaults to ``td_name_w - tag_w`` when omitted.
+    ``cell_width`` overrides each variant cell's column slot — used by the
+    standalone tap-dance image to stretch the table to fill the canvas.
+    The inner rect scales proportionally so it stays centred in the slot.
     """
     geom = _LegendGeometry.for_doc_width(doc_width)
     if name_column_width is None:
         name_column_width = geom.td_name_w - geom.tag_w
+    cell_w = cell_width if cell_width is not None else geom.td_cell_w
+    inner_w = geom.td_cell_inner_w * (cell_w / geom.td_cell_w)
     g = draw.Group()
     cells_offset = geom.tag_w + name_column_width
     # Title chip — fixed-width filled tag on the left. When a name is set,
@@ -975,8 +985,12 @@ def build_tap_dance_row(
     # Four variant cells.
     cells_x = x + cells_offset + geom.row_content_indent_gap
     for i, variant in enumerate((td.tap, td.hold, td.double_tap, td.tap_then_hold)):
-        cell_x = cells_x + i * geom.td_cell_w + geom.td_cell_w / 2 - geom.td_cell_label_half_width
-        g.append(_tap_dance_cell(cell_x, y, variant, text_color, geom, use_system_fonts))
+        cell_x = cells_x + i * cell_w + cell_w / 2 - inner_w / 2
+        g.append(
+            _tap_dance_cell(
+                cell_x, y, variant, text_color, geom, use_system_fonts, inner_width=inner_w
+            )
+        )
     return g
 
 
@@ -986,23 +1000,27 @@ def build_tap_dance_column_header(
     text_color: str,
     name_column_width: float | None = None,
     doc_width: float = 1600.0,
+    cell_width: float | None = None,
 ) -> draw.Group:
     """Render the once-per-column TAP/HOLD/DOUBLE-TAP/TAP&HOLD strip.
 
     ``name_column_width`` should match the value passed to
     :func:`build_tap_dance_row` so the column labels align with their
-    cells. Defaults to ``td_name_w - tag_w`` when omitted.
+    cells. Defaults to ``td_name_w - tag_w`` when omitted. ``cell_width``
+    overrides each variant cell's column slot, matching the same parameter
+    on :func:`build_tap_dance_row`.
     """
     geom = _LegendGeometry.for_doc_width(doc_width)
     if name_column_width is None:
         name_column_width = geom.td_name_w - geom.tag_w
+    cell_w = cell_width if cell_width is not None else geom.td_cell_w
     g = draw.Group()
     cells_x = x + geom.tag_w + name_column_width + geom.row_content_indent_gap
     for i, label in enumerate(("TAP", "HOLD", "DOUBLE-TAP", "TAP & HOLD")):
         g.append(
             draw.Text(
                 label,
-                x=cells_x + i * geom.td_cell_w + geom.td_cell_w / 2,
+                x=cells_x + i * cell_w + cell_w / 2,
                 y=y,
                 font_size=geom.macro_column_label_font_size,
                 fill=text_color,
