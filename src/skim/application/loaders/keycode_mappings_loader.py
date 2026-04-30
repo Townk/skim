@@ -32,6 +32,36 @@ from skim.data import KeycodeMappings, Keycodes
 _UNCATEGORIZED = "(uncategorized)"
 
 
+def _merge_nested_descriptions(
+    bundled: dict,
+    user: dict,
+) -> dict:
+    """Deep-merge user nested descriptions into bundled.
+
+    Bundled is ``{category: {keycode: description}}``. User has the same
+    shape. User entries override bundled entries with the same keycode in
+    the same category. New categories from user are appended after the
+    bundled ones.
+    """
+    out: dict = {}
+    # Start with bundled
+    for cat, entries in bundled.items():
+        if isinstance(entries, dict):
+            out[cat] = dict(entries)  # shallow copy so we don't mutate input
+        else:
+            # Flat-format entry — keep as-is for legacy yaml support
+            out[cat] = entries
+    # Apply user overrides
+    for cat, entries in user.items():
+        if not isinstance(entries, dict):
+            continue
+        if cat in out and isinstance(out[cat], dict):
+            out[cat].update(entries)
+        else:
+            out[cat] = dict(entries)
+    return out
+
+
 def _flatten_descriptions(
     raw: dict,
 ) -> tuple[dict[str, str], dict[str, str]]:
@@ -101,14 +131,29 @@ def load_keycode_mappings(keycodes_config: Keycodes) -> KeycodeMappings:
     for keycode in keycodes_config.overrides:
         mapping["keycodes"][keycode.keycode] = keycode.target
 
+    # Merge user-provided symbol/function descriptions and aliases before
+    # flattening so the category structure is preserved through the merge.
+    mapping["symbol_descriptions"] = _merge_nested_descriptions(
+        mapping.get("symbol_descriptions", {}),
+        keycodes_config.symbol_descriptions,
+    )
+    mapping["function_descriptions"] = _merge_nested_descriptions(
+        mapping.get("function_descriptions", {}),
+        keycodes_config.function_descriptions,
+    )
+    # Aliases are flat — shallow merge
+    aliases = dict(mapping.get("symbol_legend_aliases", {}))
+    aliases.update(keycodes_config.symbol_legend_aliases)
+    mapping["symbol_legend_aliases"] = aliases
+
     # Flatten nested symbol_descriptions and function_descriptions, building
     # parallel category maps for use by the symbol legend renderer.
-    raw_symbol = mapping.get("symbol_descriptions", {})
+    raw_symbol = mapping["symbol_descriptions"]
     flat_symbol, sym_cats = _flatten_descriptions(raw_symbol)
     mapping["symbol_descriptions"] = flat_symbol
     mapping["symbol_categories"] = sym_cats
 
-    raw_func = mapping.get("function_descriptions", {})
+    raw_func = mapping["function_descriptions"]
     flat_func, func_cats = _flatten_descriptions(raw_func)
     mapping["function_descriptions"] = flat_func
     mapping["function_categories"] = func_cats

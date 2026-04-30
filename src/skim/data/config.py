@@ -369,6 +369,39 @@ class Keycodes(BaseModel):
             Defaults to an empty tuple.
         tap_dances: Tap-dance references with optional names and previews.
             Defaults to an empty tuple.
+        symbol_descriptions: User overrides for the bundled symbol
+            description table, structured as ``{category: {keycode:
+            description}}``. User keys in an existing bundled category take
+            precedence; new categories are appended after the bundled ones.
+            Defaults to an empty dict (no overrides).
+
+            Example::
+
+                symbol_descriptions:
+                  Modifiers:
+                    KC_LEFT_CTRL: "Control (my label)"
+                  "My Section":
+                    MY_KEY: "Does the thing"
+
+        function_descriptions: User overrides for the bundled function
+            description table, same shape as ``symbol_descriptions``.
+            Defaults to an empty dict (no overrides).
+
+            Example::
+
+                function_descriptions:
+                  Layers:
+                    MO: "Custom MO description with @0;"
+
+        symbol_legend_aliases: Shallow-merge overrides for the bundled
+            ``symbol_legend_aliases`` map.  Each entry maps a keycode to
+            the canonical keycode whose legend entry it should share.
+            Defaults to an empty dict (no overrides).
+
+            Example::
+
+                symbol_legend_aliases:
+                  KC_RIGHT_GUI: KC_LEFT_GUI
 
     Example:
         >>> keycodes = Keycodes(
@@ -385,9 +418,22 @@ class Keycodes(BaseModel):
     overrides: Annotated[tuple[Keycode, ...], BeforeValidator(_coerce_to_tuple)] = ()
     macros: Annotated[tuple[Macro, ...], BeforeValidator(_coerce_to_tuple)] = ()
     tap_dances: Annotated[tuple[TapDance, ...], BeforeValidator(_coerce_to_tuple)] = ()
+    symbol_descriptions: dict[str, dict[str, str]] = Field(default_factory=dict)
+    function_descriptions: dict[str, dict[str, str]] = Field(default_factory=dict)
+    symbol_legend_aliases: dict[str, str] = Field(default_factory=dict)
 
     def __hash__(self) -> int:
-        return hash((self.pre_process, self.overrides, self.macros, self.tap_dances))
+        return hash((
+            self.pre_process,
+            self.overrides,
+            self.macros,
+            self.tap_dances,
+            tuple((cat, tuple(sorted(items.items())))
+                  for cat, items in sorted(self.symbol_descriptions.items())),
+            tuple((cat, tuple(sorted(items.items())))
+                  for cat, items in sorted(self.function_descriptions.items())),
+            tuple(sorted(self.symbol_legend_aliases.items())),
+        ))
 
 
 class Spacing(BaseModel):

@@ -101,6 +101,67 @@ class TestLoadKeycodeMappingsOverrides:
         assert keycodes.get("KC_X") == "X-Ray"
 
 
+class TestUserDescriptionOverrides:
+    """Tests for user symbol_descriptions, function_descriptions, and symbol_legend_aliases."""
+
+    def test_user_symbol_description_overrides_bundled(self):
+        """User-provided symbol_descriptions take precedence over bundled."""
+        user_keycodes = Keycodes(
+            symbol_descriptions={
+                "Modifiers": {"KC_LEFT_CTRL": "My Ctrl"},
+            },
+        )
+        mappings = load_keycode_mappings(user_keycodes)
+        assert mappings["symbol_descriptions"]["KC_LEFT_CTRL"] == "My Ctrl"
+        # Other bundled entries are unchanged
+        assert "KC_LEFT_SHIFT" in mappings["symbol_descriptions"]
+
+    def test_user_can_add_new_category(self):
+        """User can introduce a brand-new category that wasn't in the yaml."""
+        user_keycodes = Keycodes(
+            symbol_descriptions={
+                "My Custom Section": {"MY_KEY": "My description"},
+            },
+        )
+        mappings = load_keycode_mappings(user_keycodes)
+        assert mappings["symbol_descriptions"]["MY_KEY"] == "My description"
+        assert mappings["symbol_categories"]["MY_KEY"] == "My Custom Section"
+
+    def test_user_function_description_override(self):
+        """User-provided function_descriptions take precedence over bundled."""
+        user_keycodes = Keycodes(
+            function_descriptions={
+                "Layers": {"MO": "Custom MO desc"},
+            },
+        )
+        mappings = load_keycode_mappings(user_keycodes)
+        assert mappings["function_descriptions"]["MO"] == "Custom MO desc"
+
+    def test_user_legend_alias_override(self):
+        """User-provided symbol_legend_aliases override bundled entries."""
+        user_keycodes = Keycodes(
+            symbol_legend_aliases={"KC_RIGHT_CTRL": "MY_CUSTOM_CTRL_TARGET"},
+        )
+        mappings = load_keycode_mappings(user_keycodes)
+        assert mappings["symbol_legend_aliases"]["KC_RIGHT_CTRL"] == "MY_CUSTOM_CTRL_TARGET"
+
+    def test_user_legend_alias_keeps_non_overridden_bundled_entries(self):
+        """Bundled aliases not overridden by user are preserved."""
+        user_keycodes = Keycodes(
+            symbol_legend_aliases={"KC_RIGHT_CTRL": "MY_CUSTOM_CTRL_TARGET"},
+        )
+        mappings = load_keycode_mappings(user_keycodes)
+        # KC_RIGHT_GUI is bundled and not overridden
+        assert mappings["symbol_legend_aliases"]["KC_RIGHT_GUI"] == "KC_LEFT_GUI"
+
+    def test_default_keycodes_loads_without_user_overrides(self):
+        """The default Keycodes() config loads bundled data unchanged."""
+        mappings = load_keycode_mappings(Keycodes())
+        # Smoke test: bundled entries are present
+        assert "KC_LEFT_CTRL" in mappings["symbol_descriptions"]
+        assert "MO" in mappings["function_descriptions"]
+
+
 class TestLoadKeycodeMappingsIntegration:
     """Integration tests for load_keycode_mappings."""
 
