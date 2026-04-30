@@ -78,6 +78,7 @@ def _get_config(
     title_override: str | None = None,
     copyright_override: str | None = None,
     double_south_override: bool = False,
+    width_override: float | None = None,
     adjust_lightness: float | None = None,
     adjust_saturation: float | None = None,
 ) -> SkimConfig:
@@ -156,6 +157,10 @@ def _get_config(
     if copyright_override is not None:
         new_output = new_output.model_copy(update={"copyright": copyright_override})
 
+    if width_override is not None:
+        new_layout = new_output.layout.model_copy(update={"width": width_override})
+        new_output = new_output.model_copy(update={"layout": new_layout})
+
     keyboard_updates: dict = {}
     if double_south_override:
         new_features = config.keyboard.features.model_copy(update={"double_south": True})
@@ -222,6 +227,7 @@ def generate_keymap(
     title: str | None = None,
     copyright_text: str | None = None,
     double_south: bool = False,
+    width: float | None = None,
     adjust_lightness: float | None = None,
     adjust_saturation: float | None = None,
 ) -> None:
@@ -262,6 +268,7 @@ def generate_keymap(
         title_override=title,
         copyright_override=copyright_text,
         double_south_override=double_south,
+        width_override=width,
         adjust_lightness=adjust_lightness,
         adjust_saturation=adjust_saturation,
     )

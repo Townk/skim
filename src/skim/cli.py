@@ -258,6 +258,13 @@ def doctor() -> None:
     help="Force the double-south keyboard feature on (keyboard.features.double_south).",
 )
 @click.option(
+    "--width",
+    "-w",
+    type=float,
+    default=None,
+    help="Override the keymap canvas width in SVG units (output.layout.width).",
+)
+@click.option(
     "--adjust-lightness",
     "-L",
     type=float,
@@ -292,6 +299,7 @@ def generate(
     title: str | None,
     copyright_text: str | None,
     double_south: bool,
+    width: float | None,
     adjust_lightness: float | None,
     adjust_saturation: float | None,
     stdin_marker: str | None,
@@ -337,6 +345,7 @@ def generate(
             title=title,
             copyright_text=copyright_text,
             double_south=double_south,
+            width=width,
             adjust_lightness=adjust_lightness,
             adjust_saturation=adjust_saturation,
         )
@@ -402,6 +411,13 @@ def generate(
     help="Enable the double-south keyboard feature (keyboard.features.double_south).",
 )
 @click.option(
+    "--width",
+    "-w",
+    type=float,
+    default=None,
+    help="Set the keymap canvas width in SVG units (output.layout.width).",
+)
+@click.option(
     "--layer-count",
     "-n",
     type=int,
@@ -421,6 +437,7 @@ def configure(
     title: str | None,
     copyright: str | None,
     double_south: bool,
+    width: float | None,
     layer_count: int | None,
 ) -> None:
     """Generate or edit a configuration file.
@@ -439,7 +456,9 @@ def configure(
     from skim.application.config_generator import ConfigGenerator
 
     # No flags at all: show help
-    has_config_overrides = title is not None or copyright is not None or double_south
+    has_config_overrides = (
+        title is not None or copyright is not None or double_south or width is not None
+    )
     if not interactive and not keymap and not has_config_overrides:
         click.echo(ctx.get_help())
         return
@@ -459,6 +478,8 @@ def configure(
                 config_data.setdefault("keyboard", {}).setdefault("features", {})[
                     "double_south"
                 ] = True
+            if width is not None:
+                config_data["output"].setdefault("layout", {})["width"] = width
             if layer_count is not None:
                 _apply_layer_count(config_data, layer_count)
             content = yaml.dump(config_data, sort_keys=False, default_flow_style=False)
@@ -524,6 +545,8 @@ def configure(
                     config_data.setdefault("keyboard", {}).setdefault("features", {})[
                         "double_south"
                     ] = True
+                if width is not None:
+                    config_data["output"].setdefault("layout", {})["width"] = width
                 if layer_count is not None:
                     _apply_layer_count(config_data, layer_count)
                 launch_tui(
