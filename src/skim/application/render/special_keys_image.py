@@ -46,14 +46,14 @@ from .composable import (
     Composable,
     Padding,
     Point,
+    Row,
     Size,
     Spacer,
 )
-from .footer import Footer, append_footer, footer_layout_height
-from .header import Header, HeaderRenderResult, append_header, header_layout_height
+from .footer import Footer
+from .header import Header
 from .layout import KeymapLayoutMetrics
 from .legend import (
-    _draw_section_title,
     _flatten_macro_pills,
     _layout_pill_lines,
     _LegendGeometry,
@@ -61,8 +61,6 @@ from .legend import (
     all_macros,
     all_tap_dances,
     build_macro_row,
-    build_tap_dance_column_header,
-    build_tap_dance_row,
     macro_row_height,
 )
 from .legend_components import SectionStripe, TapDanceTable
@@ -159,90 +157,13 @@ def _build_setup(
     )
 
 
-def _stripe_height(geom: _LegendGeometry) -> float:
-    """Vertical extent reserved for one section title stripe (text + rule)."""
-    return geom.title_rule_offset + geom.title_baseline_offset
-
-
-def _header_layout_height(setup: _ImageSetup) -> float:
-    """Upper-bound height of the header strip used for body layout.
-
-    The header component matches the logo's height to the title's rendered
-    bounding box at ``title_font_size``; both shrink together when the
-    canvas can't accommodate them with a ``2 × padding`` gap. The natural
-    rendered height at the maximum font size is therefore a safe upper
-    bound for body positioning.
-    """
-    return header_layout_height(setup.title_text, setup.header_dims.title_font_size)
-
-
-# ---------------------------------------------------------------------------
-# SVG construction helpers
-# ---------------------------------------------------------------------------
-
-
-def _build_drawing(
-    setup: _ImageSetup,
-    canvas_w: float,
-    canvas_h: float,
-) -> draw.Drawing:
-    """Create the base ``Drawing`` with viewBox so ``--width`` is honoured.
-
-    The internal coordinate system uses the natural (possibly shrunken)
-    canvas; the SVG itself displays at the user-requested ``--width``.
-    """
-    display_w = setup.display_w
-    display_h = canvas_h * (display_w / canvas_w) if canvas_w else canvas_h
-    d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
-
-    if not setup.use_system_fonts:
-        for font in Font:
-            d.append_css(font.css_style)
-
-    border = setup.config.output.style.border
-    palette = setup.palette
-    d.append(
-        draw.Rectangle(
-            x=setup.margin,
-            y=setup.margin,
-            width=canvas_w - setup.margin * 2.0,
-            height=canvas_h - setup.margin * 2.0,
-            rx=border.radius if border else None,
-            ry=border.radius if border else None,
-            fill=palette.background_color,
-            stroke=palette.border_color if border else None,
-            stroke_width=border.width if border else None,
-        )
-    )
-    return d
-
-
-def _append_header(d: draw.Drawing, setup: _ImageSetup, canvas_w: float) -> HeaderRenderResult:
-    """Stamp the keymap title (left) and Svalboard logo (right) header.
-
-    Delegates to the shared :mod:`header` component so the logo's height
-    matches the title's full visual height; the two shrink together when
-    the canvas can't accommodate them with the minimum ``2 × padding``
-    gap between title and logo.
-    """
-    return append_header(
-        d,
-        canvas_w=canvas_w,
-        padding=setup.padding,
-        title_text=setup.title_text,
-        title_color=setup.palette.text_color,
-        title_font_max_size=setup.header_dims.title_font_size,
-        use_system_fonts=setup.use_system_fonts,
-    )
-
-
 def _section_title_max_height(setup: _ImageSetup, label: str) -> float:
     """Rendered height of a section title label (e.g. ``"MACROS"``).
 
     Used as the ``max_height`` cap for the footer in the standalone solo
     images so the copyright never reads taller than the section title
     above the body. Measured with ``getbbox()`` for the same font and
-    size :func:`_draw_section_title` actually paints with.
+    size :class:`SectionStripe` actually paints with.
     """
     pil_font = Font.FINGER_KEY.load(int(round(max(setup.geom.title_font_size, 1.0))))
     left, top, right, bottom = pil_font.getbbox(label)
@@ -262,35 +183,6 @@ def _footer_max_height(setup: _ImageSetup, *, section_title: str | None) -> floa
     if section_title is None:
         return None
     return _section_title_max_height(setup, section_title)
-
-
-def _append_copyright(
-    d: draw.Drawing,
-    setup: _ImageSetup,
-    canvas_w: float,
-    canvas_h: float,
-    *,
-    section_title: str | None,
-) -> None:
-    """Stamp the copyright string at the bottom-right corner (no-op when unset).
-
-    ``section_title`` enables the per-image footer height cap — see
-    :func:`_footer_max_height`.
-    """
-    if not setup.config.output.copyright:
-        return
-    append_footer(
-        d,
-        canvas_w=canvas_w,
-        canvas_h=canvas_h,
-        padding=setup.padding,
-        bottom_inset=setup.bottom_inset,
-        text=setup.config.output.copyright,
-        text_color=setup.palette.text_color,
-        font_max_size=setup.header_dims.copyright_font_size,
-        use_system_fonts=setup.use_system_fonts,
-        max_height=_footer_max_height(setup, section_title=section_title),
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -337,20 +229,46 @@ def _CanvasFrame(
     return size, draw_at
 
 
-def _build_image_body(
+def _section_block(
     *,
     setup: _ImageSetup,
+    title: str,
+    color: str,
+    count: int,
+    width: float,
     body: Component,
-    section_title: str,
-    section_color: str,
-    section_count: int,
-    content_w: float,
 ) -> BaseComponent:
-    """Assemble header + section stripe + body + footer into a Column.
+    """One section as a Column: ``SectionStripe`` + spacer + body.
 
-    Mirrors the historical positional layout from :mod:`special_keys_image`
-    exactly — same gaps between header / stripe / body / footer, same
-    asymmetric ``padding`` (top/sides) vs ``bottom_inset`` (bottom).
+    The same shape both standalone images and the combined image use —
+    the combined image places two of these side-by-side in a Row.
+    """
+    geom = setup.geom
+    return Column(
+        [
+            SectionStripe(title=title, count=count, width=width, accent_line=color, geom=geom),
+            Spacer(height=2 * geom.title_baseline_offset),
+            body,
+        ],
+        align="start",
+    )
+
+
+def _render_image(
+    setup: _ImageSetup,
+    *,
+    body: Component,
+    content_w: float,
+    footer_section_title: str | None,
+) -> draw.Drawing:
+    """Wrap ``body`` in the standard chrome (header / footer / border).
+
+    ``body`` is whatever sits between the header and the footer — for
+    standalone images that's a single :func:`_section_block`; for the
+    combined image it's a Row of two section blocks separated by a
+    Spacer. ``footer_section_title`` controls the per-image footer
+    height cap (see :func:`_footer_max_height`); pass ``None`` for
+    images without a single dominant section title.
     """
     geom = setup.geom
     palette = setup.palette
@@ -364,19 +282,9 @@ def _build_image_body(
         use_system_fonts=setup.use_system_fonts,
     )
 
-    stripe = SectionStripe(
-        title=section_title,
-        count=section_count,
-        width=content_w,
-        accent_line=section_color,
-        geom=geom,
-    )
-
     children: list[Component] = [
         header,
         Spacer(height=geom.title_rule_offset * 0.5),
-        stripe,
-        Spacer(height=2 * geom.title_baseline_offset),
         body,
     ]
 
@@ -386,7 +294,7 @@ def _build_image_body(
             text=footer_text,
             font_max_size=setup.header_dims.copyright_font_size,
             color=palette.text_color,
-            max_height=_footer_max_height(setup, section_title=section_title),
+            max_height=_footer_max_height(setup, section_title=footer_section_title),
             use_system_fonts=setup.use_system_fonts,
         )
         children.extend(
@@ -396,7 +304,16 @@ def _build_image_body(
             ]
         )
 
-    return Column(children, align="start")
+    column = Column(children, align="start")
+    padded = Padding(
+        column,
+        top=setup.padding,
+        right=setup.padding,
+        left=setup.padding,
+        bottom=setup.bottom_inset,
+    )
+    image = _CanvasFrame(content=padded, setup=setup)
+    return _make_drawing(setup, image)
 
 
 def _make_drawing(setup: _ImageSetup, content: Component) -> draw.Drawing:
@@ -430,30 +347,26 @@ def _render_section_image(
     section_count: int,
     content_w: float,
 ) -> draw.Drawing:
-    """Wrap ``body`` in the standard chrome and produce the SVG drawing.
+    """Wrap a single section's ``body`` in the standard chrome.
 
-    The image is one ``_CanvasFrame`` wrapping a ``Padding`` of the
-    Column[header, stripe, body, footer] block, where padding is
-    asymmetric (``setup.padding`` on top/sides, ``setup.bottom_inset``
-    on the bottom) to match the previous positional layout.
+    Convenience wrapper around :func:`_render_image` that builds the
+    one-section :func:`_section_block` for callers that only ever need
+    a single :class:`SectionStripe`.
     """
-    column = _build_image_body(
+    section = _section_block(
         setup=setup,
+        title=section_title,
+        color=section_color,
+        count=section_count,
+        width=content_w,
         body=body,
-        section_title=section_title,
-        section_color=section_color,
-        section_count=section_count,
+    )
+    return _render_image(
+        setup,
+        body=section,
         content_w=content_w,
+        footer_section_title=section_title,
     )
-    padded = Padding(
-        column,
-        top=setup.padding,
-        right=setup.padding,
-        left=setup.padding,
-        bottom=setup.bottom_inset,
-    )
-    image = _CanvasFrame(content=padded, setup=setup)
-    return _make_drawing(setup, image)
 
 
 # ---------------------------------------------------------------------------
@@ -646,116 +559,67 @@ def draw_special_keys_image(
     macro_line = derive_accent_line(palette.macro_color)
     td_line = derive_accent_line(palette.tap_dance_color)
 
-    canvas_w = setup.initial_canvas_w
-    target_content_w = canvas_w - 2 * setup.padding
+    target_content_w = setup.initial_canvas_w - 2 * setup.padding
     col_gap = geom.column_gap
-
     col_w = (target_content_w - col_gap) / 2 if macros and tap_dances else target_content_w
 
-    name_col_w = _td_name_column_width(geom, tap_dances)
-
-    stripe_y = setup.padding + _header_layout_height(setup) + geom.title_rule_offset * 0.5
-    body_top = stripe_y + _stripe_height(geom) + geom.title_baseline_offset
-
+    sections: list[Component] = []
     if macros:
-        macro_rows_h = sum(
-            macro_row_height(m, col_w, doc_width=setup.initial_canvas_w) for m in macros
-        )
-        macro_rows_h += max(0, len(macros) - 1) * geom.row_gap
-    else:
-        macro_rows_h = 0.0
-
-    td_rows_h = (
-        geom.td_header_height + len(tap_dances) * (geom.td_row_height + geom.td_row_gap)
-        if tap_dances
-        else 0.0
-    )
-
-    body_h = max(macro_rows_h, td_rows_h)
-    # Combined image — no per-section title constraint, so the footer
-    # renders at its natural size (matches the per-layer / overview).
-    footer_h = footer_layout_height(
-        setup.config.output.copyright or "",
-        setup.header_dims.copyright_font_size,
-        max_height=None,
-    )
-    canvas_h = body_top + body_h + setup.bottom_inset
-    if footer_h > 0:
-        canvas_h += footer_h + setup.bottom_inset
-
-    d = _build_drawing(setup, canvas_w, canvas_h)
-    _append_header(d, setup, canvas_w)
-
-    macro_x = setup.padding
-    td_x = setup.padding + (col_w + col_gap if macros and tap_dances else 0)
-
-    if macros:
-        _draw_section_title(
-            d,
-            "MACROS",
-            macro_x,
-            stripe_y,
-            col_w,
-            macro_line,
-            count=len(macros),
-            geom=geom,
-        )
-        cursor = body_top
-        for i, macro in enumerate(macros):
-            if i > 0:
-                cursor += geom.row_gap
-            d.append(
-                build_macro_row(
-                    macro,
-                    x=macro_x,
-                    y=cursor,
-                    content_width=col_w,
+        sections.append(
+            _section_block(
+                setup=setup,
+                title="MACROS",
+                color=macro_line,
+                count=len(macros),
+                width=col_w,
+                body=_MacrosBody(
+                    macros=macros,
                     accent_fill=palette.macro_color,
                     accent_line=macro_line,
                     text_color=palette.text_color,
+                    geom=geom,
                     use_system_fonts=setup.use_system_fonts,
+                    content_width=col_w,
                     doc_width=setup.initial_canvas_w,
-                )
+                ),
             )
-            cursor += macro_row_height(macro, col_w, doc_width=setup.initial_canvas_w)
-
+        )
     if tap_dances:
-        _draw_section_title(
-            d,
-            "TAP-DANCE",
-            td_x,
-            stripe_y,
-            col_w,
-            td_line,
-            count=len(tap_dances),
+        # Pin the legacy ``_td_name_column_width`` so the combined image
+        # keeps its overview-style fixed name column instead of the
+        # dynamic sizing the standalone tap-dances image uses.
+        td_table = TapDanceTable(
+            tap_dances=tap_dances,
+            accent_fill=palette.tap_dance_color,
+            accent_line=td_line,
+            text_color=palette.text_color,
             geom=geom,
+            use_system_fonts=setup.use_system_fonts,
+            name_column_width=_td_name_column_width(geom, tap_dances),
         )
-        d.append(
-            build_tap_dance_column_header(
-                x=td_x,
-                y=body_top + geom.title_baseline_offset,
-                text_color=palette.text_color,
-                name_column_width=name_col_w,
-                doc_width=setup.initial_canvas_w,
+        sections.append(
+            _section_block(
+                setup=setup,
+                title="TAP-DANCE",
+                color=td_line,
+                count=len(tap_dances),
+                width=col_w,
+                body=td_table,
             )
         )
-        cursor = body_top + geom.td_header_height
-        for td in tap_dances:
-            d.append(
-                build_tap_dance_row(
-                    td,
-                    x=td_x,
-                    y=cursor + geom.td_row_height / 2,
-                    column_width=col_w,
-                    accent_fill=palette.tap_dance_color,
-                    accent_line=td_line,
-                    text_color=palette.text_color,
-                    use_system_fonts=setup.use_system_fonts,
-                    name_column_width=name_col_w,
-                    doc_width=setup.initial_canvas_w,
-                )
-            )
-            cursor += geom.td_row_height + geom.td_row_gap
 
-    _append_copyright(d, setup, canvas_w, canvas_h, section_title=None)
-    return d
+    if not sections:
+        body: Component = Spacer()
+    elif len(sections) == 1:
+        body = sections[0]
+    else:
+        body = Row([sections[0], Spacer(width=col_gap), sections[1]], align="top")
+
+    return _render_image(
+        setup,
+        body=body,
+        content_w=target_content_w,
+        # Combined image has no single dominant section title, so the
+        # footer keeps its natural size (matches the per-layer/overview).
+        footer_section_title=None,
+    )
