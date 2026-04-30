@@ -143,7 +143,11 @@ def plan_layout(
 
 
 def build_action_glyph(
-    kind: SvalboardMacroActionKind, cx: float, cy: float, color: str
+    kind: SvalboardMacroActionKind,
+    cx: float,
+    cy: float,
+    color: str,
+    doc_width: float = 1600.0,
 ) -> draw.DrawingElement:
     """Return a tiny SVG primitive for the given action kind.
 
@@ -152,43 +156,58 @@ def build_action_glyph(
     - UP    → filled up-triangle   (▲) — "release".
     - TEXT  → italic capital ``T``.
     - DELAY → small clock dial (circle + two hands).
+
+    Glyph dimensions scale with ``doc_width`` so the legend stays visually
+    consistent across output sizes.
     """
+    geom = _LegendGeometry.for_doc_width(doc_width)
+    r = geom.glyph_dot_radius
+    half = geom.glyph_triangle_half
     if kind == SvalboardMacroActionKind.TAP:
-        return draw.Circle(cx=cx, cy=cy, r=3, fill=color)
+        return draw.Circle(cx=cx, cy=cy, r=r, fill=color)
     if kind == SvalboardMacroActionKind.DOWN:
         return draw.Lines(
-            cx - 3,
-            cy - 3,
-            cx + 3,
-            cy - 3,
+            cx - half,
+            cy - half,
+            cx + half,
+            cy - half,
             cx,
-            cy + 3,
+            cy + half,
             close=True,
             fill=color,
         )
     if kind == SvalboardMacroActionKind.UP:
         return draw.Lines(
-            cx - 3,
-            cy + 3,
-            cx + 3,
-            cy + 3,
+            cx - half,
+            cy + half,
+            cx + half,
+            cy + half,
             cx,
-            cy - 3,
+            cy - half,
             close=True,
             fill=color,
         )
     if kind == SvalboardMacroActionKind.DELAY:
         g = draw.Group()
-        g.append(draw.Circle(cx=cx, cy=cy, r=3.5, fill="none", stroke=color, stroke_width=1.1))
+        g.append(
+            draw.Circle(
+                cx=cx,
+                cy=cy,
+                r=geom.glyph_delay_dial_radius,
+                fill="none",
+                stroke=color,
+                stroke_width=geom.glyph_delay_stroke,
+            )
+        )
         # Clock hands at 12 o'clock + 3 o'clock.
         g.append(
             draw.Line(
                 sx=cx,
                 sy=cy,
                 ex=cx,
-                ey=cy - 2.2,
+                ey=cy - geom.glyph_delay_hour_hand,
                 stroke=color,
-                stroke_width=1.1,
+                stroke_width=geom.glyph_delay_stroke,
                 stroke_linecap="round",
             )
         )
@@ -196,10 +215,10 @@ def build_action_glyph(
             draw.Line(
                 sx=cx,
                 sy=cy,
-                ex=cx + 1.6,
+                ex=cx + geom.glyph_delay_minute_hand,
                 ey=cy,
                 stroke=color,
-                stroke_width=1.1,
+                stroke_width=geom.glyph_delay_stroke,
                 stroke_linecap="round",
             )
         )
@@ -209,7 +228,7 @@ def build_action_glyph(
         "T",
         x=cx,
         y=cy,
-        font_size=9,
+        font_size=geom.glyph_text_font_size,
         fill=color,
         font_weight="700",
         font_style="italic",
@@ -219,21 +238,265 @@ def build_action_glyph(
     )
 
 
-# --- Geometry constants (mirrors docs/design/layer.jsx Legend) -------------
-TAG_W = 56
-TAG_H = 22
-HEADER_STRIP_HEIGHT = 28
-CONTENT_STRIP_HEIGHT = 22
-ROW_GAP = 9
-PILL_GAP = 6
-PILL_HEIGHT = 18
-PILL_FONT_SIZE = 10
+# --- Geometry ratios (mirrors docs/design/layer.jsx Legend) -----------------
+# Every visual size is expressed as a fraction of the document width so the
+# legend block keeps the same proportions across output sizes. The pixel value
+# on the right of each ``/ 1600`` reproduces the canonical sizing at the
+# default 1600-unit document width.
+_TAG_W_RATIO = 56 / 1600
+_TAG_H_RATIO = 22 / 1600
+_HEADER_STRIP_HEIGHT_RATIO = 28 / 1600
+_CONTENT_STRIP_HEIGHT_RATIO = 22 / 1600
+_ROW_GAP_RATIO = 9 / 1600
+_PILL_GAP_RATIO = 6 / 1600
+_PILL_HEIGHT_RATIO = 18 / 1600
+_PILL_FONT_SIZE_RATIO = 10 / 1600
 
-PILL_PAD_X = 8  # horizontal padding inside each pill
-ICON_WIDTH = 6  # visual width of action glyphs (circle r=3, etc.)
-ICON_TEXT_GAP = 10  # gap from icon's right edge to text's left edge
-# (≤ 1.5 × PILL_PAD_X = 12)
-PILL_CHROME_WIDTH = 2 * PILL_PAD_X + ICON_WIDTH + ICON_TEXT_GAP  # = 32
+_PILL_PAD_X_RATIO = 8 / 1600  # horizontal padding inside each pill
+_ICON_WIDTH_RATIO = 6 / 1600  # visual width of action glyphs (circle r=3, etc.)
+_ICON_TEXT_GAP_RATIO = 10 / 1600  # gap from icon's right edge to text's left edge
+
+_PILL_MIN_TEXT_WIDTH_RATIO = 8 / 1600  # floor for measured text width inside a pill
+_PILL_MIN_TOTAL_WIDTH_RATIO = 28 / 1600  # absolute minimum pill width
+
+# Action-glyph primitives — coordinates inside ``build_action_glyph``.
+_GLYPH_DOT_RADIUS_RATIO = 3 / 1600
+_GLYPH_TRIANGLE_HALF_RATIO = 3 / 1600
+_GLYPH_DELAY_DIAL_RADIUS_RATIO = 3.5 / 1600
+_GLYPH_DELAY_HOUR_HAND_RATIO = 2.2 / 1600
+_GLYPH_DELAY_MINUTE_HAND_RATIO = 1.6 / 1600
+_GLYPH_DELAY_STROKE_RATIO = 1.1 / 1600
+_GLYPH_TEXT_FONT_SIZE_RATIO = 9 / 1600
+
+# Macro/TD row chrome
+_ROW_CONTENT_INDENT_GAP_RATIO = 12 / 1600  # gap between TAG_W and the indent column
+_PILL_CORNER_RADIUS_RATIO = 4 / 1600
+_TAG_STROKE_WIDTH_RATIO = 1.2 / 1600
+_TAG_NAME_GAP_RATIO = 10 / 1600  # gap between the chip and the macro/TD name text
+_TAG_NAME_FONT_SIZE_RATIO = 13 / 1600
+_TAG_INNER_FONT_SIZE_RATIO = 12 / 1600  # font size for the chip's inline label
+_TAG_INNER_TEXT_BASELINE_OFFSET_RATIO = 0.5 / 1600  # tweak so glyphs visually centre
+_TAG_HEADER_RULE_INSET_RATIO = 0.5 / 1600  # rule sits just inside the chip's bottom edge
+_TAG_HEADER_RULE_STROKE_RATIO = 1 / 1600
+
+# Macro column header / 'MACRO ACTIONS' label
+_MACRO_COLUMN_HEADER_HEIGHT_RATIO = 32 / 1600
+_MACRO_COLUMN_LABEL_FONT_SIZE_RATIO = 9 / 1600
+_MACRO_COLUMN_LABEL_LETTER_SPACING_RATIO = 1.5 / 1600
+
+# Tap-dance section
+_TD_ROW_HEIGHT_RATIO = 22 / 1600
+_TD_ROW_GAP_RATIO = 9 / 1600
+_TD_HEADER_HEIGHT_RATIO = 32 / 1600
+_TD_NAME_W_RATIO = 200 / 1600
+_TD_CELL_W_RATIO = 110 / 1600
+_TD_CELL_INNER_W_RATIO = 80 / 1600  # width of the dashed/filled rect inside a cell
+_TD_CELL_HALF_HEIGHT_RATIO = 11 / 1600  # cell rect extends ±this from row centre
+_TD_CELL_LABEL_FONT_SIZE_RATIO = 12 / 1600
+_TD_CELL_LABEL_HALF_WIDTH_RATIO = 40 / 1600  # cell label x is centred at this offset
+_TD_NAME_FONT_SIZE_RATIO = 12 / 1600
+
+# Top-level legend
+_SECTION_HEADER_HEIGHT_RATIO = 32 / 1600
+_COLUMN_GAP_RATIO = 40 / 1600
+_ACTION_KEY_STRIP_HEIGHT_RATIO = 22 / 1600
+_ACTION_KEY_PRE_GAP_RATIO = 18 / 1600
+
+# Section title strip ("MACROS" / "TAP-DANCE" + count + rule)
+_TITLE_FONT_SIZE_RATIO = 11 / 1600
+_TITLE_LETTER_SPACING_RATIO = 3 / 1600
+_TITLE_BASELINE_OFFSET_RATIO = 12 / 1600
+_TITLE_COUNT_FONT_SIZE_RATIO = 10 / 1600
+_TITLE_COUNT_LETTER_SPACING_RATIO = 1 / 1600
+_TITLE_RULE_OFFSET_RATIO = 20 / 1600
+_TITLE_RULE_STROKE_RATIO = 1.2 / 1600
+
+# Action-key footer strip
+_ACTION_KEY_LABEL_FONT_SIZE_RATIO = 9 / 1600
+_ACTION_KEY_LABEL_LETTER_SPACING_RATIO = 1.5 / 1600
+_ACTION_KEY_LABEL_OFFSET_RATIO = 6 / 1600
+_ACTION_KEY_LEGEND_LEFT_RATIO = 90 / 1600  # left edge of the legend swatches
+_ACTION_KEY_GLYPH_INSET_RATIO = 6 / 1600  # x offset of glyph centre inside its swatch
+_ACTION_KEY_TEXT_INSET_RATIO = 16 / 1600  # x offset of label text from glyph centre
+_ACTION_KEY_LABEL_FONT_SIZE_INNER_RATIO = 10 / 1600
+_ACTION_KEY_SLOT_LEAD_RATIO = 14 / 1600  # padding before the next swatch
+_ACTION_KEY_SLOT_TRAIL_RATIO = 14 / 1600  # padding after the label
+_ACTION_KEY_LABEL_CHAR_WIDTH_RATIO = 6 / 1600  # rough advance per character
+
+# Default document width — used as the fallback when callers do not supply one.
+_DEFAULT_DOC_WIDTH = 1600.0
+
+
+@dataclass(frozen=True, slots=True)
+class _LegendGeometry:
+    """All pixel sizes for the macro/tap-dance legend, derived from ``doc_width``."""
+
+    tag_w: float
+    tag_h: float
+    header_strip_height: float
+    content_strip_height: float
+    row_gap: float
+    pill_gap: float
+    pill_height: float
+    pill_font_size: float
+    pill_pad_x: float
+    icon_width: float
+    icon_text_gap: float
+    pill_chrome_width: float
+    pill_min_text_width: float
+    pill_min_total_width: float
+    glyph_dot_radius: float
+    glyph_triangle_half: float
+    glyph_delay_dial_radius: float
+    glyph_delay_hour_hand: float
+    glyph_delay_minute_hand: float
+    glyph_delay_stroke: float
+    glyph_text_font_size: float
+    row_content_indent_gap: float
+    pill_corner_radius: float
+    tag_stroke_width: float
+    tag_name_gap: float
+    tag_name_font_size: float
+    tag_inner_font_size: float
+    tag_inner_text_baseline_offset: float
+    tag_header_rule_inset: float
+    tag_header_rule_stroke: float
+    macro_column_header_height: float
+    macro_column_label_font_size: float
+    macro_column_label_letter_spacing: float
+    td_row_height: float
+    td_row_gap: float
+    td_header_height: float
+    td_name_w: float
+    td_cell_w: float
+    td_cell_inner_w: float
+    td_cell_half_height: float
+    td_cell_label_font_size: float
+    td_cell_label_half_width: float
+    td_name_font_size: float
+    section_header_height: float
+    column_gap: float
+    action_key_strip_height: float
+    action_key_pre_gap: float
+    title_font_size: float
+    title_letter_spacing: float
+    title_baseline_offset: float
+    title_count_font_size: float
+    title_count_letter_spacing: float
+    title_rule_offset: float
+    title_rule_stroke: float
+    action_key_label_font_size: float
+    action_key_label_letter_spacing: float
+    action_key_label_offset: float
+    action_key_legend_left: float
+    action_key_glyph_inset: float
+    action_key_text_inset: float
+    action_key_label_font_size_inner: float
+    action_key_slot_lead: float
+    action_key_slot_trail: float
+    action_key_label_char_width: float
+
+    @classmethod
+    def for_doc_width(cls, doc_width: float) -> "_LegendGeometry":
+        pill_pad_x = doc_width * _PILL_PAD_X_RATIO
+        icon_width = doc_width * _ICON_WIDTH_RATIO
+        icon_text_gap = doc_width * _ICON_TEXT_GAP_RATIO
+        return cls(
+            tag_w=doc_width * _TAG_W_RATIO,
+            tag_h=doc_width * _TAG_H_RATIO,
+            header_strip_height=doc_width * _HEADER_STRIP_HEIGHT_RATIO,
+            content_strip_height=doc_width * _CONTENT_STRIP_HEIGHT_RATIO,
+            row_gap=doc_width * _ROW_GAP_RATIO,
+            pill_gap=doc_width * _PILL_GAP_RATIO,
+            pill_height=doc_width * _PILL_HEIGHT_RATIO,
+            pill_font_size=doc_width * _PILL_FONT_SIZE_RATIO,
+            pill_pad_x=pill_pad_x,
+            icon_width=icon_width,
+            icon_text_gap=icon_text_gap,
+            pill_chrome_width=2 * pill_pad_x + icon_width + icon_text_gap,
+            pill_min_text_width=doc_width * _PILL_MIN_TEXT_WIDTH_RATIO,
+            pill_min_total_width=doc_width * _PILL_MIN_TOTAL_WIDTH_RATIO,
+            glyph_dot_radius=doc_width * _GLYPH_DOT_RADIUS_RATIO,
+            glyph_triangle_half=doc_width * _GLYPH_TRIANGLE_HALF_RATIO,
+            glyph_delay_dial_radius=doc_width * _GLYPH_DELAY_DIAL_RADIUS_RATIO,
+            glyph_delay_hour_hand=doc_width * _GLYPH_DELAY_HOUR_HAND_RATIO,
+            glyph_delay_minute_hand=doc_width * _GLYPH_DELAY_MINUTE_HAND_RATIO,
+            glyph_delay_stroke=doc_width * _GLYPH_DELAY_STROKE_RATIO,
+            glyph_text_font_size=doc_width * _GLYPH_TEXT_FONT_SIZE_RATIO,
+            row_content_indent_gap=doc_width * _ROW_CONTENT_INDENT_GAP_RATIO,
+            pill_corner_radius=doc_width * _PILL_CORNER_RADIUS_RATIO,
+            tag_stroke_width=doc_width * _TAG_STROKE_WIDTH_RATIO,
+            tag_name_gap=doc_width * _TAG_NAME_GAP_RATIO,
+            tag_name_font_size=doc_width * _TAG_NAME_FONT_SIZE_RATIO,
+            tag_inner_font_size=doc_width * _TAG_INNER_FONT_SIZE_RATIO,
+            tag_inner_text_baseline_offset=doc_width * _TAG_INNER_TEXT_BASELINE_OFFSET_RATIO,
+            tag_header_rule_inset=doc_width * _TAG_HEADER_RULE_INSET_RATIO,
+            tag_header_rule_stroke=doc_width * _TAG_HEADER_RULE_STROKE_RATIO,
+            macro_column_header_height=doc_width * _MACRO_COLUMN_HEADER_HEIGHT_RATIO,
+            macro_column_label_font_size=doc_width * _MACRO_COLUMN_LABEL_FONT_SIZE_RATIO,
+            macro_column_label_letter_spacing=doc_width * _MACRO_COLUMN_LABEL_LETTER_SPACING_RATIO,
+            td_row_height=doc_width * _TD_ROW_HEIGHT_RATIO,
+            td_row_gap=doc_width * _TD_ROW_GAP_RATIO,
+            td_header_height=doc_width * _TD_HEADER_HEIGHT_RATIO,
+            td_name_w=doc_width * _TD_NAME_W_RATIO,
+            td_cell_w=doc_width * _TD_CELL_W_RATIO,
+            td_cell_inner_w=doc_width * _TD_CELL_INNER_W_RATIO,
+            td_cell_half_height=doc_width * _TD_CELL_HALF_HEIGHT_RATIO,
+            td_cell_label_font_size=doc_width * _TD_CELL_LABEL_FONT_SIZE_RATIO,
+            td_cell_label_half_width=doc_width * _TD_CELL_LABEL_HALF_WIDTH_RATIO,
+            td_name_font_size=doc_width * _TD_NAME_FONT_SIZE_RATIO,
+            section_header_height=doc_width * _SECTION_HEADER_HEIGHT_RATIO,
+            column_gap=doc_width * _COLUMN_GAP_RATIO,
+            action_key_strip_height=doc_width * _ACTION_KEY_STRIP_HEIGHT_RATIO,
+            action_key_pre_gap=doc_width * _ACTION_KEY_PRE_GAP_RATIO,
+            title_font_size=doc_width * _TITLE_FONT_SIZE_RATIO,
+            title_letter_spacing=doc_width * _TITLE_LETTER_SPACING_RATIO,
+            title_baseline_offset=doc_width * _TITLE_BASELINE_OFFSET_RATIO,
+            title_count_font_size=doc_width * _TITLE_COUNT_FONT_SIZE_RATIO,
+            title_count_letter_spacing=doc_width * _TITLE_COUNT_LETTER_SPACING_RATIO,
+            title_rule_offset=doc_width * _TITLE_RULE_OFFSET_RATIO,
+            title_rule_stroke=doc_width * _TITLE_RULE_STROKE_RATIO,
+            action_key_label_font_size=doc_width * _ACTION_KEY_LABEL_FONT_SIZE_RATIO,
+            action_key_label_letter_spacing=doc_width * _ACTION_KEY_LABEL_LETTER_SPACING_RATIO,
+            action_key_label_offset=doc_width * _ACTION_KEY_LABEL_OFFSET_RATIO,
+            action_key_legend_left=doc_width * _ACTION_KEY_LEGEND_LEFT_RATIO,
+            action_key_glyph_inset=doc_width * _ACTION_KEY_GLYPH_INSET_RATIO,
+            action_key_text_inset=doc_width * _ACTION_KEY_TEXT_INSET_RATIO,
+            action_key_label_font_size_inner=doc_width * _ACTION_KEY_LABEL_FONT_SIZE_INNER_RATIO,
+            action_key_slot_lead=doc_width * _ACTION_KEY_SLOT_LEAD_RATIO,
+            action_key_slot_trail=doc_width * _ACTION_KEY_SLOT_TRAIL_RATIO,
+            action_key_label_char_width=doc_width * _ACTION_KEY_LABEL_CHAR_WIDTH_RATIO,
+        )
+
+
+# Backwards-compatible module-level constants — these mirror what the legend
+# renders at the canonical 1600-unit document width and are kept primarily for
+# tests and any external consumers that snapshotted the previous public names.
+# Production code should derive sizes from a ``_LegendGeometry`` (or pass
+# ``doc_width`` to the public functions) so the legend scales with the canvas.
+_DEFAULT_GEOM = _LegendGeometry.for_doc_width(_DEFAULT_DOC_WIDTH)
+TAG_W = _DEFAULT_GEOM.tag_w
+TAG_H = _DEFAULT_GEOM.tag_h
+HEADER_STRIP_HEIGHT = _DEFAULT_GEOM.header_strip_height
+CONTENT_STRIP_HEIGHT = _DEFAULT_GEOM.content_strip_height
+ROW_GAP = _DEFAULT_GEOM.row_gap
+PILL_GAP = _DEFAULT_GEOM.pill_gap
+PILL_HEIGHT = _DEFAULT_GEOM.pill_height
+PILL_FONT_SIZE = _DEFAULT_GEOM.pill_font_size
+PILL_PAD_X = _DEFAULT_GEOM.pill_pad_x
+ICON_WIDTH = _DEFAULT_GEOM.icon_width
+ICON_TEXT_GAP = _DEFAULT_GEOM.icon_text_gap
+PILL_CHROME_WIDTH = _DEFAULT_GEOM.pill_chrome_width
+MACRO_COLUMN_HEADER_HEIGHT = _DEFAULT_GEOM.macro_column_header_height
+TD_ROW_HEIGHT = _DEFAULT_GEOM.td_row_height
+TD_ROW_GAP = _DEFAULT_GEOM.td_row_gap
+TD_HEADER_HEIGHT = _DEFAULT_GEOM.td_header_height
+TD_NAME_W = _DEFAULT_GEOM.td_name_w
+TD_CELL_W = _DEFAULT_GEOM.td_cell_w
+SECTION_HEADER_HEIGHT = _DEFAULT_GEOM.section_header_height
+COLUMN_GAP = _DEFAULT_GEOM.column_gap
+ACTION_KEY_STRIP_HEIGHT = _DEFAULT_GEOM.action_key_strip_height
+ACTION_KEY_PRE_GAP = _DEFAULT_GEOM.action_key_pre_gap
 
 
 def _one_line(text: str) -> str:
@@ -265,7 +528,7 @@ def _legend_key_label(key: SvalboardTargetKey) -> str:
     return label
 
 
-def _pill_width(label: str) -> float:
+def _pill_width(label: str, geom: _LegendGeometry) -> float:
     """Compute the pill width to wrap ``label`` exactly.
 
     Walks the parsed :class:`Label` parts and measures each at its actual
@@ -278,13 +541,13 @@ def _pill_width(label: str) -> float:
     label_obj = Label(label, Font.FINGER_KEY, text_color="#000")
     text_width = 0.0
     for part in label_obj.parts:
-        font = part.font.load(PILL_FONT_SIZE)
+        font = part.font.load(geom.pill_font_size)
         if isinstance(part, TextPart):
             text_width += font.getlength(part.text)
         else:
             text_width += part.measure_width(font)
-    text_width = max(text_width, 8.0)
-    return max(28.0, text_width + PILL_CHROME_WIDTH)
+    text_width = max(text_width, geom.pill_min_text_width)
+    return max(geom.pill_min_total_width, text_width + geom.pill_chrome_width)
 
 
 def _macro_action_pill_labels(action: SvalboardMacroAction) -> list[str]:
@@ -320,6 +583,7 @@ def _flatten_macro_pills(
 def _layout_pill_lines(
     pills: list[tuple[SvalboardMacroActionKind, str]],
     line_width: float,
+    geom: _LegendGeometry,
 ) -> list[list[tuple[SvalboardMacroActionKind, str, float]]]:
     """Pack pills into lines, wrapping when the next pill would overflow.
 
@@ -328,18 +592,22 @@ def _layout_pill_lines(
     lines: list[list[tuple[SvalboardMacroActionKind, str, float]]] = [[]]
     cursor = 0.0
     for kind, label in pills:
-        w = _pill_width(label)
-        if lines[-1] and cursor + PILL_GAP + w > line_width:
+        w = _pill_width(label, geom)
+        if lines[-1] and cursor + geom.pill_gap + w > line_width:
             lines.append([])
             cursor = 0.0
         if lines[-1]:
-            cursor += PILL_GAP
+            cursor += geom.pill_gap
         lines[-1].append((kind, label, w))
         cursor += w
     return lines
 
 
-def macro_row_height(macro: SvalboardMacro[SvalboardTargetKey], content_width: float) -> float:
+def macro_row_height(
+    macro: SvalboardMacro[SvalboardTargetKey],
+    content_width: float,
+    doc_width: float = 1600.0,
+) -> float:
     """Total height of one macro row.
 
     Named macros: header strip + content lines (each pill-line is one
@@ -347,13 +615,14 @@ def macro_row_height(macro: SvalboardMacro[SvalboardTargetKey], content_width: f
     Unnamed macros: just content lines — chip and first pill share the
     first line.
     """
+    geom = _LegendGeometry.for_doc_width(doc_width)
     pills = _flatten_macro_pills(macro)
-    indent = TAG_W + 12
-    lines = _layout_pill_lines(pills, content_width - indent)
+    indent = geom.tag_w + geom.row_content_indent_gap
+    lines = _layout_pill_lines(pills, content_width - indent, geom)
     line_count = max(1, len(lines))
     if macro.name:
-        return HEADER_STRIP_HEIGHT + CONTENT_STRIP_HEIGHT * line_count
-    return CONTENT_STRIP_HEIGHT * line_count
+        return geom.header_strip_height + geom.content_strip_height * line_count
+    return geom.content_strip_height * line_count
 
 
 def build_macro_row(
@@ -365,6 +634,7 @@ def build_macro_row(
     accent_line: str,
     text_color: str,
     use_system_fonts: bool = False,
+    doc_width: float = 1600.0,
 ) -> draw.Group:
     """Render a single macro row at ``(x, y)``.
 
@@ -373,9 +643,10 @@ def build_macro_row(
     on the left, vertically centred on the first content strip line, and pills
     flow to the right.
     """
+    geom = _LegendGeometry.for_doc_width(doc_width)
     g = draw.Group()
     chip_label_text = f"%%nf-md-script_text_play_outline; {macro.id}"
-    indent = TAG_W + 12
+    indent = geom.tag_w + geom.row_content_indent_gap
 
     if macro.name:
         # Named layout — header strip (chip top-left at y) + content strip below.
@@ -383,13 +654,13 @@ def build_macro_row(
             draw.Rectangle(
                 x=x,
                 y=y,
-                width=TAG_W,
-                height=TAG_H,
-                rx=4,
-                ry=4,
+                width=geom.tag_w,
+                height=geom.tag_h,
+                rx=geom.pill_corner_radius,
+                ry=geom.pill_corner_radius,
                 fill=accent_fill,
                 stroke=accent_line,
-                stroke_width=1.2,
+                stroke_width=geom.tag_stroke_width,
             )
         )
         g.append(
@@ -401,18 +672,18 @@ def build_macro_row(
                 text_anchor="middle",
                 dominant_baseline="central",
             ).build_text(
-                x + TAG_W / 2,
-                y + TAG_H / 2 + 0.5,
-                12,
+                x + geom.tag_w / 2,
+                y + geom.tag_h / 2 + geom.tag_inner_text_baseline_offset,
+                geom.tag_inner_font_size,
                 use_system_fonts,
             )
         )
         g.append(
             draw.Text(
                 macro.name,
-                x=x + TAG_W + 10,
-                y=y + TAG_H / 2 + 0.5,
-                font_size=13,
+                x=x + geom.tag_w + geom.tag_name_gap,
+                y=y + geom.tag_h / 2 + geom.tag_inner_text_baseline_offset,
+                font_size=geom.tag_name_font_size,
                 font_weight="500",
                 dominant_baseline="central",
                 font_family="'Roboto', sans-serif",
@@ -421,30 +692,30 @@ def build_macro_row(
         )
         g.append(
             draw.Line(
-                sx=x + TAG_W,
-                sy=y + TAG_H - 0.5,
+                sx=x + geom.tag_w,
+                sy=y + geom.tag_h - geom.tag_header_rule_inset,
                 ex=x + content_width,
-                ey=y + TAG_H - 0.5,
+                ey=y + geom.tag_h - geom.tag_header_rule_inset,
                 stroke="#000",
                 stroke_opacity=0.08,
-                stroke_width=1,
+                stroke_width=geom.tag_header_rule_stroke,
             )
         )
-        line_y = y + HEADER_STRIP_HEIGHT
+        line_y = y + geom.header_strip_height
     else:
         # Unnamed layout — chip vertically centred on the first content line.
-        chip_y = y + (CONTENT_STRIP_HEIGHT - TAG_H) / 2
+        chip_y = y + (geom.content_strip_height - geom.tag_h) / 2
         g.append(
             draw.Rectangle(
                 x=x,
                 y=chip_y,
-                width=TAG_W,
-                height=TAG_H,
-                rx=4,
-                ry=4,
+                width=geom.tag_w,
+                height=geom.tag_h,
+                rx=geom.pill_corner_radius,
+                ry=geom.pill_corner_radius,
                 fill=accent_fill,
                 stroke=accent_line,
-                stroke_width=1.2,
+                stroke_width=geom.tag_stroke_width,
             )
         )
         g.append(
@@ -456,9 +727,9 @@ def build_macro_row(
                 text_anchor="middle",
                 dominant_baseline="central",
             ).build_text(
-                x + TAG_W / 2,
-                chip_y + TAG_H / 2 + 0.5,
-                12,
+                x + geom.tag_w / 2,
+                chip_y + geom.tag_h / 2 + geom.tag_inner_text_baseline_offset,
+                geom.tag_inner_font_size,
                 use_system_fonts,
             )
         )
@@ -466,7 +737,7 @@ def build_macro_row(
 
     # Content strip — pills with overflow wrap.
     pills = _flatten_macro_pills(macro)
-    lines = _layout_pill_lines(pills, content_width - indent)
+    lines = _layout_pill_lines(pills, content_width - indent, geom)
     for line in lines:
         cx = x + indent
         for kind, label, w in line:
@@ -474,31 +745,32 @@ def build_macro_row(
             g.append(
                 draw.Rectangle(
                     x=cx,
-                    y=line_y + (CONTENT_STRIP_HEIGHT - PILL_HEIGHT) / 2,
+                    y=line_y + (geom.content_strip_height - geom.pill_height) / 2,
                     width=w,
-                    height=PILL_HEIGHT,
-                    rx=4,
-                    ry=4,
+                    height=geom.pill_height,
+                    rx=geom.pill_corner_radius,
+                    ry=geom.pill_corner_radius,
                     fill="#FAFAF6",
                     stroke=text_color,
                     stroke_opacity=0.18,
                 )
             )
-            # Action glyph — icon centred at cx + PILL_PAD_X (so left padding
-            # from pill edge to icon centre = PILL_PAD_X).
+            # Action glyph — icon centred at cx + pill_pad_x (so left padding
+            # from pill edge to icon centre = pill_pad_x).
             g.append(
                 build_action_glyph(
                     kind,
-                    cx=cx + PILL_PAD_X,
-                    cy=line_y + CONTENT_STRIP_HEIGHT / 2,
+                    cx=cx + geom.pill_pad_x,
+                    cy=line_y + geom.content_strip_height / 2,
                     color=text_color,
+                    doc_width=doc_width,
                 )
             )
             # Label — symmetric around the available text region.
-            #   Text region: [cx + PILL_PAD_X + ICON_WIDTH/2 + ICON_TEXT_GAP, cx + w - PILL_PAD_X]
-            #   Text region centre: cx + (PILL_PAD_X + ICON_WIDTH/2 + ICON_TEXT_GAP + w - PILL_PAD_X) / 2
-            #                     = cx + (ICON_WIDTH/2 + ICON_TEXT_GAP + w) / 2
-            text_centre_x = cx + (ICON_WIDTH / 2 + ICON_TEXT_GAP + w) / 2
+            #   Text region: [cx + pill_pad_x + icon_width/2 + icon_text_gap, cx + w - pill_pad_x]
+            #   Text region centre: cx + (pill_pad_x + icon_width/2 + icon_text_gap + w - pill_pad_x) / 2
+            #                     = cx + (icon_width/2 + icon_text_gap + w) / 2
+            text_centre_x = cx + (geom.icon_width / 2 + geom.icon_text_gap + w) / 2
             g.append(
                 Label(
                     label,
@@ -509,34 +781,34 @@ def build_macro_row(
                     dominant_baseline="central",
                 ).build_text(
                     text_centre_x,
-                    line_y + CONTENT_STRIP_HEIGHT / 2 + 0.5,
-                    PILL_FONT_SIZE,
+                    line_y + geom.content_strip_height / 2 + geom.tag_inner_text_baseline_offset,
+                    geom.pill_font_size,
                     use_system_fonts,
                 )
             )
-            cx += w + PILL_GAP
-        line_y += CONTENT_STRIP_HEIGHT
+            cx += w + geom.pill_gap
+        line_y += geom.content_strip_height
     return g
 
 
-MACRO_COLUMN_HEADER_HEIGHT = 32  # space reserved for the "MACRO ACTIONS" label
-
-
-def build_macro_column_header(x: float, y: float, text_color: str) -> draw.Group:
+def build_macro_column_header(
+    x: float, y: float, text_color: str, doc_width: float = 1600.0
+) -> draw.Group:
     """Render the once-per-column 'MACRO ACTIONS' label.
 
     Positioned at the indent where pills begin so the label aligns with
     the action column rather than with the chip column.
     """
+    geom = _LegendGeometry.for_doc_width(doc_width)
     g = draw.Group()
     g.append(
         draw.Text(
             "MACRO ACTIONS",
-            x=x + TAG_W + 12,
+            x=x + geom.tag_w + geom.row_content_indent_gap,
             y=y,
-            font_size=9,
+            font_size=geom.macro_column_label_font_size,
             fill=text_color,
-            letter_spacing=1.5,
+            letter_spacing=geom.macro_column_label_letter_spacing,
             text_anchor="start",
             font_family="'Roboto', sans-serif",
         )
@@ -544,16 +816,9 @@ def build_macro_column_header(x: float, y: float, text_color: str) -> draw.Group
     return g
 
 
-# --- Tap-dance geometry constants -------------------------------------------
-TD_ROW_HEIGHT = 22
-TD_ROW_GAP = 9
-TD_HEADER_HEIGHT = 32  # space reserved for the "TAP HOLD DOUBLE-TAP …" labels
-TD_NAME_W = 200
-TD_CELL_W = 110
-
-
 def tap_dance_section_height(
     tap_dances: list[SvalboardTapDance[SvalboardTargetKey]],
+    doc_width: float = 1600.0,
 ) -> float:
     """Height of a tap-dance section (column header strip + rows).
 
@@ -562,7 +827,8 @@ def tap_dance_section_height(
     """
     if not tap_dances:
         return 0.0
-    return TD_HEADER_HEIGHT + len(tap_dances) * (TD_ROW_HEIGHT + TD_ROW_GAP)
+    geom = _LegendGeometry.for_doc_width(doc_width)
+    return geom.td_header_height + len(tap_dances) * (geom.td_row_height + geom.td_row_gap)
 
 
 def _tap_dance_cell(
@@ -570,6 +836,7 @@ def _tap_dance_cell(
     y: float,
     content: SvalboardTargetKey | None,
     text_color: str,
+    geom: _LegendGeometry,
     use_system_fonts: bool = False,
 ) -> draw.Group:
     """Render one of the four variant cells (TAP, HOLD, DOUBLE-TAP, TAP&HOLD).
@@ -582,11 +849,11 @@ def _tap_dance_cell(
         g.append(
             draw.Rectangle(
                 x=x,
-                y=y - 11,
-                width=80,
-                height=22,
-                rx=4,
-                ry=4,
+                y=y - geom.td_cell_half_height,
+                width=geom.td_cell_inner_w,
+                height=geom.td_row_height,
+                rx=geom.pill_corner_radius,
+                ry=geom.pill_corner_radius,
                 fill="none",
                 stroke=text_color,
                 stroke_opacity=0.08,
@@ -597,11 +864,11 @@ def _tap_dance_cell(
     g.append(
         draw.Rectangle(
             x=x,
-            y=y - 11,
-            width=80,
-            height=22,
-            rx=4,
-            ry=4,
+            y=y - geom.td_cell_half_height,
+            width=geom.td_cell_inner_w,
+            height=geom.td_row_height,
+            rx=geom.pill_corner_radius,
+            ry=geom.pill_corner_radius,
             fill="#FAFAF6",
             stroke=text_color,
             stroke_opacity=0.18,
@@ -616,9 +883,9 @@ def _tap_dance_cell(
     )
     g.append(
         cell_label.build_text(
-            x=x + 40,
-            y=y + 0.5,
-            font_size=12,
+            x=x + geom.td_cell_label_half_width,
+            y=y + geom.tag_inner_text_baseline_offset,
+            font_size=geom.td_cell_label_font_size,
             use_system_fonts=use_system_fonts,
         )
     )
@@ -634,7 +901,8 @@ def build_tap_dance_row(
     accent_line: str,
     text_color: str,
     use_system_fonts: bool = False,
-    name_column_width: float = TD_NAME_W - TAG_W,
+    name_column_width: float | None = None,
+    doc_width: float = 1600.0,
 ) -> draw.Group:
     """Render a single tap-dance row at ``(x, y)``.
 
@@ -642,33 +910,36 @@ def build_tap_dance_row(
     ``name_column_width`` is the width reserved between the chip and the
     variant cells for the optional name. Pass ``0`` when the entire
     tap-dance section has no titled entries to render variant cells flush
-    against the chip.
+    against the chip. Defaults to ``td_name_w - tag_w`` when omitted.
     """
+    geom = _LegendGeometry.for_doc_width(doc_width)
+    if name_column_width is None:
+        name_column_width = geom.td_name_w - geom.tag_w
     g = draw.Group()
-    cells_offset = TAG_W + name_column_width
+    cells_offset = geom.tag_w + name_column_width
     # Title chip — fixed-width filled tag on the left. When a name is set,
     # an outlined rectangle extends to the right to surround the name.
     g.append(
         draw.Rectangle(
             x=x,
-            y=y - TD_ROW_HEIGHT / 2,
-            width=TAG_W,
-            height=TD_ROW_HEIGHT,
+            y=y - geom.td_row_height / 2,
+            width=geom.tag_w,
+            height=geom.td_row_height,
             fill=accent_fill,
         )
     )
-    chip_outline_width = cells_offset if td.name else TAG_W
+    chip_outline_width = cells_offset if td.name else geom.tag_w
     g.append(
         draw.Rectangle(
             x=x,
-            y=y - TD_ROW_HEIGHT / 2,
+            y=y - geom.td_row_height / 2,
             width=chip_outline_width,
-            height=TD_ROW_HEIGHT,
-            rx=4,
-            ry=4,
+            height=geom.td_row_height,
+            rx=geom.pill_corner_radius,
+            ry=geom.pill_corner_radius,
             fill="none",
             stroke=accent_line,
-            stroke_width=1.2,
+            stroke_width=geom.tag_stroke_width,
         )
     )
     td_chip_label_text = f"%%nf-md-keyboard_close; {td.id}"
@@ -681,9 +952,9 @@ def build_tap_dance_row(
             text_anchor="middle",
             dominant_baseline="central",
         ).build_text(
-            x + TAG_W / 2,
-            y + 0.5,
-            12,
+            x + geom.tag_w / 2,
+            y + geom.tag_inner_text_baseline_offset,
+            geom.tag_inner_font_size,
             use_system_fonts,
         )
     )
@@ -691,9 +962,9 @@ def build_tap_dance_row(
         g.append(
             draw.Text(
                 td.name,
-                x=x + TAG_W + 10,
-                y=y + 0.5,
-                font_size=12,
+                x=x + geom.tag_w + geom.tag_name_gap,
+                y=y + geom.tag_inner_text_baseline_offset,
+                font_size=geom.td_name_font_size,
                 font_weight="500",
                 text_anchor="start",
                 dominant_baseline="central",
@@ -702,10 +973,10 @@ def build_tap_dance_row(
             )
         )
     # Four variant cells.
-    cells_x = x + cells_offset + 12
+    cells_x = x + cells_offset + geom.row_content_indent_gap
     for i, variant in enumerate((td.tap, td.hold, td.double_tap, td.tap_then_hold)):
-        cell_x = cells_x + i * TD_CELL_W + TD_CELL_W / 2 - 40
-        g.append(_tap_dance_cell(cell_x, y, variant, text_color, use_system_fonts))
+        cell_x = cells_x + i * geom.td_cell_w + geom.td_cell_w / 2 - geom.td_cell_label_half_width
+        g.append(_tap_dance_cell(cell_x, y, variant, text_color, geom, use_system_fonts))
     return g
 
 
@@ -713,25 +984,29 @@ def build_tap_dance_column_header(
     x: float,
     y: float,
     text_color: str,
-    name_column_width: float = TD_NAME_W - TAG_W,
+    name_column_width: float | None = None,
+    doc_width: float = 1600.0,
 ) -> draw.Group:
     """Render the once-per-column TAP/HOLD/DOUBLE-TAP/TAP&HOLD strip.
 
     ``name_column_width`` should match the value passed to
     :func:`build_tap_dance_row` so the column labels align with their
-    cells.
+    cells. Defaults to ``td_name_w - tag_w`` when omitted.
     """
+    geom = _LegendGeometry.for_doc_width(doc_width)
+    if name_column_width is None:
+        name_column_width = geom.td_name_w - geom.tag_w
     g = draw.Group()
-    cells_x = x + TAG_W + name_column_width + 12
+    cells_x = x + geom.tag_w + name_column_width + geom.row_content_indent_gap
     for i, label in enumerate(("TAP", "HOLD", "DOUBLE-TAP", "TAP & HOLD")):
         g.append(
             draw.Text(
                 label,
-                x=cells_x + i * TD_CELL_W + TD_CELL_W / 2,
+                x=cells_x + i * geom.td_cell_w + geom.td_cell_w / 2,
                 y=y,
-                font_size=9,
+                font_size=geom.macro_column_label_font_size,
                 fill=text_color,
-                letter_spacing=1.5,
+                letter_spacing=geom.macro_column_label_letter_spacing,
                 text_anchor="middle",
                 font_family="'Roboto', sans-serif",
             )
@@ -739,20 +1014,15 @@ def build_tap_dance_column_header(
     return g
 
 
-# --- Top-level legend renderer -----------------------------------------------
-SECTION_HEADER_HEIGHT = 32
-COLUMN_GAP = 40
-ACTION_KEY_STRIP_HEIGHT = 22
-ACTION_KEY_PRE_GAP = 18  # gap between last macro row and action-key strip
-
-
-def _column_widths(content_width: float) -> tuple[float, float]:
-    col = (content_width - COLUMN_GAP) / 2
+def _column_widths(content_width: float, geom: _LegendGeometry) -> tuple[float, float]:
+    col = (content_width - geom.column_gap) / 2
     return col, col
 
 
 def _macro_section_height(
-    rows: list[SvalboardMacro[SvalboardTargetKey]], col_width: float
+    rows: list[SvalboardMacro[SvalboardTargetKey]],
+    col_width: float,
+    doc_width: float = _DEFAULT_DOC_WIDTH,
 ) -> float:
     """Height of a macro section: title strip + column header + rows + action-key footer.
 
@@ -760,16 +1030,19 @@ def _macro_section_height(
     """
     if not rows:
         return 0.0
-    h = SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT
+    geom = _LegendGeometry.for_doc_width(doc_width)
+    h = geom.section_header_height + geom.macro_column_header_height
     for i, r in enumerate(rows):
         if i > 0:
-            h += ROW_GAP
-        h += macro_row_height(r, col_width)
-    h += ACTION_KEY_PRE_GAP + ACTION_KEY_STRIP_HEIGHT
+            h += geom.row_gap
+        h += macro_row_height(r, col_width, doc_width=doc_width)
+    h += geom.action_key_pre_gap + geom.action_key_strip_height
     return h
 
 
-def legend_height(layout: LegendLayout | None, content_width: float) -> float:
+def legend_height(
+    layout: LegendLayout | None, content_width: float, doc_width: float = 1600.0
+) -> float:
     """Total intrinsic height of the legend block.
 
     Each section (macros, tap-dances) occupies its own column at half
@@ -779,14 +1052,65 @@ def legend_height(layout: LegendLayout | None, content_width: float) -> float:
     """
     if layout is None:
         return 0.0
-    col_w, _ = _column_widths(content_width)
-    h_macros = _macro_section_height(layout.macro_left, col_w)
+    geom = _LegendGeometry.for_doc_width(doc_width)
+    col_w, _ = _column_widths(content_width, geom)
+    h_macros = _macro_section_height(layout.macro_left, col_w, doc_width)
     h_tds = (
-        SECTION_HEADER_HEIGHT + tap_dance_section_height(layout.tap_dance_left)
+        geom.section_header_height + tap_dance_section_height(layout.tap_dance_left, doc_width)
         if layout.tap_dance_left
         else 0.0
     )
     return max(h_macros, h_tds)
+
+
+def _draw_section_title(
+    g: draw.Group,
+    title: str,
+    x: float,
+    y: float,
+    width: float,
+    accent_line: str,
+    count: int,
+    geom: _LegendGeometry,
+) -> None:
+    """Render a section title strip ('MACROS' or 'TAP-DANCE') with rule below."""
+    g.append(
+        draw.Text(
+            title,
+            x=x,
+            y=y + geom.title_baseline_offset,
+            font_size=geom.title_font_size,
+            font_weight="700",
+            letter_spacing=geom.title_letter_spacing,
+            text_anchor="start",
+            font_family="'Roboto', sans-serif",
+            fill=accent_line,
+        )
+    )
+    g.append(
+        draw.Text(
+            f"{count} ENTRIES",
+            x=x + width,
+            y=y + geom.title_baseline_offset,
+            font_size=geom.title_count_font_size,
+            text_anchor="end",
+            fill="#888",
+            font_weight="400",
+            letter_spacing=geom.title_count_letter_spacing,
+            font_family="'Roboto', sans-serif",
+        )
+    )
+    g.append(
+        draw.Line(
+            sx=x,
+            sy=y + geom.title_rule_offset,
+            ex=x + width,
+            ey=y + geom.title_rule_offset,
+            stroke=accent_line,
+            stroke_opacity=0.5,
+            stroke_width=geom.title_rule_stroke,
+        )
+    )
 
 
 def _draw_macro_title(
@@ -796,44 +1120,9 @@ def _draw_macro_title(
     width: float,
     accent_line: str,
     count: int,
+    geom: _LegendGeometry,
 ) -> None:
-    g.append(
-        draw.Text(
-            "MACROS",
-            x=x,
-            y=y + 12,
-            font_size=11,
-            font_weight="700",
-            letter_spacing=3,
-            text_anchor="start",
-            font_family="'Roboto', sans-serif",
-            fill=accent_line,
-        )
-    )
-    g.append(
-        draw.Text(
-            f"{count} ENTRIES",
-            x=x + width,
-            y=y + 12,
-            font_size=10,
-            text_anchor="end",
-            fill="#888",
-            font_weight="400",
-            letter_spacing=1,
-            font_family="'Roboto', sans-serif",
-        )
-    )
-    g.append(
-        draw.Line(
-            sx=x,
-            sy=y + 20,
-            ex=x + width,
-            ey=y + 20,
-            stroke=accent_line,
-            stroke_opacity=0.5,
-            stroke_width=1.2,
-        )
-    )
+    _draw_section_title(g, "MACROS", x, y, width, accent_line, count, geom)
 
 
 def _draw_td_title(
@@ -843,62 +1132,28 @@ def _draw_td_title(
     width: float,
     accent_line: str,
     count: int,
+    geom: _LegendGeometry,
 ) -> None:
-    g.append(
-        draw.Text(
-            "TAP-DANCE",
-            x=x,
-            y=y + 12,
-            font_size=11,
-            font_weight="700",
-            letter_spacing=3,
-            text_anchor="start",
-            font_family="'Roboto', sans-serif",
-            fill=accent_line,
-        )
-    )
-    g.append(
-        draw.Text(
-            f"{count} ENTRIES",
-            x=x + width,
-            y=y + 12,
-            font_size=10,
-            text_anchor="end",
-            fill="#888",
-            font_weight="400",
-            letter_spacing=1,
-            font_family="'Roboto', sans-serif",
-        )
-    )
-    g.append(
-        draw.Line(
-            sx=x,
-            sy=y + 20,
-            ex=x + width,
-            ey=y + 20,
-            stroke=accent_line,
-            stroke_opacity=0.5,
-            stroke_width=1.2,
-        )
-    )
+    _draw_section_title(g, "TAP-DANCE", x, y, width, accent_line, count, geom)
 
 
-def _action_key_strip(x: float, y: float, text_color: str) -> draw.Group:
+def _action_key_strip(x: float, y: float, text_color: str, doc_width: float = 1600.0) -> draw.Group:
     """The 'tap | press | release | text | delay' key below macros."""
+    geom = _LegendGeometry.for_doc_width(doc_width)
     g = draw.Group()
     g.append(
         draw.Text(
             "ACTION KEY",
             x=x,
-            y=y + 6,
-            font_size=9,
+            y=y + geom.action_key_label_offset,
+            font_size=geom.action_key_label_font_size,
             fill="#999",
-            letter_spacing=1.5,
+            letter_spacing=geom.action_key_label_letter_spacing,
             dominant_baseline="central",
             font_family="'Roboto', sans-serif",
         )
     )
-    cx = x + 90
+    cx = x + geom.action_key_legend_left
     items = [
         (SvalboardMacroActionKind.TAP, "tap"),
         (SvalboardMacroActionKind.DOWN, "press"),
@@ -907,19 +1162,31 @@ def _action_key_strip(x: float, y: float, text_color: str) -> draw.Group:
         (SvalboardMacroActionKind.DELAY, "delay"),
     ]
     for kind, label in items:
-        g.append(build_action_glyph(kind, cx=cx + 6, cy=y + 6, color=text_color))
+        g.append(
+            build_action_glyph(
+                kind,
+                cx=cx + geom.action_key_glyph_inset,
+                cy=y + geom.action_key_label_offset,
+                color=text_color,
+                doc_width=doc_width,
+            )
+        )
         g.append(
             draw.Text(
                 label,
-                x=cx + 16,
-                y=y + 6,
-                font_size=10,
+                x=cx + geom.action_key_text_inset,
+                y=y + geom.action_key_label_offset,
+                font_size=geom.action_key_label_font_size_inner,
                 fill="#666",
                 dominant_baseline="central",
                 font_family="'Roboto', sans-serif",
             )
         )
-        cx += 14 + len(label) * 6 + 14
+        cx += (
+            geom.action_key_slot_lead
+            + len(label) * geom.action_key_label_char_width
+            + geom.action_key_slot_trail
+        )
     return g
 
 
@@ -932,6 +1199,8 @@ def _draw_macro_column(
     accent_fill: str,
     accent_line: str,
     text_color: str,
+    geom: _LegendGeometry,
+    doc_width: float,
     use_system_fonts: bool = False,
 ) -> float:
     """Stamp ``rows`` into one column starting at ``start_y``.
@@ -942,7 +1211,7 @@ def _draw_macro_column(
     cursor = start_y
     for i, m in enumerate(rows):
         if i > 0:
-            cursor += ROW_GAP
+            cursor += geom.row_gap
         g.append(
             build_macro_row(
                 m,
@@ -953,13 +1222,15 @@ def _draw_macro_column(
                 accent_line=accent_line,
                 text_color=text_color,
                 use_system_fonts=use_system_fonts,
+                doc_width=doc_width,
             )
         )
-        cursor += macro_row_height(m, col_w)
+        cursor += macro_row_height(m, col_w, doc_width=doc_width)
     return cursor
 
 
 def _td_name_column_width(
+    geom: _LegendGeometry,
     *row_groups: list[SvalboardTapDance[SvalboardTargetKey]],
 ) -> float:
     """Reserve the name area only when at least one row has a name.
@@ -968,7 +1239,7 @@ def _td_name_column_width(
     columns of a span-columns section align consistently.
     """
     has_any_name = any(td.name for group in row_groups for td in group)
-    return (TD_NAME_W - TAG_W) if has_any_name else 0.0
+    return (geom.td_name_w - geom.tag_w) if has_any_name else 0.0
 
 
 def _draw_td_column(
@@ -980,33 +1251,39 @@ def _draw_td_column(
     accent_fill: str,
     accent_line: str,
     text_color: str,
+    geom: _LegendGeometry,
+    doc_width: float,
     use_system_fonts: bool = False,
-    name_column_width: float = TD_NAME_W - TAG_W,
+    name_column_width: float | None = None,
 ) -> None:
+    if name_column_width is None:
+        name_column_width = geom.td_name_w - geom.tag_w
     g.append(
         build_tap_dance_column_header(
             x=col_x,
-            y=start_y + 12,
+            y=start_y + geom.title_baseline_offset,
             text_color=text_color,
             name_column_width=name_column_width,
+            doc_width=doc_width,
         )
     )
-    cursor = start_y + TD_HEADER_HEIGHT
+    cursor = start_y + geom.td_header_height
     for t in rows:
         g.append(
             build_tap_dance_row(
                 t,
                 x=col_x,
-                y=cursor + TD_ROW_HEIGHT / 2,
+                y=cursor + geom.td_row_height / 2,
                 column_width=col_w,
                 accent_fill=accent_fill,
                 accent_line=accent_line,
                 text_color=text_color,
                 use_system_fonts=use_system_fonts,
                 name_column_width=name_column_width,
+                doc_width=doc_width,
             )
         )
-        cursor += TD_ROW_HEIGHT + TD_ROW_GAP
+        cursor += geom.td_row_height + geom.td_row_gap
 
 
 def build_legend(
@@ -1016,6 +1293,7 @@ def build_legend(
     content_width: float,
     palette: Palette,
     use_system_fonts: bool = False,
+    doc_width: float = 1600.0,
 ) -> draw.Group | None:
     """Render the full legend block at ``(x, y)``.
 
@@ -1023,9 +1301,10 @@ def build_legend(
     """
     if layout is None:
         return None
+    geom = _LegendGeometry.for_doc_width(doc_width)
     macro_line = derive_accent_line(palette.macro_color)
     td_line = derive_accent_line(palette.tap_dance_color)
-    col_w, _ = _column_widths(content_width)
+    col_w, _ = _column_widths(content_width, geom)
     g = draw.Group()
 
     if layout.macro_left:
@@ -1036,52 +1315,60 @@ def build_legend(
             col_w,
             macro_line,
             count=len(layout.macro_left),
+            geom=geom,
         )
         g.append(
             build_macro_column_header(
                 x=x,
-                y=y + SECTION_HEADER_HEIGHT + 12,
+                y=y + geom.section_header_height + geom.title_baseline_offset,
                 text_color=palette.text_color,
+                doc_width=doc_width,
             )
         )
         end_left = _draw_macro_column(
             g,
             layout.macro_left,
             x,
-            y + SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT,
+            y + geom.section_header_height + geom.macro_column_header_height,
             col_w,
             palette.macro_color,
             macro_line,
             palette.text_color,
+            geom,
+            doc_width,
             use_system_fonts=use_system_fonts,
         )
         g.append(
             _action_key_strip(
                 x=x,
-                y=end_left + ACTION_KEY_PRE_GAP,
+                y=end_left + geom.action_key_pre_gap,
                 text_color=palette.text_color,
+                doc_width=doc_width,
             )
         )
 
     if layout.tap_dance_left:
         _draw_td_title(
             g,
-            x + col_w + COLUMN_GAP,
+            x + col_w + geom.column_gap,
             y,
             col_w,
             td_line,
             count=len(layout.tap_dance_left),
+            geom=geom,
         )
-        td_name_w = _td_name_column_width(layout.tap_dance_left)
+        td_name_w = _td_name_column_width(geom, layout.tap_dance_left)
         _draw_td_column(
             g,
             layout.tap_dance_left,
-            x + col_w + COLUMN_GAP,
-            y + SECTION_HEADER_HEIGHT,
+            x + col_w + geom.column_gap,
+            y + geom.section_header_height,
             col_w,
             palette.tap_dance_color,
             td_line,
             palette.text_color,
+            geom,
+            doc_width,
             use_system_fonts=use_system_fonts,
             name_column_width=td_name_w,
         )

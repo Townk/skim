@@ -47,6 +47,10 @@ from .symbol_legend import (
 )
 from .text import Font, FontSubsetter, FontUsageAnalyzer, Label
 
+# Vertical gap between the macro/TD legend block and the symbol legend block,
+# expressed as a fraction of the document width.
+_SYMBOL_LEGEND_GAP_RATIO = 24 / 1600
+
 
 def _draw_layer(
     config: SkimConfig,
@@ -68,6 +72,7 @@ def _draw_layer(
         has_double_south=config.keyboard.features.double_south,
         use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
         hold_symbol_position=config.output.style.hold_symbol_position,
+        doc_width=config.output.layout.width,
         use_system_fonts=use_system_fonts,
         show_layer_indicators=config.output.style.show_layer_indicators,
     )
@@ -220,10 +225,10 @@ def _draw_layer(
     else:
         symbol_entries = []
 
-    symbol_legend_gap = 24.0
+    symbol_legend_gap = m.width * _SYMBOL_LEGEND_GAP_RATIO
     content_width = canvas_width - 2 * outer_padding
-    legend_h = legend_height(legend_plan, content_width)
-    sym_h = symbol_legend_height(symbol_entries, content_width)
+    legend_h = legend_height(legend_plan, content_width, doc_width=m.width)
+    sym_h = symbol_legend_height(symbol_entries, content_width, doc_width=m.width)
 
     if legend_h > 0 and sym_h > 0:
         legend_block_h = legend_h + symbol_legend_gap + sym_h
@@ -356,6 +361,7 @@ def _draw_layer(
             content_width=content_width,
             palette=config.output.style.palette,
             use_system_fonts=use_system_fonts,
+            doc_width=m.width,
         )
         if legend_group is not None:
             d.append(legend_group)
@@ -372,6 +378,7 @@ def _draw_layer(
             palette=config.output.style.palette,
             use_system_fonts=use_system_fonts,
             flow=config.output.style.symbol_legend_flow.value,
+            doc_width=m.width,
         )
         if sym_group is not None:
             d.append(sym_group)

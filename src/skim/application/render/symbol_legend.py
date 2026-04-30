@@ -628,19 +628,73 @@ def collect_used_descriptions(
 # Rendering
 # ---------------------------------------------------------------------------
 
-# Geometry constants
-_SYMBOL_HEADER_HEIGHT = 28
-_ENTRY_ROW_HEIGHT = 20
-_SYMBOL_FONT_SIZE = 13
-_DESC_FONT_SIZE = 13
-_COLUMN_GAP = 18.0
-_GLYPH_DESC_GAP = 6.0  # gap between glyph cell and description text
-_ROW_GAP = 3.0
-_ENTRY_RIGHT_PAD = 6.0  # pad between adjacent column entries
+# Geometry ratios — every visible size scales with the document width so the
+# symbol legend keeps the same proportions across output sizes. The raw pixel
+# values on the right of each division are the canonical sizes when the
+# document width is 1600 (the default).
+_SYMBOL_HEADER_HEIGHT_RATIO = 28 / 1600
+_ENTRY_ROW_HEIGHT_RATIO = 20 / 1600
+_SYMBOL_FONT_SIZE_RATIO = 13 / 1600
+_DESC_FONT_SIZE_RATIO = 13 / 1600
+_COLUMN_GAP_RATIO = 18 / 1600
+_GLYPH_DESC_GAP_RATIO = 6 / 1600  # gap between glyph cell and description text
+_ROW_GAP_RATIO = 3 / 1600
+_ENTRY_RIGHT_PAD_RATIO = 6 / 1600  # pad between adjacent column entries
+_MIN_GLYPH_CELL_RATIO = 4 / 1600  # measurement floor for blank glyph cells
+
+# Section title strip
+_TITLE_FONT_SIZE_RATIO = 11 / 1600
+_TITLE_LETTER_SPACING_RATIO = 3 / 1600
+_TITLE_BASELINE_OFFSET_RATIO = 12 / 1600
+_RULE_OFFSET_RATIO = 20 / 1600
+_RULE_STROKE_WIDTH_RATIO = 1.2 / 1600
 
 
-def _measure_label_width(label: str, font_size: float) -> float:
-    """Measure the rendered width of ``label`` at ``font_size``."""
+@dataclass(frozen=True, slots=True)
+class _SymbolLegendGeometry:
+    """All pixel sizes for the symbol legend, derived from ``doc_width``."""
+
+    header_height: float
+    entry_row_height: float
+    symbol_font_size: float
+    desc_font_size: float
+    column_gap: float
+    glyph_desc_gap: float
+    row_gap: float
+    entry_right_pad: float
+    min_glyph_cell: float
+    title_font_size: float
+    title_letter_spacing: float
+    title_baseline_offset: float
+    rule_offset: float
+    rule_stroke_width: float
+
+    @classmethod
+    def for_doc_width(cls, doc_width: float) -> "_SymbolLegendGeometry":
+        return cls(
+            header_height=doc_width * _SYMBOL_HEADER_HEIGHT_RATIO,
+            entry_row_height=doc_width * _ENTRY_ROW_HEIGHT_RATIO,
+            symbol_font_size=doc_width * _SYMBOL_FONT_SIZE_RATIO,
+            desc_font_size=doc_width * _DESC_FONT_SIZE_RATIO,
+            column_gap=doc_width * _COLUMN_GAP_RATIO,
+            glyph_desc_gap=doc_width * _GLYPH_DESC_GAP_RATIO,
+            row_gap=doc_width * _ROW_GAP_RATIO,
+            entry_right_pad=doc_width * _ENTRY_RIGHT_PAD_RATIO,
+            min_glyph_cell=doc_width * _MIN_GLYPH_CELL_RATIO,
+            title_font_size=doc_width * _TITLE_FONT_SIZE_RATIO,
+            title_letter_spacing=doc_width * _TITLE_LETTER_SPACING_RATIO,
+            title_baseline_offset=doc_width * _TITLE_BASELINE_OFFSET_RATIO,
+            rule_offset=doc_width * _RULE_OFFSET_RATIO,
+            rule_stroke_width=doc_width * _RULE_STROKE_WIDTH_RATIO,
+        )
+
+
+def _measure_label_width(label: str, font_size: float, min_width: float) -> float:
+    """Measure the rendered width of ``label`` at ``font_size``.
+
+    ``min_width`` is the floor returned for blank/whitespace labels so the
+    glyph cell never collapses below a usable extent.
+    """
     label_obj = Label(label, Font.FINGER_KEY, text_color="#000")
     width = 0.0
     for part in label_obj.parts:
@@ -649,12 +703,13 @@ def _measure_label_width(label: str, font_size: float) -> float:
             width += font.getlength(part.text)
         else:
             width += part.measure_width(font)
-    return max(width, 4.0)
+    return max(width, min_width)
 
 
 def symbol_legend_height(
     entries: list[SymbolLegendEntry],
     content_width: float,
+    doc_width: float = 1600.0,
 ) -> float:
     """Return the total height the symbol legend block needs.
 
@@ -663,19 +718,27 @@ def symbol_legend_height(
     if not entries:
         return 0.0
 
+    geom = _SymbolLegendGeometry.for_doc_width(doc_width)
+
     # Uniform glyph cell width = widest glyph across all entries
-    max_glyph_w = max(_measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries)
+    max_glyph_w = max(
+        _measure_label_width(e.display_label, geom.symbol_font_size, geom.min_glyph_cell)
+        for e in entries
+    )
 
     # Description text widths — use the same Label-parts-aware measurement
     # as the glyph column so NerdFont/symbol fragments and other non-BMP
     # codepoints in resolved descriptions are sized correctly.
-    max_desc_w = max(_measure_label_width(e.description, _DESC_FONT_SIZE) for e in entries)
+    max_desc_w = max(
+        _measure_label_width(e.description, geom.desc_font_size, geom.min_glyph_cell)
+        for e in entries
+    )
 
-    entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + _ENTRY_RIGHT_PAD
-    col_count = max(1, int((content_width + _COLUMN_GAP) / (entry_w + _COLUMN_GAP)))
+    entry_w = max_glyph_w + geom.glyph_desc_gap + max_desc_w + geom.entry_right_pad
+    col_count = max(1, int((content_width + geom.column_gap) / (entry_w + geom.column_gap)))
     row_count = (len(entries) + col_count - 1) // col_count
 
-    return _SYMBOL_HEADER_HEIGHT + row_count * (_ENTRY_ROW_HEIGHT + _ROW_GAP)
+    return geom.header_height + row_count * (geom.entry_row_height + geom.row_gap)
 
 
 def build_symbol_legend(
@@ -686,6 +749,7 @@ def build_symbol_legend(
     palette: object,  # Palette (avoid circular import by keeping loose type)
     use_system_fonts: bool = False,
     flow: str = "column",
+    doc_width: float = 1600.0,
 ) -> draw.Group | None:
     """Render the symbol legend block at ``(x, y)``.
 
@@ -719,13 +783,21 @@ def build_symbol_legend(
     text_color = palette.text_color
     accent_line = "#888888"  # neutral-gray, independent of any per-layer color
 
+    geom = _SymbolLegendGeometry.for_doc_width(doc_width)
+
     # Compute layout geometry — inline style (no surrounding rectangle)
-    max_glyph_w = max(_measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries)
+    max_glyph_w = max(
+        _measure_label_width(e.display_label, geom.symbol_font_size, geom.min_glyph_cell)
+        for e in entries
+    )
 
-    max_desc_w = max(_measure_label_width(e.description, _DESC_FONT_SIZE) for e in entries)
+    max_desc_w = max(
+        _measure_label_width(e.description, geom.desc_font_size, geom.min_glyph_cell)
+        for e in entries
+    )
 
-    entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + _ENTRY_RIGHT_PAD
-    col_count = max(1, int((content_width + _COLUMN_GAP) / (entry_w + _COLUMN_GAP)))
+    entry_w = max_glyph_w + geom.glyph_desc_gap + max_desc_w + geom.entry_right_pad
+    col_count = max(1, int((content_width + geom.column_gap) / (entry_w + geom.column_gap)))
 
     g = draw.Group()
 
@@ -738,10 +810,10 @@ def build_symbol_legend(
         draw.Text(
             "SYMBOLS",
             x=x,
-            y=y + 12,
-            font_size=11,
+            y=y + geom.title_baseline_offset,
+            font_size=geom.title_font_size,
             font_weight="700",
-            letter_spacing=3,
+            letter_spacing=geom.title_letter_spacing,
             text_anchor="start",
             font_family=label_font,
             fill=accent_line,
@@ -750,19 +822,19 @@ def build_symbol_legend(
     g.append(
         draw.Line(
             sx=x,
-            sy=y + 20,
+            sy=y + geom.rule_offset,
             ex=x + content_width,
-            ey=y + 20,
+            ey=y + geom.rule_offset,
             stroke=accent_line,
             stroke_opacity=0.5,
-            stroke_width=1.2,
+            stroke_width=geom.rule_stroke_width,
         )
     )
 
     # Entries — inline ACTION-KEY style (no surrounding box)
     n = len(entries)
     row_count = (n + col_count - 1) // col_count
-    content_y = y + _SYMBOL_HEADER_HEIGHT
+    content_y = y + geom.header_height
     for idx, entry in enumerate(entries):
         if flow == "row":
             col = idx % col_count
@@ -771,9 +843,9 @@ def build_symbol_legend(
             col = idx // row_count
             row = idx % row_count
         # Column x: evenly distribute
-        col_x = x + col * (entry_w + _COLUMN_GAP)
-        row_y = content_y + row * (_ENTRY_ROW_HEIGHT + _ROW_GAP)
-        cell_mid_y = row_y + _ENTRY_ROW_HEIGHT / 2
+        col_x = x + col * (entry_w + geom.column_gap)
+        row_y = content_y + row * (geom.entry_row_height + geom.row_gap)
+        cell_mid_y = row_y + geom.entry_row_height / 2
 
         # Symbol glyph — centred within the uniform glyph cell
         g.append(
@@ -786,7 +858,7 @@ def build_symbol_legend(
             ).build_text(
                 col_x + max_glyph_w / 2,
                 cell_mid_y + 0.5,
-                _SYMBOL_FONT_SIZE,
+                geom.symbol_font_size,
                 use_system_fonts,
             )
         )
@@ -794,9 +866,9 @@ def build_symbol_legend(
         g.append(
             draw.Text(
                 entry.description,
-                x=col_x + max_glyph_w + _GLYPH_DESC_GAP,
+                x=col_x + max_glyph_w + geom.glyph_desc_gap,
                 y=cell_mid_y + 0.5,
-                font_size=_DESC_FONT_SIZE,
+                font_size=geom.desc_font_size,
                 dominant_baseline="central",
                 font_family=label_font,
                 fill=text_color,

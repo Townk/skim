@@ -47,11 +47,12 @@ from .legend import (
     plan_layout,
 )
 from .overview_layout import (
-    _BADGE_PADDING_LEFT,
-    _BADGE_PADDING_RIGHT,
     _LOGO_WIDTH_TO_BADGE_WIDTH,
     BadgeDimensions,
     OverviewLayout,
+    _badge_padding_left,
+    _badge_padding_right,
+    _outer_padding,
 )
 from .symbol_legend import (
     build_symbol_legend,
@@ -72,6 +73,42 @@ _BADGE_FONT_SIZE_RATIO = 0.45
 # Connector spacing as a ratio of the outer key width. Tighter than 1.0
 # (the full N-key width) — settled visually during Phase 1.
 _CONNECTOR_SPACING_RATIO = 0.6
+
+# Connector path stroke styling, expressed as fractions of the document width.
+# At the canonical 1600-unit width these reproduce the original 2.5/0.1/7px
+# values; at other widths the dotted pattern keeps the same visual cadence.
+_CONNECTOR_PATH_STROKE_WIDTH_RATIO = 2.5 / 1600
+_CONNECTOR_PATH_DASH_DOT_RATIO = 0.1 / 1600
+_CONNECTOR_PATH_DASH_GAP_RATIO = 7 / 1600
+
+# Vertical gap between the macro/TD legend and the symbol legend below it.
+_SYMBOL_LEGEND_GAP_RATIO = 24 / 1600
+
+# Badge corner radius as a fraction of the badge height.
+_BADGE_BORDER_RADIUS_RATIO = 0.2
+
+# Title font size relative to the badge font size.
+_TITLE_FONT_SIZE_RATIO_OF_BADGE = 1.8
+
+# Variant label vertical offset above/below the badge, expressed as a fraction
+# of the badge font size.
+_VARIANT_LABEL_OFFSET_RATIO_OF_FONT = 0.2
+
+# Preliminary badge dimensions used as a seed for the OverviewLayout iteration
+# (the real badge is recomputed once the cluster width is known). At the
+# canonical 1600-unit width these reproduce the original 200/40/8px values.
+_PRELIM_BADGE_WIDTH_RATIO = 200 / 1600
+_PRELIM_BADGE_HEIGHT_RATIO = 40 / 1600
+_PRELIM_BADGE_RADIUS_RATIO = 8 / 1600
+
+
+def _prelim_badge_dimensions(doc_width: float) -> BadgeDimensions:
+    """Seed badge dimensions for the preliminary OverviewLayout pass."""
+    return BadgeDimensions(
+        width=doc_width * _PRELIM_BADGE_WIDTH_RATIO,
+        height=doc_width * _PRELIM_BADGE_HEIGHT_RATIO,
+        border_radius=doc_width * _PRELIM_BADGE_RADIUS_RATIO,
+    )
 
 
 def _badge_text(qmk_idx: int, name: str) -> str:
@@ -126,7 +163,8 @@ def _compute_badge_dims(
         char_width = badge_font_size * 0.65
         max_text_width = max(len(t) * char_width for t in badge_texts) if badge_texts else 50
 
-    badge_width = _BADGE_PADDING_LEFT + max_text_width + _BADGE_PADDING_RIGHT
+    doc_width = config.output.layout.width
+    badge_width = _badge_padding_left(doc_width) + max_text_width + _badge_padding_right(doc_width)
     border_radius = badge_height * 0.2
 
     return BadgeDimensions(
@@ -178,18 +216,18 @@ def compute_header_dims(
         for pos, layer_cfg in enumerate(config.keyboard.layers)
         if layer_cfg.index in keymap.layers
     ]
-    prelim_badge = BadgeDimensions(width=200, height=40, border_radius=8)
+    prelim_badge = _prelim_badge_dimensions(config.output.layout.width)
     prelim_layout = OverviewLayout(config, prelim_badge)
     badge_dims = _compute_badge_dims(config, render_layers, prelim_layout.finger_cluster_width)
     layout = OverviewLayout(config, badge_dims, routing_column_count=0)
 
     badge_h = layout.outer_key_size
     badge_font_size = badge_h * _BADGE_FONT_SIZE_RATIO
-    title_font_size = badge_font_size * 1.8
+    title_font_size = badge_font_size * _TITLE_FONT_SIZE_RATIO_OF_BADGE
     logo_width = badge_dims.width * _LOGO_WIDTH_TO_BADGE_WIDTH
     logo_height = _LOGO_ASPECT_RATIO.height_from_width(logo_width)
     base_metrics = KeymapLayoutMetrics.from_config(config)
-    outer_padding = max(base_metrics.inset * 2, 40.0)
+    outer_padding = _outer_padding(base_metrics)
     # Overview uses ``row_gap = finger_cluster_width * outer_key_proportion`` —
     # one N-key width — for the gap below the header and between rows. Reuse it
     # here so per-layer images have the same breathing room after the header.
@@ -275,6 +313,7 @@ def _compute_thumb_indicator_rects(
                 gap=gap,
                 offset_direction=offset_dir,
                 connector_type=conn_type,
+                doc_width=config.output.layout.width,
                 connector_target_y=connector_target_y,
             )
 
@@ -296,6 +335,7 @@ def _compute_finger_indicator_rects(
     finger_clusters_right: list[FingerClusterComponent],
     layer_data: SvalboardLayout[SvalboardTargetKey],
     has_double_south: bool,
+    doc_width: float,
 ) -> dict[int, tuple[float, float, float, float]]:
     """Return ``{id(triggering_key): (rect_x, rect_y, rect_w, rect_h)}`` for one
     layer's finger-cluster indicators.
@@ -358,6 +398,7 @@ def _compute_finger_indicator_rects(
                     gap=key_gap,
                     offset_direction=offset_dir,
                     connector_type=conn_type,
+                    doc_width=doc_width,
                 )
 
                 radius = circle_diameter / 2.0
@@ -414,6 +455,7 @@ def _compute_all_indicator_rects(
                 right_clusters,
                 layer_data,
                 has_double_south=config.keyboard.features.double_south,
+                doc_width=config.output.layout.width,
             )
         )
 
@@ -526,6 +568,7 @@ def _build_finger_clusters_for_layer(
         has_double_south=config.keyboard.features.double_south,
         use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
         hold_symbol_position=config.output.style.hold_symbol_position,
+        doc_width=config.output.layout.width,
         use_system_fonts=use_system_fonts,
         show_layer_indicators=config.output.style.show_layer_indicators,
         qmk_index_to_position=config.keyboard.qmk_index_to_position,
@@ -578,6 +621,7 @@ def _build_thumb_clusters(
         has_double_south=config.keyboard.features.double_south,
         use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
         hold_symbol_position=config.output.style.hold_symbol_position,
+        doc_width=config.output.layout.width,
         use_system_fonts=use_system_fonts,
         show_layer_indicators=config.output.style.show_layer_indicators,
         qmk_index_to_position=config.keyboard.qmk_index_to_position,
@@ -617,7 +661,7 @@ def draw_overview(
     base_metrics = KeymapLayoutMetrics.from_config(config)
 
     # --- Phase 1: Compute layout dimensions ---
-    prelim_badge = BadgeDimensions(width=200, height=40, border_radius=8)
+    prelim_badge = _prelim_badge_dimensions(config.output.layout.width)
     prelim_layout = OverviewLayout(config, prelim_badge)
     badge_dims = _compute_badge_dims(config, render_layers, prelim_layout.finger_cluster_width)
     # Routing area width is allocated by route_overview_connectors via extra_right_padding;
@@ -721,10 +765,14 @@ def draw_overview(
     else:
         symbol_entries = []
 
-    symbol_legend_gap = 24.0
+    symbol_legend_gap = config.output.layout.width * _SYMBOL_LEGEND_GAP_RATIO
     legend_content_width = canvas_w - 2 * padding
-    legend_h = legend_height(legend_plan, legend_content_width)
-    sym_h = symbol_legend_height(symbol_entries, legend_content_width)
+    legend_h = legend_height(
+        legend_plan, legend_content_width, doc_width=config.output.layout.width
+    )
+    sym_h = symbol_legend_height(
+        symbol_entries, legend_content_width, doc_width=config.output.layout.width
+    )
     # ``routing.extra_bottom_padding`` includes a 0.5*keymap_spacing buffer
     # below the bottommost DOWN lane (see ConnectorRouting docstring). Strip
     # that buffer when measuring where the keyboard area visually ends so
@@ -795,9 +843,10 @@ def draw_overview(
     # computed from the preliminary cluster_width and is stale.
     badge_w = badge_dims.width
     badge_h = layout.outer_key_size
-    badge_r = badge_h * 0.2
+    badge_r = badge_h * _BADGE_BORDER_RADIUS_RATIO
     badge_font_size = badge_h * _BADGE_FONT_SIZE_RATIO
     badge_x = padding
+    badge_pad_left = _badge_padding_left(config.output.layout.width)
 
     # Header: logo + title
     logo_width = badge_w * _LOGO_WIDTH_TO_BADGE_WIDTH
@@ -823,7 +872,7 @@ def draw_overview(
     d.append(
         draw.Text(
             title_text,
-            font_size=badge_font_size * 1.8,
+            font_size=badge_font_size * _TITLE_FONT_SIZE_RATIO_OF_BADGE,
             x=layout.right_column_x,
             y=padding + logo_height / 2.0,
             text_anchor="start",
@@ -840,8 +889,8 @@ def draw_overview(
             draw.Text(
                 "LAYERS",
                 font_size=badge_font_size,
-                x=badge_x + _BADGE_PADDING_LEFT,
-                y=first_badge_y - badge_font_size * 0.2,
+                x=badge_x + badge_pad_left,
+                y=first_badge_y - badge_font_size * _VARIANT_LABEL_OFFSET_RATIO_OF_FONT,
                 text_anchor="start",
                 dominant_baseline="text-after-edge",
                 font_family=label_font,
@@ -872,7 +921,7 @@ def draw_overview(
             draw.Text(
                 _badge_text(qmk_idx, layer_cfg.name),
                 font_size=badge_font_size,
-                x=badge_x + _BADGE_PADDING_LEFT,
+                x=badge_x + badge_pad_left,
                 y=badge_y + badge_h / 2.0,
                 text_anchor="start",
                 dominant_baseline="central",
@@ -885,8 +934,8 @@ def draw_overview(
                 draw.Text(
                     layer_cfg.variant,
                     font_size=badge_font_size,
-                    x=badge_x + _BADGE_PADDING_LEFT,
-                    y=badge_y + badge_h + badge_font_size * 0.2,
+                    x=badge_x + badge_pad_left,
+                    y=badge_y + badge_h + badge_font_size * _VARIANT_LABEL_OFFSET_RATIO_OF_FONT,
                     text_anchor="start",
                     dominant_baseline="text-before-edge",
                     font_family=label_font,
@@ -912,7 +961,7 @@ def draw_overview(
         draw.Text(
             "THUMBS",
             font_size=badge_font_size,
-            x=badge_x + _BADGE_PADDING_LEFT,
+            x=badge_x + badge_pad_left,
             y=thumbs_badge_y + badge_h / 2.0,
             text_anchor="start",
             dominant_baseline="central",
@@ -948,8 +997,12 @@ def draw_overview(
             else:
                 stroke_color = "#808080"
             path.args["stroke"] = stroke_color
-            path.args["stroke-width"] = 2.5
-            path.args["stroke-dasharray"] = "0.1 7"
+            path.args["stroke-width"] = (
+                config.output.layout.width * _CONNECTOR_PATH_STROKE_WIDTH_RATIO
+            )
+            dot = config.output.layout.width * _CONNECTOR_PATH_DASH_DOT_RATIO
+            gap = config.output.layout.width * _CONNECTOR_PATH_DASH_GAP_RATIO
+            path.args["stroke-dasharray"] = f"{dot} {gap}"
             path.args["stroke-linecap"] = "round"
             path.args["opacity"] = 0.7
             d.append(path)
@@ -963,6 +1016,7 @@ def draw_overview(
             content_width=legend_content_width,
             palette=palette,
             use_system_fonts=use_system_fonts,
+            doc_width=config.output.layout.width,
         )
         if legend_group is not None:
             d.append(legend_group)
@@ -978,6 +1032,7 @@ def draw_overview(
             palette=palette,
             use_system_fonts=use_system_fonts,
             flow=config.output.style.symbol_legend_flow.value,
+            doc_width=config.output.layout.width,
         )
         if sym_group is not None:
             d.append(sym_group)

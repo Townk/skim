@@ -41,9 +41,35 @@ _BADGE_TO_CLUSTER_GAP_KS = 4
 # ThumbClusterComponent.
 _THUMB_KEY_INSET_PROPORTION = 0.038
 
-# Badge internal padding (SVG units)
-_BADGE_PADDING_LEFT = 15.0
-_BADGE_PADDING_RIGHT = 30.0
+# Badge internal padding, expressed as fractions of the document width so the
+# overview's badges keep the same visual proportions across output sizes.
+_BADGE_PADDING_LEFT_RATIO = 15 / 1600
+_BADGE_PADDING_RIGHT_RATIO = 30 / 1600
+
+# Outer padding floor (used when ``m.inset * 2`` is smaller). Matches the
+# default keymap-image padding at the canonical 1600-unit width.
+_OUTER_PADDING_FLOOR_RATIO = 40 / 1600
+
+
+def _badge_padding_left(doc_width: float) -> float:
+    """Return the badge's left internal padding for the given document width."""
+    return doc_width * _BADGE_PADDING_LEFT_RATIO
+
+
+def _badge_padding_right(doc_width: float) -> float:
+    """Return the badge's right internal padding for the given document width."""
+    return doc_width * _BADGE_PADDING_RIGHT_RATIO
+
+
+def _outer_padding(metrics: KeymapLayoutMetrics) -> float:
+    """Outer padding used by the overview (and matched by per-layer images).
+
+    The keyboard-derived ``m.inset * 2`` wins when the configuration's spacing
+    is generous; below that, the floor scales with the canvas width so smaller
+    outputs still have visible breathing room around the content.
+    """
+    return max(metrics.inset * 2, metrics.width * _OUTER_PADDING_FLOOR_RATIO)
+
 
 # Logo dimensions used for header — must mirror what overview.py renders so
 # the layout reserves the right amount of header space.
@@ -100,7 +126,7 @@ class OverviewLayout:
         config_width = m.width
 
         # Outer padding — bigger than single-layer images
-        padding = max(m.inset * 2, 40.0)
+        padding = _outer_padding(m)
 
         # Column 1 width: badge width + left padding
         col1_width = padding + self._badge_dims.width

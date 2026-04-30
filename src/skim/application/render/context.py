@@ -40,6 +40,7 @@ class RenderContext:
     has_double_south: bool
     use_layer_colors_on_keys: bool
     hold_symbol_position: SplitSidePosition
+    doc_width: float = 1600.0
     use_system_fonts: bool = False
     show_layer_indicators: bool = False
     qmk_index_to_position: Callable[[int], int | None] = field(
@@ -132,6 +133,7 @@ class ClusterRenderContext(RenderContext):
             has_double_south=render_context.has_double_south,
             use_layer_colors_on_keys=render_context.use_layer_colors_on_keys,
             hold_symbol_position=render_context.hold_symbol_position,
+            doc_width=render_context.doc_width,
             use_system_fonts=render_context.use_system_fonts,
             show_layer_indicators=render_context.show_layer_indicators,
             qmk_index_to_position=render_context.qmk_index_to_position,

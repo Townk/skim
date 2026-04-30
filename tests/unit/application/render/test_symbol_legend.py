@@ -490,20 +490,23 @@ def _flow_digit_positions(group) -> dict[int, tuple[float, float]]:
 def _legend_width_for_n_cols(n_cols: int, entries: list) -> float:
     """Return a content_width that results in exactly ``n_cols`` columns."""
     from skim.application.render.symbol_legend import (
-        _COLUMN_GAP,
-        _DESC_FONT_SIZE,
-        _ENTRY_RIGHT_PAD,
-        _GLYPH_DESC_GAP,
-        _SYMBOL_FONT_SIZE,
+        _SymbolLegendGeometry,
         _measure_label_width,
     )
 
-    max_glyph_w = max(_measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries)
-    max_desc_w = max(_measure_label_width(e.description, _DESC_FONT_SIZE) for e in entries)
-    entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + _ENTRY_RIGHT_PAD
+    geom = _SymbolLegendGeometry.for_doc_width(1600.0)
+    max_glyph_w = max(
+        _measure_label_width(e.display_label, geom.symbol_font_size, geom.min_glyph_cell)
+        for e in entries
+    )
+    max_desc_w = max(
+        _measure_label_width(e.description, geom.desc_font_size, geom.min_glyph_cell)
+        for e in entries
+    )
+    entry_w = max_glyph_w + geom.glyph_desc_gap + max_desc_w + geom.entry_right_pad
     # midpoint of the valid range for exactly n_cols columns
-    min_w = n_cols * (entry_w + _COLUMN_GAP) - _COLUMN_GAP
-    max_w = (n_cols + 1) * (entry_w + _COLUMN_GAP) - _COLUMN_GAP
+    min_w = n_cols * (entry_w + geom.column_gap) - geom.column_gap
+    max_w = (n_cols + 1) * (entry_w + geom.column_gap) - geom.column_gap
     return (min_w + max_w) / 2.0
 
 

@@ -57,10 +57,10 @@ class ConnectorType(Enum):
     DIAGONAL = "diagonal"
 
 
-_CONNECTOR_WIDTH = 2
-_CIRCLE_STROKE_WIDTH = 2
-_ENDPOINT_RADIUS = 2
-_ENDPOINT_INSET = 4
+_CONNECTOR_WIDTH_RATIO = 2 / 1600
+_CIRCLE_STROKE_WIDTH_RATIO = 2 / 1600
+_ENDPOINT_RADIUS_RATIO = 2 / 1600
+_ENDPOINT_INSET_RATIO = 4 / 1600
 _FALLBACK_FILL = "#808080"
 _FALLBACK_STROKE = "#606060"
 
@@ -70,10 +70,13 @@ class LayerIndicator:
 
     The indicator consists of:
     - A filled circle with the target layer's base color
-    - A 2px outline using the target layer's gradient[1]
+    - An outline using the target layer's gradient[1]
     - A 0-indexed layer number label in white
     - A connector line from the circle edge to the key
-    - A 4px endpoint circle drawn 4px inside the key boundary
+    - A small endpoint circle drawn just inside the key boundary
+
+    Stroke widths and the endpoint inset scale with ``doc_width`` so the
+    indicator chrome stays visually proportional across output sizes.
     """
 
     def __init__(
@@ -88,6 +91,7 @@ class LayerIndicator:
         gap: float,
         offset_direction: OffsetDirection,
         connector_type: ConnectorType,
+        doc_width: float = 1600.0,
         connector_target_y: float | None = None,
         qmk_index_to_position: Callable[[int], int | None] = lambda idx: idx,
     ) -> None:
@@ -102,6 +106,10 @@ class LayerIndicator:
         self._offset_direction = offset_direction
         self._connector_type = connector_type
         self._connector_target_y = connector_target_y
+        self._connector_width = doc_width * _CONNECTOR_WIDTH_RATIO
+        self._circle_stroke_width = doc_width * _CIRCLE_STROKE_WIDTH_RATIO
+        self._endpoint_radius = doc_width * _ENDPOINT_RADIUS_RATIO
+        self._endpoint_inset = doc_width * _ENDPOINT_INSET_RATIO
 
         # Resolve colors using position mapping
         position = qmk_index_to_position(target_layer)
@@ -168,31 +176,31 @@ class LayerIndicator:
                 self._line_x1 = self._cx
                 self._line_y1 = self._cy + self._radius
                 self._line_x2 = self._cx
-                self._line_y2 = target_y + _ENDPOINT_INSET
+                self._line_y2 = target_y + self._endpoint_inset
                 self._ep_x = self._cx
-                self._ep_y = target_y + _ENDPOINT_INSET
+                self._ep_y = target_y + self._endpoint_inset
             case ConnectorType.HORIZONTAL:
                 if self._offset_direction == OffsetDirection.LEFT:
                     self._line_x1 = self._cx + self._radius
                     self._line_y1 = self._cy
-                    self._line_x2 = self._key_x + _ENDPOINT_INSET
+                    self._line_x2 = self._key_x + self._endpoint_inset
                     self._line_y2 = self._cy
-                    self._ep_x = self._key_x + _ENDPOINT_INSET
+                    self._ep_x = self._key_x + self._endpoint_inset
                     self._ep_y = self._cy
                 else:
                     self._line_x1 = self._cx - self._radius
                     self._line_y1 = self._cy
-                    self._line_x2 = self._key_x + self._key_width - _ENDPOINT_INSET
+                    self._line_x2 = self._key_x + self._key_width - self._endpoint_inset
                     self._line_y2 = self._cy
-                    self._ep_x = self._key_x + self._key_width - _ENDPOINT_INSET
+                    self._ep_x = self._key_x + self._key_width - self._endpoint_inset
                     self._ep_y = self._cy
             case ConnectorType.DIAGONAL:
                 cos45 = math.cos(math.pi / 4)
                 sin45 = math.sin(math.pi / 4)
-                # Endpoint is 4px inside the key's edge, not from its center.
-                # For the circular center key, edge is at key_width/2 from center.
+                # Endpoint sits inside the key's edge, not its center. For the
+                # circular center key, the edge is at key_width/2 from center.
                 key_edge_r = self._key_width / 2
-                inset_r = key_edge_r - _ENDPOINT_INSET
+                inset_r = key_edge_r - self._endpoint_inset
                 if self._offset_direction == OffsetDirection.DIAGONAL_RIGHT:
                     self._line_x1 = self._cx - self._radius * cos45
                     self._line_y1 = self._cy - self._radius * sin45
@@ -214,7 +222,7 @@ class LayerIndicator:
             draw.Raw(
                 f'<line x1="{self._line_x1}" y1="{self._line_y1}"'
                 f' x2="{self._line_x2}" y2="{self._line_y2}"'
-                f' stroke="{self._stroke_color}" stroke-width="{_CONNECTOR_WIDTH}" />'
+                f' stroke="{self._stroke_color}" stroke-width="{self._connector_width}" />'
             )
         )
 
@@ -222,7 +230,7 @@ class LayerIndicator:
             draw.Circle(
                 self._ep_x,
                 self._ep_y,
-                _ENDPOINT_RADIUS,
+                self._endpoint_radius,
                 fill=self._stroke_color,
             )
         )
@@ -234,7 +242,7 @@ class LayerIndicator:
                 self._radius,
                 fill=self._fill_color,
                 stroke=self._stroke_color,
-                stroke_width=_CIRCLE_STROKE_WIDTH,
+                stroke_width=self._circle_stroke_width,
             )
         )
 
@@ -336,6 +344,7 @@ class LayerIndicatorOverlay:
         circle_diameter: float,
         gap: float,
         has_double_south: bool,
+        doc_width: float = 1600.0,
         qmk_index_to_position: Callable[[int], int | None] = lambda idx: idx,
     ) -> "LayerIndicatorOverlay":
         """Create an overlay for a finger cluster."""
@@ -368,6 +377,7 @@ class LayerIndicatorOverlay:
                     gap=key_gap,
                     offset_direction=offset_dir,
                     connector_type=conn_type,
+                    doc_width=doc_width,
                     qmk_index_to_position=qmk_index_to_position,
                 )
             )
@@ -384,6 +394,7 @@ class LayerIndicatorOverlay:
         palette: Palette,
         circle_diameter: float,
         gap: float,
+        doc_width: float = 1600.0,
         qmk_index_to_position: Callable[[int], int | None] = lambda idx: idx,
     ) -> "LayerIndicatorOverlay":
         """Create an overlay for a thumb cluster."""
@@ -441,6 +452,7 @@ class LayerIndicatorOverlay:
                     gap=gap,
                     offset_direction=offset_dir,
                     connector_type=conn_type,
+                    doc_width=doc_width,
                     connector_target_y=connector_target_y,
                     qmk_index_to_position=qmk_index_to_position,
                 )
