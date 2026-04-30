@@ -699,11 +699,15 @@ def draw_overview(
         for _, qmk_idx in render_layers:
             if qmk_idx in raw_keymap.layers:
                 all_raw_keycodes.extend(k for k in raw_keymap.layers[qmk_idx] if k is not None)
-        symbol_entries = collect_used_descriptions(all_raw_keycodes, raw_keymap, keycode_mappings)
+        symbol_entries = collect_used_descriptions(
+            all_raw_keycodes,
+            raw_keymap,
+            keycode_mappings,
+            include_transparent=not config.output.style.show_transparent_fallthrough,
+        )
     else:
         symbol_entries = []
 
-    legend_top_gap = 36.0
     symbol_legend_gap = 24.0
     legend_content_width = canvas_w - 2 * padding
     legend_h = legend_height(legend_plan, legend_content_width)
@@ -711,22 +715,29 @@ def draw_overview(
     # ``routing.extra_bottom_padding`` includes a 0.5*keymap_spacing buffer
     # below the bottommost DOWN lane (see ConnectorRouting docstring). Strip
     # that buffer when measuring where the keyboard area visually ends so
-    # the legend's top sits ``legend_top_gap`` below the actual arm tip,
-    # not ``buffer + legend_top_gap`` below it.
+    # the legend's top sits at the natural keyboard bottom edge, not below
+    # the routing buffer.
     routing_buffer = (
         0.5 * nk * _CONNECTOR_SPACING_RATIO
         if (routing is not None and routing.extra_bottom_padding > 0)
         else 0.0
     )
     keyboard_section_bottom = canvas_h - copyright_extra - routing_buffer
-    legend_top = keyboard_section_bottom + legend_top_gap if (legend_h > 0 or sym_h > 0) else None
-    if legend_h > 0:
-        canvas_h += legend_top_gap + legend_h
-    if sym_h > 0:
-        if legend_h > 0:
-            canvas_h += symbol_legend_gap + sym_h
-        else:
-            canvas_h += legend_top_gap + sym_h
+
+    if legend_h > 0 and sym_h > 0:
+        legend_block_h = legend_h + symbol_legend_gap + sym_h
+    elif legend_h > 0:
+        legend_block_h = legend_h
+    else:
+        legend_block_h = sym_h
+
+    # Symmetric spacing: the legend block sits at the natural keyboard bottom
+    # edge (reusing the existing ``m.inset`` gap above the legend), with a
+    # matching ``m.inset`` gap below before the copyright footer. This mirrors
+    # the per-layer spacing in ``_draw_layer``.
+    legend_top = keyboard_section_bottom if legend_block_h > 0 else None
+    if legend_block_h > 0:
+        canvas_h += legend_block_h + base_metrics.inset
 
     # Match top padding: layout.canvas_height ends with one m.inset of
     # breathing room, but the top has a full `padding`. When copyright is

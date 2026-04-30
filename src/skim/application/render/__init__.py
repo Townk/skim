@@ -211,26 +211,35 @@ def _draw_layer(
 
     # Plan the symbol legend.
     if config.output.style.show_symbol_legend and raw_layer_keycodes and keycode_mappings:
-        symbol_entries = collect_used_descriptions(raw_layer_keycodes, raw_keymap, keycode_mappings)
+        symbol_entries = collect_used_descriptions(
+            raw_layer_keycodes,
+            raw_keymap,
+            keycode_mappings,
+            include_transparent=not config.output.style.show_transparent_fallthrough,
+        )
     else:
         symbol_entries = []
 
-    legend_top_gap = 36.0
     symbol_legend_gap = 24.0
     content_width = canvas_width - 2 * outer_padding
     legend_h = legend_height(legend_plan, content_width)
     sym_h = symbol_legend_height(symbol_entries, content_width)
-    keyboard_bottom = keyboard_canvas_h - bottom_inset
-    legend_top = keyboard_bottom + legend_top_gap if (legend_h > 0 or sym_h > 0) else None
+
+    if legend_h > 0 and sym_h > 0:
+        legend_block_h = legend_h + symbol_legend_gap + sym_h
+    elif legend_h > 0:
+        legend_block_h = legend_h
+    else:
+        legend_block_h = sym_h
+
+    # Symmetric spacing: the legend block sits at the natural bottom edge of
+    # the keyboard area (reusing the existing bottom inset above the legend),
+    # with a matching ``bottom_inset`` gap below before the copyright footer.
+    legend_top = keyboard_canvas_h if legend_block_h > 0 else None
 
     canvas_height = keyboard_canvas_h
-    if legend_h > 0:
-        canvas_height += legend_top_gap + legend_h
-    if sym_h > 0:
-        if legend_h > 0:
-            canvas_height += symbol_legend_gap + sym_h
-        else:
-            canvas_height += legend_top_gap + sym_h
+    if legend_block_h > 0:
+        canvas_height += legend_block_h + bottom_inset
     canvas_height += copyright_extra
 
     # Create drawing
@@ -353,11 +362,8 @@ def _draw_layer(
 
     # Symbol legend — placed after the macro/TD legend (or directly after
     # the keyboard when there's no macro/TD legend).
-    if symbol_entries:
-        if legend_top is not None:
-            sym_legend_y = legend_top + legend_h + symbol_legend_gap if legend_h > 0 else legend_top
-        else:
-            sym_legend_y = keyboard_bottom + legend_top_gap
+    if symbol_entries and legend_top is not None:
+        sym_legend_y = legend_top + legend_h + symbol_legend_gap if legend_h > 0 else legend_top
         sym_group = build_symbol_legend(
             entries=symbol_entries,
             x=outer_padding,

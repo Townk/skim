@@ -34,6 +34,10 @@ from skim.domain import (
 
 from .keycode_label_adapter import KeycodeLabelAdapter
 
+_TRANSPARENT_GLYPH = "⛛"
+"""Vial-style inverted triangle drawn on transparent keys when
+fall-through-to-layer-zero is disabled."""
+
 
 def _detect_special_ids(
     keycode: str,
@@ -72,6 +76,19 @@ def _substitute(
         is_transparent=True,
         macro_id=base_key.macro_id,
         tap_dance_id=base_key.tap_dance_id,
+    )
+
+
+def _stamp_transparent_glyph(key: SvalboardTargetKey) -> SvalboardTargetKey:
+    """Replace a transparent key's empty label with the ⛛ glyph."""
+    if not key.is_transparent or key.label:
+        return key
+    return SvalboardTargetKey(
+        label=_TRANSPARENT_GLYPH,
+        layer_switch=key.layer_switch,
+        is_transparent=True,
+        macro_id=key.macro_id,
+        tap_dance_id=key.tap_dance_id,
     )
 
 
@@ -148,6 +165,13 @@ class KeymapTargetAdapter:
                 idx: self._apply_fallthrough(layer, base, idx) if idx != 0 else layer
                 for idx, layer in layers.items()
             }
+        elif not self._fallthrough_to_layer_zero:
+            # Without fall-through, transparent keys would otherwise render
+            # blank.  Stamp the Vial-style ⛛ glyph on each transparent
+            # position so users can still see where the transparent keys
+            # are.  The ghost colour applied at render time uses the same
+            # ``is_transparent`` flag, so the glyph appears faded.
+            layers = {idx: layer.map(_stamp_transparent_glyph) for idx, layer in layers.items()}
 
         tap_dances = tuple(self._transform_tap_dance(td) for td in keymap.tap_dances)
         macros = tuple(self._transform_macro(macro) for macro in keymap.macros)

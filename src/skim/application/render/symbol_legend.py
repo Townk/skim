@@ -378,6 +378,7 @@ def _collect_raw(
     keycode_mappings: KeycodeMappings,
     out: dict[str, SymbolLegendEntry],
     visited_funcs: set[str],
+    include_transparent: bool = True,
 ) -> None:
     """Recursive worker that populates ``out`` (sort_key → entry).
 
@@ -411,19 +412,23 @@ def _collect_raw(
 
         # --- Special-case the transparent family ---
         # ``KC_TRANSPARENT``, ``KC_TRNS`` and ``_______`` all resolve to
-        # an empty label in keycode-mappings.yaml (rendered as nothing
-        # on the key — the layer-0 fallthrough fills the slot). For the
-        # legend, collapse all three to a single entry with the
-        # Vial-style ⛛ glyph and the description on KC_TRANSPARENT.
+        # an empty label in keycode-mappings.yaml.  When fall-through is
+        # disabled the renderer stamps the Vial-style ⛛ glyph on each
+        # transparent key, and we add the matching legend entry here.
+        # When fall-through is enabled the keys borrow their layer-0
+        # labels and the ⛛ never appears on the keymap, so we suppress
+        # the legend entry to avoid showing a glyph that's nowhere on
+        # the image.
         if keycode in _TRANSPARENT_KEYCODES:
-            sort_k = "KC_TRANSPARENT"
-            if sort_k not in out and "KC_TRANSPARENT" in symbol_desc:
-                out[sort_k] = SymbolLegendEntry(
-                    display_label=_TRANSPARENT_GLYPH,
-                    description=symbol_desc["KC_TRANSPARENT"],
-                    sort_key=sort_k,
-                    category=symbol_cats.get("KC_TRANSPARENT", ""),
-                )
+            if include_transparent:
+                sort_k = "KC_TRANSPARENT"
+                if sort_k not in out and "KC_TRANSPARENT" in symbol_desc:
+                    out[sort_k] = SymbolLegendEntry(
+                        display_label=_TRANSPARENT_GLYPH,
+                        description=symbol_desc["KC_TRANSPARENT"],
+                        sort_key=sort_k,
+                        category=symbol_cats.get("KC_TRANSPARENT", ""),
+                    )
             continue
 
         # --- Check the WHOLE keycode against symbol_descriptions first ---
@@ -490,7 +495,14 @@ def _collect_raw(
             # Recurse into args (no function_descriptions entry, already visited,
             # or generic-mode entry that may have described-atomic args).
             args = _parse_function_args(args_str)
-            _collect_raw(args, keymap, keycode_mappings, out, visited_funcs)
+            _collect_raw(
+                args,
+                keymap,
+                keycode_mappings,
+                out,
+                visited_funcs,
+                include_transparent=include_transparent,
+            )
             continue
 
         # --- TD(id)? ---
@@ -508,7 +520,14 @@ def _collect_raw(
                         )
                         if kc:
                             variant_keycodes.append(kc)
-                _collect_raw(variant_keycodes, keymap, keycode_mappings, out, visited_funcs)
+                _collect_raw(
+                    variant_keycodes,
+                    keymap,
+                    keycode_mappings,
+                    out,
+                    visited_funcs,
+                    include_transparent=include_transparent,
+                )
             continue
 
         # --- MACRO_id or Mdigit? ---
@@ -524,7 +543,14 @@ def _collect_raw(
                         kc = key if isinstance(key, str) else getattr(key, "label", None)
                         if kc:
                             action_keycodes.append(kc)
-                _collect_raw(action_keycodes, keymap, keycode_mappings, out, visited_funcs)
+                _collect_raw(
+                    action_keycodes,
+                    keymap,
+                    keycode_mappings,
+                    out,
+                    visited_funcs,
+                    include_transparent=include_transparent,
+                )
             continue
 
         # --- Plain atomic keycode ---
@@ -565,6 +591,7 @@ def collect_used_descriptions(
     keycodes: Iterable[str],
     keymap: SvalboardKeymap[str] | SvalboardKeymap[SvalboardTargetKey] | None,
     keycode_mappings: KeycodeMappings,
+    include_transparent: bool = True,
 ) -> list[SymbolLegendEntry]:
     """Return description entries for the symbols used in ``keycodes``.
 
@@ -576,6 +603,12 @@ def collect_used_descriptions(
         Full keymap object (for tap-dance and macro recursion).
     keycode_mappings:
         Loaded yaml dict (from ``load_keycode_mappings``).
+    include_transparent:
+        When True, add a legend entry for the ⛛ glyph if any
+        ``KC_TRANSPARENT`` / ``KC_TRNS`` / ``_______`` keycodes are
+        encountered. Set False when fall-through-to-layer-zero is
+        enabled — in that mode the glyph never appears on the keymap
+        so the legend entry would be misleading.
 
     Returns
     -------
@@ -585,7 +618,9 @@ def collect_used_descriptions(
         ``function_descriptions``.
     """
     out: dict[str, SymbolLegendEntry] = {}
-    _collect_raw(keycodes, keymap, keycode_mappings, out, set())
+    _collect_raw(
+        keycodes, keymap, keycode_mappings, out, set(), include_transparent=include_transparent
+    )
     return sorted(out.values(), key=_entry_sort_key)
 
 

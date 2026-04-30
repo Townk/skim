@@ -140,12 +140,12 @@ class TestKeymapTargetAdapterTransparentFallthrough:
         assert layer_zero_key.label == "A"
         assert layer_zero_key.is_transparent is False
 
-    def test_substitution_disabled_leaves_label_blank(self):
+    def test_substitution_disabled_stamps_transparent_glyph(self):
         label_adapter = MockLabelAdapter(self._label_map())
         adapter = KeymapTargetAdapter(label_adapter, fallthrough_to_layer_zero=False)  # type: ignore[arg-type]
         result = adapter.transform(make_keymap(2))
         ghost = result.layers[1].left.index.center_key
-        assert ghost.label == ""
+        assert ghost.label == "⛛"
         assert ghost.is_transparent is True
 
     def test_no_layer_zero_skips_substitution(self):
