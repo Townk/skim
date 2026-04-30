@@ -373,9 +373,7 @@ class TestKeymapTargetAdapterMacros:
 def _make_macro(id_: str) -> SvalboardMacro[str]:
     return SvalboardMacro[str](
         id=id_,
-        actions=(
-            SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TEXT, text="x"),
-        ),
+        actions=(SvalboardMacroAction[str](kind=SvalboardMacroActionKind.TEXT, text="x"),),
     )
 
 
@@ -446,7 +444,7 @@ class TestSpecialIdStampingViaTransformLayer:
 
         def _side(prefix: str, special_key: str) -> SplitSide[str]:
             return SplitSide(
-                index=FingerCluster(special_key),   # center = special
+                index=FingerCluster(special_key),  # center = special
                 middle=FingerCluster(f"{prefix}_M"),
                 ring=FingerCluster(f"{prefix}_R"),
                 pinky=FingerCluster(f"{prefix}_P"),

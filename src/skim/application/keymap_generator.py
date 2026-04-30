@@ -208,7 +208,9 @@ def generate_keymap(
     keymap = _resolve_keymap(config, input_keymap)
     keycode_mappings = load_keycode_mappings(config.keycodes)
     drawings = draw_keymap(
-        config, keymap, targets,
+        config,
+        keymap,
+        targets,
         raw_keymap=input_keymap,
         keycode_mappings=keycode_mappings,
     )

@@ -690,7 +690,11 @@ def draw_overview(
         legend_plan = None
 
     # Plan symbol legend (union of all rendered layers).
-    if config.output.style.show_symbol_legend and raw_keymap is not None and keycode_mappings is not None:
+    if (
+        config.output.style.show_symbol_legend
+        and raw_keymap is not None
+        and keycode_mappings is not None
+    ):
         all_raw_keycodes: list[str] = []
         for _, qmk_idx in render_layers:
             if qmk_idx in raw_keymap.layers:
@@ -732,9 +736,7 @@ def draw_overview(
     # buffer below the bottommost lane (see connectors.ConnectorRouting
     # docstring). Only add the explicit top/bottom padding match when
     # neither buffer applies — i.e. no copyright AND no DOWN-lane routing.
-    routing_provides_buffer = (
-        routing is not None and routing.extra_bottom_padding > 0
-    )
+    routing_provides_buffer = routing is not None and routing.extra_bottom_padding > 0
     if not config.output.copyright and not routing_provides_buffer:
         canvas_h += max(0.0, padding - base_metrics.inset)
 

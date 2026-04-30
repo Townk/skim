@@ -198,9 +198,7 @@ def _draw_layer(
     )
     bottom_inset = m.inset + m.margin
     copyright_font_size = header_dims.copyright_font_size
-    copyright_extra = (
-        copyright_font_size + bottom_inset if config.output.copyright else 0.0
-    )
+    copyright_extra = copyright_font_size + bottom_inset if config.output.copyright else 0.0
 
     # Plan the macro/TD legend and reserve its vertical space.
     if config.output.style.show_special_keys_legend:
@@ -213,9 +211,7 @@ def _draw_layer(
 
     # Plan the symbol legend.
     if config.output.style.show_symbol_legend and raw_layer_keycodes and keycode_mappings:
-        symbol_entries = collect_used_descriptions(
-            raw_layer_keycodes, raw_keymap, keycode_mappings
-        )
+        symbol_entries = collect_used_descriptions(raw_layer_keycodes, raw_keymap, keycode_mappings)
     else:
         symbol_entries = []
 
@@ -410,7 +406,11 @@ def draw_keymap(
             raw_layer = raw_keymap.layers[qmk_idx]
             raw_layer_keycodes = [k for k in raw_layer if k is not None]
         keymap_images[f"keymap-layer-{qmk_idx}"] = _draw_layer(
-            config, layer, pos, qmk_idx, header_dims,
+            config,
+            layer,
+            pos,
+            qmk_idx,
+            header_dims,
             macros=keymap.macros,
             tap_dances=keymap.tap_dances,
             raw_layer_keycodes=raw_layer_keycodes,
@@ -420,7 +420,8 @@ def draw_keymap(
 
     if targets.overview:
         keymap_images["keymap-overview"] = draw_overview(
-            config, keymap,
+            config,
+            keymap,
             raw_keymap=raw_keymap,
             keycode_mappings=keycode_mappings,
         )

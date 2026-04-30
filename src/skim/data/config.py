@@ -423,17 +423,23 @@ class Keycodes(BaseModel):
     symbol_legend_aliases: dict[str, str] = Field(default_factory=dict)
 
     def __hash__(self) -> int:
-        return hash((
-            self.pre_process,
-            self.overrides,
-            self.macros,
-            self.tap_dances,
-            tuple((cat, tuple(sorted(items.items())))
-                  for cat, items in sorted(self.symbol_descriptions.items())),
-            tuple((cat, tuple(sorted(items.items())))
-                  for cat, items in sorted(self.function_descriptions.items())),
-            tuple(sorted(self.symbol_legend_aliases.items())),
-        ))
+        return hash(
+            (
+                self.pre_process,
+                self.overrides,
+                self.macros,
+                self.tap_dances,
+                tuple(
+                    (cat, tuple(sorted(items.items())))
+                    for cat, items in sorted(self.symbol_descriptions.items())
+                ),
+                tuple(
+                    (cat, tuple(sorted(items.items())))
+                    for cat, items in sorted(self.function_descriptions.items())
+                ),
+                tuple(sorted(self.symbol_legend_aliases.items())),
+            )
+        )
 
 
 class Spacing(BaseModel):
@@ -728,9 +734,7 @@ class SymbolLegendFlow(str, Enum):
     COLUMN_MAJOR = "column"
 
 
-SymbolLegendFlowStr = Annotated[
-    SymbolLegendFlow, BeforeValidator(lambda v: SymbolLegendFlow(v))
-]
+SymbolLegendFlowStr = Annotated[SymbolLegendFlow, BeforeValidator(lambda v: SymbolLegendFlow(v))]
 
 
 class Style(BaseModel):

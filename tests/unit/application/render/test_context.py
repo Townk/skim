@@ -419,5 +419,3 @@ class TestFingerClusterKeyColors:
         colors = FingerClusterKeyColors(primary="#FF0000", accent="#AA0000")
         # Slots-based classes don't have __dict__
         assert not hasattr(colors, "__dict__")
-
-

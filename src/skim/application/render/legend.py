@@ -97,14 +97,14 @@ def resolve_tap_dances(
 
 
 def all_macros(
-    macros: tuple[SvalboardMacro[SvalboardTargetKey], ...]
+    macros: tuple[SvalboardMacro[SvalboardTargetKey], ...],
 ) -> list[SvalboardMacro[SvalboardTargetKey]]:
     """Return all parsed macros sorted named-first, then by id (no filter)."""
     return sorted(macros, key=_named_first_sort_key)
 
 
 def all_tap_dances(
-    tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...]
+    tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...],
 ) -> list[SvalboardTapDance[SvalboardTargetKey]]:
     """Return all parsed tap-dances sorted named-first, then by id (no filter)."""
     return sorted(tap_dances, key=_named_first_sort_key)
@@ -157,32 +157,64 @@ def build_action_glyph(
         return draw.Circle(cx=cx, cy=cy, r=3, fill=color)
     if kind == SvalboardMacroActionKind.DOWN:
         return draw.Lines(
-            cx - 3, cy - 3,
-            cx + 3, cy - 3,
-            cx,     cy + 3,
-            close=True, fill=color,
+            cx - 3,
+            cy - 3,
+            cx + 3,
+            cy - 3,
+            cx,
+            cy + 3,
+            close=True,
+            fill=color,
         )
     if kind == SvalboardMacroActionKind.UP:
         return draw.Lines(
-            cx - 3, cy + 3,
-            cx + 3, cy + 3,
-            cx,     cy - 3,
-            close=True, fill=color,
+            cx - 3,
+            cy + 3,
+            cx + 3,
+            cy + 3,
+            cx,
+            cy - 3,
+            close=True,
+            fill=color,
         )
     if kind == SvalboardMacroActionKind.DELAY:
         g = draw.Group()
-        g.append(draw.Circle(cx=cx, cy=cy, r=3.5, fill="none",
-                             stroke=color, stroke_width=1.1))
+        g.append(draw.Circle(cx=cx, cy=cy, r=3.5, fill="none", stroke=color, stroke_width=1.1))
         # Clock hands at 12 o'clock + 3 o'clock.
-        g.append(draw.Line(sx=cx, sy=cy, ex=cx, ey=cy - 2.2,
-                           stroke=color, stroke_width=1.1, stroke_linecap="round"))
-        g.append(draw.Line(sx=cx, sy=cy, ex=cx + 1.6, ey=cy,
-                           stroke=color, stroke_width=1.1, stroke_linecap="round"))
+        g.append(
+            draw.Line(
+                sx=cx,
+                sy=cy,
+                ex=cx,
+                ey=cy - 2.2,
+                stroke=color,
+                stroke_width=1.1,
+                stroke_linecap="round",
+            )
+        )
+        g.append(
+            draw.Line(
+                sx=cx,
+                sy=cy,
+                ex=cx + 1.6,
+                ey=cy,
+                stroke=color,
+                stroke_width=1.1,
+                stroke_linecap="round",
+            )
+        )
         return g
     # TEXT
     return draw.Text(
-        "T", x=cx, y=cy, font_size=9, fill=color, font_weight="700",
-        font_style="italic", text_anchor="middle", dominant_baseline="central",
+        "T",
+        x=cx,
+        y=cy,
+        font_size=9,
+        fill=color,
+        font_weight="700",
+        font_style="italic",
+        text_anchor="middle",
+        dominant_baseline="central",
         font_family="'Roboto', sans-serif",
     )
 
@@ -197,10 +229,10 @@ PILL_GAP = 6
 PILL_HEIGHT = 18
 PILL_FONT_SIZE = 10
 
-PILL_PAD_X = 8                # horizontal padding inside each pill
-ICON_WIDTH = 6                # visual width of action glyphs (circle r=3, etc.)
-ICON_TEXT_GAP = 10            # gap from icon's right edge to text's left edge
-                              # (≤ 1.5 × PILL_PAD_X = 12)
+PILL_PAD_X = 8  # horizontal padding inside each pill
+ICON_WIDTH = 6  # visual width of action glyphs (circle r=3, etc.)
+ICON_TEXT_GAP = 10  # gap from icon's right edge to text's left edge
+# (≤ 1.5 × PILL_PAD_X = 12)
 PILL_CHROME_WIDTH = 2 * PILL_PAD_X + ICON_WIDTH + ICON_TEXT_GAP  # = 32
 
 
@@ -307,9 +339,7 @@ def _layout_pill_lines(
     return lines
 
 
-def macro_row_height(
-    macro: SvalboardMacro[SvalboardTargetKey], content_width: float
-) -> float:
+def macro_row_height(macro: SvalboardMacro[SvalboardTargetKey], content_width: float) -> float:
     """Total height of one macro row.
 
     Named macros: header strip + content lines (each pill-line is one
@@ -349,10 +379,19 @@ def build_macro_row(
 
     if macro.name:
         # Named layout — header strip (chip top-left at y) + content strip below.
-        g.append(draw.Rectangle(
-            x=x, y=y, width=TAG_W, height=TAG_H, rx=4, ry=4,
-            fill=accent_fill, stroke=accent_line, stroke_width=1.2,
-        ))
+        g.append(
+            draw.Rectangle(
+                x=x,
+                y=y,
+                width=TAG_W,
+                height=TAG_H,
+                rx=4,
+                ry=4,
+                fill=accent_fill,
+                stroke=accent_line,
+                stroke_width=1.2,
+            )
+        )
         g.append(
             Label(
                 chip_label_text,
@@ -368,24 +407,46 @@ def build_macro_row(
                 use_system_fonts,
             )
         )
-        g.append(draw.Text(
-            macro.name, x=x + TAG_W + 10, y=y + TAG_H / 2 + 0.5,
-            font_size=13, font_weight="500", dominant_baseline="central",
-            font_family="'Roboto', sans-serif", fill=text_color,
-        ))
-        g.append(draw.Line(
-            sx=x + TAG_W, sy=y + TAG_H - 0.5,
-            ex=x + content_width, ey=y + TAG_H - 0.5,
-            stroke="#000", stroke_opacity=0.08, stroke_width=1,
-        ))
+        g.append(
+            draw.Text(
+                macro.name,
+                x=x + TAG_W + 10,
+                y=y + TAG_H / 2 + 0.5,
+                font_size=13,
+                font_weight="500",
+                dominant_baseline="central",
+                font_family="'Roboto', sans-serif",
+                fill=text_color,
+            )
+        )
+        g.append(
+            draw.Line(
+                sx=x + TAG_W,
+                sy=y + TAG_H - 0.5,
+                ex=x + content_width,
+                ey=y + TAG_H - 0.5,
+                stroke="#000",
+                stroke_opacity=0.08,
+                stroke_width=1,
+            )
+        )
         line_y = y + HEADER_STRIP_HEIGHT
     else:
         # Unnamed layout — chip vertically centred on the first content line.
         chip_y = y + (CONTENT_STRIP_HEIGHT - TAG_H) / 2
-        g.append(draw.Rectangle(
-            x=x, y=chip_y, width=TAG_W, height=TAG_H, rx=4, ry=4,
-            fill=accent_fill, stroke=accent_line, stroke_width=1.2,
-        ))
+        g.append(
+            draw.Rectangle(
+                x=x,
+                y=chip_y,
+                width=TAG_W,
+                height=TAG_H,
+                rx=4,
+                ry=4,
+                fill=accent_fill,
+                stroke=accent_line,
+                stroke_width=1.2,
+            )
+        )
         g.append(
             Label(
                 chip_label_text,
@@ -410,17 +471,29 @@ def build_macro_row(
         cx = x + indent
         for kind, label, w in line:
             # Pill background
-            g.append(draw.Rectangle(
-                x=cx, y=line_y + (CONTENT_STRIP_HEIGHT - PILL_HEIGHT) / 2,
-                width=w, height=PILL_HEIGHT, rx=4, ry=4,
-                fill="#FAFAF6", stroke=text_color, stroke_opacity=0.18,
-            ))
+            g.append(
+                draw.Rectangle(
+                    x=cx,
+                    y=line_y + (CONTENT_STRIP_HEIGHT - PILL_HEIGHT) / 2,
+                    width=w,
+                    height=PILL_HEIGHT,
+                    rx=4,
+                    ry=4,
+                    fill="#FAFAF6",
+                    stroke=text_color,
+                    stroke_opacity=0.18,
+                )
+            )
             # Action glyph — icon centred at cx + PILL_PAD_X (so left padding
             # from pill edge to icon centre = PILL_PAD_X).
-            g.append(build_action_glyph(
-                kind, cx=cx + PILL_PAD_X, cy=line_y + CONTENT_STRIP_HEIGHT / 2,
-                color=text_color,
-            ))
+            g.append(
+                build_action_glyph(
+                    kind,
+                    cx=cx + PILL_PAD_X,
+                    cy=line_y + CONTENT_STRIP_HEIGHT / 2,
+                    color=text_color,
+                )
+            )
             # Label — symmetric around the available text region.
             #   Text region: [cx + PILL_PAD_X + ICON_WIDTH/2 + ICON_TEXT_GAP, cx + w - PILL_PAD_X]
             #   Text region centre: cx + (PILL_PAD_X + ICON_WIDTH/2 + ICON_TEXT_GAP + w - PILL_PAD_X) / 2
@@ -449,21 +522,25 @@ def build_macro_row(
 MACRO_COLUMN_HEADER_HEIGHT = 32  # space reserved for the "MACRO ACTIONS" label
 
 
-def build_macro_column_header(
-    x: float, y: float, text_color: str
-) -> draw.Group:
+def build_macro_column_header(x: float, y: float, text_color: str) -> draw.Group:
     """Render the once-per-column 'MACRO ACTIONS' label.
 
     Positioned at the indent where pills begin so the label aligns with
     the action column rather than with the chip column.
     """
     g = draw.Group()
-    g.append(draw.Text(
-        "MACRO ACTIONS",
-        x=x + TAG_W + 12, y=y,
-        font_size=9, fill=text_color, letter_spacing=1.5,
-        text_anchor="start", font_family="'Roboto', sans-serif",
-    ))
+    g.append(
+        draw.Text(
+            "MACRO ACTIONS",
+            x=x + TAG_W + 12,
+            y=y,
+            font_size=9,
+            fill=text_color,
+            letter_spacing=1.5,
+            text_anchor="start",
+            font_family="'Roboto', sans-serif",
+        )
+    )
     return g
 
 
@@ -489,7 +566,9 @@ def tap_dance_section_height(
 
 
 def _tap_dance_cell(
-    x: float, y: float, content: SvalboardTargetKey | None,
+    x: float,
+    y: float,
+    content: SvalboardTargetKey | None,
     text_color: str,
     use_system_fonts: bool = False,
 ) -> draw.Group:
@@ -500,15 +579,34 @@ def _tap_dance_cell(
     """
     g = draw.Group()
     if content is None:
-        g.append(draw.Rectangle(
-            x=x, y=y - 11, width=80, height=22, rx=4, ry=4, fill="none",
-            stroke=text_color, stroke_opacity=0.08, stroke_dasharray="3 3",
-        ))
+        g.append(
+            draw.Rectangle(
+                x=x,
+                y=y - 11,
+                width=80,
+                height=22,
+                rx=4,
+                ry=4,
+                fill="none",
+                stroke=text_color,
+                stroke_opacity=0.08,
+                stroke_dasharray="3 3",
+            )
+        )
         return g
-    g.append(draw.Rectangle(
-        x=x, y=y - 11, width=80, height=22, rx=4, ry=4,
-        fill="#FAFAF6", stroke=text_color, stroke_opacity=0.18,
-    ))
+    g.append(
+        draw.Rectangle(
+            x=x,
+            y=y - 11,
+            width=80,
+            height=22,
+            rx=4,
+            ry=4,
+            fill="#FAFAF6",
+            stroke=text_color,
+            stroke_opacity=0.18,
+        )
+    )
     cell_label = Label(
         _legend_key_label(content),
         font=Font.FINGER_KEY,
@@ -516,11 +614,14 @@ def _tap_dance_cell(
         text_anchor="middle",
         dominant_baseline="central",
     )
-    g.append(cell_label.build_text(
-        x=x + 40, y=y + 0.5,
-        font_size=12,
-        use_system_fonts=use_system_fonts,
-    ))
+    g.append(
+        cell_label.build_text(
+            x=x + 40,
+            y=y + 0.5,
+            font_size=12,
+            use_system_fonts=use_system_fonts,
+        )
+    )
     return g
 
 
@@ -547,16 +648,29 @@ def build_tap_dance_row(
     cells_offset = TAG_W + name_column_width
     # Title chip — fixed-width filled tag on the left. When a name is set,
     # an outlined rectangle extends to the right to surround the name.
-    g.append(draw.Rectangle(
-        x=x, y=y - TD_ROW_HEIGHT / 2, width=TAG_W, height=TD_ROW_HEIGHT,
-        fill=accent_fill,
-    ))
+    g.append(
+        draw.Rectangle(
+            x=x,
+            y=y - TD_ROW_HEIGHT / 2,
+            width=TAG_W,
+            height=TD_ROW_HEIGHT,
+            fill=accent_fill,
+        )
+    )
     chip_outline_width = cells_offset if td.name else TAG_W
-    g.append(draw.Rectangle(
-        x=x, y=y - TD_ROW_HEIGHT / 2, width=chip_outline_width,
-        height=TD_ROW_HEIGHT, rx=4, ry=4,
-        fill="none", stroke=accent_line, stroke_width=1.2,
-    ))
+    g.append(
+        draw.Rectangle(
+            x=x,
+            y=y - TD_ROW_HEIGHT / 2,
+            width=chip_outline_width,
+            height=TD_ROW_HEIGHT,
+            rx=4,
+            ry=4,
+            fill="none",
+            stroke=accent_line,
+            stroke_width=1.2,
+        )
+    )
     td_chip_label_text = f"%%nf-md-keyboard_close; {td.id}"
     g.append(
         Label(
@@ -574,11 +688,19 @@ def build_tap_dance_row(
         )
     )
     if td.name:
-        g.append(draw.Text(
-            td.name, x=x + TAG_W + 10, y=y + 0.5, font_size=12, font_weight="500",
-            text_anchor="start", dominant_baseline="central",
-            font_family="'Roboto', sans-serif", fill=text_color,
-        ))
+        g.append(
+            draw.Text(
+                td.name,
+                x=x + TAG_W + 10,
+                y=y + 0.5,
+                font_size=12,
+                font_weight="500",
+                text_anchor="start",
+                dominant_baseline="central",
+                font_family="'Roboto', sans-serif",
+                fill=text_color,
+            )
+        )
     # Four variant cells.
     cells_x = x + cells_offset + 12
     for i, variant in enumerate((td.tap, td.hold, td.double_tap, td.tap_then_hold)):
@@ -588,7 +710,9 @@ def build_tap_dance_row(
 
 
 def build_tap_dance_column_header(
-    x: float, y: float, text_color: str,
+    x: float,
+    y: float,
+    text_color: str,
     name_column_width: float = TD_NAME_W - TAG_W,
 ) -> draw.Group:
     """Render the once-per-column TAP/HOLD/DOUBLE-TAP/TAP&HOLD strip.
@@ -600,11 +724,18 @@ def build_tap_dance_column_header(
     g = draw.Group()
     cells_x = x + TAG_W + name_column_width + 12
     for i, label in enumerate(("TAP", "HOLD", "DOUBLE-TAP", "TAP & HOLD")):
-        g.append(draw.Text(
-            label, x=cells_x + i * TD_CELL_W + TD_CELL_W / 2,
-            y=y, font_size=9, fill=text_color, letter_spacing=1.5,
-            text_anchor="middle", font_family="'Roboto', sans-serif",
-        ))
+        g.append(
+            draw.Text(
+                label,
+                x=cells_x + i * TD_CELL_W + TD_CELL_W / 2,
+                y=y,
+                font_size=9,
+                fill=text_color,
+                letter_spacing=1.5,
+                text_anchor="middle",
+                font_family="'Roboto', sans-serif",
+            )
+        )
     return g
 
 
@@ -659,50 +790,114 @@ def legend_height(layout: LegendLayout | None, content_width: float) -> float:
 
 
 def _draw_macro_title(
-    g: draw.Group, x: float, y: float, width: float, accent_line: str, count: int,
+    g: draw.Group,
+    x: float,
+    y: float,
+    width: float,
+    accent_line: str,
+    count: int,
 ) -> None:
-    g.append(draw.Text(
-        "MACROS", x=x, y=y + 12, font_size=11, font_weight="700",
-        letter_spacing=3, text_anchor="start",
-        font_family="'Roboto', sans-serif", fill=accent_line,
-    ))
-    g.append(draw.Text(
-        f"{count} ENTRIES", x=x + width, y=y + 12, font_size=10,
-        text_anchor="end", fill="#888", font_weight="400", letter_spacing=1,
-        font_family="'Roboto', sans-serif",
-    ))
-    g.append(draw.Line(
-        sx=x, sy=y + 20, ex=x + width, ey=y + 20,
-        stroke=accent_line, stroke_opacity=0.5, stroke_width=1.2,
-    ))
+    g.append(
+        draw.Text(
+            "MACROS",
+            x=x,
+            y=y + 12,
+            font_size=11,
+            font_weight="700",
+            letter_spacing=3,
+            text_anchor="start",
+            font_family="'Roboto', sans-serif",
+            fill=accent_line,
+        )
+    )
+    g.append(
+        draw.Text(
+            f"{count} ENTRIES",
+            x=x + width,
+            y=y + 12,
+            font_size=10,
+            text_anchor="end",
+            fill="#888",
+            font_weight="400",
+            letter_spacing=1,
+            font_family="'Roboto', sans-serif",
+        )
+    )
+    g.append(
+        draw.Line(
+            sx=x,
+            sy=y + 20,
+            ex=x + width,
+            ey=y + 20,
+            stroke=accent_line,
+            stroke_opacity=0.5,
+            stroke_width=1.2,
+        )
+    )
 
 
 def _draw_td_title(
-    g: draw.Group, x: float, y: float, width: float, accent_line: str, count: int,
+    g: draw.Group,
+    x: float,
+    y: float,
+    width: float,
+    accent_line: str,
+    count: int,
 ) -> None:
-    g.append(draw.Text(
-        "TAP-DANCE", x=x, y=y + 12, font_size=11, font_weight="700",
-        letter_spacing=3, text_anchor="start",
-        font_family="'Roboto', sans-serif", fill=accent_line,
-    ))
-    g.append(draw.Text(
-        f"{count} ENTRIES", x=x + width, y=y + 12, font_size=10,
-        text_anchor="end", fill="#888", font_weight="400", letter_spacing=1,
-        font_family="'Roboto', sans-serif",
-    ))
-    g.append(draw.Line(
-        sx=x, sy=y + 20, ex=x + width, ey=y + 20,
-        stroke=accent_line, stroke_opacity=0.5, stroke_width=1.2,
-    ))
+    g.append(
+        draw.Text(
+            "TAP-DANCE",
+            x=x,
+            y=y + 12,
+            font_size=11,
+            font_weight="700",
+            letter_spacing=3,
+            text_anchor="start",
+            font_family="'Roboto', sans-serif",
+            fill=accent_line,
+        )
+    )
+    g.append(
+        draw.Text(
+            f"{count} ENTRIES",
+            x=x + width,
+            y=y + 12,
+            font_size=10,
+            text_anchor="end",
+            fill="#888",
+            font_weight="400",
+            letter_spacing=1,
+            font_family="'Roboto', sans-serif",
+        )
+    )
+    g.append(
+        draw.Line(
+            sx=x,
+            sy=y + 20,
+            ex=x + width,
+            ey=y + 20,
+            stroke=accent_line,
+            stroke_opacity=0.5,
+            stroke_width=1.2,
+        )
+    )
 
 
 def _action_key_strip(x: float, y: float, text_color: str) -> draw.Group:
     """The 'tap | press | release | text | delay' key below macros."""
     g = draw.Group()
-    g.append(draw.Text(
-        "ACTION KEY", x=x, y=y + 6, font_size=9, fill="#999", letter_spacing=1.5,
-        dominant_baseline="central", font_family="'Roboto', sans-serif",
-    ))
+    g.append(
+        draw.Text(
+            "ACTION KEY",
+            x=x,
+            y=y + 6,
+            font_size=9,
+            fill="#999",
+            letter_spacing=1.5,
+            dominant_baseline="central",
+            font_family="'Roboto', sans-serif",
+        )
+    )
     cx = x + 90
     items = [
         (SvalboardMacroActionKind.TAP, "tap"),
@@ -713,10 +908,17 @@ def _action_key_strip(x: float, y: float, text_color: str) -> draw.Group:
     ]
     for kind, label in items:
         g.append(build_action_glyph(kind, cx=cx + 6, cy=y + 6, color=text_color))
-        g.append(draw.Text(
-            label, x=cx + 16, y=y + 6, font_size=10, fill="#666",
-            dominant_baseline="central", font_family="'Roboto', sans-serif",
-        ))
+        g.append(
+            draw.Text(
+                label,
+                x=cx + 16,
+                y=y + 6,
+                font_size=10,
+                fill="#666",
+                dominant_baseline="central",
+                font_family="'Roboto', sans-serif",
+            )
+        )
         cx += 14 + len(label) * 6 + 14
     return g
 
@@ -741,11 +943,18 @@ def _draw_macro_column(
     for i, m in enumerate(rows):
         if i > 0:
             cursor += ROW_GAP
-        g.append(build_macro_row(
-            m, x=col_x, y=cursor, content_width=col_w,
-            accent_fill=accent_fill, accent_line=accent_line,
-            text_color=text_color, use_system_fonts=use_system_fonts,
-        ))
+        g.append(
+            build_macro_row(
+                m,
+                x=col_x,
+                y=cursor,
+                content_width=col_w,
+                accent_fill=accent_fill,
+                accent_line=accent_line,
+                text_color=text_color,
+                use_system_fonts=use_system_fonts,
+            )
+        )
         cursor += macro_row_height(m, col_w)
     return cursor
 
@@ -774,19 +983,29 @@ def _draw_td_column(
     use_system_fonts: bool = False,
     name_column_width: float = TD_NAME_W - TAG_W,
 ) -> None:
-    g.append(build_tap_dance_column_header(
-        x=col_x, y=start_y + 12, text_color=text_color,
-        name_column_width=name_column_width,
-    ))
+    g.append(
+        build_tap_dance_column_header(
+            x=col_x,
+            y=start_y + 12,
+            text_color=text_color,
+            name_column_width=name_column_width,
+        )
+    )
     cursor = start_y + TD_HEADER_HEIGHT
     for t in rows:
-        g.append(build_tap_dance_row(
-            t, x=col_x, y=cursor + TD_ROW_HEIGHT / 2,
-            column_width=col_w,
-            accent_fill=accent_fill, accent_line=accent_line,
-            text_color=text_color, use_system_fonts=use_system_fonts,
-            name_column_width=name_column_width,
-        ))
+        g.append(
+            build_tap_dance_row(
+                t,
+                x=col_x,
+                y=cursor + TD_ROW_HEIGHT / 2,
+                column_width=col_w,
+                accent_fill=accent_fill,
+                accent_line=accent_line,
+                text_color=text_color,
+                use_system_fonts=use_system_fonts,
+                name_column_width=name_column_width,
+            )
+        )
         cursor += TD_ROW_HEIGHT + TD_ROW_GAP
 
 
@@ -811,31 +1030,58 @@ def build_legend(
 
     if layout.macro_left:
         _draw_macro_title(
-            g, x, y, col_w, macro_line, count=len(layout.macro_left),
+            g,
+            x,
+            y,
+            col_w,
+            macro_line,
+            count=len(layout.macro_left),
         )
-        g.append(build_macro_column_header(
-            x=x, y=y + SECTION_HEADER_HEIGHT + 12, text_color=palette.text_color,
-        ))
+        g.append(
+            build_macro_column_header(
+                x=x,
+                y=y + SECTION_HEADER_HEIGHT + 12,
+                text_color=palette.text_color,
+            )
+        )
         end_left = _draw_macro_column(
-            g, layout.macro_left, x,
-            y + SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT, col_w,
-            palette.macro_color, macro_line, palette.text_color,
+            g,
+            layout.macro_left,
+            x,
+            y + SECTION_HEADER_HEIGHT + MACRO_COLUMN_HEADER_HEIGHT,
+            col_w,
+            palette.macro_color,
+            macro_line,
+            palette.text_color,
             use_system_fonts=use_system_fonts,
         )
-        g.append(_action_key_strip(
-            x=x, y=end_left + ACTION_KEY_PRE_GAP, text_color=palette.text_color,
-        ))
+        g.append(
+            _action_key_strip(
+                x=x,
+                y=end_left + ACTION_KEY_PRE_GAP,
+                text_color=palette.text_color,
+            )
+        )
 
     if layout.tap_dance_left:
         _draw_td_title(
-            g, x + col_w + COLUMN_GAP, y, col_w, td_line,
+            g,
+            x + col_w + COLUMN_GAP,
+            y,
+            col_w,
+            td_line,
             count=len(layout.tap_dance_left),
         )
         td_name_w = _td_name_column_width(layout.tap_dance_left)
         _draw_td_column(
-            g, layout.tap_dance_left, x + col_w + COLUMN_GAP,
-            y + SECTION_HEADER_HEIGHT, col_w,
-            palette.tap_dance_color, td_line, palette.text_color,
+            g,
+            layout.tap_dance_left,
+            x + col_w + COLUMN_GAP,
+            y + SECTION_HEADER_HEIGHT,
+            col_w,
+            palette.tap_dance_color,
+            td_line,
+            palette.text_color,
             use_system_fonts=use_system_fonts,
             name_column_width=td_name_w,
         )

@@ -112,7 +112,12 @@ def _parse_vial_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
             tap_then_hold=_vial_keycode_or_none(row[3]),
             tapping_term=int(row[4]),
         )
-        if td.tap is None and td.hold is None and td.double_tap is None and td.tap_then_hold is None:
+        if (
+            td.tap is None
+            and td.hold is None
+            and td.double_tap is None
+            and td.tap_then_hold is None
+        ):
             continue
         tap_dances.append(td)
     return tuple(tap_dances)
@@ -139,7 +144,12 @@ def _parse_keybard_tap_dances(data: Any) -> tuple[SvalboardTapDance[str], ...]:
             tap_then_hold=_vial_keycode_or_none(entry.get("taphold")),
             tapping_term=int(entry.get("tapms", 200)),
         )
-        if td.tap is None and td.hold is None and td.double_tap is None and td.tap_then_hold is None:
+        if (
+            td.tap is None
+            and td.hold is None
+            and td.double_tap is None
+            and td.tap_then_hold is None
+        ):
             continue
         tap_dances.append(td)
     return tuple(tap_dances)

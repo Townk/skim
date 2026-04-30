@@ -200,6 +200,7 @@ class KeymapTargetAdapter:
             A layout containing SvalboardTargetKey objects with labels,
             layer-switching metadata, and special ids where applicable.
         """
+
         def _convert(keycode: str) -> SvalboardTargetKey:
             target = self._label_adapter.transform(keycode)
             macro_id, tap_dance_id = _detect_special_ids(keycode, macros, tap_dances)

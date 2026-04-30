@@ -418,5 +418,3 @@ class TestKeycodeLabelAdapterTransparentDetection:
     def test_macro_does_not_set_flag(self):
         result = self._adapter().transform("MO(0)")
         assert result.is_transparent is False
-
-

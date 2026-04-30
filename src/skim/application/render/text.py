@@ -540,9 +540,7 @@ class FontUsageAnalyzer:
         for macro in macros:
             # Macro chip: name + per-action glyphs/keys/text
             if macro.name:
-                self._collect_from_label(
-                    Label(macro.name, Font.FINGER_KEY, text_color="#000")
-                )
+                self._collect_from_label(Label(macro.name, Font.FINGER_KEY, text_color="#000"))
             for action in macro.actions:
                 for key in action.keys:
                     if key is not None and key.label:
@@ -550,14 +548,10 @@ class FontUsageAnalyzer:
                             Label(key.label, Font.FINGER_KEY, text_color="#000")
                         )
                 if action.text:
-                    self._collect_from_label(
-                        Label(action.text, Font.FINGER_KEY, text_color="#000")
-                    )
+                    self._collect_from_label(Label(action.text, Font.FINGER_KEY, text_color="#000"))
         for td in tap_dances:
             if td.name:
-                self._collect_from_label(
-                    Label(td.name, Font.FINGER_KEY, text_color="#000")
-                )
+                self._collect_from_label(Label(td.name, Font.FINGER_KEY, text_color="#000"))
             for variant in (td.tap, td.hold, td.double_tap, td.tap_then_hold):
                 if variant is not None and variant.label:
                     self._collect_from_label(

@@ -356,9 +356,7 @@ class TestLayerLegendIntegration:
             ),
         )
 
-    def test_layer_with_specials_grows_canvas(
-        self, sample_config, single_layer_keymap
-    ):
+    def test_layer_with_specials_grows_canvas(self, sample_config, single_layer_keymap):
         targets = KeymapGeneratorTargets(all_layers=True)
         plain_imgs = draw_keymap(sample_config, single_layer_keymap, targets)
         plain_drawing = plain_imgs["keymap-layer-0"]
@@ -380,9 +378,7 @@ class TestLayerLegendIntegration:
         assert palette.macro_color in svg_text
         assert palette.tap_dance_color in svg_text
 
-    def test_plain_layer_does_not_emit_accent_colours(
-        self, sample_config, single_layer_keymap
-    ):
+    def test_plain_layer_does_not_emit_accent_colours(self, sample_config, single_layer_keymap):
         targets = KeymapGeneratorTargets(all_layers=True)
         plain_imgs = draw_keymap(sample_config, single_layer_keymap, targets)
         plain_drawing = plain_imgs["keymap-layer-0"]

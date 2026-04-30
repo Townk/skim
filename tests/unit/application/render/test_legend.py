@@ -86,9 +86,7 @@ def test_collect_picks_up_tap_dance_ids():
 def test_collect_includes_transparent_fallthroughs():
     """Transparent keys whose ids were inherited from layer 0 still count."""
     keys = [SvalboardTargetKey(label="A") for _ in range(60)]
-    keys[3] = SvalboardTargetKey(
-        label="M3", macro_id="3", is_transparent=True
-    )
+    keys[3] = SvalboardTargetKey(label="M3", macro_id="3", is_transparent=True)
     layer = _layout_from_keys(keys)
     macros, _ = collect_used_ids(layer)
     assert macros == {"3"}
@@ -234,9 +232,7 @@ def test_macro_row_height_no_overflow():
 
 
 def test_macro_row_height_two_content_lines_when_overflow():
-    long_macro = _macro_with_actions(
-        *(((SvalboardMacroActionKind.TAP, "K"),) * 30)
-    )
+    long_macro = _macro_with_actions(*(((SvalboardMacroActionKind.TAP, "K"),) * 30))
     # Unnamed macro, tight column → at least 2 content lines (no header strip).
     h = macro_row_height(long_macro, content_width=120)
     assert h >= 2 * CONTENT_STRIP_HEIGHT
@@ -258,8 +254,13 @@ def test_macro_row_height_named_includes_header_strip():
 def test_build_macro_row_returns_group():
     macro = _macro_with_actions((SvalboardMacroActionKind.TAP, "A"))
     g = build_macro_row(
-        macro=macro, x=0, y=0, content_width=600,
-        accent_fill="#89511C", accent_line="#DD9857", text_color="#000",
+        macro=macro,
+        x=0,
+        y=0,
+        content_width=600,
+        accent_fill="#89511C",
+        accent_line="#DD9857",
+        text_color="#000",
     )
     assert isinstance(g, draw.Group)
 
@@ -288,8 +289,13 @@ def test_build_tap_dance_row_returns_group():
         name="Undo / Cmd",
     )
     g = build_tap_dance_row(
-        td=td, x=0, y=0, column_width=600,
-        accent_fill="#41687F", accent_line="#9AB9CB", text_color="#000",
+        td=td,
+        x=0,
+        y=0,
+        column_width=600,
+        accent_fill="#41687F",
+        accent_line="#9AB9CB",
+        text_color="#000",
     )
     assert isinstance(g, draw.Group)
 
@@ -298,8 +304,13 @@ def test_build_tap_dance_row_handles_none_variants():
     """Missing variants render an empty/dashed cell, not a crash."""
     td = SvalboardTapDance(id="0", tap=None, hold=None, double_tap=None, tap_then_hold=None)
     g = build_tap_dance_row(
-        td=td, x=0, y=0, column_width=600,
-        accent_fill="#41687F", accent_line="#9AB9CB", text_color="#000",
+        td=td,
+        x=0,
+        y=0,
+        column_width=600,
+        accent_fill="#41687F",
+        accent_line="#9AB9CB",
+        text_color="#000",
     )
     assert isinstance(g, draw.Group)
 
@@ -387,10 +398,10 @@ def test_legend_key_label_appends_layer_number_for_layer_only_function():
     from skim.application.render.legend import _legend_key_label
 
     key = SvalboardTargetKey(
-        label="\U000F03FE",  # any layer-icon glyph (or a plain string for the test)
+        label="\U000f03fe",  # any layer-icon glyph (or a plain string for the test)
         layer_switch=2,
     )
-    assert _legend_key_label(key) == "\U000F03FE 2"
+    assert _legend_key_label(key) == "\U000f03fe 2"
 
 
 def test_legend_key_label_passes_compound_label_through():
