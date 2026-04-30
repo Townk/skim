@@ -193,7 +193,7 @@ def doctor() -> None:
 )
 @click.option(
     "--use-system-fonts",
-    "-S",
+    "-F",
     is_flag=True,
     help="Use system fonts instead of embedding fonts in SVG.",
 )
@@ -210,7 +210,7 @@ def doctor() -> None:
     help="Overwrite existing files without confirmation.",
 )
 @click.option(
-    "-n",
+    "-N",
     "--no-special-keys",
     "no_special_keys",
     is_flag=True,
@@ -218,6 +218,7 @@ def doctor() -> None:
     help="Omit the macro and tap-dance legend tables from the rendered SVGs.",
 )
 @click.option(
+    "-Y",
     "--no-symbols",
     "no_symbols",
     is_flag=True,
@@ -325,7 +326,7 @@ def generate(
     type=click.Path(path_type=Path),
     help="Output configuration file path.",
 )
-@click.option("--force", "-f", is_flag=True, help="Overwrite existing file.")
+@click.option("--force", is_flag=True, help="Overwrite existing file.")
 @click.option(
     "--qmk-color-header",
     "-C",
@@ -334,13 +335,13 @@ def generate(
 )
 @click.option(
     "--adjust-lightness",
-    "-l",
+    "-L",
     type=float,
     help="Adjust lightness (0.0-1.0) (non-interactive).",
 )
 @click.option(
     "--adjust-saturation",
-    "-s",
+    "-S",
     type=float,
     help="Adjust saturation (0.0-1.0) (non-interactive).",
 )
