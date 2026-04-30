@@ -28,6 +28,7 @@ Example:
 """
 
 import logging
+import re
 from pathlib import Path
 
 from skim.data import InputFiles, KeymapGeneratorTargets, OutputFiles, SkimConfig, SvalboardKeymap
@@ -40,6 +41,15 @@ from .render import draw_keymap, make_gradient
 
 logger = logging.getLogger(__name__)
 """Module-level logger for keymap generation operations."""
+
+
+def _derive_title_from_filename(keymap_path: Path) -> str:
+    """Build a human-readable overview title from a keymap filename.
+
+    ``vial-sample.vil`` → ``"Vial Sample Layers Layout"``.
+    """
+    stem = re.sub(r"[-_]+", " ", keymap_path.stem).strip()
+    return f"{stem.title()} Layers Layout" if stem else "Layers Layout"
 
 
 def _derive_default_config_from_keymap(keymap_path: Path) -> SkimConfig:
@@ -64,6 +74,7 @@ def _get_config(
     show_special_keys_legend: bool = True,
     show_symbol_legend: bool = True,
     symbol_legend_flow: str | None = None,
+    title_override: str | None = None,
 ) -> SkimConfig:
     """Load and enhance configuration with generated gradients.
 
@@ -112,7 +123,16 @@ def _get_config(
         style_updates["symbol_legend_flow"] = SymbolLegendFlow(symbol_legend_flow)
 
     new_style = config.output.style.model_copy(update=style_updates)
-    new_output = config.output.model_copy(update={"style": new_style})
+
+    output_updates: dict = {"style": new_style}
+    if title_override is not None:
+        output_updates["keymap_title"] = title_override
+    elif config.output.keymap_title is None and keymap_for_defaults is not None:
+        # No explicit title (config or CLI) — fall back to the keymap filename
+        # so the overview reads better than the generic "Layer 0 Layers Layout".
+        output_updates["keymap_title"] = _derive_title_from_filename(keymap_for_defaults)
+
+    new_output = config.output.model_copy(update=output_updates)
     return config.model_copy(update={"output": new_output})
 
 
@@ -168,6 +188,7 @@ def generate_keymap(
     show_special_keys_legend: bool = True,
     show_symbol_legend: bool = True,
     symbol_legend_flow: str | None = None,
+    title: str | None = None,
 ) -> None:
     """Generate keymap visualization images.
 
@@ -203,6 +224,7 @@ def generate_keymap(
         show_special_keys_legend=show_special_keys_legend,
         show_symbol_legend=show_symbol_legend,
         symbol_legend_flow=symbol_legend_flow,
+        title_override=title,
     )
     input_keymap = _get_input_keymap(inputs, config)
     keymap = _resolve_keymap(config, input_keymap)

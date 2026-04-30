@@ -234,6 +234,13 @@ def doctor() -> None:
         "Default: column."
     ),
 )
+@click.option(
+    "--title",
+    "-t",
+    type=str,
+    default=None,
+    help="Override the overview keymap title (output.keymap_title).",
+)
 @click.argument("stdin_marker", required=False, type=click.STRING)
 def generate(
     config: Path | None,
@@ -247,6 +254,7 @@ def generate(
     no_special_keys: bool,
     no_symbols: bool,
     symbol_legend_flow: str | None,
+    title: str | None,
     stdin_marker: str | None,
 ) -> None:
     """Generate keymap visualization images.
@@ -282,6 +290,7 @@ def generate(
             show_special_keys_legend=not no_special_keys,
             show_symbol_legend=not no_symbols,
             symbol_legend_flow=symbol_legend_flow,
+            title=title,
         )
     except click.Abort as e:
         click.echo(f"Aborted: {e}", err=True)
