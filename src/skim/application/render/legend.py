@@ -685,7 +685,6 @@ def build_macro_row(
                 x=x + geom.tag_w + geom.tag_name_gap,
                 y=y + geom.tag_h / 2 + geom.tag_inner_text_baseline_offset,
                 font_size=geom.tag_name_font_size,
-                font_weight="500",
                 dominant_baseline="central",
                 font_family="'Roboto', sans-serif",
                 fill=text_color,

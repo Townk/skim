@@ -311,7 +311,12 @@ def TapDanceRow(
                 use_system_fonts,
             )
         )
-        # Optional name in the chip's outlined extension.
+        # Optional name in the chip's outlined extension. Rendered at the
+        # bundled Roboto Regular weight (no ``font_weight`` attribute) so the
+        # painted glyph run matches what :func:`_measure_text_width` reports
+        # via PIL — requesting weight 500 would synthesize a slightly
+        # heavier face since only Regular / Black / Thin are embedded, and
+        # PIL would then under-measure the rendered run.
         if td.name:
             d.append(
                 draw.Text(
@@ -319,7 +324,6 @@ def TapDanceRow(
                     x=x + geom.tag_w + geom.tag_name_gap,
                     y=cy + geom.tag_inner_text_baseline_offset,
                     font_size=geom.td_name_font_size,
-                    font_weight="500",
                     text_anchor="start",
                     dominant_baseline="central",
                     font_family="'Roboto', sans-serif",
