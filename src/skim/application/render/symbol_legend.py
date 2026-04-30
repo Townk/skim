@@ -50,9 +50,7 @@ _FUNC_RE = re.compile(r"^([A-Z][A-Z0-9_]*)\((.+)\)$")
 _ALIAS_RE = re.compile(r"@@([A-Z0-9_]+);")
 """Match ``@@KEYCODE;`` alias references inside a label string."""
 
-_LAYER_FUNCTION_NAMES = frozenset(
-    {"DF", "PDF", "MO", "LM", "LT", "OSL", "TG", "TO", "TT"}
-)
+_LAYER_FUNCTION_NAMES = frozenset({"DF", "PDF", "MO", "LM", "LT", "OSL", "TG", "TO", "TT"})
 """Layer-switching function names for which a ``#`` layer-arg indicator is
 appended to the display label when the rendered result doesn't already
 contain one."""
@@ -87,8 +85,14 @@ _CATEGORY_ORDER = (
     "Modifiers",
     "Lock Keys",
     "International",
+    "Editing",
+    "Navigation",
     "Commands",
+    "Browser",
+    "Desktop",
+    "Quantum",
     "Media Keys",
+    "RGB",
     "Mouse",
     "Number Pad",
     "Special Keys",
@@ -117,6 +121,7 @@ def _entry_sort_key(entry: SymbolLegendEntry) -> tuple:
 # ---------------------------------------------------------------------------
 # Collection helpers
 # ---------------------------------------------------------------------------
+
 
 def _resolve_aliases(
     keycode: str,
@@ -268,11 +273,7 @@ def _function_display_label(
 
     # If this is a layer function but the rendered label has no layer
     # reference, append ``#`` so the legend shows it takes a layer arg.
-    if (
-        func_name in _LAYER_FUNCTION_NAMES
-        and "#" not in label
-        and SEPARATOR_CHAR not in label
-    ):
+    if func_name in _LAYER_FUNCTION_NAMES and "#" not in label and SEPARATOR_CHAR not in label:
         label = f"{label} #" if label else "#"
 
     return label
@@ -325,6 +326,7 @@ def _resolve_display_label(
         if template is None:
             return keycode
         args = _parse_function_args(args_str)
+
         # Substitute @N; argument placeholders
         def _sub_arg(m: re.Match[str]) -> str:
             idx = int(m.group(1))
@@ -333,6 +335,7 @@ def _resolve_display_label(
             return _resolve_display_label(args[idx], keycodes_dict, macro_functions)
 
         result = re.sub(r"@(\d+);", _sub_arg, template)
+
         # Resolve @@KEY; alias references
         def _sub_alias(m: re.Match[str]) -> str:
             key = m.group(1)
@@ -473,9 +476,7 @@ def _collect_raw(
                 else:
                     # Generic mode: one entry per function name (deduped).
                     desc = _resolve_description_generic(raw_desc, adapter)
-                    label = _function_display_label(
-                        func_name, macro_functions, keycode_mappings
-                    )
+                    label = _function_display_label(func_name, macro_functions, keycode_mappings)
                     sort_k = func_name
                     if sort_k not in out:
                         out[sort_k] = SymbolLegendEntry(
@@ -502,7 +503,9 @@ def _collect_raw(
                 variant_keycodes: list[str] = []
                 for variant in (td.tap, td.hold, td.double_tap, td.tap_then_hold):
                     if variant is not None:
-                        kc = variant if isinstance(variant, str) else getattr(variant, "label", None)
+                        kc = (
+                            variant if isinstance(variant, str) else getattr(variant, "label", None)
+                        )
                         if kc:
                             variant_keycodes.append(kc)
                 _collect_raw(variant_keycodes, keymap, keycode_mappings, out, visited_funcs)
@@ -596,9 +599,9 @@ _ENTRY_ROW_HEIGHT = 16
 _SYMBOL_FONT_SIZE = 10
 _DESC_FONT_SIZE = 10
 _COLUMN_GAP = 18.0
-_GLYPH_DESC_GAP = 6.0    # gap between glyph cell and description text
+_GLYPH_DESC_GAP = 6.0  # gap between glyph cell and description text
 _ROW_GAP = 1.0
-_ENTRY_RIGHT_PAD = 6.0   # pad between adjacent column entries
+_ENTRY_RIGHT_PAD = 6.0  # pad between adjacent column entries
 
 
 def _measure_label_width(label: str, font_size: float) -> float:
@@ -626,16 +629,12 @@ def symbol_legend_height(
         return 0.0
 
     # Uniform glyph cell width = widest glyph across all entries
-    max_glyph_w = max(
-        _measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries
-    )
+    max_glyph_w = max(_measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries)
 
     # Description text widths — use the same Label-parts-aware measurement
     # as the glyph column so NerdFont/symbol fragments and other non-BMP
     # codepoints in resolved descriptions are sized correctly.
-    max_desc_w = max(
-        _measure_label_width(e.description, _DESC_FONT_SIZE) for e in entries
-    )
+    max_desc_w = max(_measure_label_width(e.description, _DESC_FONT_SIZE) for e in entries)
 
     entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + _ENTRY_RIGHT_PAD
     col_count = max(1, int((content_width + _COLUMN_GAP) / (entry_w + _COLUMN_GAP)))
@@ -686,13 +685,9 @@ def build_symbol_legend(
     accent_line = "#888888"  # neutral-gray, independent of any per-layer color
 
     # Compute layout geometry — inline style (no surrounding rectangle)
-    max_glyph_w = max(
-        _measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries
-    )
+    max_glyph_w = max(_measure_label_width(e.display_label, _SYMBOL_FONT_SIZE) for e in entries)
 
-    max_desc_w = max(
-        _measure_label_width(e.description, _DESC_FONT_SIZE) for e in entries
-    )
+    max_desc_w = max(_measure_label_width(e.description, _DESC_FONT_SIZE) for e in entries)
 
     entry_w = max_glyph_w + _GLYPH_DESC_GAP + max_desc_w + _ENTRY_RIGHT_PAD
     col_count = max(1, int((content_width + _COLUMN_GAP) / (entry_w + _COLUMN_GAP)))
@@ -704,16 +699,30 @@ def build_symbol_legend(
     )
 
     # Section header
-    g.append(draw.Text(
-        "SYMBOLS",
-        x=x, y=y + 12,
-        font_size=11, font_weight="700", letter_spacing=3,
-        text_anchor="start", font_family=label_font, fill=accent_line,
-    ))
-    g.append(draw.Line(
-        sx=x, sy=y + 20, ex=x + content_width, ey=y + 20,
-        stroke=accent_line, stroke_opacity=0.5, stroke_width=1.2,
-    ))
+    g.append(
+        draw.Text(
+            "SYMBOLS",
+            x=x,
+            y=y + 12,
+            font_size=11,
+            font_weight="700",
+            letter_spacing=3,
+            text_anchor="start",
+            font_family=label_font,
+            fill=accent_line,
+        )
+    )
+    g.append(
+        draw.Line(
+            sx=x,
+            sy=y + 20,
+            ex=x + content_width,
+            ey=y + 20,
+            stroke=accent_line,
+            stroke_opacity=0.5,
+            stroke_width=1.2,
+        )
+    )
 
     # Entries — inline ACTION-KEY style (no surrounding box)
     n = len(entries)
@@ -747,15 +756,17 @@ def build_symbol_legend(
             )
         )
         # Description text — left-aligned immediately after the glyph cell
-        g.append(draw.Text(
-            entry.description,
-            x=col_x + max_glyph_w + _GLYPH_DESC_GAP,
-            y=cell_mid_y + 0.5,
-            font_size=_DESC_FONT_SIZE,
-            dominant_baseline="central",
-            font_family=label_font,
-            fill=text_color,
-            opacity=0.75,
-        ))
+        g.append(
+            draw.Text(
+                entry.description,
+                x=col_x + max_glyph_w + _GLYPH_DESC_GAP,
+                y=cell_mid_y + 0.5,
+                font_size=_DESC_FONT_SIZE,
+                dominant_baseline="central",
+                font_family=label_font,
+                fill=text_color,
+                opacity=0.75,
+            )
+        )
 
     return g

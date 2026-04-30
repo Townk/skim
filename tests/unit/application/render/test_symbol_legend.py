@@ -17,6 +17,7 @@ from skim.data import Palette, SkimConfig
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _mappings():
     """Return the real keycode mappings (uses lru_cache, cheap after first call)."""
     return load_keycode_mappings(SkimConfig().keycodes)
@@ -29,6 +30,7 @@ def _entries(keycodes, keymap=None):
 # ---------------------------------------------------------------------------
 # collect_used_descriptions tests
 # ---------------------------------------------------------------------------
+
 
 class TestCollectUsedDescriptions:
     def test_collect_simple_modifier(self):
@@ -152,13 +154,11 @@ class TestCollectUsedDescriptions:
 
     def test_collect_groups_by_category(self):
         """Entries with category metadata sort by category, then by id."""
-        # Note: ``KC_NUM_LOC`` (not KC_NUM_LOCK) is the canonical Lock-Keys
-        # entry in the bundled yaml; KC_NUMLOCK aliases to it via @@.
         entries = _entries(["KC_CAPS_LOCK", "KC_LEFT_CTRL", "MO(1)", "KC_ENTER"])
         categories = [e.category for e in entries]
         # Layers (MO) → Modifiers (KC_LEFT_CTRL) → Lock Keys (KC_CAPS_LOCK)
-        # → Special Keys (KC_ENTER)
-        assert categories == ["Layers", "Modifiers", "Lock Keys", "Special Keys"]
+        # → Editing (KC_ENTER, per the bundled yaml's category placement).
+        assert categories == ["Layers", "Modifiers", "Lock Keys", "Editing"]
 
     def test_collect_multiple_functions(self):
         """MO(1) and TG(2) each produce their own entry, deduped."""
@@ -300,8 +300,7 @@ class TestCollectUsedDescriptions:
         """
         entries = _entries(["KC_RIGHT_GUI"])
         gui_entries = [
-            e for e in entries
-            if e.sort_key == "KC_LEFT_GUI" and e.category == "Modifiers"
+            e for e in entries if e.sort_key == "KC_LEFT_GUI" and e.category == "Modifiers"
         ]
         assert len(gui_entries) == 1
         assert gui_entries[0].description  # non-empty
@@ -341,6 +340,7 @@ class TestCollectUsedDescriptions:
 # symbol_legend_height tests
 # ---------------------------------------------------------------------------
 
+
 class TestSymbolLegendHeight:
     def test_empty_entries_returns_zero(self):
         assert symbol_legend_height([], 800.0) == 0.0
@@ -362,6 +362,7 @@ class TestSymbolLegendHeight:
 # ---------------------------------------------------------------------------
 # Per-instance description tests
 # ---------------------------------------------------------------------------
+
 
 def _mappings_with_function_description(func: str, description: str):
     """Return a copy of real keycode mappings with one function_descriptions entry
@@ -401,9 +402,7 @@ def test_description_with_only_hash_placeholder_dedupes():
 
 def test_description_mixed_at_and_hash():
     """Mixed @N; and #N; → per-instance mode; @N; resolves, #N; stays as #."""
-    mappings = _mappings_with_function_description(
-        "MO", "Layer @0; pattern: #0;"
-    )
+    mappings = _mappings_with_function_description("MO", "Layer @0; pattern: #0;")
     entries = collect_used_descriptions(["MO(7)"], None, mappings)
     mo_entries = [e for e in entries if "MO" in e.sort_key]
     assert len(mo_entries) == 1
@@ -414,6 +413,7 @@ def test_description_mixed_at_and_hash():
 # build_symbol_legend tests
 # ---------------------------------------------------------------------------
 
+
 class TestBuildSymbolLegend:
     def _palette(self):
         return Palette()
@@ -423,6 +423,7 @@ class TestBuildSymbolLegend:
 
     def test_returns_group_when_nonempty(self):
         import drawsvg as draw
+
         entries = _entries(["KC_LEFT_CTRL"])
         g = build_symbol_legend(entries, 0, 0, 800, self._palette())
         assert g is not None
@@ -431,6 +432,7 @@ class TestBuildSymbolLegend:
     def _to_svg(self, group) -> str:
         """Render a Group to SVG string via a Drawing wrapper."""
         import drawsvg as draw
+
         d = draw.Drawing(1600, 400)
         d.append(group)
         return d.as_svg()
@@ -456,9 +458,11 @@ class TestBuildSymbolLegend:
 # Flow direction tests
 # ---------------------------------------------------------------------------
 
+
 def _make_flow_entries(n: int) -> list:
     """Build n synthetic SymbolLegendEntry objects for layout testing."""
     from skim.application.render.symbol_legend import SymbolLegendEntry
+
     return [
         SymbolLegendEntry(
             display_label=str(i),
@@ -533,9 +537,7 @@ class TestSymbolLegendFlow:
         assert digit_pos[0][0] == digit_pos[1][0], (
             "Column-major: entries 0 and 1 should share the same x (same column)"
         )
-        assert digit_pos[1][1] > digit_pos[0][1], (
-            "Column-major: entry 1 should be below entry 0"
-        )
+        assert digit_pos[1][1] > digit_pos[0][1], "Column-major: entry 1 should be below entry 0"
 
         # entry[2] must be to the right of entry[0] (next col → larger x, same row)
         assert digit_pos[2][0] > digit_pos[0][0], (
@@ -573,9 +575,7 @@ class TestSymbolLegendFlow:
         )
 
         # entry[3] must be below entry[0] (wrapped to next row)
-        assert digit_pos[3][1] > digit_pos[0][1], (
-            "Row-major: entry 3 should be below entry 0"
-        )
+        assert digit_pos[3][1] > digit_pos[0][1], "Row-major: entry 3 should be below entry 0"
         assert digit_pos[3][0] == digit_pos[0][0], (
             "Row-major: entries 0 and 3 should share the same x (leftmost column)"
         )
