@@ -349,6 +349,36 @@ def Padding(
 
 
 @Composable
+def Align(
+    child: Component,
+    *,
+    width: float | None = None,
+    height: float | None = None,
+    horizontal: str = "start",
+    vertical: str = "start",
+):
+    """Place ``child`` inside a larger box, aligned to one of its edges.
+
+    When ``width`` (or ``height``) is supplied and exceeds the child's
+    natural extent, the child is positioned within the resulting box
+    according to ``horizontal`` / ``vertical`` (``start`` / ``center`` /
+    ``end``). When the dimension is omitted it defaults to the child's
+    natural extent. Useful for right-aligning a footer inside a wider
+    column or centring a small child inside a fixed slot.
+    """
+    box_w = width if width is not None and width > child.size.width else child.size.width
+    box_h = height if height is not None and height > child.size.height else child.size.height
+    size = Size(box_w, box_h)
+
+    def draw_at(d, origin):
+        dx = _align_offset(horizontal, box_w, child.size.width)
+        dy = _align_offset(vertical, box_h, child.size.height)
+        child.draw_at(d, origin.offset(dx, dy))
+
+    return size, draw_at
+
+
+@Composable
 def BorderedFrame(
     child: Component,
     *,

@@ -38,9 +38,19 @@ import drawsvg as draw
 from skim.data import Palette, SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTargetKey
 
-from .composable import Point
-from .footer import append_footer, footer_layout_height
-from .header import HeaderRenderResult, append_header, header_layout_height
+from .composable import (
+    Align,
+    BaseComponent,
+    Column,
+    Component,
+    Composable,
+    Padding,
+    Point,
+    Size,
+    Spacer,
+)
+from .footer import Footer, append_footer, footer_layout_height
+from .header import Header, HeaderRenderResult, append_header, header_layout_height
 from .layout import KeymapLayoutMetrics
 from .legend import (
     _draw_section_title,
@@ -55,6 +65,7 @@ from .legend import (
     build_tap_dance_row,
     macro_row_height,
 )
+from .legend_components import SectionStripe, TapDanceTable
 from .overview import HeaderDims, compute_header_dims
 from .overview_layout import _outer_padding
 from .styling import derive_accent_line
@@ -283,6 +294,169 @@ def _append_copyright(
 
 
 # ---------------------------------------------------------------------------
+# Composable image scaffolding
+# ---------------------------------------------------------------------------
+
+
+@Composable
+def _CanvasFrame(
+    *,
+    content: Component,
+    setup: _ImageSetup,
+):
+    """Outer chrome: rounded background border around ``content``.
+
+    The natural size matches ``content`` exactly — the border is
+    painted INSIDE that extent, inset by ``setup.margin``, mirroring
+    the historical positional layout (where the border surrounded the
+    canvas minus margin and the content sat at offset ``padding`` from
+    the canvas edge). The content's :meth:`draw_at` runs at the same
+    origin so its top-left aligns with the canvas top-left.
+    """
+    size = content.size
+    border = setup.config.output.style.border
+    palette = setup.palette
+    margin = setup.margin
+
+    def draw_at(d, origin):
+        d.append(
+            draw.Rectangle(
+                x=origin.x + margin,
+                y=origin.y + margin,
+                width=size.width - 2 * margin,
+                height=size.height - 2 * margin,
+                rx=border.radius if border else None,
+                ry=border.radius if border else None,
+                fill=palette.background_color,
+                stroke=palette.border_color if border else None,
+                stroke_width=border.width if border else None,
+            )
+        )
+        content.draw_at(d, origin)
+
+    return size, draw_at
+
+
+def _build_image_body(
+    *,
+    setup: _ImageSetup,
+    body: Component,
+    section_title: str,
+    section_color: str,
+    section_count: int,
+    content_w: float,
+) -> BaseComponent:
+    """Assemble header + section stripe + body + footer into a Column.
+
+    Mirrors the historical positional layout from :mod:`special_keys_image`
+    exactly — same gaps between header / stripe / body / footer, same
+    asymmetric ``padding`` (top/sides) vs ``bottom_inset`` (bottom).
+    """
+    geom = setup.geom
+    palette = setup.palette
+
+    header = Header(
+        title=setup.title_text,
+        title_font_max_size=setup.header_dims.title_font_size,
+        gap=2 * setup.padding,
+        max_width=content_w,
+        color=palette.text_color,
+        use_system_fonts=setup.use_system_fonts,
+    )
+
+    stripe = SectionStripe(
+        title=section_title,
+        count=section_count,
+        width=content_w,
+        accent_line=section_color,
+        geom=geom,
+    )
+
+    children: list[Component] = [
+        header,
+        Spacer(height=geom.title_rule_offset * 0.5),
+        stripe,
+        Spacer(height=2 * geom.title_baseline_offset),
+        body,
+    ]
+
+    footer_text = setup.config.output.copyright or ""
+    if footer_text:
+        footer = Footer(
+            text=footer_text,
+            font_max_size=setup.header_dims.copyright_font_size,
+            color=palette.text_color,
+            max_height=_footer_max_height(setup, section_title=section_title),
+            use_system_fonts=setup.use_system_fonts,
+        )
+        children.extend(
+            [
+                Spacer(height=setup.bottom_inset),
+                Align(footer, width=content_w, horizontal="end"),
+            ]
+        )
+
+    return Column(children, align="start")
+
+
+def _make_drawing(setup: _ImageSetup, content: Component) -> draw.Drawing:
+    """Create the SVG ``Drawing`` for ``content`` and paint it.
+
+    Sets the displayed width to ``setup.display_w`` and exposes the
+    natural canvas via ``viewBox`` so the requested ``--width`` is
+    honoured while content scales proportionally.
+    """
+    canvas_w = content.size.width
+    canvas_h = content.size.height
+    display_w = setup.display_w
+    display_h = canvas_h * (display_w / canvas_w) if canvas_w else canvas_h
+
+    d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+
+    if not setup.use_system_fonts:
+        for font in Font:
+            d.append_css(font.css_style)
+
+    content.draw_at(d, Point(0, 0))
+    return d
+
+
+def _render_section_image(
+    setup: _ImageSetup,
+    *,
+    body: Component,
+    section_title: str,
+    section_color: str,
+    section_count: int,
+    content_w: float,
+) -> draw.Drawing:
+    """Wrap ``body`` in the standard chrome and produce the SVG drawing.
+
+    The image is one ``_CanvasFrame`` wrapping a ``Padding`` of the
+    Column[header, stripe, body, footer] block, where padding is
+    asymmetric (``setup.padding`` on top/sides, ``setup.bottom_inset``
+    on the bottom) to match the previous positional layout.
+    """
+    column = _build_image_body(
+        setup=setup,
+        body=body,
+        section_title=section_title,
+        section_color=section_color,
+        section_count=section_count,
+        content_w=content_w,
+    )
+    padded = Padding(
+        column,
+        top=setup.padding,
+        right=setup.padding,
+        left=setup.padding,
+        bottom=setup.bottom_inset,
+    )
+    image = _CanvasFrame(content=padded, setup=setup)
+    return _make_drawing(setup, image)
+
+
+# ---------------------------------------------------------------------------
 # Macros image
 # ---------------------------------------------------------------------------
 
@@ -306,6 +480,52 @@ def _macro_natural_widths(macros: list, geom: _LegendGeometry) -> list[float]:
     return widths
 
 
+@Composable
+def _MacrosBody(
+    *,
+    macros: list,
+    accent_fill: str,
+    accent_line: str,
+    text_color: str,
+    geom: _LegendGeometry,
+    use_system_fonts: bool,
+    content_width: float,
+    doc_width: float,
+):
+    """Stacked macro rows with the legend's natural row-gap spacing.
+
+    Wraps the existing :func:`build_macro_row` helper so the rendered
+    pills and chips match what the overview's macro section paints.
+    Per-row height respects ``content_width`` (pills wrap to additional
+    lines when they don't fit).
+    """
+    row_heights = [macro_row_height(m, content_width, doc_width=doc_width) for m in macros]
+    total_h = sum(row_heights) + max(0, len(macros) - 1) * geom.row_gap
+    size = Size(content_width, total_h)
+
+    def draw_at(d, origin):
+        cursor = origin.y
+        for i, macro in enumerate(macros):
+            if i > 0:
+                cursor += geom.row_gap
+            d.append(
+                build_macro_row(
+                    macro,
+                    x=origin.x,
+                    y=cursor,
+                    content_width=content_width,
+                    accent_fill=accent_fill,
+                    accent_line=accent_line,
+                    text_color=text_color,
+                    use_system_fonts=use_system_fonts,
+                    doc_width=doc_width,
+                )
+            )
+            cursor += row_heights[i]
+
+    return size, draw_at
+
+
 def draw_macros_image(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
@@ -317,81 +537,41 @@ def draw_macros_image(
     geom = setup.geom
     macro_line = derive_accent_line(palette.macro_color)
 
-    initial_canvas_w = setup.initial_canvas_w
-    initial_content_w = initial_canvas_w - 2 * setup.padding
-
-    natural_widths = _macro_natural_widths(macros, geom)
-    longest_natural = max(natural_widths) if natural_widths else 0.0
+    initial_content_w = setup.initial_canvas_w - 2 * setup.padding
 
     # Lay out using the *initial* content width so wrap detection matches
     # what the user-requested canvas would normally produce. If the longest
     # natural row fits within ``initial_content_w`` no row wraps and we can
     # shrink the canvas; otherwise we keep the canvas at ``--width`` and let
     # the existing pill-wrap logic handle the overflow.
+    natural_widths = _macro_natural_widths(macros, geom)
+    longest_natural = max(natural_widths) if natural_widths else 0.0
     no_wrapping = longest_natural <= initial_content_w
-    if no_wrapping and longest_natural > 0:
-        content_w = longest_natural
-        canvas_w = content_w + 2 * setup.padding
-    else:
-        canvas_w = initial_canvas_w
-        content_w = initial_content_w
+    content_w = longest_natural if (no_wrapping and longest_natural > 0) else initial_content_w
 
-    stripe_y = setup.padding + _header_layout_height(setup) + geom.title_rule_offset * 0.5
-    body_y = stripe_y + _stripe_height(geom) + geom.title_baseline_offset
-
-    if macros:
-        rows_h = sum(
-            macro_row_height(m, content_w, doc_width=setup.initial_canvas_w) for m in macros
+    body: Component = (
+        _MacrosBody(
+            macros=macros,
+            accent_fill=palette.macro_color,
+            accent_line=macro_line,
+            text_color=palette.text_color,
+            geom=geom,
+            use_system_fonts=setup.use_system_fonts,
+            content_width=content_w,
+            doc_width=setup.initial_canvas_w,
         )
-        rows_h += max(0, len(macros) - 1) * geom.row_gap
-    else:
-        rows_h = 0.0
-
-    macros_section_title = "MACROS"
-    footer_h = footer_layout_height(
-        setup.config.output.copyright or "",
-        setup.header_dims.copyright_font_size,
-        max_height=_footer_max_height(setup, section_title=macros_section_title),
-    )
-    canvas_h = body_y + rows_h + setup.bottom_inset
-    if footer_h > 0:
-        canvas_h += footer_h + setup.bottom_inset
-
-    d = _build_drawing(setup, canvas_w, canvas_h)
-    _append_header(d, setup, canvas_w)
-
-    _draw_section_title(
-        d,
-        macros_section_title,
-        setup.padding,
-        stripe_y,
-        content_w,
-        macro_line,
-        count=len(macros),
-        geom=geom,
+        if macros
+        else Spacer()
     )
 
-    cursor = body_y
-    for i, macro in enumerate(macros):
-        if i > 0:
-            cursor += geom.row_gap
-        d.append(
-            build_macro_row(
-                macro,
-                x=setup.padding,
-                y=cursor,
-                content_width=content_w,
-                accent_fill=palette.macro_color,
-                accent_line=macro_line,
-                text_color=palette.text_color,
-                use_system_fonts=setup.use_system_fonts,
-                doc_width=setup.initial_canvas_w,
-            )
-        )
-        cursor += macro_row_height(macro, content_w, doc_width=setup.initial_canvas_w)
-
-    _append_copyright(d, setup, canvas_w, canvas_h, section_title=macros_section_title)
-    return d
+    return _render_section_image(
+        setup,
+        body=body,
+        section_title="MACROS",
+        section_color=macro_line,
+        section_count=len(macros),
+        content_w=content_w,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -411,8 +591,6 @@ def draw_tap_dances_image(
     budget and truncates the longest names with ``"…"`` when they
     can't fit.
     """
-    from .legend_components import TapDanceTable
-
     setup = _build_setup(config, keymap)
     tap_dances = all_tap_dances(keymap.tap_dances)
     palette = setup.palette
@@ -434,41 +612,16 @@ def draw_tap_dances_image(
         max_width=initial_content_w,
     )
     content_w = min(initial_content_w, table.size.width) if tap_dances else initial_content_w
-    canvas_w = content_w + 2 * setup.padding
+    body: Component = table if tap_dances else Spacer()
 
-    stripe_y = setup.padding + _header_layout_height(setup) + geom.title_rule_offset * 0.5
-    body_top = stripe_y + _stripe_height(geom) + geom.title_baseline_offset
-    body_h = table.size.height if tap_dances else 0.0
-
-    td_section_title = "TAP-DANCE"
-    footer_h = footer_layout_height(
-        setup.config.output.copyright or "",
-        setup.header_dims.copyright_font_size,
-        max_height=_footer_max_height(setup, section_title=td_section_title),
+    return _render_section_image(
+        setup,
+        body=body,
+        section_title="TAP-DANCE",
+        section_color=td_line,
+        section_count=len(tap_dances),
+        content_w=content_w,
     )
-    canvas_h = body_top + body_h + setup.bottom_inset
-    if footer_h > 0:
-        canvas_h += footer_h + setup.bottom_inset
-
-    d = _build_drawing(setup, canvas_w, canvas_h)
-    _append_header(d, setup, canvas_w)
-
-    _draw_section_title(
-        d,
-        td_section_title,
-        setup.padding,
-        stripe_y,
-        content_w,
-        td_line,
-        count=len(tap_dances),
-        geom=geom,
-    )
-
-    if tap_dances:
-        table.draw_at(d, Point(setup.padding, body_top))
-
-    _append_copyright(d, setup, canvas_w, canvas_h, section_title=td_section_title)
-    return d
 
 
 # ---------------------------------------------------------------------------

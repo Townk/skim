@@ -562,7 +562,77 @@ def _resolve_name_column(
     return name_column_width, adjusted
 
 
+# ---------------------------------------------------------------------------
+# Section title strip (e.g. ``MACROS``, ``TAP-DANCE``)
+# ---------------------------------------------------------------------------
+
+
+@Composable
+def SectionStripe(
+    *,
+    title: str,
+    count: int,
+    width: float,
+    accent_line: str,
+    geom: _LegendGeometry,
+):
+    """Title text on the left, ``N ENTRIES`` on the right, rule line below.
+
+    The element occupies the full ``width`` so a host's column layout
+    can stretch the rule across the content area. Vertical extent
+    matches what the legacy ``_draw_section_title`` reserved —
+    ``title_rule_offset`` from the top to the rule line — so the
+    composable can drop into a Column without changing the surrounding
+    image's body offset.
+    """
+    height = geom.title_rule_offset
+    size = Size(width, height)
+
+    def draw_at(d, origin):
+        x, y = origin.x, origin.y
+        d.append(
+            draw.Text(
+                title,
+                x=x,
+                y=y + geom.title_baseline_offset,
+                font_size=geom.title_font_size,
+                font_weight="700",
+                letter_spacing=geom.title_letter_spacing,
+                text_anchor="start",
+                font_family="'Roboto', sans-serif",
+                fill=accent_line,
+            )
+        )
+        d.append(
+            draw.Text(
+                f"{count} ENTRIES",
+                x=x + width,
+                y=y + geom.title_baseline_offset,
+                font_size=geom.title_count_font_size,
+                text_anchor="end",
+                fill="#888",
+                font_weight="400",
+                letter_spacing=geom.title_count_letter_spacing,
+                font_family="'Roboto', sans-serif",
+            )
+        )
+        d.append(
+            draw.Line(
+                sx=x,
+                sy=y + geom.title_rule_offset,
+                ex=x + width,
+                ey=y + geom.title_rule_offset,
+                stroke=accent_line,
+                stroke_opacity=0.5,
+                stroke_width=geom.title_rule_stroke,
+            )
+        )
+
+    return size, draw_at
+
+
 __all__ = [
+    "SectionStripe",
     "TapDanceCell",
     "TapDanceColumnHeader",
     "TapDanceRow",
