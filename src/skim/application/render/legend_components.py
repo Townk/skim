@@ -46,19 +46,16 @@ _ELLIPSIS = "…"
 def _measure_text_width(text: str, font_size: float) -> float:
     """Rendered width of ``text`` at ``font_size`` using the FINGER_KEY font.
 
-    Goes through :class:`Label` so the measurement matches the
-    codebase's canonical text-measurement path (the same one used by
-    keymap key labels). ``Label.measure_width`` parses ``%%nf-…;``
-    symbol references and upper-cases plain text parts, both of which
-    can land in user-supplied tap-dance names. Using this utility
-    instead of a direct ``pil_font.getlength`` call also avoids
-    under-estimating glyph widths when the SVG renderer paints text
-    at a heavier weight than the bundled Roboto Regular face the
-    composables embed.
+    Goes through :meth:`Label.measure_rendered_width` — the canonical
+    "measure as painted" helper, shared with the symbol legend. That
+    path skips the upper-casing that :meth:`Label.measure_width`
+    applies for keymap key labels (which DO render in caps) and so
+    matches the mixed-case glyph run an SVG ``<text>`` element
+    actually paints for tap-dance names.
     """
     if not text:
         return 0.0
-    return Label(text, Font.FINGER_KEY, text_color="#000").measure_width(
+    return Label(text, Font.FINGER_KEY, text_color="#000").measure_rendered_width(
         int(round(max(font_size, 1.0)))
     )
 

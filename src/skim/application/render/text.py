@@ -331,6 +331,29 @@ class Label:
             width += part.measure_width(part.font.load(font_size))
         return width
 
+    def measure_rendered_width(self, font_size: int) -> float:
+        """Measure the label's width as it is actually painted in the SVG.
+
+        Differs from :meth:`measure_width` in one detail: text parts
+        are measured WITHOUT being upper-cased. ``measure_width`` is
+        intended for keymap-key labels (which the renderer paints in
+        all-caps), so ``TextPart.measure_width`` upper-cases before
+        calling ``getlength``. For free-form text — tap-dance names,
+        macro names, symbol-legend descriptions — that upper-casing
+        over-estimates the rendered run by ~20% and leaves a visible
+        gap between the text and its right-side decoration.
+
+        Symbol and separator parts measure identically in both paths.
+        """
+        width = 0.0
+        for part in self.parts:
+            font = part.font.load(font_size)
+            if isinstance(part, TextPart):
+                width += font.getlength(part.text)
+            else:
+                width += part.measure_width(font)
+        return width
+
     def size_to_fit(self, target_width: float, max_font_size: int, min_font_size: int = 1) -> int:
         """Find the largest font size that fits the label within target width.
 

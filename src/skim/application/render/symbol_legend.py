@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING
 import drawsvg as draw
 
 from skim.application.render.legend import _legend_key_label
-from skim.application.render.text import Font, Label, TextPart
+from skim.application.render.text import Font, Label
 from skim.data import KeycodeMappings, SvalboardKeymap
 from skim.domain import SEPARATOR_CHAR, SvalboardTargetKey
 
@@ -701,14 +701,9 @@ def _measure_label_width(label: str, font_size: float, min_width: float) -> floa
     ``min_width`` is the floor returned for blank/whitespace labels so the
     glyph cell never collapses below a usable extent.
     """
-    label_obj = Label(label, Font.FINGER_KEY, text_color="#000")
-    width = 0.0
-    for part in label_obj.parts:
-        font = part.font.load(font_size)
-        if isinstance(part, TextPart):
-            width += font.getlength(part.text)
-        else:
-            width += part.measure_width(font)
+    width = Label(label, Font.FINGER_KEY, text_color="#000").measure_rendered_width(
+        int(round(font_size))
+    )
     return max(width, min_width)
 
 
