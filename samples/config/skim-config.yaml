@@ -67,9 +67,9 @@ keycodes:
   - keycode: USER23
     target: LT(_FUN, MKC_BKTAB)
   - keycode: MB_ESC
-    target: MT(MOD_LALT, KC_ESC)
+    target: MT(MOD_LOPT, KC_ESC)
   - keycode: USER29
-    target: MT(MOD_LALT, KC_ESC)
+    target: MT(MOD_LOPT, KC_ESC)
   overrides:
   - keycode: MKC_BKTAB
     target: '%%nf-md-keyboard_tab_reverse;'

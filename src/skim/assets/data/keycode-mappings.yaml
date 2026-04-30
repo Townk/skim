@@ -265,18 +265,18 @@ keycodes:
   KC_RCTRL: "@@KC_LEFT_CTRL;"
   KC_LEFT_ALT: "%%nf-md-apple_keyboard_option;"
   KC_RIGHT_ALT: "@@KC_LEFT_ALT;"
-  KC_LALT: "@@KC_LEFT_ALT;"
-  KC_RALT: "@@KC_LEFT_ALT;"
-  KC_LOPT: "@@KC_LEFT_ALT;"
-  KC_ROPT: "@@KC_LEFT_ALT;"
+  KC_LALT: "⎇"
+  KC_RALT: "@@KC_LALT;"
+  KC_LOPT: "%%nf-md-apple_keyboard_option;"
+  KC_ROPT: "@@KC_LOPT;"
   KC_LEFT_GUI: "%%nf-md-apple_keyboard_command;"
   KC_RIGHT_GUI: "@@KC_LEFT_GUI;"
   KC_LGUI: "@@KC_LEFT_GUI;"
   KC_RGUI: "@@KC_LEFT_GUI;"
-  KC_LCMD: "@@KC_LEFT_GUI;"
-  KC_RCMD: "@@KC_LEFT_GUI;"
-  KC_LWIN: "@@KC_LEFT_GUI;"
-  KC_RWIN: "@@KC_LEFT_GUI;"
+  KC_LCMD: "%%nf-md-apple_keyboard_command;"
+  KC_RCMD: "@@KC_LCMD;"
+  KC_LWIN: "%%nf-md-microsoft_windows;"
+  KC_RWIN: "@@KC_LWIN;"
 
   # Command keys
   KC_PRINT_SCREEN: "%%nf-md-monitor_screenshot;"
@@ -1202,55 +1202,99 @@ symbol_legend_aliases:
   KC_RIGHT_SHIFT: KC_LEFT_SHIFT
   KC_RIGHT_ALT: KC_LEFT_ALT
   KC_RIGHT_GUI: KC_LEFT_GUI
+  KC_RCMD: KC_LCMD
+  KC_RWIN: KC_LWIN
+  KC_RALT: KC_LALT
+  KC_ROPT: KC_LOPT
+  SV_CAPS_WORD: QK_CAPS_WORD_TOGGLE
 
 symbol_descriptions:
-  Modifiers:
-    KC_LEFT_CTRL: "Ctrl"
-    KC_LEFT_SHIFT: "Shift"
-    KC_LEFT_ALT: "Alt / Option"
-    KC_LEFT_GUI: "GUI / Cmd / Win"
-
-  Lock Keys:
-    KC_CAPS_LOCK: "Caps Lock"
-    KC_SCROLL_LOCK: "Scroll Lock"
-    KC_NUM_LOC: "Num Lock"
-    KC_NUM_LOCK: "Num Lock"
-
   International:
     KC_NONUS_HASH: "Non-US hash"
     KC_NONUS_BACKSLASH: "Non-US backslash"
 
+  Modifiers:
+    KC_LEFT_CTRL: "Ctrl"
+    KC_LEFT_SHIFT: "Shift"
+    KC_LEFT_ALT: "Option / Alt "
+    KC_LEFT_GUI: "Command / Window"
+    KC_LCMD: "Command"
+    KC_LWIN: "Windows"
+    KC_LALT: "Alt"
+    KC_LOPT: "Option"
+
+  Lock Keys:
+    KC_CAPS_LOCK: "Caps Lock"
+    QK_CAPS_WORD_TOGGLE: "Caps Word"
+    KC_SCROLL_LOCK: "Scroll Lock"
+    KC_NUM_LOC: "Num Lock"
+
+  Navigation:
+    # ---- Arrow keys ----
+    KC_LEFT: "Arrow Left"
+    KC_RIGHT: "Arrow Right"
+    KC_UP: "Arrow Up"
+    KC_DOWN: "Arrow Down"
+    # ---- Navigation cluster ----
+    KC_HOME: "Home"
+    KC_END: "End"
+    KC_PAGE_UP: "Page Up"
+    KC_PAGE_DOWN: "Page Down"
+    # ---- Form navigation ----
+    KC_TAB: "Tab"
+    "LSFT(KC_TAB)": "Back Tab"
+    # ---- Common known shortcuts ----
+    "A(KC_LEFT)": "Previous word"
+    "A(KC_RIGHT)": "Next word"
+    "G(KC_LEFT)": "Beginning of line"
+    "G(KC_RIGHT)": "End of line"
+    "G(KC_UP)": "Beginning of document"
+    "G(KC_DOWN)": "End of document"
+    "G(KC_TAB)": "Next app"
+    "LSG(KC_TAB)": "Previous app"
+    "G(KC_A)": "Select all"
+    "G(KC_F)": "Find"
+    # ---- Special keys ----
+    KC_FIND: "Find"
+
+  Editing:
+    # ---- Essential editing / navigation keys ----
+    KC_ENTER: "Enter"
+    KC_ESCAPE: "Escape"
+    KC_SPACE: "Space"
+    KC_BACKSPACE: "Backspace"
+    KC_DELETE: "Delete"
+    KC_INSERT: "Insert"
+    KC_CUT: "Cut"
+    KC_COPY: "Copy"
+    KC_PASTE: "Paste"
+    KC_RETURN: "Return"
+    KC_SEPARATOR: "Numeric separator"
+    KC_AGAIN: "Redo"
+    KC_UNDO: "Undo"
+    # ---- Common known shortcuts ----
+    "A(KC_BACKSPACE)": "Delete previous word"
+    "A(KC_DELETE)": "Delete next word"
+    "G(KC_BACKSPACE)": "Delete to beginning of line"
+    "G(KC_C)": "Copy"
+    "G(KC_V)": "Paste"
+    "G(KC_X)": "Cut"
+    "G(KC_Z)": "Undo"
+    "LSG(KC_Z)": "Redo"
+
   Commands:
     # ---- System / utility ----
-    KC_PRINT_SCREEN: "Print Screen"
-    KC_PAUSE: "Pause / Break"
-    KC_APPLICATION: "Application / Menu key"
     KC_KB_POWER: "Keyboard Power"
     KC_SYSTEM_POWER: "System Power"
     KC_SYSTEM_SLEEP: "System Sleep"
     KC_SYSTEM_WAKE: "System Wake"
     KC_EXECUTE: "Execute"
-    KC_HELP: "Help"
-    KC_MENU: "Menu"
     KC_SELECT: "Select"
     KC_STOP: "Stop"
-    KC_AGAIN: "Again / Redo"
-    KC_UNDO: "Undo"
-    KC_CUT: "Cut"
-    KC_COPY: "Copy"
-    KC_PASTE: "Paste"
-    KC_FIND: "Find"
-    KC_ALTERNATE_ERASE: "Alternate Erase"
-    KC_SYSTEM_REQUEST: "System Request (SysRq)"
-    KC_CANCEL: "Cancel"
-    KC_CLEAR: "Clear"
-    KC_RETURN: "Return (numpad Enter)"
-    KC_SEPARATOR: "Separator (numpad decimal separator)"
-    KC_OUT: "Exit / Out"
-    KC_OPER: "Operator (terminal)"
-    KC_CLEAR_AGAIN: "Clear Again"
-    KC_CRSEL: "CrSel (cursor select)"
-    KC_EXSEL: "ExSel (extend selection)"
+    SV_OUTPUT_STATUS: "Output status log"
+    SV_TURBO_SCAN: "Turbo scan mode"
+
+  Browser:
     # ---- Web / browser ----
     KC_WWW_SEARCH: "Browser Search"
     KC_WWW_HOME: "Browser Home"
@@ -1259,36 +1303,26 @@ symbol_descriptions:
     KC_WWW_STOP: "Browser Stop"
     KC_WWW_REFRESH: "Browser Refresh"
     KC_WWW_FAVORITES: "Browser Favorites"
+
+  Desktop:
     # ---- OS / desktop ----
     KC_CONTROL_PANEL: "Control Panel"
     KC_ASSISTANT: "Virtual Assistant"
     KC_MISSION_CONTROL: "Mission Control"
     KC_LAUNCHPAD: "Launchpad"
+    KC_MY_COMPUTER: "My Computer"
+    KC_APPLICATION: "Menu key"
+    KC_HELP: "Help"
+    KC_MENU: "Menu"
+    KC_MAIL: "Launch Mail"
+    KC_CALCULATOR: "Launch Calculator"
+
+  Quantum:
     # ---- QMK quantum ----
-    QK_CAPS_WORD_TOGGLE: "Caps Word (auto-shift next word, then revert)"
     QK_REPEAT_KEY: "Repeat last key"
-    QK_ALT_REPEAT_KEY: "Alternate repeat of last key"
+    QK_ALT_REPEAT_KEY: "Alternate repeat"
     # ---- Function-call patterns (macOS-style word/line navigation) ----
     # Match the WHOLE keycode string (post pre-processing) for well-known combos.
-    "A(KC_LEFT)": "Previous word"
-    "A(KC_RIGHT)": "Next word"
-    "A(KC_BACKSPACE)": "Delete previous word"
-    "A(KC_DELETE)": "Delete next word"
-    "G(KC_LEFT)": "Beginning of line"
-    "G(KC_RIGHT)": "End of line"
-    "G(KC_UP)": "Beginning of document"
-    "G(KC_DOWN)": "End of document"
-    "G(KC_BACKSPACE)": "Delete to beginning of line"
-    "LSFT(KC_TAB)": "Reverse Tab (previous field)"
-    "G(KC_TAB)": "Switch app forward"
-    "LSG(KC_TAB)": "Switch app backward"
-    "G(KC_C)": "Copy"
-    "G(KC_V)": "Paste"
-    "G(KC_X)": "Cut"
-    "G(KC_Z)": "Undo"
-    "LSG(KC_Z)": "Redo"
-    "G(KC_A)": "Select all"
-    "G(KC_F)": "Find"
 
   Media Keys:
     KC_AUDIO_MUTE: "Mute"
@@ -1305,23 +1339,22 @@ symbol_descriptions:
     KC_MEDIA_EJECT: "Eject"
     KC_MEDIA_FAST_FORWARD: "Fast Forward"
     KC_MEDIA_REWIND: "Rewind"
-    KC_MAIL: "Launch Mail"
-    KC_CALCULATOR: "Launch Calculator"
-    KC_MY_COMPUTER: "My Computer"
+
+  RGB:
     KC_BRIGHTNESS_UP: "Brightness Up"
     KC_BRIGHTNESS_DOWN: "Brightness Down"
     # ---- RGB / LED underglow ----
-    QK_UNDERGLOW_TOGGLE: "Toggle RGB underglow on/off"
-    QK_UNDERGLOW_MODE_NEXT: "RGB mode — next"
-    QK_UNDERGLOW_MODE_PREVIOUS: "RGB mode — previous"
-    QK_UNDERGLOW_HUE_UP: "RGB hue — increase"
-    QK_UNDERGLOW_HUE_DOWN: "RGB hue — decrease"
-    QK_UNDERGLOW_SATURATION_UP: "RGB saturation — increase"
-    QK_UNDERGLOW_SATURATION_DOWN: "RGB saturation — decrease"
-    QK_UNDERGLOW_VALUE_UP: "RGB brightness — increase"
-    QK_UNDERGLOW_VALUE_DOWN: "RGB brightness — decrease"
-    QK_UNDERGLOW_SPEED_UP: "RGB animation speed — increase"
-    QK_UNDERGLOW_SPEED_DOWN: "RGB animation speed — decrease"
+    QK_UNDERGLOW_TOGGLE: "Toggle RGB underglow"
+    QK_UNDERGLOW_MODE_NEXT: "Next RGB mode"
+    QK_UNDERGLOW_MODE_PREVIOUS: "Previous RGB mode"
+    QK_UNDERGLOW_HUE_UP: "HSL hue up"
+    QK_UNDERGLOW_HUE_DOWN: "HSL hue down"
+    QK_UNDERGLOW_SATURATION_UP: "HSL saturation up"
+    QK_UNDERGLOW_SATURATION_DOWN: "HSL saturation down"
+    QK_UNDERGLOW_VALUE_UP: "HSL brightness up"
+    QK_UNDERGLOW_VALUE_DOWN: "HSL brightness down"
+    QK_UNDERGLOW_SPEED_UP: "RGB animation speed up"
+    QK_UNDERGLOW_SPEED_DOWN: "RGB animation speed down"
 
   Mouse:
     QK_MOUSE_BUTTON_1: "Left mouse button"
@@ -1337,56 +1370,46 @@ symbol_descriptions:
     QK_MOUSE_WHEEL_DOWN: "Scroll wheel down"
     QK_MOUSE_WHEEL_LEFT: "Scroll wheel left"
     QK_MOUSE_WHEEL_RIGHT: "Scroll wheel right"
-    QK_MOUSE_ACCELERATION_0: "Mouse speed — slow"
-    QK_MOUSE_ACCELERATION_1: "Mouse speed — medium"
-    QK_MOUSE_ACCELERATION_2: "Mouse speed — fast"
-
-  Number Pad:
-
-  Special Keys:
-    # ---- Essential editing / navigation keys ----
-    KC_ENTER: "Enter / Return"
-    KC_ESCAPE: "Escape"
-    KC_TAB: "Tab"
-    KC_SPACE: "Space"
-    KC_BACKSPACE: "Backspace (delete left)"
-    KC_DELETE: "Delete (delete right)"
-    KC_INSERT: "Insert"
-    # KC_NO is intentionally not described — blocked slots are obvious from
-    # the (empty) keymap rendering, no need to clutter the legend.
-    KC_TRANSPARENT: "Transparent (pass-through to lower layer)"
-    # ---- Arrow keys ----
-    KC_LEFT: "Arrow Left"
-    KC_RIGHT: "Arrow Right"
-    KC_UP: "Arrow Up"
-    KC_DOWN: "Arrow Down"
-    # ---- Navigation cluster ----
-    KC_HOME: "Home (beginning of line)"
-    KC_END: "End (end of line)"
-    KC_PAGE_UP: "Page Up"
-    KC_PAGE_DOWN: "Page Down"
-
-  Svalboard:
-    SV_LEFT_DPI_INC: "Left trackball DPI — increase"
-    SV_LEFT_DPI_DEC: "Left trackball DPI — decrease"
-    SV_RIGHT_DPI_INC: "Right trackball DPI — increase"
-    SV_RIGHT_DPI_DEC: "Right trackball DPI — decrease"
-    SV_LEFT_SCROLL_TOGGLE: "Left trackball scroll mode — toggle"
-    SV_RIGHT_SCROLL_TOGGLE: "Right trackball scroll mode — toggle"
+    QK_MOUSE_ACCELERATION_0: "Mouse speed (slow)"
+    QK_MOUSE_ACCELERATION_1: "Mouse speed (medium)"
+    QK_MOUSE_ACCELERATION_2: "Mouse speed (fast)"
+    # Svalboard specials
+    SV_LEFT_DPI_INC: "Left trackball DPI +"
+    SV_LEFT_DPI_DEC: "Left trackball DPI —"
+    SV_RIGHT_DPI_INC: "Right trackball DPI +"
+    SV_RIGHT_DPI_DEC: "Right trackball DPI —"
+    SV_LEFT_SCROLL_TOGGLE: "Left trackball scroll toggle"
+    SV_RIGHT_SCROLL_TOGGLE: "Right trackball scroll toggle"
     SV_RECALIBRATE_POINTER: "Recalibrate pointer sensor"
     SV_MH_CHANGE_TIMEOUTS: "Change mouse-hold timeouts"
-    SV_CAPS_WORD: "Caps Word toggle"
     SV_AXIS_SCROLL_LOCK: "Lock scroll to one axis"
-    SV_TOGGLE_23_67: "Toggle between layer groups 2/3 and 6/7"
-    SV_TOGGLE_45_67: "Toggle between layer groups 4/5 and 6/7"
-    SV_SNIPER_2: "Sniper mode — precision 2"
-    SV_SNIPER_3: "Sniper mode — precision 3"
-    SV_SNIPER_5: "Sniper mode — precision 5"
-    SV_SCROLL_HOLD: "Hold to activate scroll mode"
+    SV_SNIPER_2: "Sniper precision 2"
+    SV_SNIPER_3: "Sniper precision 3"
+    SV_SNIPER_5: "Sniper precision 5"
+    SV_SCROLL_HOLD: "Hold to scroll mode"
     SV_SCROLL_TOGGLE: "Toggle scroll mode"
-    SV_OUTPUT_STATUS: "Output status log"
-    SV_TOGGLE_AUTOMOUSE: "Toggle auto-mouse layer"
-    SV_TURBO_SCAN: "Turbo scan mode"
+    SV_TOGGLE_AUTOMOUSE: "Toggle auto-mouse"
+
+  Special Keys:
+    # KC_NO is intentionally not described — blocked slots are obvious from
+    # the (empty) keymap rendering, no need to clutter the legend.
+    KC_TRANSPARENT: "Pass-through lower layer"
+    # ---- Very niche keys ----
+    KC_ALTERNATE_ERASE: "Alternate Erase"
+    KC_SYSTEM_REQUEST: "System Request"
+    KC_CANCEL: "Cancel"
+    KC_CLEAR: "Clear"
+    KC_OUT: "Exit"
+    KC_OPER: "Operator (terminal)"
+    KC_CLEAR_AGAIN: "Clear Again"
+    KC_CRSEL: "Cursor select (CrSel)"
+    KC_EXSEL: "Extend selection (ExSel)"
+    KC_PRINT_SCREEN: "Print Screen"
+    KC_PAUSE: "Pause"
+
+  Layers:
+    SV_TOGGLE_23_67: "Toggle layers 2 and 3"
+    SV_TOGGLE_45_67: "Toggle layers 4 and 5"
 
 # Description for keycode functions (used as wrappers). Keyed by the
 # function token (the part before the parenthesis). When a key is bound
@@ -1405,15 +1428,15 @@ function_descriptions:
     # Descriptions use the same placeholder syntax as macro_functions templates:
     # ``#N;`` → literal layer-arg N (rendered as ``#`` in the legend),
     # ``@N;`` → keycode arg N (rendered as ``#``), ``@@KC;`` → resolved symbol.
-    DF: "Set default layer to #0; until power down"
-    PDF: "Set permanent default layer to #0; (persists after power down)"
-    MO: "Change to layer #0; while holding"
-    LM: "Change to layer #0; while holding (with modifiers)"
-    OSL: "One-shot layer #0; (next key triggers it once)"
-    TG: "Toggle layer #0; on/off"
-    TO: "Activate layer #0; and turn off all others except base"
-    TT: "Layer #0;: momentary on hold, toggle on multi-tap"
+    DF: "Default layer to #0;"
+    PDF: "Set permanent default layer to #0;"
+    MO: "Hold to layer #0;"
+    LM: "Hold to layer #0; with $1; pressed"
+    OSL: "One-shot layer #0;"
+    TG: "Toggle layer #0;"
+    TO: "Make #0; the only active layer"
+    TT: "Hold to layer #0; / double-tap to toggle"
 
   Modifiers:
     # One-shot modifier — describes the one-shot mechanic (not tap-hold).
-    OSM: "One-shot modifier (next key gets the modifier once)"
+    OSM: "One-shot $0;"
