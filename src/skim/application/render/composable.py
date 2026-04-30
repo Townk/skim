@@ -7,9 +7,9 @@
 
 A :class:`CanvasElement` is anything with a known size that can paint
 itself at an origin in a ``drawsvg.Drawing``. The :func:`Composable`
-decorator turns a builder function returning ``(size, draw_fn)`` into a
-factory that yields :class:`CanvasElement` instances — composition is
-just calling other composables and using their elements as children.
+decorator marks a function as one that constructs a :class:`Element`
+(or a typed subclass), so composition is just calling other composables
+and using the elements they produce as children.
 
 Why this exists
 ---------------
@@ -19,35 +19,68 @@ children inline, and append shapes directly to the ``Drawing``. Every
 new image variant duplicated that same scaffolding, so a fix in one
 place often had to be re-applied in others. With composables, every
 piece of the rendered output (a label, a row, a section, the whole
-image) is a self-contained element that knows its own extent and how to
-paint itself — a parent only ever queries ``size`` and calls
+image) is a self-contained element that knows its own extent and how
+to paint itself — a parent only ever queries ``size`` and calls
 ``draw_at`` to lay it out.
 
 Authoring a composable
 ----------------------
 
-Decorate a function that returns ``(size, draw_fn)`` with
-:func:`Composable`. The body has two responsibilities:
+Decorate the function with :func:`Composable`. The body has two
+responsibilities:
 
   1. Compute the natural extent of the element from its inputs (often
      by querying the sizes of child elements).
   2. Return a closure ``(d, origin) -> None`` that paints into ``d``
      starting at ``origin`` (the element's top-left).
 
-For pure composition (where one composable simply wraps another and
-adds no new draw behaviour), a body can return the inner element's
-size and bound ``draw_at`` directly::
+For the common case the body returns a ``(size, draw_fn)`` tuple and
+the decorator wraps it into a plain :class:`Element`::
+
+    @Composable
+    def Label(text: str, font_size: float):
+        size = _measure(text, font_size)
+
+        def draw(d, origin): ...
+
+        return size, draw
+
+For pure composition (one composable simply wrapping another), the
+body can return the inner element's ``(size, draw_at)`` directly —
+``draw_at`` is a bound method whose signature matches ``DrawFn``::
 
     @Composable
     def Header(...):
         inner = Row([title, logo], gap=...)
         return inner.size, inner.draw_at
+
+When a composable needs to expose extra information beyond ``size`` /
+``draw_at`` (e.g. a thumb cluster surfacing per-indicator anchor points
+to the connector router), define a typed subclass of :class:`Element`
+and return an instance of that subclass directly::
+
+    @dataclass(frozen=True, slots=True, kw_only=True)
+    class ThumbClusterElement(Element):
+        connector_anchors: tuple[ConnectorAnchor, ...]
+
+    @Composable
+    def ThumbCluster(...) -> ThumbClusterElement:
+        size = ...
+        anchors = (...)
+        def draw(d, origin): ...
+        return ThumbClusterElement(
+            size=size, draw_fn=draw, connector_anchors=anchors,
+        )
+
+Parents that need the extra fields type the variable as the subclass;
+parents that only need ``size`` / ``draw_at`` rely on the
+:class:`CanvasElement` Protocol view automatically.
 """
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from functools import wraps
-from typing import Protocol
+from typing import ParamSpec, Protocol, TypeVar, overload
 
 import drawsvg as draw
 
@@ -97,21 +130,29 @@ class CanvasElement(Protocol):
     def draw_at(self, d: draw.Drawing, origin: Point) -> None: ...
 
 
-@dataclass(frozen=True, slots=True)
-class _Element:
-    """Concrete :class:`CanvasElement` produced by :func:`Composable`.
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Element:
+    """Concrete :class:`CanvasElement` — size + a draw closure.
 
-    The draw closure is stored as a private field; ``draw_at`` is a
-    method that defers to it. Bound-method semantics let a parent
-    composable still delegate by passing ``inner.draw_at`` straight
-    through as the ``draw_fn`` of its own return tuple.
+    The default element type produced by :func:`Composable` from a
+    ``(size, draw_fn)`` tuple. Composables that need to expose extra
+    metadata to their parents (e.g. per-indicator anchor points)
+    subclass this and return an instance of the subclass directly.
+    Subclasses should themselves be ``@dataclass(frozen=True,
+    slots=True, kw_only=True)``.
+
+    ``draw_fn`` is stored as a field but is invoked through the
+    :meth:`draw_at` method so the public surface stays consistent with
+    the :class:`CanvasElement` protocol; ``draw_at`` is a bound method
+    that callers can pass straight through as a ``DrawFn`` when a
+    parent composable simply delegates to a child.
     """
 
     size: Size
-    _draw_fn: DrawFn
+    draw_fn: DrawFn
 
     def draw_at(self, d: draw.Drawing, origin: Point) -> None:
-        self._draw_fn(d, origin)
+        self.draw_fn(d, origin)
 
 
 # ---------------------------------------------------------------------------
@@ -119,25 +160,41 @@ class _Element:
 # ---------------------------------------------------------------------------
 
 
+_P = ParamSpec("_P")
+_E = TypeVar("_E", bound=Element)
+_BuilderResult = tuple[Size, DrawFn]
+
+
+@overload
+def Composable(builder: Callable[_P, _E]) -> Callable[_P, _E]: ...
+
+
+@overload
+def Composable(builder: Callable[_P, _BuilderResult]) -> Callable[_P, Element]: ...
+
+
 def Composable(
-    builder: Callable[..., tuple[Size, DrawFn]],
-) -> Callable[..., CanvasElement]:
-    """Wrap a ``(size, draw_fn)`` builder into a ``CanvasElement`` factory.
+    builder: Callable[_P, Element | _BuilderResult],
+) -> Callable[_P, Element]:
+    """Mark a function as a composable.
 
-    The decorated function focuses on:
+    The decorated function may return either:
 
-      1. Computing its size from its inputs (and any child elements).
-      2. Returning a draw closure that paints into a Drawing at a given
-         origin.
+      * ``(size, draw_fn)`` — auto-wrapped into a plain :class:`Element`.
+      * an :class:`Element` instance (or subclass) — passed through
+        unchanged so typed subclasses keep their extra metadata.
 
-    Calling the decorated function returns a :class:`CanvasElement`
-    that can be composed with other composables.
+    Composition is just calling decorated functions and using the
+    elements they produce as children of other composables.
     """
 
     @wraps(builder)
-    def factory(*args, **kwargs) -> CanvasElement:
-        size, draw_fn = builder(*args, **kwargs)
-        return _Element(size=size, _draw_fn=draw_fn)
+    def factory(*args: _P.args, **kwargs: _P.kwargs) -> Element:
+        result = builder(*args, **kwargs)
+        if isinstance(result, Element):
+            return result
+        size, draw_fn = result
+        return Element(size=size, draw_fn=draw_fn)
 
     return factory
 
