@@ -642,6 +642,11 @@ keycodes:
 # resolve the QMK alias keycode into the combo keycodes it outputs like
 # `S(KC_1)` that is what the GUI displays when the keymap uses `KC_EXLM`.
 pre_processing:
+  # Vial writes ``0xffff`` for unconfigured slots (e.g. the double-south
+  # positions on layers that don't use them). Treat as no-op so the
+  # renderer leaves the key blank instead of printing the raw token.
+  "0xffff": "KC_NO"
+  "0xFFFF": "KC_NO"
   "LSFT(KC_GRAVE)": "KC_TILD"
   "LSFT(KC_GRV)": "KC_TILD"
   "LSFT(KC_1)": "KC_EXLM"
