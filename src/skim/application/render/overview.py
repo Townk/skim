@@ -31,6 +31,7 @@ from .connectors import (
 from .context import RenderContext
 from .geometry import AspectRatio
 from .indicators import (
+    _CIRCLE_STROKE_WIDTH_RATIO,
     _FINGER_KEY_NAMES,
     _THUMB_KEY_HEIGHT_RATIOS,
     _THUMB_KEY_NAMES,
@@ -75,11 +76,11 @@ _BADGE_FONT_SIZE_RATIO = 0.45
 _CONNECTOR_SPACING_RATIO = 0.6
 
 # Connector path stroke styling, expressed as fractions of the document width.
-# At the canonical 1600-unit width these reproduce the original 2.5/0.1/7px
-# values; at other widths the dotted pattern keeps the same visual cadence.
-_CONNECTOR_PATH_STROKE_WIDTH_RATIO = 2.5 / 1600
+# Stroke width and dash gap track each other (both 1.75× the original tuning)
+# so the dotted cadence stays legible as the canvas grows or shrinks.
+_CONNECTOR_PATH_STROKE_WIDTH_RATIO = 4.375 / 1600
 _CONNECTOR_PATH_DASH_DOT_RATIO = 0.1 / 1600
-_CONNECTOR_PATH_DASH_GAP_RATIO = 7 / 1600
+_CONNECTOR_PATH_DASH_GAP_RATIO = 12.25 / 1600
 
 # Vertical gap between the macro/TD legend and the symbol legend below it.
 _SYMBOL_LEGEND_GAP_RATIO = 24 / 1600
@@ -320,11 +321,14 @@ def _compute_thumb_indicator_rects(
             radius = circle_diameter / 2.0
             abs_cx = thumb_comp.x + indicator.circle_center_x
             abs_cy = thumb_comp.y + indicator.circle_center_y
+            # Inflate by 6× the circle's stroke width so the connector path
+            # lands well clear of the indicator's outer edge.
+            offset = 6 * config.output.layout.width * _CIRCLE_STROKE_WIDTH_RATIO
             results[id(key)] = (
-                abs_cx - radius,
-                abs_cy - radius,
-                circle_diameter,
-                circle_diameter,
+                abs_cx - radius - offset,
+                abs_cy - radius - offset,
+                circle_diameter + 2 * offset,
+                circle_diameter + 2 * offset,
             )
 
     return results
@@ -404,11 +408,14 @@ def _compute_finger_indicator_rects(
                 radius = circle_diameter / 2.0
                 abs_cx = finger_comp.x + indicator.circle_center_x
                 abs_cy = finger_comp.y + indicator.circle_center_y
+                # Inflate by 6× the circle's stroke width so the connector
+                # path lands well clear of the indicator's outer edge.
+                offset = 6 * doc_width * _CIRCLE_STROKE_WIDTH_RATIO
                 results[id(key)] = (
-                    abs_cx - radius,
-                    abs_cy - radius,
-                    circle_diameter,
-                    circle_diameter,
+                    abs_cx - radius - offset,
+                    abs_cy - radius - offset,
+                    circle_diameter + 2 * offset,
+                    circle_diameter + 2 * offset,
                 )
 
     return results
