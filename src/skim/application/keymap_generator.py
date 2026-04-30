@@ -76,6 +76,8 @@ def _get_config(
     show_symbol_legend: bool = True,
     symbol_legend_flow: str | None = None,
     title_override: str | None = None,
+    copyright_override: str | None = None,
+    double_south_override: bool = False,
     adjust_lightness: float | None = None,
     adjust_saturation: float | None = None,
 ) -> SkimConfig:
@@ -150,7 +152,19 @@ def _get_config(
         output_updates["keymap_title"] = _derive_title_from_filename(keymap_for_defaults)
 
     new_output = config.output.model_copy(update=output_updates)
-    return config.model_copy(update={"output": new_output})
+
+    if copyright_override is not None:
+        new_output = new_output.model_copy(update={"copyright": copyright_override})
+
+    keyboard_updates: dict = {}
+    if double_south_override:
+        new_features = config.keyboard.features.model_copy(update={"double_south": True})
+        keyboard_updates["features"] = new_features
+
+    config_updates: dict = {"output": new_output}
+    if keyboard_updates:
+        config_updates["keyboard"] = config.keyboard.model_copy(update=keyboard_updates)
+    return config.model_copy(update=config_updates)
 
 
 def _get_input_keymap(inputs: InputFiles, config: SkimConfig) -> SvalboardKeymap[str]:
@@ -206,6 +220,8 @@ def generate_keymap(
     show_symbol_legend: bool = True,
     symbol_legend_flow: str | None = None,
     title: str | None = None,
+    copyright_text: str | None = None,
+    double_south: bool = False,
     adjust_lightness: float | None = None,
     adjust_saturation: float | None = None,
 ) -> None:
@@ -244,6 +260,8 @@ def generate_keymap(
         show_symbol_legend=show_symbol_legend,
         symbol_legend_flow=symbol_legend_flow,
         title_override=title,
+        copyright_override=copyright_text,
+        double_south_override=double_south,
         adjust_lightness=adjust_lightness,
         adjust_saturation=adjust_saturation,
     )

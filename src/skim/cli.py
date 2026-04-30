@@ -243,6 +243,21 @@ def doctor() -> None:
     help="Override the overview keymap title (output.keymap_title).",
 )
 @click.option(
+    "--copyright",
+    "-r",
+    "copyright_text",
+    type=str,
+    default=None,
+    help="Override the copyright notice (output.copyright).",
+)
+@click.option(
+    "--double-south",
+    "-d",
+    is_flag=True,
+    default=False,
+    help="Force the double-south keyboard feature on (keyboard.features.double_south).",
+)
+@click.option(
     "--adjust-lightness",
     "-L",
     type=float,
@@ -275,6 +290,8 @@ def generate(
     no_symbols: bool,
     symbol_legend_flow: str | None,
     title: str | None,
+    copyright_text: str | None,
+    double_south: bool,
     adjust_lightness: float | None,
     adjust_saturation: float | None,
     stdin_marker: str | None,
@@ -318,6 +335,8 @@ def generate(
             show_symbol_legend=not no_symbols,
             symbol_legend_flow=symbol_legend_flow,
             title=title,
+            copyright_text=copyright_text,
+            double_south=double_south,
             adjust_lightness=adjust_lightness,
             adjust_saturation=adjust_saturation,
         )
@@ -376,6 +395,13 @@ def generate(
 @click.option("--title", "-t", type=str, help="Set the keymap title (output.keymap_title).")
 @click.option("--copyright", "-r", type=str, help="Set the copyright notice (output.copyright).")
 @click.option(
+    "--double-south",
+    "-d",
+    is_flag=True,
+    default=False,
+    help="Enable the double-south keyboard feature (keyboard.features.double_south).",
+)
+@click.option(
     "--layer-count",
     "-n",
     type=int,
@@ -394,6 +420,7 @@ def configure(
     adjust_saturation: float | None,
     title: str | None,
     copyright: str | None,
+    double_south: bool,
     layer_count: int | None,
 ) -> None:
     """Generate or edit a configuration file.
@@ -412,7 +439,7 @@ def configure(
     from skim.application.config_generator import ConfigGenerator
 
     # No flags at all: show help
-    has_config_overrides = title is not None or copyright is not None
+    has_config_overrides = title is not None or copyright is not None or double_south
     if not interactive and not keymap and not has_config_overrides:
         click.echo(ctx.get_help())
         return
@@ -428,6 +455,10 @@ def configure(
                 config_data["output"]["keymap_title"] = title
             if copyright is not None:
                 config_data["output"]["copyright"] = copyright
+            if double_south:
+                config_data.setdefault("keyboard", {}).setdefault("features", {})[
+                    "double_south"
+                ] = True
             if layer_count is not None:
                 _apply_layer_count(config_data, layer_count)
             content = yaml.dump(config_data, sort_keys=False, default_flow_style=False)
@@ -489,6 +520,10 @@ def configure(
                     config_data["output"]["keymap_title"] = title
                 if copyright is not None:
                     config_data["output"]["copyright"] = copyright
+                if double_south:
+                    config_data.setdefault("keyboard", {}).setdefault("features", {})[
+                        "double_south"
+                    ] = True
                 if layer_count is not None:
                     _apply_layer_count(config_data, layer_count)
                 launch_tui(
