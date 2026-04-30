@@ -40,11 +40,12 @@ from skim.domain import SvalboardTargetKey
 
 from .footer import append_footer, footer_layout_height
 from .header import HeaderRenderResult, append_header, header_layout_height
+from .layout import KeymapLayoutMetrics
 from .legend import (
-    _LegendGeometry,
     _draw_section_title,
     _flatten_macro_pills,
     _layout_pill_lines,
+    _LegendGeometry,
     _td_name_column_width,
     all_macros,
     all_tap_dances,
@@ -53,7 +54,6 @@ from .legend import (
     build_tap_dance_row,
     macro_row_height,
 )
-from .layout import KeymapLayoutMetrics
 from .overview import HeaderDims, compute_header_dims
 from .overview_layout import _outer_padding
 from .styling import derive_accent_line
@@ -510,10 +510,7 @@ def draw_special_keys_image(
     target_content_w = canvas_w - 2 * setup.padding
     col_gap = geom.column_gap
 
-    if macros and tap_dances:
-        col_w = (target_content_w - col_gap) / 2
-    else:
-        col_w = target_content_w
+    col_w = (target_content_w - col_gap) / 2 if macros and tap_dances else target_content_w
 
     name_col_w = _td_name_column_width(geom, tap_dances)
 

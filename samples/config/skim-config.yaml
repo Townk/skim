@@ -76,11 +76,11 @@ keycodes:
   - keycode: CKC_SMSFT
     target: '%%nf-md-brain; @@KC_LEFT_SHIFT;'
   - keycode: MKC_APPWIN
-    target: '@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_DOWN;'
+    target: '%%nf-md-view_dashboard_outline;'
   - keycode: MKC_DKTN
-    target: '@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_RIGHT;'
+    target: '%%nf-md-monitor;%%nf-cod-triangle_right;'
   - keycode: MKC_DKTP
-    target: '@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_LEFT;'
+    target: '%%nf-cod-triangle_left;%%nf-md-monitor;'
   - keycode: MKC_SHDKT
     target: '%%nf-md-monitor;'
   - keycode: MKC_SHNOT
@@ -111,6 +111,27 @@ keycodes:
     target: '@@MB_CTL;'
   - keycode: KC_ESC
     target: "\u238B\_ESC"
+  symbol_legend_aliases:
+    CKC_BSPC: KC_BSPC
+    CKC_TAB: KC_TAB
+    MB_SFT: KC_BTN1
+    MB_ALT: KC_BTN2
+    MB_GUI: KC_BTN3
+    MB_CTL: KC_BTN4
+    MB_ESC: KC_ESC
+  symbol_descriptions:
+    Modifiers:
+      CKC_SMSFT: Smart shift
+    Navigation:
+      MKC_BKTAB: Shift tab
+    Desktop:
+      MKC_APPWIN: Show app windows
+      MKC_DKTN: Next space
+      MKC_DKTP: Previous space
+      MKC_SHDKT: Show desktop
+      MKC_SHNOT: Show notifications
+      MKC_SPFND: Spotlight search
+
 output:
   layout:
     width: 1600.0

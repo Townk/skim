@@ -1212,6 +1212,9 @@ symbol_legend_aliases:
   KC_RALT: KC_LALT
   KC_ROPT: KC_LOPT
   SV_CAPS_WORD: QK_CAPS_WORD_TOGGLE
+  "A(KC_RGHT)": "A(KC_RIGHT)"
+  "C(KC_RGHT)": "C(KC_RIGHT)"
+  "G(KC_RGHT)": "G(KC_RIGHT)"
 
 symbol_descriptions:
   International:

@@ -214,6 +214,59 @@ class TestCollectUsedDescriptions:
         # No "Left Alt" entry from recursion
         assert not any(e.description == "Left Alt" for e in entries)
 
+    def test_collect_function_call_pattern_via_legend_alias(self):
+        """A function-call spelled differently from its canonical form
+        resolves to the canonical entry via ``symbol_legend_aliases``.
+
+        Mirrors the bundled bridge from ``A(KC_RGHT)`` to ``A(KC_RIGHT)``:
+        the keymap-side spelling has no description on its own, but the
+        alias map redirects the lookup so the canonical entry's description
+        ("Next word") is what shows up in the legend.
+        """
+        from skim.application.render.symbol_legend import collect_used_descriptions
+
+        mappings: dict = {
+            "keycodes": {
+                "KC_RGHT": "→",
+                "KC_RIGHT": "→",
+                "KC_LEFT_ALT": "%%nf-md-apple_keyboard_option;",
+            },
+            "pre_processing": {},
+            "macro_functions": {
+                "A": "@@KC_LEFT_ALT; @0;",
+            },
+            "modifier_union": {},
+            "symbol_descriptions": {
+                "A(KC_RIGHT)": "Next word",
+            },
+            "function_descriptions": {},
+            "symbol_legend_aliases": {
+                "A(KC_RGHT)": "A(KC_RIGHT)",
+            },
+        }
+        entries = collect_used_descriptions(["A(KC_RGHT)"], None, mappings)
+        assert len(entries) == 1
+        assert entries[0].description == "Next word"
+        # Sort key uses the canonical form so spellings dedupe together.
+        assert entries[0].sort_key == "A(KC_RIGHT)"
+
+    def test_collect_function_call_alias_dedupes_with_canonical(self):
+        """``A(KC_RGHT)`` and ``A(KC_RIGHT)`` collapse into a single entry."""
+        from skim.application.render.symbol_legend import collect_used_descriptions
+
+        mappings: dict = {
+            "keycodes": {"KC_RGHT": "→", "KC_RIGHT": "→"},
+            "pre_processing": {},
+            "macro_functions": {"A": "@0;"},
+            "modifier_union": {},
+            "symbol_descriptions": {"A(KC_RIGHT)": "Next word"},
+            "function_descriptions": {},
+            "symbol_legend_aliases": {"A(KC_RGHT)": "A(KC_RIGHT)"},
+        }
+        entries = collect_used_descriptions(["A(KC_RGHT)", "A(KC_RIGHT)"], None, mappings)
+        assert len(entries) == 1
+        assert entries[0].sort_key == "A(KC_RIGHT)"
+
     def test_collect_function_call_no_pattern_recurses(self):
         """A function-call NOT in symbol_descriptions falls back to
         function_descriptions + recursion into args."""
@@ -490,8 +543,8 @@ def _flow_digit_positions(group) -> dict[int, tuple[float, float]]:
 def _legend_width_for_n_cols(n_cols: int, entries: list) -> float:
     """Return a content_width that results in exactly ``n_cols`` columns."""
     from skim.application.render.symbol_legend import (
-        _SymbolLegendGeometry,
         _measure_label_width,
+        _SymbolLegendGeometry,
     )
 
     geom = _SymbolLegendGeometry.for_doc_width(1600.0)

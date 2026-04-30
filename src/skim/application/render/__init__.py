@@ -18,8 +18,6 @@ import logging
 
 import drawsvg as draw
 
-logger = logging.getLogger(__name__)
-
 from skim.assets import ASSETS
 from skim.data import (
     KeycodeMappings,
@@ -55,6 +53,8 @@ from .symbol_legend import (
     symbol_legend_height,
 )
 from .text import Font, FontSubsetter, FontUsageAnalyzer, Label
+
+logger = logging.getLogger(__name__)
 
 # Vertical gap between the macro/TD legend block and the symbol legend block,
 # expressed as a fraction of the document width.

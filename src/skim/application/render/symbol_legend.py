@@ -434,16 +434,22 @@ def _collect_raw(
         # --- Check the WHOLE keycode against symbol_descriptions first ---
         # This handles both atomic matches AND function-call patterns like
         # "A(KC_LEFT)" that are listed verbatim in symbol_descriptions.
-        if keycode in symbol_desc:
-            desc = symbol_desc[keycode]
+        # Apply the legend-alias redirect before the lookup so spellings
+        # that share a canonical form — atomic L/R variants (e.g.
+        # ``KC_RIGHT_CTRL`` → ``KC_LEFT_CTRL``) and function-call variants
+        # like ``A(KC_RGHT)`` → ``A(KC_RIGHT)`` — both resolve to the
+        # canonical entry's description and dedupe under one sort key.
+        effective_keycode = legend_aliases.get(keycode, keycode)
+        if effective_keycode in symbol_desc:
+            desc = symbol_desc[effective_keycode]
             display = _resolve_display_label(keycode, keycodes_dict, macro_functions)
-            sort_k = keycode
+            sort_k = effective_keycode
             if sort_k not in out:
                 out[sort_k] = SymbolLegendEntry(
                     display_label=display,
                     description=desc,
                     sort_key=sort_k,
-                    category=symbol_cats.get(keycode, ""),
+                    category=symbol_cats.get(effective_keycode, ""),
                 )
             continue  # Do NOT recurse — one entry for the whole pattern
 
@@ -670,7 +676,7 @@ class _SymbolLegendGeometry:
     rule_stroke_width: float
 
     @classmethod
-    def for_doc_width(cls, doc_width: float) -> "_SymbolLegendGeometry":
+    def for_doc_width(cls, doc_width: float) -> _SymbolLegendGeometry:
         return cls(
             header_height=doc_width * _SYMBOL_HEADER_HEIGHT_RATIO,
             entry_row_height=doc_width * _ENTRY_ROW_HEIGHT_RATIO,
