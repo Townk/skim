@@ -38,6 +38,7 @@ import drawsvg as draw
 from skim.data import Palette, SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTargetKey
 
+from .composable import Point
 from .footer import append_footer, footer_layout_height
 from .header import HeaderRenderResult, append_header, header_layout_height
 from .layout import KeymapLayoutMetrics
@@ -404,29 +405,40 @@ def draw_tap_dances_image(
 ) -> draw.Drawing:
     """Render the standalone tap-dances image.
 
-    The table renders at its natural 1.5× width and the canvas shrinks
-    horizontally to wrap it — variant cells are NOT stretched.
+    Builds the table via the :func:`TapDanceTable` composable with the
+    canvas content width as the budget — the table either snugly wraps
+    its content (and the canvas shrinks to match) or stretches to the
+    budget and truncates the longest names with ``"…"`` when they
+    can't fit.
     """
+    from .legend_components import TapDanceTable
+
     setup = _build_setup(config, keymap)
     tap_dances = all_tap_dances(keymap.tap_dances)
     palette = setup.palette
     geom = setup.geom
     td_line = derive_accent_line(palette.tap_dance_color)
 
-    name_col_w = _td_name_column_width(geom, tap_dances)
-    table_w = geom.tag_w + name_col_w + geom.row_content_indent_gap + 4 * geom.td_cell_w
-
     initial_content_w = setup.initial_canvas_w - 2 * setup.padding
-    # Shrink the canvas to wrap the table when there's slack; never grow
-    # past the user-requested width.
-    content_w = min(initial_content_w, table_w)
+
+    # Build the table component first so we can shrink the canvas to
+    # match it. ``max_width`` caps the table at the canvas budget;
+    # when names would overflow the cap they're auto-truncated.
+    table = TapDanceTable(
+        tap_dances=tap_dances,
+        accent_fill=palette.tap_dance_color,
+        accent_line=td_line,
+        text_color=palette.text_color,
+        geom=geom,
+        use_system_fonts=setup.use_system_fonts,
+        max_width=initial_content_w,
+    )
+    content_w = min(initial_content_w, table.size.width) if tap_dances else initial_content_w
     canvas_w = content_w + 2 * setup.padding
 
     stripe_y = setup.padding + _header_layout_height(setup) + geom.title_rule_offset * 0.5
     body_top = stripe_y + _stripe_height(geom) + geom.title_baseline_offset
-
-    rows_h = len(tap_dances) * (geom.td_row_height + geom.td_row_gap) if tap_dances else 0.0
-    body_h = (geom.td_header_height + rows_h) if tap_dances else 0.0
+    body_h = table.size.height if tap_dances else 0.0
 
     td_section_title = "TAP-DANCE"
     footer_h = footer_layout_height(
@@ -453,32 +465,7 @@ def draw_tap_dances_image(
     )
 
     if tap_dances:
-        d.append(
-            build_tap_dance_column_header(
-                x=setup.padding,
-                y=body_top + geom.title_baseline_offset,
-                text_color=palette.text_color,
-                name_column_width=name_col_w,
-                doc_width=setup.initial_canvas_w,
-            )
-        )
-        cursor = body_top + geom.td_header_height
-        for td in tap_dances:
-            d.append(
-                build_tap_dance_row(
-                    td,
-                    x=setup.padding,
-                    y=cursor + geom.td_row_height / 2,
-                    column_width=content_w,
-                    accent_fill=palette.tap_dance_color,
-                    accent_line=td_line,
-                    text_color=palette.text_color,
-                    use_system_fonts=setup.use_system_fonts,
-                    name_column_width=name_col_w,
-                    doc_width=setup.initial_canvas_w,
-                )
-            )
-            cursor += geom.td_row_height + geom.td_row_gap
+        table.draw_at(d, Point(setup.padding, body_top))
 
     _append_copyright(d, setup, canvas_w, canvas_h, section_title=td_section_title)
     return d

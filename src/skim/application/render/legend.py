@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 
 import drawsvg as draw
 
+from skim.application.render.composable import Point
 from skim.application.render.styling import derive_accent_line
 from skim.application.render.text import Font, Label, TextPart
 from skim.data import Palette, SvalboardLayout
@@ -831,71 +832,6 @@ def tap_dance_section_height(
     return geom.td_header_height + len(tap_dances) * (geom.td_row_height + geom.td_row_gap)
 
 
-def _tap_dance_cell(
-    x: float,
-    y: float,
-    content: SvalboardTargetKey | None,
-    text_color: str,
-    geom: _LegendGeometry,
-    use_system_fonts: bool = False,
-    inner_width: float | None = None,
-) -> draw.Group:
-    """Render one of the four variant cells (TAP, HOLD, DOUBLE-TAP, TAP&HOLD).
-
-    ``y`` is the vertical centre of the cell. ``x`` is the left edge of the
-    inner rect. ``inner_width`` overrides the rect width (and label centre)
-    when the caller stretches cells to fill a wider column. An empty
-    (``None``) cell renders as a dashed placeholder rect.
-    """
-    rect_w = inner_width if inner_width is not None else geom.td_cell_inner_w
-    g = draw.Group()
-    if content is None:
-        g.append(
-            draw.Rectangle(
-                x=x,
-                y=y - geom.td_cell_half_height,
-                width=rect_w,
-                height=geom.td_row_height,
-                rx=geom.pill_corner_radius,
-                ry=geom.pill_corner_radius,
-                fill="none",
-                stroke=text_color,
-                stroke_opacity=0.08,
-                stroke_dasharray="3 3",
-            )
-        )
-        return g
-    g.append(
-        draw.Rectangle(
-            x=x,
-            y=y - geom.td_cell_half_height,
-            width=rect_w,
-            height=geom.td_row_height,
-            rx=geom.pill_corner_radius,
-            ry=geom.pill_corner_radius,
-            fill="#FAFAF6",
-            stroke=text_color,
-            stroke_opacity=0.18,
-        )
-    )
-    cell_label = Label(
-        _legend_key_label(content),
-        font=Font.FINGER_KEY,
-        text_color=text_color,
-        text_anchor="middle",
-        dominant_baseline="central",
-    )
-    g.append(
-        cell_label.build_text(
-            x=x + rect_w / 2,
-            y=y + geom.tag_inner_text_baseline_offset,
-            font_size=geom.td_cell_label_font_size,
-            use_system_fonts=use_system_fonts,
-        )
-    )
-    return g
-
-
 def build_tap_dance_row(
     td: SvalboardTapDance[SvalboardTargetKey],
     x: float,
@@ -911,86 +847,31 @@ def build_tap_dance_row(
 ) -> draw.Group:
     """Render a single tap-dance row at ``(x, y)``.
 
-    ``y`` is the vertical centre of the row.
-    ``name_column_width`` is the width reserved between the chip and the
-    variant cells for the optional name. Pass ``0`` when the entire
-    tap-dance section has no titled entries to render variant cells flush
-    against the chip. Defaults to ``td_name_w - tag_w`` when omitted.
-    ``cell_width`` overrides each variant cell's column slot — used by the
-    standalone tap-dance image to stretch the table to fill the canvas.
-    The inner rect scales proportionally so it stays centred in the slot.
+    Imperative wrapper around :func:`legend_components.TapDanceRow` —
+    same SVG output, ``y`` here is still the vertical centre of the
+    row (the composable's origin is the top-left, so the wrapper
+    converts).
+
+    See :func:`legend_components.TapDanceRow` for the full layout
+    contract; ``column_width`` is unused (kept for backward
+    compatibility with the legacy signature).
     """
+    del column_width  # unused — historical part of the API
+    from .legend_components import TapDanceRow
+
     geom = _LegendGeometry.for_doc_width(doc_width)
-    if name_column_width is None:
-        name_column_width = geom.td_name_w - geom.tag_w
-    cell_w = cell_width if cell_width is not None else geom.td_cell_w
-    inner_w = geom.td_cell_inner_w * (cell_w / geom.td_cell_w)
+    component = TapDanceRow(
+        td=td,
+        accent_fill=accent_fill,
+        accent_line=accent_line,
+        text_color=text_color,
+        geom=geom,
+        use_system_fonts=use_system_fonts,
+        name_column_width=name_column_width,
+        cell_width=cell_width,
+    )
     g = draw.Group()
-    cells_offset = geom.tag_w + name_column_width
-    # Title chip — fixed-width filled tag on the left. When a name is set,
-    # an outlined rectangle extends to the right to surround the name.
-    g.append(
-        draw.Rectangle(
-            x=x,
-            y=y - geom.td_row_height / 2,
-            width=geom.tag_w,
-            height=geom.td_row_height,
-            fill=accent_fill,
-        )
-    )
-    chip_outline_width = cells_offset if td.name else geom.tag_w
-    g.append(
-        draw.Rectangle(
-            x=x,
-            y=y - geom.td_row_height / 2,
-            width=chip_outline_width,
-            height=geom.td_row_height,
-            rx=geom.pill_corner_radius,
-            ry=geom.pill_corner_radius,
-            fill="none",
-            stroke=accent_line,
-            stroke_width=geom.tag_stroke_width,
-        )
-    )
-    td_chip_label_text = f"%%nf-md-keyboard_close; {td.id}"
-    g.append(
-        Label(
-            td_chip_label_text,
-            Font.FINGER_KEY,
-            text_color="#FFF",
-            background_color=accent_fill,
-            text_anchor="middle",
-            dominant_baseline="central",
-        ).build_text(
-            x + geom.tag_w / 2,
-            y + geom.tag_inner_text_baseline_offset,
-            geom.tag_inner_font_size,
-            use_system_fonts,
-        )
-    )
-    if td.name:
-        g.append(
-            draw.Text(
-                td.name,
-                x=x + geom.tag_w + geom.tag_name_gap,
-                y=y + geom.tag_inner_text_baseline_offset,
-                font_size=geom.td_name_font_size,
-                font_weight="500",
-                text_anchor="start",
-                dominant_baseline="central",
-                font_family="'Roboto', sans-serif",
-                fill=text_color,
-            )
-        )
-    # Four variant cells.
-    cells_x = x + cells_offset + geom.row_content_indent_gap
-    for i, variant in enumerate((td.tap, td.hold, td.double_tap, td.tap_then_hold)):
-        cell_x = cells_x + i * cell_w + cell_w / 2 - inner_w / 2
-        g.append(
-            _tap_dance_cell(
-                cell_x, y, variant, text_color, geom, use_system_fonts, inner_width=inner_w
-            )
-        )
+    component.draw_at(g, Point(x, y - geom.td_row_height / 2))
     return g
 
 
@@ -1004,31 +885,24 @@ def build_tap_dance_column_header(
 ) -> draw.Group:
     """Render the once-per-column TAP/HOLD/DOUBLE-TAP/TAP&HOLD strip.
 
-    ``name_column_width`` should match the value passed to
-    :func:`build_tap_dance_row` so the column labels align with their
-    cells. Defaults to ``td_name_w - tag_w`` when omitted. ``cell_width``
-    overrides each variant cell's column slot, matching the same parameter
-    on :func:`build_tap_dance_row`.
+    Imperative wrapper around
+    :func:`legend_components.TapDanceColumnHeader`. ``y`` here is the
+    text baseline (legacy contract); the composable's origin is the
+    top of its bounding box, so the wrapper subtracts
+    ``title_baseline_offset`` to land the labels at the same y as
+    before.
     """
+    from .legend_components import TapDanceColumnHeader
+
     geom = _LegendGeometry.for_doc_width(doc_width)
-    if name_column_width is None:
-        name_column_width = geom.td_name_w - geom.tag_w
-    cell_w = cell_width if cell_width is not None else geom.td_cell_w
+    component = TapDanceColumnHeader(
+        text_color=text_color,
+        geom=geom,
+        name_column_width=name_column_width,
+        cell_width=cell_width,
+    )
     g = draw.Group()
-    cells_x = x + geom.tag_w + name_column_width + geom.row_content_indent_gap
-    for i, label in enumerate(("TAP", "HOLD", "DOUBLE-TAP", "TAP & HOLD")):
-        g.append(
-            draw.Text(
-                label,
-                x=cells_x + i * cell_w + cell_w / 2,
-                y=y,
-                font_size=geom.macro_column_label_font_size,
-                fill=text_color,
-                letter_spacing=geom.macro_column_label_letter_spacing,
-                text_anchor="middle",
-                font_family="'Roboto', sans-serif",
-            )
-        )
+    component.draw_at(g, Point(x, y - geom.title_baseline_offset))
     return g
 
 

@@ -11,14 +11,16 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from skim.application.keymap_generator import (
+    _apply_config_special_key_names,
     _get_config,
     _get_input_keymap,
     _resolve_keymap,
     generate_keymap,
 )
 from skim.data.cli import InputFiles, KeymapGeneratorTargets, OutputFiles
-from skim.data.config import LayerColor, SkimConfig
+from skim.data.config import Keycodes, LayerColor, Macro, SkimConfig, TapDance
 from skim.data.keyboard import SvalboardKeymap
+from skim.domain.domain_types import SvalboardMacro, SvalboardTapDance
 
 
 class TestGetConfig:
@@ -102,6 +104,63 @@ class TestGetConfig:
         assert len(result.keyboard.layers) > 0, (
             "keyboard.layers must be auto-populated from the keymap"
         )
+
+
+class TestApplyConfigSpecialKeyNames:
+    """Tests for ``_apply_config_special_key_names``."""
+
+    def test_returns_input_unchanged_when_config_has_no_names(self):
+        """No-op when neither macros nor tap_dances carry a name."""
+        keymap = SvalboardKeymap(
+            layers={},
+            tap_dances=(SvalboardTapDance(id="0"),),
+            macros=(SvalboardMacro(id="0"),),
+        )
+        config = Keycodes(
+            tap_dances=(TapDance(id="0", name=None),),
+            macros=(Macro(id="0", name=None),),
+        )
+        result = _apply_config_special_key_names(keymap, config)
+        assert result is keymap
+
+    def test_applies_tap_dance_name_by_id(self):
+        """Tap-dance names from the config land on the matching keymap entry."""
+        keymap = SvalboardKeymap(
+            layers={},
+            tap_dances=(SvalboardTapDance(id="0"), SvalboardTapDance(id="1")),
+        )
+        config = Keycodes(
+            tap_dances=(
+                TapDance(id="0", name="My TD"),
+                TapDance(id="1", name=None),  # leaves keymap entry's name alone
+            ),
+        )
+        result = _apply_config_special_key_names(keymap, config)
+        names = [td.name for td in result.tap_dances]
+        assert names == ["My TD", None]
+
+    def test_applies_macro_name_by_id(self):
+        """Macro names from the config land on the matching keymap entry."""
+        keymap = SvalboardKeymap(
+            layers={},
+            macros=(SvalboardMacro(id="0"), SvalboardMacro(id="3")),
+        )
+        config = Keycodes(macros=(Macro(id="3", name="Print"),))
+        result = _apply_config_special_key_names(keymap, config)
+        names_by_id = {m.id: m.name for m in result.macros}
+        assert names_by_id == {"0": None, "3": "Print"}
+
+    def test_unmatched_config_ids_are_ignored(self):
+        """Config entries that don't match any keymap entry are ignored."""
+        keymap = SvalboardKeymap(layers={}, tap_dances=(SvalboardTapDance(id="0"),))
+        config = Keycodes(
+            tap_dances=(
+                TapDance(id="0", name="Real"),
+                TapDance(id="99", name="Phantom"),
+            ),
+        )
+        result = _apply_config_special_key_names(keymap, config)
+        assert [td.name for td in result.tap_dances] == ["Real"]
 
 
 class TestGetInputKeymap:

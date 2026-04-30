@@ -29,9 +29,11 @@ Example:
 
 import logging
 import re
+from dataclasses import replace
 from pathlib import Path
 
 from skim.data import InputFiles, KeymapGeneratorTargets, OutputFiles, SkimConfig, SvalboardKeymap
+from skim.data.config import Keycodes
 from skim.domain import SvalboardTargetKey
 from skim.domain.adapters import KeycodeLabelAdapter, KeymapTargetAdapter
 
@@ -172,6 +174,36 @@ def _get_config(
     return config.model_copy(update=config_updates)
 
 
+def _apply_config_special_key_names(
+    keymap: SvalboardKeymap[str], keycodes_config: Keycodes
+) -> SvalboardKeymap[str]:
+    """Surface tap-dance / macro names from the config onto the parsed keymap.
+
+    Keymap parsers (vial / keybard / c2json) only carry the structural
+    fields of each tap-dance and macro — the human-readable ``name``
+    field on :class:`SvalboardTapDance` / :class:`SvalboardMacro` lives
+    in the user's config under ``keycodes.tap_dances`` /
+    ``keycodes.macros`` and is matched up by id at this seam, so
+    downstream renderers see the names directly without having to
+    reach back into the config.
+
+    A config entry with ``name=None`` leaves the parsed keymap entry's
+    name untouched (which is itself ``None`` from the parsers today).
+    """
+    td_names = {td.id: td.name for td in keycodes_config.tap_dances if td.name}
+    macro_names = {m.id: m.name for m in keycodes_config.macros if m.name}
+    if not td_names and not macro_names:
+        return keymap
+
+    new_tds = tuple(
+        replace(td, name=td_names[td.id]) if td.id in td_names else td for td in keymap.tap_dances
+    )
+    new_macros = tuple(
+        replace(m, name=macro_names[m.id]) if m.id in macro_names else m for m in keymap.macros
+    )
+    return replace(keymap, tap_dances=new_tds, macros=new_macros)
+
+
 def _get_input_keymap(inputs: InputFiles, config: SkimConfig) -> SvalboardKeymap[str]:
     """Load the raw keymap from the specified input source.
 
@@ -181,13 +213,16 @@ def _get_input_keymap(inputs: InputFiles, config: SkimConfig) -> SvalboardKeymap
         config: The skim configuration containing layer index mappings.
 
     Returns:
-        A SvalboardKeymap containing raw keycode strings for all layers.
+        A SvalboardKeymap containing raw keycode strings for all layers,
+        with tap-dance and macro names from ``config.keycodes`` merged
+        in by id so downstream renderers see them.
     """
     layer_indices = [layer.index for layer in config.keyboard.layers] or None
-    return load_keymap(
+    keymap = load_keymap(
         None if inputs.force_stdin_keymap else inputs.keymap,
         layer_indices=layer_indices,
     )
+    return _apply_config_special_key_names(keymap, config.keycodes)
 
 
 def _resolve_keymap(

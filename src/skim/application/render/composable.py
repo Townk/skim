@@ -81,7 +81,7 @@ parents that only need ``size`` / ``draw_at`` rely on the
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from functools import wraps
-from typing import ParamSpec, Protocol, TypeVar, overload
+from typing import Any, ParamSpec, Protocol, TypeVar, overload
 
 import drawsvg as draw
 
@@ -113,7 +113,27 @@ class Point:
         return Point(self.x + dx, self.y + dy)
 
 
-DrawFn = Callable[[draw.Drawing, Point], None]
+class _DrawTarget(Protocol):
+    """Anything composables can paint into — i.e. anything with ``.append``.
+
+    ``drawsvg.Drawing`` and ``drawsvg.Group`` both qualify (their
+    ``append`` signatures are compatible) but they don't share a common
+    ancestor in drawsvg, so we use a structural Protocol instead of a
+    Union to keep the relationship implicit.
+
+    The parameter name and ``Any`` element type are chosen to match
+    drawsvg's actual ``Drawing.append`` / ``Group.append`` signatures
+    so pyright accepts both as structurally satisfying this Protocol —
+    Protocol parameters are contravariant (a stricter element type
+    here would reject the more permissive real implementations) and
+    pyright also checks parameter names for positional-or-keyword
+    arguments.
+    """
+
+    def append(self, element: Any) -> None: ...
+
+
+DrawFn = Callable[[_DrawTarget, Point], None]
 """Signature of the closure produced by a composable's body."""
 
 
@@ -131,7 +151,7 @@ class Component(Protocol):
 
     size: Size
 
-    def draw_at(self, d: draw.Drawing, origin: Point) -> None: ...
+    def draw_at(self, d: _DrawTarget, origin: Point) -> None: ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -160,7 +180,7 @@ class BaseComponent(Component):
     size: Size
     draw_fn: DrawFn
 
-    def draw_at(self, d: draw.Drawing, origin: Point) -> None:
+    def draw_at(self, d: _DrawTarget, origin: Point) -> None:
         self.draw_fn(d, origin)
 
 
