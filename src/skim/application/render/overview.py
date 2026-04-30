@@ -17,7 +17,6 @@ from dataclasses import dataclass
 
 import drawsvg as draw
 
-from skim.assets import ASSETS
 from skim.data import KeycodeMappings, SkimConfig, SvalboardKeymap, SvalboardLayout
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
@@ -29,7 +28,9 @@ from .connectors import (
     route_overview_connectors,
 )
 from .context import RenderContext
+from .footer import append_footer
 from .geometry import AspectRatio
+from .header import append_header
 from .indicators import (
     _CIRCLE_STROKE_WIDTH_RATIO,
     _FINGER_KEY_NAMES,
@@ -850,7 +851,6 @@ def draw_overview(
     label_font = (
         Font.FINGER_KEY.get_system_font_family() if use_system_fonts else Font.FINGER_KEY.value
     )
-    title_font = Font.TITLE.get_system_font_family() if use_system_fonts else Font.TITLE.value
 
     # Use the FINAL layout's outer_key_size for badge height so the badge top
     # and bottom line up exactly with the E/W key edges. badge_dims.height was
@@ -862,20 +862,11 @@ def draw_overview(
     badge_x = padding
     badge_pad_left = _badge_padding_left(config.output.layout.width)
 
-    # Header: logo + title
-    logo_width = badge_w * _LOGO_WIDTH_TO_BADGE_WIDTH
-    logo_height = _LOGO_ASPECT_RATIO.height_from_width(logo_width)
-    d.append(
-        draw.Image(
-            x=padding,
-            y=padding,
-            width=logo_width,
-            height=logo_height,
-            path=ASSETS.logo_svalboard,
-            embed=True,
-        )
-    )
-
+    # Header: keymap title (left) + Svalboard logo (right). Goes through
+    # the shared header component so the per-layer, overview, and
+    # special-keys images all share the same layout rules — title shrinks
+    # to fit alongside the logo, and the logo height tracks the title's
+    # rendered glyph bbox.
     if config.output.keymap_title:
         title_text = config.output.keymap_title
     elif num_layers > 0:
@@ -883,17 +874,14 @@ def draw_overview(
         title_text = f"{(first_layer.variant or first_layer.name)} Layers Layout"
     else:
         title_text = "Keymap Layout"
-    d.append(
-        draw.Text(
-            title_text,
-            font_size=badge_font_size * _TITLE_FONT_SIZE_RATIO_OF_BADGE,
-            x=layout.right_column_x,
-            y=padding + logo_height / 2.0,
-            text_anchor="start",
-            dominant_baseline="central",
-            font_family=title_font,
-            fill=palette.text_color,
-        )
+    append_header(
+        d,
+        canvas_w=canvas_w,
+        padding=padding,
+        title_text=title_text,
+        title_color=palette.text_color,
+        title_font_max_size=badge_font_size * _TITLE_FONT_SIZE_RATIO_OF_BADGE,
+        use_system_fonts=use_system_fonts,
     )
 
     # LAYERS heading
@@ -1051,20 +1039,21 @@ def draw_overview(
         if sym_group is not None:
             d.append(sym_group)
 
-    # Copyright
+    # Copyright — shared footer component so per-layer, overview, and the
+    # special-keys images all stamp the copyright the same way. Bottom
+    # inset matches the overview's outer ``padding`` to preserve the
+    # historical position.
     if config.output.copyright:
-        d.append(
-            draw.Text(
-                config.output.copyright,
-                font_size=badge_font_size,
-                x=canvas_w - padding,
-                y=canvas_h - padding,
-                text_anchor="end",
-                dominant_baseline="text-after-edge",
-                font_family=label_font,
-                fill=palette.text_color,
-                opacity=0.6,
-            )
+        append_footer(
+            d,
+            canvas_w=canvas_w,
+            canvas_h=canvas_h,
+            padding=padding,
+            bottom_inset=padding,
+            text=config.output.copyright,
+            text_color=palette.text_color,
+            font_max_size=badge_font_size,
+            use_system_fonts=use_system_fonts,
         )
 
     return d

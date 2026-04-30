@@ -18,7 +18,6 @@ import logging
 
 import drawsvg as draw
 
-from skim.assets import ASSETS
 from skim.data import (
     KeycodeMappings,
     KeymapGeneratorTargets,
@@ -31,6 +30,8 @@ from skim.domain import KeyboardSide, SvalboardMacro, SvalboardTapDance, Svalboa
 
 from .components import FingerClusterComponent, ThumbClusterComponent
 from .context import RenderContext
+from .footer import append_footer, footer_layout_height
+from .header import append_header, header_layout_height
 from .layout import Boundary, KeymapLayout
 from .legend import (
     build_legend,
@@ -52,7 +53,7 @@ from .symbol_legend import (
     collect_used_descriptions,
     symbol_legend_height,
 )
-from .text import Font, FontSubsetter, FontUsageAnalyzer, Label
+from .text import FontSubsetter, FontUsageAnalyzer, Label
 
 logger = logging.getLogger(__name__)
 
@@ -88,17 +89,26 @@ def _draw_layer(
     layer_layout = KeymapLayout(config)
     m = layer_layout.metrics
 
+    # Layer title — needed both as the header text and as input to the
+    # header's "shrink-to-fit" sizing (the logo height matches the title's
+    # rendered glyph bbox, so the body offset depends on the title text).
+    layer_title = (
+        f"Layer {qmk_index}"
+        if config_position >= len(config.keyboard.layers)
+        else config.keyboard.layers[config_position].name
+    )
+    if "layer" not in layer_title.lower():
+        layer_title += " Layer"
+
     # Header strip (title + logo) sits at the top of the canvas. Sizes, outer
     # padding, and the gap below the header all come from the overview (see
     # compute_header_dims) so typography and spacing match it verbatim. The
-    # header zone reserves the height of the taller element, plus the
-    # overview's row_gap before the clusters start.
+    # header component sizes the logo to the title's rendered bbox, so the
+    # natural header height is just the title's bbox at ``title_font_size``.
     title_font_size = header_dims.title_font_size
-    logo_width = header_dims.logo_width
-    logo_height = header_dims.logo_height
     outer_padding = header_dims.outer_padding
     gap_below_header = header_dims.gap_below_header
-    header_height = max(title_font_size, logo_height)
+    header_height = header_layout_height(layer_title, title_font_size)
     # The cluster top is conventionally at margin + inset + top_indicator_offset.
     # We want it at outer_padding + header_height + gap_below_header, so add the
     # difference as header_offset.
@@ -212,7 +222,9 @@ def _draw_layer(
     )
     bottom_inset = m.inset + m.margin
     copyright_font_size = header_dims.copyright_font_size
-    copyright_extra = copyright_font_size + bottom_inset if config.output.copyright else 0.0
+    copyright_text = config.output.copyright or ""
+    copyright_h = footer_layout_height(copyright_text, copyright_font_size)
+    copyright_extra = copyright_h + bottom_inset if copyright_text else 0.0
 
     # Plan the macro/TD legend and reserve its vertical space.
     if config.output.style.show_special_keys_legend:
@@ -264,15 +276,6 @@ def _draw_layer(
     display_w = m.width
     display_h = canvas_height * (display_w / canvas_width) if canvas_width else canvas_height
     d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_width} {canvas_height}")
-
-    # Layer title
-    layer_title = (
-        f"Layer {qmk_index}"
-        if config_position >= len(config.keyboard.layers)
-        else config.keyboard.layers[config_position].name
-    )
-    if "layer" not in layer_title.lower():
-        layer_title += " Layer"
 
     labels_keymap: SvalboardLayout[Label | None] = SvalboardLayout(
         left=SplitSide(
@@ -327,45 +330,27 @@ def _draw_layer(
     d.append(left_thumb.build())
     d.append(right_thumb.build())
 
-    title_font = Font.TITLE.get_system_font_family() if use_system_fonts else Font.TITLE.value
-    d.append(
-        draw.Text(
-            layer_title,
-            font_size=title_font_size,
-            x=outer_padding,
-            y=outer_padding,
-            text_anchor="start",
-            dominant_baseline="hanging",
-            font_family=title_font,
-        )
+    append_header(
+        d,
+        canvas_w=canvas_width,
+        padding=outer_padding,
+        title_text=layer_title,
+        title_color=config.output.style.palette.text_color,
+        title_font_max_size=title_font_size,
+        use_system_fonts=use_system_fonts,
     )
 
-    logo_svg = draw.Image(
-        x=canvas_width - outer_padding - logo_width,
-        y=outer_padding,
-        width=logo_width,
-        height=logo_height,
-        path=ASSETS.logo_svalboard,
-        embed=True,
-    )
-    d.append(logo_svg)
-
-    if config.output.copyright:
-        label_font = (
-            Font.FINGER_KEY.get_system_font_family() if use_system_fonts else Font.FINGER_KEY.value
-        )
-        d.append(
-            draw.Text(
-                config.output.copyright,
-                font_size=copyright_font_size,
-                x=canvas_width - outer_padding,
-                y=canvas_height - bottom_inset,
-                text_anchor="end",
-                dominant_baseline="text-after-edge",
-                font_family=label_font,
-                fill=config.output.style.palette.text_color,
-                opacity=0.6,
-            )
+    if copyright_text:
+        append_footer(
+            d,
+            canvas_w=canvas_width,
+            canvas_h=canvas_height,
+            padding=outer_padding,
+            bottom_inset=bottom_inset,
+            text=copyright_text,
+            text_color=config.output.style.palette.text_color,
+            font_max_size=copyright_font_size,
+            use_system_fonts=use_system_fonts,
         )
 
     if legend_plan is not None and legend_top is not None:
