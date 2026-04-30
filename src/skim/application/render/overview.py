@@ -74,6 +74,20 @@ _BADGE_FONT_SIZE_RATIO = 0.45
 _CONNECTOR_SPACING_RATIO = 0.6
 
 
+def _badge_text(qmk_idx: int, name: str) -> str:
+    """Compose a layer badge label, deduping the redundant ``Layer N`` case.
+
+    When the layer name is the auto-generated ``Layer N`` placeholder
+    matching ``qmk_idx`` (case-insensitive), drop the leading number to
+    avoid badges that read ``"0 LAYER 0"``. Named layers keep the index
+    prefix (e.g. ``"0 LETTERS"``).
+    """
+    upper = name.upper()
+    if upper == f"LAYER {qmk_idx}":
+        return upper
+    return f"{qmk_idx} {upper}"
+
+
 def _compute_badge_dims(
     config: SkimConfig,
     render_layers: list[tuple[int, int]],
@@ -90,8 +104,7 @@ def _compute_badge_dims(
     # Build all badge texts to find the widest
     badge_texts: list[str] = []
     for pos, qmk_idx in render_layers:
-        name = config.keyboard.layers[pos].name.upper()
-        badge_texts.append(f"{qmk_idx} {name}")
+        badge_texts.append(_badge_text(qmk_idx, config.keyboard.layers[pos].name))
     badge_texts.append("THUMBS")
 
     # Measure text width using PIL font for accuracy.
@@ -857,7 +870,7 @@ def draw_overview(
         )
         d.append(
             draw.Text(
-                f"{qmk_idx} {layer_cfg.name.upper()}",
+                _badge_text(qmk_idx, layer_cfg.name),
                 font_size=badge_font_size,
                 x=badge_x + _BADGE_PADDING_LEFT,
                 y=badge_y + badge_h / 2.0,
