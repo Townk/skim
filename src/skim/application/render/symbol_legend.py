@@ -630,12 +630,12 @@ def collect_used_descriptions(
 
 # Geometry constants
 _SYMBOL_HEADER_HEIGHT = 28
-_ENTRY_ROW_HEIGHT = 16
-_SYMBOL_FONT_SIZE = 10
-_DESC_FONT_SIZE = 10
+_ENTRY_ROW_HEIGHT = 20
+_SYMBOL_FONT_SIZE = 13
+_DESC_FONT_SIZE = 13
 _COLUMN_GAP = 18.0
 _GLYPH_DESC_GAP = 6.0  # gap between glyph cell and description text
-_ROW_GAP = 1.0
+_ROW_GAP = 3.0
 _ENTRY_RIGHT_PAD = 6.0  # pad between adjacent column entries
 
 
