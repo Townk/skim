@@ -5,11 +5,11 @@
 
 """Composable rendering primitives for skim images.
 
-A :class:`CanvasElement` is anything with a known size that can paint
+A :class:`Component` is anything with a known size that can paint
 itself at an origin in a ``drawsvg.Drawing``. The :func:`Composable`
-decorator marks a function as one that constructs a :class:`Element`
+decorator marks a function as one that constructs a :class:`BaseComponent`
 (or a typed subclass), so composition is just calling other composables
-and using the elements they produce as children.
+and using the components they produce as children.
 
 Why this exists
 ---------------
@@ -35,7 +35,7 @@ responsibilities:
      starting at ``origin`` (the element's top-left).
 
 For the common case the body returns a ``(size, draw_fn)`` tuple and
-the decorator wraps it into a plain :class:`Element`::
+the decorator wraps it into a plain :class:`BaseComponent`::
 
     @Composable
     def Label(text: str, font_size: float):
@@ -46,7 +46,7 @@ the decorator wraps it into a plain :class:`Element`::
         return size, draw
 
 For pure composition (one composable simply wrapping another), the
-body can return the inner element's ``(size, draw_at)`` directly —
+body can return the inner component's ``(size, draw_at)`` directly —
 ``draw_at`` is a bound method whose signature matches ``DrawFn``::
 
     @Composable
@@ -56,25 +56,26 @@ body can return the inner element's ``(size, draw_at)`` directly —
 
 When a composable needs to expose extra information beyond ``size`` /
 ``draw_at`` (e.g. a thumb cluster surfacing per-indicator anchor points
-to the connector router), define a typed subclass of :class:`Element`
-and return an instance of that subclass directly::
+to the connector router), define a typed subclass of
+:class:`BaseComponent` and return an instance of that subclass
+directly::
 
     @dataclass(frozen=True, slots=True, kw_only=True)
-    class ThumbClusterElement(Element):
+    class ThumbClusterComponent(BaseComponent):
         connector_anchors: tuple[ConnectorAnchor, ...]
 
     @Composable
-    def ThumbCluster(...) -> ThumbClusterElement:
+    def ThumbCluster(...) -> ThumbClusterComponent:
         size = ...
         anchors = (...)
         def draw(d, origin): ...
-        return ThumbClusterElement(
+        return ThumbClusterComponent(
             size=size, draw_fn=draw, connector_anchors=anchors,
         )
 
 Parents that need the extra fields type the variable as the subclass;
 parents that only need ``size`` / ``draw_at`` rely on the
-:class:`CanvasElement` Protocol view automatically.
+:class:`Component` Protocol view automatically.
 """
 
 from collections.abc import Callable, Iterable
@@ -116,25 +117,28 @@ DrawFn = Callable[[draw.Drawing, Point], None]
 """Signature of the closure produced by a composable's body."""
 
 
-class CanvasElement(Protocol):
+class Component(Protocol):
     """Anything with a known size that knows how to paint itself.
 
     Composition uses these as building blocks: a parent queries
     :attr:`size` to lay out its children, then calls :meth:`draw_at`
     to paint each one.
+
+    ``size`` is declared as an attribute (not ``@property``) so plain
+    dataclass fields satisfy it without pyright flagging a method/
+    field override mismatch when subclasses define ``size: Size``.
     """
 
-    @property
-    def size(self) -> Size: ...
+    size: Size
 
     def draw_at(self, d: draw.Drawing, origin: Point) -> None: ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Element:
-    """Concrete :class:`CanvasElement` — size + a draw closure.
+class BaseComponent(Component):
+    """Canonical :class:`Component` implementation — size + a draw closure.
 
-    The default element type produced by :func:`Composable` from a
+    The default component type produced by :func:`Composable` from a
     ``(size, draw_fn)`` tuple. Composables that need to expose extra
     metadata to their parents (e.g. per-indicator anchor points)
     subclass this and return an instance of the subclass directly.
@@ -143,9 +147,14 @@ class Element:
 
     ``draw_fn`` is stored as a field but is invoked through the
     :meth:`draw_at` method so the public surface stays consistent with
-    the :class:`CanvasElement` protocol; ``draw_at`` is a bound method
+    the :class:`Component` protocol; ``draw_at`` is a bound method
     that callers can pass straight through as a ``DrawFn`` when a
     parent composable simply delegates to a child.
+
+    Inherits explicitly from :class:`Component` — pyright would accept
+    structural conformance, but the explicit relationship is
+    self-documenting and makes typed subclasses (``XComponent``)
+    automatically inherit it.
     """
 
     size: Size
@@ -161,40 +170,42 @@ class Element:
 
 
 _P = ParamSpec("_P")
-_E = TypeVar("_E", bound=Element)
+_C = TypeVar("_C", bound=BaseComponent)
 _BuilderResult = tuple[Size, DrawFn]
 
 
 @overload
-def Composable(builder: Callable[_P, _E]) -> Callable[_P, _E]: ...
+def Composable(builder: Callable[_P, _C]) -> Callable[_P, _C]: ...
 
 
 @overload
-def Composable(builder: Callable[_P, _BuilderResult]) -> Callable[_P, Element]: ...
+def Composable(builder: Callable[_P, _BuilderResult]) -> Callable[_P, BaseComponent]: ...
 
 
 def Composable(
-    builder: Callable[_P, Element | _BuilderResult],
-) -> Callable[_P, Element]:
+    builder: Callable[_P, BaseComponent | _BuilderResult],
+) -> Callable[_P, BaseComponent]:
     """Mark a function as a composable.
 
     The decorated function may return either:
 
-      * ``(size, draw_fn)`` — auto-wrapped into a plain :class:`Element`.
-      * an :class:`Element` instance (or subclass) — passed through
-        unchanged so typed subclasses keep their extra metadata.
+      * ``(size, draw_fn)`` — auto-wrapped into a plain
+        :class:`BaseComponent`.
+      * a :class:`BaseComponent` instance (or subclass) — passed
+        through unchanged so typed subclasses keep their extra
+        metadata.
 
     Composition is just calling decorated functions and using the
-    elements they produce as children of other composables.
+    components they produce as children of other composables.
     """
 
     @wraps(builder)
-    def factory(*args: _P.args, **kwargs: _P.kwargs) -> Element:
+    def factory(*args: _P.args, **kwargs: _P.kwargs) -> BaseComponent:
         result = builder(*args, **kwargs)
-        if isinstance(result, Element):
+        if isinstance(result, BaseComponent):
             return result
         size, draw_fn = result
-        return Element(size=size, draw_fn=draw_fn)
+        return BaseComponent(size=size, draw_fn=draw_fn)
 
     return factory
 
@@ -237,7 +248,7 @@ def Spacer(width: float = 0.0, height: float = 0.0):
 
 @Composable
 def Row(
-    children: Iterable[CanvasElement],
+    children: Iterable[Component],
     gap: float = 0.0,
     align: str = "center",
 ):
@@ -263,7 +274,7 @@ def Row(
 
 @Composable
 def Column(
-    children: Iterable[CanvasElement],
+    children: Iterable[Component],
     gap: float = 0.0,
     align: str = "start",
 ):
@@ -289,7 +300,7 @@ def Column(
 
 @Composable
 def Padding(
-    child: CanvasElement,
+    child: Component,
     all: float = 0.0,
     *,
     top: float | None = None,
@@ -319,7 +330,7 @@ def Padding(
 
 @Composable
 def BorderedFrame(
-    child: CanvasElement,
+    child: Component,
     *,
     border_radius: float = 0.0,
     background: str = "white",

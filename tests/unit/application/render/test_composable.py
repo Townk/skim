@@ -10,11 +10,11 @@ from dataclasses import dataclass
 import drawsvg as draw
 
 from skim.application.render.composable import (
+    BaseComponent,
     BorderedFrame,
-    CanvasElement,
     Column,
+    Component,
     Composable,
-    Element,
     Padding,
     Point,
     Row,
@@ -23,13 +23,13 @@ from skim.application.render.composable import (
 )
 
 # ---------------------------------------------------------------------------
-# Helpers — minimal fake elements for layout assertions
+# Helpers — minimal fake components for layout assertions
 # ---------------------------------------------------------------------------
 
 
 @Composable
 def _Rect(width: float, height: float, color: str = "red"):
-    """A solid-coloured rectangle used as a stand-in for real content."""
+    """A solid-coloured rectangle component used as a stand-in for real content."""
     size = Size(width, height)
 
     def draw_at(d, origin):
@@ -38,9 +38,9 @@ def _Rect(width: float, height: float, color: str = "red"):
     return size, draw_at
 
 
-def _draw_to_drawing(element: CanvasElement, origin: Point = Point(0, 0)) -> draw.Drawing:
-    d = draw.Drawing(max(element.size.width, 1), max(element.size.height, 1))
-    element.draw_at(d, origin)
+def _draw_to_drawing(component: Component, origin: Point = Point(0, 0)) -> draw.Drawing:
+    d = draw.Drawing(max(component.size.width, 1), max(component.size.height, 1))
+    component.draw_at(d, origin)
     return d
 
 
@@ -50,54 +50,54 @@ def _draw_to_drawing(element: CanvasElement, origin: Point = Point(0, 0)) -> dra
 
 
 class TestComposableDecorator:
-    def test_tuple_shortcut_wraps_to_element(self):
-        """``(size, draw_fn)`` returns are auto-wrapped into ``Element``."""
+    def test_tuple_shortcut_wraps_to_base_component(self):
+        """``(size, draw_fn)`` returns are auto-wrapped into ``BaseComponent``."""
         rect = _Rect(10.0, 20.0)
-        assert isinstance(rect, Element)
+        assert isinstance(rect, BaseComponent)
         assert rect.size == Size(10.0, 20.0)
 
-    def test_element_subclass_pass_through(self):
-        """Composables can return typed ``Element`` subclasses directly."""
+    def test_subclass_pass_through(self):
+        """Composables can return typed ``BaseComponent`` subclasses directly."""
 
         @dataclass(frozen=True, slots=True, kw_only=True)
-        class TaggedElement(Element):
+        class TaggedComponent(BaseComponent):
             tag: str
 
         @Composable
-        def Tagged(width: float, height: float, tag: str) -> TaggedElement:
+        def Tagged(width: float, height: float, tag: str) -> TaggedComponent:
             size = Size(width, height)
 
             def draw(d, origin):
                 del d, origin
 
-            return TaggedElement(size=size, draw_fn=draw, tag=tag)
+            return TaggedComponent(size=size, draw_fn=draw, tag=tag)
 
         result = Tagged(5.0, 6.0, tag="hello")
-        assert isinstance(result, TaggedElement)
+        assert isinstance(result, TaggedComponent)
         assert result.tag == "hello"
         assert result.size == Size(5.0, 6.0)
 
-    def test_element_subclass_typed_metadata_survives_composition(self):
+    def test_subclass_typed_metadata_survives_composition(self):
         """Typed metadata stays accessible after composing with primitives."""
 
         @dataclass(frozen=True, slots=True, kw_only=True)
-        class AnchoredElement(Element):
+        class AnchoredComponent(BaseComponent):
             anchor: Point
 
         @Composable
-        def Anchored(width: float, height: float) -> AnchoredElement:
+        def Anchored(width: float, height: float) -> AnchoredComponent:
             size = Size(width, height)
             anchor = Point(width / 2.0, 0.0)
 
             def draw(d, origin):
                 del d, origin
 
-            return AnchoredElement(size=size, draw_fn=draw, anchor=anchor)
+            return AnchoredComponent(size=size, draw_fn=draw, anchor=anchor)
 
-        # The metadata is read from the typed element directly.
+        # The metadata is read from the typed component directly.
         anchored = Anchored(40.0, 10.0)
         assert anchored.anchor == Point(20.0, 0.0)
-        # And the typed element is still a CanvasElement, so it composes
+        # And the typed component is still a Component, so it composes
         # with primitives like Row / Padding without extra ceremony.
         row = Row([anchored, _Rect(5.0, 5.0)])
         assert row.size.width == 45.0
