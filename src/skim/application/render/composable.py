@@ -81,9 +81,11 @@ parents that only need ``size`` / ``draw_at`` rely on the
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, ParamSpec, Protocol, TypeVar, overload
+from typing import Any, Concatenate, Generic, ParamSpec, Protocol, TypeVar, overload
 
 import drawsvg as draw
+
+from .render_context import RenderContext, current_render_context
 
 # ---------------------------------------------------------------------------
 # Core types
@@ -184,6 +186,44 @@ class BaseComponent(Component):
         self.draw_fn(d, origin)
 
 
+_M = TypeVar("_M")
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class MetricsComponent(BaseComponent, Generic[_M]):
+    """A :class:`BaseComponent` that exposes its component-specific metrics.
+
+    Convention: every "real" composable (anything beyond a layout
+    primitive) returns a :class:`MetricsComponent` parameterised by a
+    frozen dataclass that captures everything its parent might want to
+    read — resolved widths, dynamic truncation outcomes, per-row
+    heights, anchor points, etc. Layout primitives (``Spacer``,
+    ``Padding``, ``Align``, ``Row``, ``Column``, ``BorderedFrame``)
+    keep returning plain :class:`BaseComponent` since they have no
+    component-specific metrics worth exposing.
+
+    The two-tier surface keeps ``component.size`` and
+    ``component.draw_at`` on the protocol contract while
+    component-specific data lives behind a single, predictable
+    namespace::
+
+        @dataclass(frozen=True, slots=True, kw_only=True)
+        class TapDanceTableMetrics:
+            cell_width: float
+            name_column_width: float
+            ...
+
+
+        @CtxComposable
+        def TapDanceTable(ctx, *, tap_dances) -> MetricsComponent[TapDanceTableMetrics]:
+            metrics = TapDanceTableMetrics.compute(ctx, tap_dances)
+            ...
+            return MetricsComponent(size=..., draw_fn=..., metrics=metrics)
+    """
+
+    metrics: _M
+
+
 # ---------------------------------------------------------------------------
 # Decorator
 # ---------------------------------------------------------------------------
@@ -222,6 +262,67 @@ def Composable(
     @wraps(builder)
     def factory(*args: _P.args, **kwargs: _P.kwargs) -> BaseComponent:
         result = builder(*args, **kwargs)
+        if isinstance(result, BaseComponent):
+            return result
+        size, draw_fn = result
+        return BaseComponent(size=size, draw_fn=draw_fn)
+
+    return factory
+
+
+# ---------------------------------------------------------------------------
+# Context-injecting decorator (transitional name; will replace
+# :func:`Composable` after the migration completes)
+# ---------------------------------------------------------------------------
+
+
+@overload
+def CtxComposable(
+    builder: Callable[Concatenate[RenderContext, _P], _C],
+) -> Callable[_P, _C]: ...
+
+
+@overload
+def CtxComposable(
+    builder: Callable[Concatenate[RenderContext, _P], _BuilderResult],
+) -> Callable[_P, BaseComponent]: ...
+
+
+def CtxComposable(
+    builder: Callable[Concatenate[RenderContext, _P], BaseComponent | _BuilderResult],
+) -> Callable[_P, BaseComponent]:
+    """Mark a function as a context-aware composable.
+
+    The decorated function declares ``ctx: RenderContext`` as its
+    first positional parameter (the equivalent of ``self`` on a
+    method). Callers don't pass ``ctx`` explicitly — the decorator
+    pulls the active :class:`RenderContext` from the
+    :func:`using_render_context` block and prepends it to every call.
+    The :class:`Concatenate` typing on the public-facing signature
+    drops the first param so pyright sees the call shape as the
+    function MINUS the context.
+
+    The body returns the same shapes as :func:`Composable`: either a
+    ``(size, draw_fn)`` tuple (auto-wrapped into :class:`BaseComponent`)
+    or a :class:`BaseComponent` / :class:`MetricsComponent` instance
+    that's passed through unchanged.
+
+    Calling a decorated composable outside of a
+    :func:`using_render_context` block raises ``LookupError`` at the
+    very first lookup — failure is loud and obvious rather than
+    silently producing a degenerate render.
+
+    This decorator coexists with :func:`Composable` during the
+    migration: composables flip from the old shape to the new one as
+    they're migrated. Once every composable uses the new shape, this
+    decorator will be renamed to :func:`Composable` and the old one
+    will be removed.
+    """
+
+    @wraps(builder)
+    def factory(*args: _P.args, **kwargs: _P.kwargs) -> BaseComponent:
+        ctx = current_render_context()
+        result = builder(ctx, *args, **kwargs)
         if isinstance(result, BaseComponent):
             return result
         size, draw_fn = result

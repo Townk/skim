@@ -8,6 +8,7 @@
 from dataclasses import dataclass
 
 import drawsvg as draw
+import pytest
 
 from skim.application.render.composable import (
     BaseComponent,
@@ -15,11 +16,18 @@ from skim.application.render.composable import (
     Column,
     Component,
     Composable,
+    CtxComposable,
+    MetricsComponent,
     Padding,
     Point,
     Row,
     Size,
     Spacer,
+)
+from skim.application.render.render_context import (
+    RenderContext,
+    current_render_context,
+    using_render_context,
 )
 
 # ---------------------------------------------------------------------------
@@ -195,3 +203,137 @@ class TestSpacer:
         before = len(d.elements)
         s.draw_at(d, Point(0, 0))
         assert len(d.elements) == before
+
+
+# ---------------------------------------------------------------------------
+# MetricsComponent[M] — typed-subclass with a metrics namespace
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class _FakeMetrics:
+    cell_width: float
+    rows: int
+
+
+class TestMetricsComponent:
+    def test_exposes_metrics_field(self):
+        m = MetricsComponent(
+            size=Size(10, 20),
+            draw_fn=lambda _d, _o: None,
+            metrics=_FakeMetrics(cell_width=5.0, rows=3),
+        )
+        assert m.metrics.cell_width == 5.0
+        assert m.metrics.rows == 3
+        assert m.size == Size(10, 20)
+
+    def test_satisfies_component_protocol(self):
+        m: Component = MetricsComponent(
+            size=Size(10, 20),
+            draw_fn=lambda _d, _o: None,
+            metrics=_FakeMetrics(cell_width=5.0, rows=3),
+        )
+        # `Component` Protocol only sees size + draw_at; the metrics
+        # field is invisible through that view but accessible on the
+        # concrete subclass.
+        assert m.size == Size(10, 20)
+        d = draw.Drawing(50, 50)
+        m.draw_at(d, Point(0, 0))
+
+
+# ---------------------------------------------------------------------------
+# RenderContext + ContextVar plumbing
+# ---------------------------------------------------------------------------
+
+
+def _build_ctx() -> RenderContext:
+    """Construct a RenderContext for tests without going through a real config."""
+    from skim.application.render.render_context import (
+        DocumentMetrics,
+        Theme,
+    )
+    from skim.data import SkimConfig, SvalboardKeymap
+
+    config = SkimConfig()
+    keymap = SvalboardKeymap(layers={})
+    return RenderContext(
+        config=config,
+        keymap=keymap,
+        theme=Theme(palette=config.output.style.palette),
+        document_metrics=DocumentMetrics(
+            doc_width=1600.0,
+            scale=1.0,
+            margin=10.0,
+            padding=20.0,
+            bottom_inset=15.0,
+            border_radius=8.0,
+            column_gap=24.0,
+        ),
+    )
+
+
+class TestRenderContext:
+    def test_using_render_context_sets_active_ctx(self):
+        ctx = _build_ctx()
+        with using_render_context(ctx) as scoped:
+            assert scoped is ctx
+            assert current_render_context() is ctx
+
+    def test_outside_context_raises(self):
+        with pytest.raises(LookupError):
+            current_render_context()
+
+    def test_context_restored_after_block(self):
+        outer = _build_ctx()
+        inner = _build_ctx()
+        with using_render_context(outer):
+            assert current_render_context() is outer
+            with using_render_context(inner):
+                assert current_render_context() is inner
+            assert current_render_context() is outer
+
+    def test_context_cleared_after_block(self):
+        ctx = _build_ctx()
+        with using_render_context(ctx):
+            pass
+        with pytest.raises(LookupError):
+            current_render_context()
+
+
+# ---------------------------------------------------------------------------
+# @CtxComposable — context auto-injected as first positional argument
+# ---------------------------------------------------------------------------
+
+
+@CtxComposable
+def _CtxRect(ctx, *, width: float, height: float, color: str = "blue"):
+    """A composable that reads doc_width from ctx.document_metrics."""
+    # Touch ctx so the test can verify it was passed in.
+    assert ctx.document_metrics.doc_width > 0
+    size = Size(width, height)
+
+    def draw_at(d, origin):
+        d.append(draw.Rectangle(x=origin.x, y=origin.y, width=width, height=height, fill=color))
+
+    return size, draw_at
+
+
+class TestCtxComposable:
+    def test_injects_ctx_from_active_context(self):
+        ctx = _build_ctx()
+        with using_render_context(ctx):
+            rect = _CtxRect(width=10, height=20)
+        assert rect.size == Size(10.0, 20.0)
+
+    def test_raises_outside_context(self):
+        with pytest.raises(LookupError):
+            _CtxRect(width=10, height=20)
+
+    def test_caller_does_not_pass_ctx_explicitly(self):
+        """Public signature drops the ctx parameter via Concatenate typing."""
+        ctx = _build_ctx()
+        with using_render_context(ctx):
+            # Calling with positional `ctx` would be wrong; the public
+            # API only accepts the keyword args after ``ctx``.
+            rect = _CtxRect(width=5, height=5)
+        assert rect.size == Size(5.0, 5.0)
