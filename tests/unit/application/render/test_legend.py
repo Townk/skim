@@ -6,12 +6,13 @@ from skim.application.render.legend import (
     ACTION_KEY_PRE_GAP,
     ACTION_KEY_STRIP_HEIGHT,
     CONTENT_STRIP_HEIGHT,
-    HEADER_STRIP_HEIGHT,
     MACRO_COLUMN_HEADER_HEIGHT,
     SECTION_HEADER_HEIGHT,
+    TAG_H,
     TD_HEADER_HEIGHT,
     TD_ROW_GAP,
     TD_ROW_HEIGHT,
+    _LegendGeometry,
     _macro_section_height,
     all_macros,
     all_tap_dances,
@@ -27,6 +28,12 @@ from skim.application.render.legend import (
     resolve_tap_dances,
     tap_dance_section_height,
 )
+
+# Universal table spacings sourced from the same legend ratios that
+# DocumentMetrics.from_config feeds composables.
+_GEOM = _LegendGeometry.for_doc_width(1600.0)
+_TABLE_COL_SPACING = _GEOM.pill_gap
+_TABLE_HEADER_SPACING = _GEOM.row_content_indent_gap
 from skim.data import SvalboardLayout
 from skim.domain import (
     SvalboardMacro,
@@ -227,28 +234,49 @@ def test_macro_row_height_no_overflow():
         (SvalboardMacroActionKind.TAP, "A"),
         (SvalboardMacroActionKind.TAP, "B"),
     )
-    h = macro_row_height(macro, content_width=600)
+    h = macro_row_height(
+        macro,
+        content_width=600,
+        table_col_spacing=_TABLE_COL_SPACING,
+        table_header_spacing=_TABLE_HEADER_SPACING,
+    )
     assert h == CONTENT_STRIP_HEIGHT
 
 
 def test_macro_row_height_two_content_lines_when_overflow():
     long_macro = _macro_with_actions(*(((SvalboardMacroActionKind.TAP, "K"),) * 30))
     # Unnamed macro, tight column → at least 2 content lines (no header strip).
-    h = macro_row_height(long_macro, content_width=120)
+    h = macro_row_height(
+        long_macro,
+        content_width=120,
+        table_col_spacing=_TABLE_COL_SPACING,
+        table_header_spacing=_TABLE_HEADER_SPACING,
+    )
     assert h >= 2 * CONTENT_STRIP_HEIGHT
 
 
 def test_macro_row_height_no_name_omits_header_strip():
     macro = _macro_with_actions((SvalboardMacroActionKind.TAP, "A"))
-    h = macro_row_height(macro, content_width=600)
+    h = macro_row_height(
+        macro,
+        content_width=600,
+        table_col_spacing=_TABLE_COL_SPACING,
+        table_header_spacing=_TABLE_HEADER_SPACING,
+    )
     assert h == CONTENT_STRIP_HEIGHT
 
 
 def test_macro_row_height_named_includes_header_strip():
     macro = _macro_with_actions((SvalboardMacroActionKind.TAP, "A"))
     macro_named = SvalboardMacro(id=macro.id, actions=macro.actions, name="Print")
-    h = macro_row_height(macro_named, content_width=600)
-    assert h == HEADER_STRIP_HEIGHT + CONTENT_STRIP_HEIGHT
+    h = macro_row_height(
+        macro_named,
+        content_width=600,
+        table_col_spacing=_TABLE_COL_SPACING,
+        table_header_spacing=_TABLE_HEADER_SPACING,
+    )
+    # Named macros: chip (TAG_H) + table_header_spacing gap + content line(s).
+    assert h == TAG_H + _TABLE_HEADER_SPACING + CONTENT_STRIP_HEIGHT
 
 
 def test_build_macro_row_returns_group():
@@ -261,6 +289,8 @@ def test_build_macro_row_returns_group():
         accent_fill="#89511C",
         accent_line="#DD9857",
         text_color="#000",
+        table_col_spacing=_TABLE_COL_SPACING,
+        table_header_spacing=_TABLE_HEADER_SPACING,
     )
     assert isinstance(g, draw.Group)
 
@@ -433,7 +463,12 @@ def test_macro_section_height_includes_column_header(palette):
     expected = (
         SECTION_HEADER_HEIGHT
         + MACRO_COLUMN_HEADER_HEIGHT
-        + macro_row_height(macros[0], 600)
+        + macro_row_height(
+            macros[0],
+            600,
+            table_col_spacing=_TABLE_COL_SPACING,
+            table_header_spacing=_TABLE_HEADER_SPACING,
+        )
         + ACTION_KEY_PRE_GAP
         + ACTION_KEY_STRIP_HEIGHT
     )

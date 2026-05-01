@@ -246,7 +246,6 @@ def build_action_glyph(
 # default 1600-unit document width.
 _TAG_W_RATIO = 56 / 1600
 _TAG_H_RATIO = 22 / 1600
-_HEADER_STRIP_HEIGHT_RATIO = 28 / 1600
 _CONTENT_STRIP_HEIGHT_RATIO = 22 / 1600
 _ROW_GAP_RATIO = 9 / 1600
 _PILL_GAP_RATIO = 6 / 1600
@@ -334,7 +333,6 @@ class _LegendGeometry:
 
     tag_w: float
     tag_h: float
-    header_strip_height: float
     content_strip_height: float
     row_gap: float
     pill_gap: float
@@ -405,7 +403,6 @@ class _LegendGeometry:
         return cls(
             tag_w=doc_width * _TAG_W_RATIO,
             tag_h=doc_width * _TAG_H_RATIO,
-            header_strip_height=doc_width * _HEADER_STRIP_HEIGHT_RATIO,
             content_strip_height=doc_width * _CONTENT_STRIP_HEIGHT_RATIO,
             row_gap=doc_width * _ROW_GAP_RATIO,
             pill_gap=doc_width * _PILL_GAP_RATIO,
@@ -478,7 +475,6 @@ class _LegendGeometry:
 _DEFAULT_GEOM = _LegendGeometry.for_doc_width(_DEFAULT_DOC_WIDTH)
 TAG_W = _DEFAULT_GEOM.tag_w
 TAG_H = _DEFAULT_GEOM.tag_h
-HEADER_STRIP_HEIGHT = _DEFAULT_GEOM.header_strip_height
 CONTENT_STRIP_HEIGHT = _DEFAULT_GEOM.content_strip_height
 ROW_GAP = _DEFAULT_GEOM.row_gap
 PILL_GAP = _DEFAULT_GEOM.pill_gap
@@ -585,6 +581,8 @@ def _layout_pill_lines(
     pills: list[tuple[SvalboardMacroActionKind, str]],
     line_width: float,
     geom: _LegendGeometry,
+    *,
+    table_col_spacing: float,
 ) -> list[list[tuple[SvalboardMacroActionKind, str, float]]]:
     """Pack pills into lines, wrapping when the next pill would overflow.
 
@@ -594,11 +592,11 @@ def _layout_pill_lines(
     cursor = 0.0
     for kind, label in pills:
         w = _pill_width(label, geom)
-        if lines[-1] and cursor + geom.pill_gap + w > line_width:
+        if lines[-1] and cursor + table_col_spacing + w > line_width:
             lines.append([])
             cursor = 0.0
         if lines[-1]:
-            cursor += geom.pill_gap
+            cursor += table_col_spacing
         lines[-1].append((kind, label, w))
         cursor += w
     return lines
@@ -607,22 +605,27 @@ def _layout_pill_lines(
 def macro_row_height(
     macro: SvalboardMacro[SvalboardTargetKey],
     content_width: float,
+    *,
+    table_col_spacing: float,
+    table_header_spacing: float,
     doc_width: float = 1600.0,
 ) -> float:
     """Total height of one macro row.
 
-    Named macros: header strip + content lines (each pill-line is one
-    ``CONTENT_STRIP_HEIGHT`` tall).
+    Named macros: header strip (chip + ``table_header_spacing`` gap below)
+    + content lines (each pill-line is one ``CONTENT_STRIP_HEIGHT`` tall).
     Unnamed macros: just content lines — chip and first pill share the
     first line.
     """
     geom = _LegendGeometry.for_doc_width(doc_width)
     pills = _flatten_macro_pills(macro)
-    indent = geom.tag_w + geom.row_content_indent_gap
-    lines = _layout_pill_lines(pills, content_width - indent, geom)
+    indent = geom.tag_w + table_header_spacing
+    lines = _layout_pill_lines(
+        pills, content_width - indent, geom, table_col_spacing=table_col_spacing
+    )
     line_count = max(1, len(lines))
     if macro.name:
-        return geom.header_strip_height + geom.content_strip_height * line_count
+        return geom.tag_h + table_header_spacing + geom.content_strip_height * line_count
     return geom.content_strip_height * line_count
 
 
@@ -634,6 +637,9 @@ def build_macro_row(
     accent_fill: str,
     accent_line: str,
     text_color: str,
+    *,
+    table_col_spacing: float,
+    table_header_spacing: float,
     use_system_fonts: bool = False,
     doc_width: float = 1600.0,
 ) -> draw.Group:
@@ -647,7 +653,7 @@ def build_macro_row(
     geom = _LegendGeometry.for_doc_width(doc_width)
     g = draw.Group()
     chip_label_text = f"%%nf-md-script_text_play_outline; {macro.id}"
-    indent = geom.tag_w + geom.row_content_indent_gap
+    indent = geom.tag_w + table_header_spacing
 
     if macro.name:
         # Named layout — header strip (chip top-left at y) + content strip below.
@@ -701,7 +707,7 @@ def build_macro_row(
                 stroke_width=geom.tag_header_rule_stroke,
             )
         )
-        line_y = y + geom.header_strip_height
+        line_y = y + geom.tag_h + table_header_spacing
     else:
         # Unnamed layout — chip vertically centred on the first content line.
         chip_y = y + (geom.content_strip_height - geom.tag_h) / 2
@@ -737,7 +743,9 @@ def build_macro_row(
 
     # Content strip — pills with overflow wrap.
     pills = _flatten_macro_pills(macro)
-    lines = _layout_pill_lines(pills, content_width - indent, geom)
+    lines = _layout_pill_lines(
+        pills, content_width - indent, geom, table_col_spacing=table_col_spacing
+    )
     for line in lines:
         cx = x + indent
         for kind, label, w in line:
@@ -786,7 +794,7 @@ def build_macro_row(
                     use_system_fonts,
                 )
             )
-            cx += w + geom.pill_gap
+            cx += w + table_col_spacing
         line_y += geom.content_strip_height
     return g
 
@@ -951,7 +959,13 @@ def _macro_section_height(
     for i, r in enumerate(rows):
         if i > 0:
             h += geom.row_gap
-        h += macro_row_height(r, col_width, doc_width=doc_width)
+        h += macro_row_height(
+            r,
+            col_width,
+            table_col_spacing=geom.pill_gap,
+            table_header_spacing=geom.row_content_indent_gap,
+            doc_width=doc_width,
+        )
     h += geom.action_key_pre_gap + geom.action_key_strip_height
     return h
 
@@ -1137,11 +1151,19 @@ def _draw_macro_column(
                 accent_fill=accent_fill,
                 accent_line=accent_line,
                 text_color=text_color,
+                table_col_spacing=geom.pill_gap,
+                table_header_spacing=geom.row_content_indent_gap,
                 use_system_fonts=use_system_fonts,
                 doc_width=doc_width,
             )
         )
-        cursor += macro_row_height(m, col_w, doc_width=doc_width)
+        cursor += macro_row_height(
+            m,
+            col_w,
+            table_col_spacing=geom.pill_gap,
+            table_header_spacing=geom.row_content_indent_gap,
+            doc_width=doc_width,
+        )
     return cursor
 
 

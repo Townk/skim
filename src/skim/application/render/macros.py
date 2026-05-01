@@ -70,24 +70,32 @@ class MacroMetrics:
     the underlying ``_LegendGeometry``. When that helper retires,
     pill metrics will move here.
 
-    Currently delegates to ``_LegendGeometry`` so values stay aligned
-    across the codebase; the ratios can move here directly once the
-    legacy legend module retires.
+    Spacings use the universal table-spacing names — ``table_col_spacing``
+    is the gap between adjacent pills (and any other column-axis siblings),
+    ``table_header_spacing`` is the gap between a row header (chip) and the
+    row's content (pills), and ``table_row_spacing`` is the gap between
+    stacked rows. Sourced from ``DocumentMetrics`` so every table-shaped
+    composable in the image agrees on rhythm.
     """
 
     chip_width: float
-    row_gap: float
-    row_content_indent_gap: float
-    pill_gap: float
+    table_col_spacing: float
+    table_header_spacing: float
+    table_row_spacing: float
 
     @classmethod
     def for_doc_width(cls, doc_width: float) -> MacroMetrics:
+        # The legend geom owns the per-doc-width ratios for the four
+        # universal table spacings (``DocumentMetrics.from_config``
+        # also reads them). We tap them directly here so the macro
+        # composables stay aligned with every other table-shaped
+        # composable in the image without going through a config build.
         geom = _LegendGeometry.for_doc_width(doc_width)
         return cls(
             chip_width=geom.tag_w,
-            row_gap=geom.row_gap,
-            row_content_indent_gap=geom.row_content_indent_gap,
-            pill_gap=geom.pill_gap,
+            table_col_spacing=geom.pill_gap,
+            table_header_spacing=geom.row_content_indent_gap,
+            table_row_spacing=geom.td_row_gap,
         )
 
 
@@ -101,19 +109,25 @@ def macro_natural_widths(macros: list, doc_width: float) -> list[float]:
     exactly.
     """
     geom = _LegendGeometry.for_doc_width(doc_width)
-    indent = geom.tag_w + geom.row_content_indent_gap
+    metrics = MacroMetrics.for_doc_width(doc_width)
+    indent = metrics.chip_width + metrics.table_header_spacing
     widths: list[float] = []
     for macro in macros:
         pills = _flatten_macro_pills(macro)
         if not pills:
             widths.append(indent)
             continue
-        # ``_layout_pill_lines`` accounts for ``pill_gap``; querying it with
-        # an effectively unbounded width returns a single line whose total
-        # width is the natural macro row width.
-        lines = _layout_pill_lines(pills, line_width=float("inf"), geom=geom)
+        # ``_layout_pill_lines`` accounts for the col-spacing; querying it
+        # with an effectively unbounded width returns a single line whose
+        # total width is the natural macro row width.
+        lines = _layout_pill_lines(
+            pills,
+            line_width=float("inf"),
+            geom=geom,
+            table_col_spacing=metrics.table_col_spacing,
+        )
         line = lines[0]
-        line_w = sum(w for _, _, w in line) + max(0, len(line) - 1) * geom.pill_gap
+        line_w = sum(w for _, _, w in line) + max(0, len(line) - 1) * metrics.table_col_spacing
         widths.append(indent + line_w)
     return widths
 
@@ -145,15 +159,24 @@ def MacroTable(
     metrics = MacroMetrics.for_doc_width(doc_width)
     use_system_fonts = ctx.config.output.style.use_system_fonts
 
-    row_heights = [macro_row_height(m, content_width, doc_width=doc_width) for m in macros]
-    total_h = sum(row_heights) + max(0, len(macros) - 1) * metrics.row_gap
+    row_heights = [
+        macro_row_height(
+            m,
+            content_width,
+            table_col_spacing=metrics.table_col_spacing,
+            table_header_spacing=metrics.table_header_spacing,
+            doc_width=doc_width,
+        )
+        for m in macros
+    ]
+    total_h = sum(row_heights) + max(0, len(macros) - 1) * metrics.table_row_spacing
     size = Size(content_width, total_h)
 
     def draw_at(d, origin):
         cursor = origin.y
         for i, macro in enumerate(macros):
             if i > 0:
-                cursor += metrics.row_gap
+                cursor += metrics.table_row_spacing
             d.append(
                 build_macro_row(
                     macro,
@@ -163,6 +186,8 @@ def MacroTable(
                     accent_fill=accent_fill,
                     accent_line=accent_line,
                     text_color=text_color,
+                    table_col_spacing=metrics.table_col_spacing,
+                    table_header_spacing=metrics.table_header_spacing,
                     use_system_fonts=use_system_fonts,
                     doc_width=doc_width,
                 )
