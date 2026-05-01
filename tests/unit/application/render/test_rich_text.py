@@ -126,9 +126,9 @@ class TestSeparator:
                 style=_style(12.0),
             )
         # Default separator " " — width should match ``measure("foo ") + measure("bar")``.
-        expected = measure_text_width(
-            "foo ", Font.FINGER_KEY, 12.0
-        ) + measure_text_width("bar", Font.FINGER_KEY, 12.0)
+        expected = measure_text_width("foo ", Font.FINGER_KEY, 12.0) + measure_text_width(
+            "bar", Font.FINGER_KEY, 12.0
+        )
         assert abs(el.size.width - expected) < 0.5
 
     def test_empty_separator_preserves_input_spacing(self):
@@ -140,9 +140,9 @@ class TestSeparator:
                 style=_style(12.0),
                 separator="",
             )
-        expected = measure_text_width(
-            "foo", Font.FINGER_KEY, 12.0
-        ) + measure_text_width("bar", Font.FINGER_KEY, 12.0)
+        expected = measure_text_width("foo", Font.FINGER_KEY, 12.0) + measure_text_width(
+            "bar", Font.FINGER_KEY, 12.0
+        )
         assert abs(el.size.width - expected) < 0.5
 
 

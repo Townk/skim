@@ -280,8 +280,7 @@ def TapDanceCell(
         # centre — same magic offset the chip glyph and TD name use).
         label_origin = Point(
             rect_x,
-            rect_y + row_h / 2 + metrics.chip_inner_text_baseline_offset
-            - label_el.size.height / 2,
+            rect_y + row_h / 2 + metrics.chip_inner_text_baseline_offset - label_el.size.height / 2,
         )
         label_el.draw_at(d, label_origin)
 
