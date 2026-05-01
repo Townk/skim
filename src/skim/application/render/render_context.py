@@ -169,10 +169,12 @@ class DocumentMetrics:
     """Outer canvas → border gap (matches ``KeymapLayoutMetrics.margin``)."""
 
     padding: float
-    """Outer canvas → content gap (matches ``_outer_padding``)."""
+    """Outer canvas → content gap (matches ``_outer_padding``).
 
-    bottom_inset: float
-    """Bottom canvas → content gap (= ``inset + margin``)."""
+    Applied uniformly on all four sides of the document — no
+    asymmetric bottom inset. Keeps the outer breathing room
+    consistent regardless of which edge it borders.
+    """
 
     border_radius: float | None
     """Rounded-rectangle radius for the outer border, or ``None`` when off."""
@@ -194,7 +196,6 @@ class DocumentMetrics:
             doc_width=config.output.layout.width,
             margin=metrics.margin,
             padding=_outer_padding(metrics),
-            bottom_inset=metrics.inset + metrics.margin,
             border_radius=border.radius if border else None,
             column_gap=legend_geom.column_gap,
         )

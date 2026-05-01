@@ -124,16 +124,6 @@ def KeymapDocument(ctx, *, content: Component, content_padding: Padding):
 # ---------------------------------------------------------------------------
 
 
-def _document_padding(metrics) -> Padding:
-    """The standard outer-content inset used by every keymap document."""
-    return Padding(
-        top=metrics.padding,
-        right=metrics.padding,
-        left=metrics.padding,
-        bottom=metrics.bottom_inset,
-    )
-
-
 @Composable(use_context=True)
 def KeymapMacroDocument(ctx, *, macros: list, scale: float = BODY_SCALE):
     """The full standalone macros image as a single composable.
@@ -173,7 +163,7 @@ def KeymapMacroDocument(ctx, *, macros: list, scale: float = BODY_SCALE):
         if ctx.config.output.copyright:
             Footer(text=ctx.config.output.copyright, width=content_w)
 
-    return KeymapDocument(content=content, content_padding=_document_padding(metrics))
+    return KeymapDocument(content=content, content_padding=Padding(metrics.padding))
 
 
 @Composable(use_context=True)
@@ -211,7 +201,7 @@ def KeymapTapDanceDocument(ctx, *, tap_dances: list, scale: float = BODY_SCALE):
         if ctx.config.output.copyright:
             Footer(text=ctx.config.output.copyright, width=content_w)
 
-    return KeymapDocument(content=content, content_padding=_document_padding(metrics))
+    return KeymapDocument(content=content, content_padding=Padding(metrics.padding))
 
 
 @Composable(use_context=True)
@@ -290,7 +280,7 @@ def KeymapSpecialKeysDocument(
         if ctx.config.output.copyright:
             Footer(text=ctx.config.output.copyright, width=target_content_w)
 
-    return KeymapDocument(content=content, content_padding=_document_padding(metrics))
+    return KeymapDocument(content=content, content_padding=Padding(metrics.padding))
 
 
 __all__ = [
