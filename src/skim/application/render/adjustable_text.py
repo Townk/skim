@@ -73,6 +73,35 @@ class AdjustableTextMetrics:
     truncated: bool
     """True when the painted text has been ellipsized."""
 
+    baseline: float
+    """Y-offset from the bbox top to the alphabetic baseline.
+
+    The line on which ``H``, ``x``, ``a`` rest. Useful for aligning
+    decorations (an underline, a strike-through anchor) to the
+    rendered text. Same reference frame as the component's
+    :attr:`size` — add ``origin.y + baseline`` to land on the
+    baseline in the parent's coordinate space.
+    """
+
+    meanline: float
+    """Y-offset from the bbox top to the x-height (lowercase ceiling).
+
+    The line that the tops of ``x``, ``a``, ``c`` sit on. Useful
+    for aligning a sibling element (icon, chip, glyph) to the
+    visual centre of lowercase text via
+    ``(baseline + meanline) / 2``.
+    """
+
+    ascender_line: float
+    """Y-offset from the bbox top to the ascender / cap-height line.
+
+    The line that the tops of ``H``, ``b``, ``l`` reach. May be
+    negative when the rendered text contains no ascenders or
+    capitals — e.g. ``"x"`` alone has its bbox top at the meanline,
+    so the ascender line sits above ``y=0``. The bbox itself is
+    sized to the rendered text, not to the full font cell.
+    """
+
 
 # ---------------------------------------------------------------------------
 # Measurement helpers (PIL-accurate, Nerd-Font-aware via ``Label``)
@@ -103,6 +132,37 @@ def _measure_height(text: str, font: Font, font_size: float) -> float:
     pil_font = font.load(font_size)
     _, top, _, bottom = pil_font.getbbox(text)
     return float(bottom - top)
+
+
+def _reference_lines(
+    text: str, font: Font, font_size: float
+) -> tuple[float, float, float]:
+    """Return ``(baseline, meanline, ascender_line)`` y-offsets within
+    the rendered text's bbox.
+
+    All three are offsets (in SVG units at ``font_size``) from the
+    bbox top — the same reference frame as the bbox itself, so a
+    parent can add ``origin.y + baseline`` to land on the rendered
+    alphabetic baseline. The reference characters ``"x"`` (top at
+    meanline, bottom at baseline) and ``"H"`` (top at cap height /
+    ascender) are measured at the same font size and translated
+    into the rendered text's bbox-local coords by subtracting the
+    rendered text's bbox top.
+
+    Values may be negative when the reference line sits above the
+    bbox top — e.g. for a string of ``"x"`` alone, the ascender
+    line is above the rendered glyph.
+    """
+    if not text:
+        return 0.0, 0.0, 0.0
+    pil_font = font.load(font_size)
+    _, x_top, _, x_bottom = pil_font.getbbox("x")
+    _, h_top, _, _ = pil_font.getbbox("H")
+    _, text_top, _, _ = pil_font.getbbox(text)
+    baseline = float(x_bottom - text_top)
+    meanline = float(x_top - text_top)
+    ascender_line = float(h_top - text_top)
+    return baseline, meanline, ascender_line
 
 
 def _truncate_to_fit(
@@ -223,7 +283,12 @@ def AdjustableText(
             size=size,
             draw_fn=_noop,
             metrics=AdjustableTextMetrics(
-                font_size=0.0, rendered_text="", truncated=False
+                font_size=0.0,
+                rendered_text="",
+                truncated=False,
+                baseline=0.0,
+                meanline=0.0,
+                ascender_line=0.0,
             ),
         )
 
@@ -250,6 +315,9 @@ def AdjustableText(
 
     rendered_w = _measure_width(rendered_text, style.font, style.color, font_size)
     rendered_h = _measure_height(rendered_text, style.font, font_size)
+    baseline, meanline, ascender_line = _reference_lines(
+        rendered_text, style.font, font_size
+    )
     # ``max_width`` is the slot the parent allocates — when supplied,
     # the bbox occupies that full width and ``text_anchor`` controls
     # where inside the bbox the text paints. When omitted, the bbox
@@ -309,7 +377,12 @@ def AdjustableText(
         size=size,
         draw_fn=draw_at,
         metrics=AdjustableTextMetrics(
-            font_size=font_size, rendered_text=rendered_text, truncated=truncated
+            font_size=font_size,
+            rendered_text=rendered_text,
+            truncated=truncated,
+            baseline=baseline,
+            meanline=meanline,
+            ascender_line=ascender_line,
         ),
     )
 
