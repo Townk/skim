@@ -5,15 +5,19 @@
 
 """Composable building blocks for the tap-dance section.
 
-Four composables that nest:
+Five composables that nest:
 
 * :func:`TapDanceCell` — one variant slot (``TAP``, ``HOLD``,
   ``DOUBLE-TAP``, ``TAP & HOLD``).
 * :func:`TapDanceRow` — chip + optional name + four cells.
 * :func:`TapDanceColumnHeader` — the strip of column labels above
   the rows.
-* :func:`TapDanceTable` — column header + N rows; the entry point
-  used by both standalone and combined images.
+* :func:`TapDanceTable` — column header + N rows.
+* :func:`TapDanceSection` — a ``TAP-DANCE`` section title strip
+  followed by a :func:`TapDanceTable`, laid out in a Column with the
+  section's standard inter-strip / body gap. Both the standalone
+  tap-dances image and the combined special-keys image render this
+  composable directly.
 
 Plus the section's text-measurement and chip-shape helpers
 (``_truncate_with_ellipsis``, ``_filled_chip_path``,
@@ -28,8 +32,10 @@ from typing import TYPE_CHECKING
 
 import drawsvg as draw
 
-from .composable import Composable, Point, Size
+from .composable import Column, Composable, Point, Size
 from .legend import _legend_key_label, _LegendGeometry
+from .section_stripe import SectionStripe
+from .styling import derive_accent_line
 from .text import Font, Label
 
 if TYPE_CHECKING:
@@ -590,6 +596,73 @@ def _resolve_name_column(
 
 
 # ---------------------------------------------------------------------------
+# TAP-DANCE section composable
+# ---------------------------------------------------------------------------
+
+
+@Composable(use_context=True)
+def TapDanceSection(
+    ctx,
+    *,
+    tap_dances: list[SvalboardTapDance[SvalboardTargetKey]],
+    width: float | None = None,
+    scale: float = 1.0,
+    name_column_width: float | None = None,
+    max_width: float | None = None,
+):
+    """The TAP-DANCE section — :func:`SectionStripe` + :func:`TapDanceTable`.
+
+    Encapsulates the title strip, the section's accent colours
+    (derived from the theme's tap-dance palette colour) and the
+    standard inter-strip / body gap. Both the standalone tap-dances
+    image and the combined special-keys image render this composable
+    directly.
+
+    ``width`` is the section's slot width — it sets the
+    :func:`SectionStripe`'s extent (where the count text lands and
+    where the rule ends). When ``None`` (standalone-image case) the
+    stripe snugs to the table's natural width so the rule lines up
+    with the rightmost cell. When given (combined-image case) the
+    stripe spans the slot, even if the table is narrower.
+
+    ``scale`` is forwarded to the underlying :func:`TapDanceTable` so
+    the chips / cells enlarge while the section title strip stays at
+    the unscaled per-image size. ``name_column_width`` and
+    ``max_width`` pass through too so the combined image can pin a
+    fixed column and the standalone image can cap the table at the
+    canvas budget.
+    """
+    palette = ctx.theme.palette
+    accent_line = derive_accent_line(palette.tap_dance_color)
+    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
+
+    table = TapDanceTable(
+        tap_dances=tap_dances,
+        accent_fill=palette.tap_dance_color,
+        accent_line=accent_line,
+        text_color=palette.text_color,
+        scale=scale,
+        name_column_width=name_column_width,
+        max_width=max_width,
+    )
+    stripe_width = width if width is not None else table.size.width
+    inner = Column(
+        [
+            SectionStripe(
+                title="TAP-DANCE",
+                count=len(tap_dances),
+                width=stripe_width,
+                accent_line=accent_line,
+            ),
+            table,
+        ],
+        gap=2 * geom.title_baseline_offset,
+        align="start",
+    )
+    return inner.size, inner.draw_at
+
+
+# ---------------------------------------------------------------------------
 # Standalone image entry point
 # ---------------------------------------------------------------------------
 
@@ -606,41 +679,37 @@ def draw_tap_dances_image(config, keymap):
     # Local imports — avoid pulling rendering siblings at module load
     # time (and avoid a hard dep on the standalone-image stack from
     # the per-component composables).
-    from .keymap_document import BODY_SCALE, render_single_section_document
+    from .composable import Spacer
+    from .keymap_document import BODY_SCALE, render
     from .legend import all_tap_dances
     from .render_context import RenderContext, using_render_context
-    from .styling import derive_accent_line
 
     with using_render_context(RenderContext.build(config, keymap)) as ctx:
         tap_dances = all_tap_dances(keymap.tap_dances)
-        palette = ctx.theme.palette
         metrics = ctx.document_metrics
-        td_line = derive_accent_line(palette.tap_dance_color)
 
         initial_content_w = metrics.doc_width - 2 * metrics.padding
 
-        # Build the table component first so we can shrink the canvas to
-        # match it. ``max_width`` caps the table at the canvas budget;
-        # when names would overflow the cap they're auto-truncated.
-        table = TapDanceTable(
-            tap_dances=tap_dances,
-            accent_fill=palette.tap_dance_color,
-            accent_line=td_line,
-            text_color=palette.text_color,
-            scale=BODY_SCALE,
-            max_width=initial_content_w,
-        )
-        from .composable import Spacer
+        # Build the section first so we can shrink the canvas to match it.
+        # ``max_width`` caps the table at the canvas budget; when names
+        # would overflow the cap they're auto-truncated. Omitting
+        # ``width`` lets the section snug-fit the table's natural extent.
+        if tap_dances:
+            section = TapDanceSection(
+                tap_dances=tap_dances,
+                scale=BODY_SCALE,
+                max_width=initial_content_w,
+            )
+            content_w = min(initial_content_w, section.size.width)
+            body = section
+        else:
+            content_w = initial_content_w
+            body = Spacer()
 
-        content_w = min(initial_content_w, table.size.width) if tap_dances else initial_content_w
-        body = table if tap_dances else Spacer()
-
-        return render_single_section_document(
+        return render(
             body=body,
-            section_title="TAP-DANCE",
-            section_color=td_line,
-            section_count=len(tap_dances),
             content_w=content_w,
+            footer_section_title="TAP-DANCE",
         )
 
 
@@ -648,6 +717,7 @@ __all__ = [
     "TapDanceCell",
     "TapDanceColumnHeader",
     "TapDanceRow",
+    "TapDanceSection",
     "TapDanceTable",
     "draw_tap_dances_image",
 ]

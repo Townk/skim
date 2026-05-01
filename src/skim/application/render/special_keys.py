@@ -22,12 +22,11 @@ from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTargetKey
 
 from .composable import Component, Row, Spacer
-from .keymap_document import BODY_SCALE, LabeledSection, render
+from .keymap_document import BODY_SCALE, render
 from .legend import _LegendGeometry, _td_name_column_width, all_macros, all_tap_dances
-from .macros import MacroList
+from .macros import MacroSection
 from .render_context import RenderContext, using_render_context
-from .styling import derive_accent_line
-from .tap_dance import TapDanceTable
+from .tap_dance import TapDanceSection
 
 
 def draw_special_keys_image(
@@ -42,14 +41,11 @@ def draw_special_keys_image(
     with using_render_context(RenderContext.build(config, keymap)) as ctx:
         macros = all_macros(keymap.macros)
         tap_dances = all_tap_dances(keymap.tap_dances)
-        palette = ctx.theme.palette
         metrics = ctx.document_metrics
         # Bodies render at ``BODY_SCALE``; the static name-column
         # width and the cross-column gap are computed against the
         # scaled geom so the two columns keep their proportions.
         scaled_geom = _LegendGeometry.for_doc_width(metrics.doc_width * BODY_SCALE)
-        macro_line = derive_accent_line(palette.macro_color)
-        td_line = derive_accent_line(palette.tap_dance_color)
 
         target_content_w = metrics.doc_width - 2 * metrics.padding
         col_gap = scaled_geom.column_gap
@@ -58,40 +54,23 @@ def draw_special_keys_image(
         sections: list[Component] = []
         if macros:
             sections.append(
-                LabeledSection(
-                    title="MACROS",
-                    color=macro_line,
-                    count=len(macros),
+                MacroSection(
+                    macros=macros,
+                    content_width=col_w,
                     width=col_w,
-                    body=MacroList(
-                        macros=macros,
-                        accent_fill=palette.macro_color,
-                        accent_line=macro_line,
-                        text_color=palette.text_color,
-                        content_width=col_w,
-                        scale=BODY_SCALE,
-                    ),
+                    scale=BODY_SCALE,
                 )
             )
         if tap_dances:
             # Pin the legacy ``_td_name_column_width`` so the combined image
             # keeps its overview-style fixed name column instead of the
             # dynamic sizing the standalone tap-dances image uses.
-            td_table = TapDanceTable(
-                tap_dances=tap_dances,
-                accent_fill=palette.tap_dance_color,
-                accent_line=td_line,
-                text_color=palette.text_color,
-                scale=BODY_SCALE,
-                name_column_width=_td_name_column_width(scaled_geom, tap_dances),
-            )
             sections.append(
-                LabeledSection(
-                    title="TAP-DANCE",
-                    color=td_line,
-                    count=len(tap_dances),
+                TapDanceSection(
+                    tap_dances=tap_dances,
                     width=col_w,
-                    body=td_table,
+                    scale=BODY_SCALE,
+                    name_column_width=_td_name_column_width(scaled_geom, tap_dances),
                 )
             )
 

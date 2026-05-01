@@ -7,24 +7,21 @@
 
 A "keymap document" is the outermost rendered artifact of any
 standalone special-keys image: the rounded background border, the
-header (keymap title + Svalboard logo), zero-or-more labeled body
-sections, and an optional copyright footer.
+header (keymap title + Svalboard logo), the body, and an optional
+copyright footer.
 
 This module owns:
 
 * :func:`KeymapDocument` — the outermost composable (rounded border
   around the rest of the content).
-* :func:`LabeledSection` — a section with a :func:`SectionStripe`
-  header and a body Component beneath. Used directly by standalone
-  images and stacked side-by-side via Row in the combined image.
 * :func:`render` — assembles header + body + (optional) footer into
   a :class:`KeymapDocument` and produces the final ``draw.Drawing``.
-* :func:`render_single_section_document` — convenience wrapper for
-  the standalone macros / tap-dances images that always render
-  exactly one labeled section.
 * :data:`BODY_SCALE` — the per-image body magnification multiplier
   used by the standalone images so chips and cells read at a visual
   weight comparable to layout keys.
+
+Per-section composables (``MacroSection``, ``TapDanceSection``) are
+in their own modules; this one only owns the chrome that wraps them.
 """
 
 from __future__ import annotations
@@ -44,7 +41,6 @@ from .footer import Footer
 from .header import Header
 from .legend import _LegendGeometry
 from .render_context import current_render_context
-from .section_stripe import SectionStripe
 from .text import Font
 
 # The body of a standalone special-keys image (the macro / tap-dance
@@ -146,43 +142,8 @@ def KeymapDocument(ctx, *, content: Component):
 
 
 # ---------------------------------------------------------------------------
-# Labeled section + render helpers
+# Render helpers
 # ---------------------------------------------------------------------------
-
-
-@Composable(use_context=True)
-def LabeledSection(
-    ctx,
-    *,
-    title: str,
-    color: str,
-    count: int,
-    width: float,
-    body: Component,
-):
-    """One section as a Column: ``SectionStripe`` + spacer + body.
-
-    The same shape both standalone images and the combined image use —
-    the combined image places two of these side-by-side in a Row.
-    Reads the inter-strip / body gap from the unscaled section-stripe
-    geometry so the spacing matches what every image variant uses.
-
-    Returns the inner :func:`Column`'s ``size`` and ``draw_at`` so the
-    composable framework's pattern-recognition is consistent — every
-    "real" component is decorated; only pure helpers (``render``,
-    ``_make_drawing``, footer-cap measurement) stay as plain
-    functions.
-    """
-    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
-    inner = Column(
-        [
-            SectionStripe(title=title, count=count, width=width, accent_line=color),
-            Spacer(height=2 * geom.title_baseline_offset),
-            body,
-        ],
-        align="start",
-    )
-    return inner.size, inner.draw_at
 
 
 def render(
@@ -194,11 +155,12 @@ def render(
     """Wrap ``body`` in the standard chrome (header / footer / border).
 
     ``body`` is whatever sits between the header and the footer — for
-    standalone images that's a single :func:`LabeledSection`; for the
-    combined image it's a Row of two labeled sections separated by a
-    Spacer. ``footer_section_title`` controls the per-image footer
-    height cap (see :func:`_footer_max_height`); pass ``None`` for
-    images without a single dominant section title.
+    standalone images that's a single :func:`MacroSection` or
+    :func:`TapDanceSection`; for the combined image it's a Row of
+    one of each separated by a Spacer. ``footer_section_title``
+    controls the per-image footer height cap (see
+    :func:`_footer_max_height`); pass ``None`` for images without a
+    single dominant section title.
     """
     ctx = current_render_context()
     metrics = ctx.document_metrics
@@ -264,38 +226,8 @@ def _make_drawing(content: Component) -> draw.Drawing:
     return d
 
 
-def render_single_section_document(
-    *,
-    body: Component,
-    section_title: str,
-    section_color: str,
-    section_count: int,
-    content_w: float,
-) -> draw.Drawing:
-    """Wrap a single section's ``body`` in the standard chrome.
-
-    Convenience wrapper around :func:`render` that builds the
-    one-section :func:`LabeledSection` for callers that only ever need
-    a single :class:`SectionStripe`.
-    """
-    section = LabeledSection(
-        title=section_title,
-        color=section_color,
-        count=section_count,
-        width=content_w,
-        body=body,
-    )
-    return render(
-        body=section,
-        content_w=content_w,
-        footer_section_title=section_title,
-    )
-
-
 __all__ = [
     "BODY_SCALE",
     "KeymapDocument",
-    "LabeledSection",
     "render",
-    "render_single_section_document",
 ]

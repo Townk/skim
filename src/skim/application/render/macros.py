@@ -5,9 +5,12 @@
 
 """The macros section composables and standalone-image entry point.
 
-* :func:`MacroList` — stacked macro rows wrapping the legacy
+* :func:`MacroTable` — stacked macro rows wrapping the legacy
   ``build_macro_row`` so the rendered pills/chips match what the
   overview's macro section paints.
+* :func:`MacroSection` — a ``MACROS`` :func:`SectionStripe` followed
+  by a :func:`MacroTable`, laid out in a Column with the section's
+  standard inter-strip / body gap.
 * :func:`macro_natural_widths` — pre-pass helper that reports each
   macro's natural single-line width; used by image entry points to
   decide whether to shrink the canvas to wrap content.
@@ -22,8 +25,8 @@ import drawsvg as draw
 from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTargetKey
 
-from .composable import Component, Composable, Size, Spacer
-from .keymap_document import BODY_SCALE, render_single_section_document
+from .composable import Column, Component, Composable, Size, Spacer
+from .keymap_document import BODY_SCALE, render
 from .legend import (
     _flatten_macro_pills,
     _layout_pill_lines,
@@ -33,6 +36,7 @@ from .legend import (
     macro_row_height,
 )
 from .render_context import RenderContext, using_render_context
+from .section_stripe import SectionStripe
 from .styling import derive_accent_line
 
 
@@ -56,7 +60,7 @@ def macro_natural_widths(macros: list, geom: _LegendGeometry) -> list[float]:
 
 
 @Composable(use_context=True)
-def MacroList(
+def MacroTable(
     ctx,
     *,
     macros: list,
@@ -109,6 +113,63 @@ def MacroList(
     return size, draw_at
 
 
+@Composable(use_context=True)
+def MacroSection(
+    ctx,
+    *,
+    macros: list,
+    content_width: float,
+    width: float | None = None,
+    scale: float = 1.0,
+):
+    """The MACROS section — :func:`SectionStripe` + :func:`MacroTable`.
+
+    Encapsulates the title strip, the section's accent colours
+    (derived from the theme's macro palette colour) and the standard
+    inter-strip / body gap. Both the standalone macros image and the
+    combined special-keys image render this composable directly.
+
+    ``content_width`` is the layout budget passed to :func:`MacroTable`
+    for pill-wrap detection — pills wrap to extra lines when they
+    don't fit. ``width`` sets the :func:`SectionStripe`'s extent
+    (where the count text lands and where the rule ends); when
+    ``None`` (standalone-image case) the stripe snugs to the table's
+    actual width, when given (combined-image case) it spans the slot.
+
+    ``scale`` is forwarded to the underlying :func:`MacroTable` so the
+    chips / pills enlarge while the section title strip stays at the
+    unscaled per-image size.
+    """
+    palette = ctx.theme.palette
+    accent_fill = palette.macro_color
+    accent_line = derive_accent_line(accent_fill)
+    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
+
+    table = MacroTable(
+        macros=macros,
+        accent_fill=accent_fill,
+        accent_line=accent_line,
+        text_color=palette.text_color,
+        content_width=content_width,
+        scale=scale,
+    )
+    stripe_width = width if width is not None else table.size.width
+    inner = Column(
+        [
+            SectionStripe(
+                title="MACROS",
+                count=len(macros),
+                width=stripe_width,
+                accent_line=accent_line,
+            ),
+            table,
+        ],
+        gap=2 * geom.title_baseline_offset,
+        align="start",
+    )
+    return inner.size, inner.draw_at
+
+
 def draw_macros_image(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
@@ -116,13 +177,11 @@ def draw_macros_image(
     """Render the standalone macros image."""
     with using_render_context(RenderContext.build(config, keymap)) as ctx:
         macros = all_macros(keymap.macros)
-        palette = ctx.theme.palette
         metrics = ctx.document_metrics
         # The MACROS body renders at ``BODY_SCALE``; use the scaled
         # geom for wrap-detection so ``macro_natural_widths`` reports
         # the same widths the body composable will lay out against.
         scaled_geom = _LegendGeometry.for_doc_width(metrics.doc_width * BODY_SCALE)
-        macro_line = derive_accent_line(palette.macro_color)
 
         initial_content_w = metrics.doc_width - 2 * metrics.padding
 
@@ -137,29 +196,21 @@ def draw_macros_image(
         content_w = longest_natural if (no_wrapping and longest_natural > 0) else initial_content_w
 
         body: Component = (
-            MacroList(
-                macros=macros,
-                accent_fill=palette.macro_color,
-                accent_line=macro_line,
-                text_color=palette.text_color,
-                content_width=content_w,
-                scale=BODY_SCALE,
-            )
+            MacroSection(macros=macros, content_width=content_w, scale=BODY_SCALE)
             if macros
             else Spacer()
         )
 
-        return render_single_section_document(
+        return render(
             body=body,
-            section_title="MACROS",
-            section_color=macro_line,
-            section_count=len(macros),
             content_w=content_w,
+            footer_section_title="MACROS",
         )
 
 
 __all__ = [
-    "MacroList",
+    "MacroSection",
+    "MacroTable",
     "draw_macros_image",
     "macro_natural_widths",
 ]
