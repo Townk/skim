@@ -385,12 +385,17 @@ def AdjustableText(
             fill=style.color,
             opacity=opacity,
         )
-        # ``letter_spacing`` is set as a post-build attribute since
-        # ``drawsvg.Text`` doesn't accept it positionally; passing it
-        # via ``args`` keeps the constructor call type-clean while
-        # still emitting the attribute on the SVG element.
+        # ``letter_spacing`` and non-default ``font-weight`` are set as
+        # post-build attributes since ``drawsvg.Text`` doesn't accept
+        # them positionally; passing them via ``args`` keeps the
+        # constructor call type-clean while still emitting the
+        # attribute on the SVG element. Weight is omitted when it
+        # matches the default 400 so we don't bloat the SVG with a
+        # redundant attribute on every text element.
         if letter_spacing is not None:
             text_el.args["letter_spacing"] = letter_spacing
+        if style.weight != 400:
+            text_el.args["font-weight"] = str(style.weight)
         d.append(text_el)
 
     return MetricsComponent(

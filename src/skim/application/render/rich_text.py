@@ -207,6 +207,7 @@ def parse_into_spans(text: str, default_style: TextStyle) -> list[TextSpan]:
     symbols_style = TextStyle(
         font=Font.SYMBOLS,
         size=default_style.size,
+        weight=default_style.weight,
         color=default_style.color,
     )
     spans: list[TextSpan] = []
@@ -587,7 +588,7 @@ def RichText(
     span_elements = [
         AdjustableText(
             text=text,
-            style=TextStyle(font=es.font, size=size_, color=es.color),
+            style=TextStyle(font=es.font, size=size_, weight=es.weight, color=es.color),
             text_anchor="start",
             dominant_baseline=dominant_baseline,
             opacity=opacity,

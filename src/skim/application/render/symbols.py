@@ -185,6 +185,7 @@ def SymbolEntry(
     glyph_style = TextStyle(
         font=Font.FINGER_KEY,
         size=metrics.symbol_font_size,
+        weight=700,
         color=text_color,
     )
     glyph_el = RichText(
