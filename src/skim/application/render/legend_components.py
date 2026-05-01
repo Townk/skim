@@ -142,13 +142,13 @@ def _filled_chip_path(
 # ---------------------------------------------------------------------------
 
 
-@Composable
+@Composable(use_context=True)
 def TapDanceCell(
+    ctx,
     *,
     content: SvalboardTargetKey | None,
     text_color: str,
-    geom: _LegendGeometry,
-    use_system_fonts: bool = False,
+    scale: float = 1.0,
     cell_width: float | None = None,
 ):
     """One tap-dance variant cell (``TAP`` / ``HOLD`` / ``DOUBLE-TAP`` / ``TAP & HOLD``).
@@ -156,11 +156,17 @@ def TapDanceCell(
     The cell occupies a ``cell_width × td_row_height`` slot; the inner
     rect (filled when ``content`` is a key, dashed-empty otherwise) is
     centred horizontally within the slot. ``cell_width`` defaults to
-    ``geom.td_cell_w`` so the natural geom-driven sizing is preserved.
-    The inner rect's width tracks ``cell_width`` proportionally so a
-    stretched cell stretches its rect too — same rule the legacy
-    helper applies.
+    the scaled ``geom.td_cell_w`` so the natural geom-driven sizing is
+    preserved. The inner rect's width tracks ``cell_width``
+    proportionally so a stretched cell stretches its rect too — same
+    rule the legacy helper applies.
+
+    ``scale`` matches the convention :func:`TapDanceTable` uses so
+    standalone callers can size individual cells consistently with the
+    rest of the table.
     """
+    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width * scale)
+    use_system_fonts = ctx.config.output.style.use_system_fonts
     cell_w = cell_width if cell_width is not None else geom.td_cell_w
     inner_w = geom.td_cell_inner_w * (cell_w / geom.td_cell_w)
     row_h = geom.td_row_height
@@ -217,15 +223,15 @@ def TapDanceCell(
     return size, draw_at
 
 
-@Composable
+@Composable(use_context=True)
 def TapDanceRow(
+    ctx,
     *,
     td: SvalboardTapDance[SvalboardTargetKey],
     accent_fill: str,
     accent_line: str,
     text_color: str,
-    geom: _LegendGeometry,
-    use_system_fonts: bool = False,
+    scale: float = 1.0,
     name_column_width: float | None = None,
     cell_width: float | None = None,
 ):
@@ -240,7 +246,14 @@ def TapDanceRow(
     with no name still leaves room consistent with the rest of the
     section. ``cell_width`` overrides each variant cell's slot width
     (used by the standalone tap-dances image to stretch the table).
+
+    ``scale`` matches the convention :func:`TapDanceTable` uses so
+    standalone callers can size individual rows consistently with the
+    rest of the table; it's forwarded to the per-variant
+    :func:`TapDanceCell` instances.
     """
+    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width * scale)
+    use_system_fonts = ctx.config.output.style.use_system_fonts
     if name_column_width is None:
         name_column_width = geom.td_name_w - geom.tag_w
     cell_w = cell_width if cell_width is not None else geom.td_cell_w
@@ -330,14 +343,14 @@ def TapDanceRow(
                     fill=text_color,
                 )
             )
-        # Four variant cells.
+        # Four variant cells. Pass ``scale`` down so the cells derive
+        # the same scaled geometry the row was built against.
         variants = (td.tap, td.hold, td.double_tap, td.tap_then_hold)
         for i, variant in enumerate(variants):
             cell = TapDanceCell(
                 content=variant,
                 text_color=text_color,
-                geom=geom,
-                use_system_fonts=use_system_fonts,
+                scale=scale,
                 cell_width=cell_w,
             )
             cell.draw_at(d, Point(x + cells_start_x + i * cell_w, y))
@@ -345,11 +358,12 @@ def TapDanceRow(
     return size, draw_at
 
 
-@Composable
+@Composable(use_context=True)
 def TapDanceColumnHeader(
+    ctx,
     *,
     text_color: str,
-    geom: _LegendGeometry,
+    scale: float = 1.0,
     name_column_width: float | None = None,
     cell_width: float | None = None,
 ):
@@ -359,7 +373,11 @@ def TapDanceColumnHeader(
     the vertical space the existing layout reserves for it; the four
     labels are baseline-aligned at ``title_baseline_offset`` from the
     top, mirroring the legacy ``build_tap_dance_column_header`` call.
+
+    ``scale`` matches the convention :func:`TapDanceTable` uses so
+    the header strip stays sized in step with the rows below.
     """
+    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width * scale)
     if name_column_width is None:
         name_column_width = geom.td_name_w - geom.tag_w
     cell_w = cell_width if cell_width is not None else geom.td_cell_w
@@ -441,7 +459,6 @@ def TapDanceTable(
     a name and ``0`` when none do.
     """
     geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width * scale)
-    use_system_fonts = ctx.config.output.style.use_system_fonts
     cell_w = cell_width if cell_width is not None else geom.td_cell_w
     inner_w = geom.td_cell_inner_w * (cell_w / geom.td_cell_w)
     # The cells block ends at the LAST inner rect's right edge — the
@@ -475,7 +492,7 @@ def TapDanceTable(
 
     header = TapDanceColumnHeader(
         text_color=text_color,
-        geom=geom,
+        scale=scale,
         name_column_width=resolved_name_column_width,
         cell_width=cell_width,
     )
@@ -485,8 +502,7 @@ def TapDanceTable(
             accent_fill=accent_fill,
             accent_line=accent_line,
             text_color=text_color,
-            geom=geom,
-            use_system_fonts=use_system_fonts,
+            scale=scale,
             name_column_width=resolved_name_column_width,
             cell_width=cell_width,
         )

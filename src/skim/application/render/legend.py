@@ -831,6 +831,32 @@ def tap_dance_section_height(
     return geom.td_header_height + len(tap_dances) * (geom.td_row_height + geom.td_row_gap)
 
 
+def _ctx_for_legacy_wrapper(doc_width: float, use_system_fonts: bool):
+    """Build the minimum :class:`RenderContext` the ctx-aware composables need.
+
+    Legacy ``build_tap_dance_*`` wrappers don't run inside a
+    ``using_render_context`` block (their callers — the overview's
+    inline TD section — haven't been migrated to the composable
+    pipeline). They construct a tiny config from their explicit
+    ``doc_width`` / ``use_system_fonts`` kwargs so the inner composables
+    still see the layout width and font policy they were called with.
+    """
+    from skim.data import SkimConfig, SvalboardKeymap
+
+    from .render_context import RenderContext
+
+    config = SkimConfig.model_validate(
+        {
+            "output": {
+                "layout": {"width": doc_width},
+                "style": {"use_system_fonts": use_system_fonts},
+            }
+        }
+    )
+    keymap = SvalboardKeymap(layers={})
+    return RenderContext.build(config, keymap)
+
+
 def build_tap_dance_row(
     td: SvalboardTapDance[SvalboardTargetKey],
     x: float,
@@ -857,20 +883,20 @@ def build_tap_dance_row(
     """
     del column_width  # unused — historical part of the API
     from .legend_components import TapDanceRow
+    from .render_context import using_render_context
 
     geom = _LegendGeometry.for_doc_width(doc_width)
-    component = TapDanceRow(
-        td=td,
-        accent_fill=accent_fill,
-        accent_line=accent_line,
-        text_color=text_color,
-        geom=geom,
-        use_system_fonts=use_system_fonts,
-        name_column_width=name_column_width,
-        cell_width=cell_width,
-    )
     g = draw.Group()
-    component.draw_at(g, Point(x, y - geom.td_row_height / 2))
+    with using_render_context(_ctx_for_legacy_wrapper(doc_width, use_system_fonts)):
+        component = TapDanceRow(
+            td=td,
+            accent_fill=accent_fill,
+            accent_line=accent_line,
+            text_color=text_color,
+            name_column_width=name_column_width,
+            cell_width=cell_width,
+        )
+        component.draw_at(g, Point(x, y - geom.td_row_height / 2))
     return g
 
 
@@ -892,16 +918,17 @@ def build_tap_dance_column_header(
     before.
     """
     from .legend_components import TapDanceColumnHeader
+    from .render_context import using_render_context
 
     geom = _LegendGeometry.for_doc_width(doc_width)
-    component = TapDanceColumnHeader(
-        text_color=text_color,
-        geom=geom,
-        name_column_width=name_column_width,
-        cell_width=cell_width,
-    )
     g = draw.Group()
-    component.draw_at(g, Point(x, y - geom.title_baseline_offset))
+    with using_render_context(_ctx_for_legacy_wrapper(doc_width, use_system_fonts=False)):
+        component = TapDanceColumnHeader(
+            text_color=text_color,
+            name_column_width=name_column_width,
+            cell_width=cell_width,
+        )
+        component.draw_at(g, Point(x, y - geom.title_baseline_offset))
     return g
 
 
