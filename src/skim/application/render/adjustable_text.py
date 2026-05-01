@@ -32,8 +32,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import drawsvg as draw
-
 from .composable import Composable
 from .primitives import MetricsComponent, Point, Size
 from .render_context import TextStyle
@@ -326,9 +324,6 @@ def AdjustableText(
     size = Size(bbox_w, rendered_h)
 
     use_system_fonts = ctx.config.output.style.use_system_fonts
-    family = (
-        style.font.get_system_font_family() if use_system_fonts else style.font.value
-    )
 
     # Y-offset within the bbox depends on which baseline the SVG
     # renderer anchors to. The default ``text-before-edge`` paints
@@ -359,19 +354,28 @@ def AdjustableText(
         x_offset = 0.0
 
     def draw_at(d, origin: Point) -> None:
-        d.append(
-            draw.Text(
-                rendered_text,
-                font_size=font_size,
-                x=origin.x + x_offset,
-                y=origin.y + y_offset,
-                text_anchor=text_anchor,
-                dominant_baseline=dominant_baseline,
-                font_family=family,
-                fill=style.color,
-                opacity=opacity,
-            )
+        # Route the SVG render through :meth:`Label.build_text` so
+        # mixed-font input — plain text alongside Nerd Font tokens
+        # (``"%%nf-md-keyboard_close;"`` etc.) — produces a multi-
+        # font ``<text>``+``<tspan>`` element with each part's font
+        # family set correctly. For pure-plain-text input the parsed
+        # label collapses to a single :class:`TextPart` and the
+        # output reduces to a flat ``<text>``.
+        text_el = Label(
+            rendered_text,
+            font=style.font,
+            text_color=style.color,
+            text_anchor=text_anchor,
+            dominant_baseline=dominant_baseline,
+        ).build_text(
+            x=origin.x + x_offset,
+            y=origin.y + y_offset,
+            font_size=font_size,
+            use_system_fonts=use_system_fonts,
         )
+        if opacity != 1.0:
+            text_el.args["opacity"] = opacity
+        d.append(text_el)
 
     return MetricsComponent(
         size=size,

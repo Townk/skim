@@ -208,17 +208,39 @@ def TapDanceCell(
     rest of the table.
     """
     metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
-    use_system_fonts = ctx.config.output.style.use_system_fonts
     cell_w = cell_width if cell_width is not None else metrics.cell_w
     inner_w = metrics.cell_inner_w * (cell_w / metrics.cell_w)
     row_h = metrics.row_height
     size = Size(cell_w, row_h)
     rect_x_offset = (cell_w - inner_w) / 2.0
 
+    # Pre-build the optional key label as an :func:`AdjustableText` —
+    # the inner rect's width is the slot, and ``AdjustableText``
+    # handles per-cell ellipsis truncation when a label's natural
+    # rendered width overflows. Multi-part Nerd Font tokens
+    # (``"%%nf-md-...; foo"``) are rendered correctly because
+    # ``AdjustableText`` routes through :meth:`Label.build_text`
+    # internally.
+    label_el = (
+        AdjustableText(
+            text=_legend_key_label(content),
+            style=TextStyle(
+                font=Font.FINGER_KEY,
+                size=metrics.cell_label_font_size,
+                color=text_color,
+            ),
+            max_width=inner_w,
+            text_anchor="middle",
+            dominant_baseline="central",
+        )
+        if content is not None
+        else None
+    )
+
     def draw_at(d, origin):
         rect_x = origin.x + rect_x_offset
         rect_y = origin.y
-        if content is None:
+        if label_el is None:
             d.append(
                 draw.Rectangle(
                     x=rect_x,
@@ -247,20 +269,21 @@ def TapDanceCell(
                 stroke_opacity=0.18,
             )
         )
-        d.append(
-            Label(
-                _legend_key_label(content),
-                font=Font.FINGER_KEY,
-                text_color=text_color,
-                text_anchor="middle",
-                dominant_baseline="central",
-            ).build_text(
-                x=rect_x + inner_w / 2,
-                y=rect_y + row_h / 2 + metrics.chip_inner_text_baseline_offset,
-                font_size=metrics.cell_label_font_size,
-                use_system_fonts=use_system_fonts,
-            )
+        # The bbox already fills the inner rect horizontally
+        # (``max_width=inner_w``); vertically the bbox top must be
+        # placed so the bbox centre lands at the inner rect's vertical
+        # centre + the historical ``chip_inner_text_baseline_offset``
+        # tweak (compensates for SVG ``central`` baseline not matching
+        # the font's visual centre — same magic offset the chip glyph
+        # and TD name use). With ``dominant_baseline="central"`` the
+        # painted text lands at ``origin.y + bbox_h/2``, so the origin
+        # y must be at the row-centre target minus half the bbox.
+        label_origin = Point(
+            rect_x,
+            rect_y + row_h / 2 + metrics.chip_inner_text_baseline_offset
+            - label_el.size.height / 2,
         )
+        label_el.draw_at(d, label_origin)
 
     return size, draw_at
 
