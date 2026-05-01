@@ -23,7 +23,7 @@ import drawsvg as draw
 
 from .adjustable_text import AdjustableText
 from .composable import Composable
-from .primitives import DrawFn, Point, Row, Size, Spacer
+from .primitives import DrawFn, Point, Size
 from .text import Font
 
 # Floor on the footer font size when shrinking under ``max_height`` so
@@ -105,28 +105,23 @@ def _footer_size_and_draw(
     color: str,
     family: str,
     max_height: float | None,
-    max_width: float | None = None,
 ) -> tuple[Size, DrawFn]:
     """Pure helper that builds the size + draw closure for a footer line.
 
-    Shared between the :func:`Footer` composable (ctx-aware) and the
-    legacy :func:`append_footer` imperative wrapper so both produce
-    pixel-identical output. Empty ``text`` yields a zero-sized no-op
-    element so hosts don't need to special-case "no copyright".
-
-    When ``max_width`` is given the returned size's ``width`` matches
-    it (the element fills the slot) and the text is right-anchored
-    at that slot's right edge — Footer is conceptually always
-    right-aligned, so it owns its alignment instead of asking a
-    parent ``Align`` wrapper to do it. When ``max_width`` is
-    ``None`` the size matches the text's natural bbox.
+    Used by the legacy imperative path (:func:`append_footer` /
+    :func:`footer_layout_height`) — the ctx-aware :func:`Footer`
+    composable now goes through :func:`AdjustableText` directly.
+    Empty ``text`` yields a zero-sized no-op so legacy hosts don't
+    need to special-case "no copyright". The reported size matches
+    the text's natural bbox; the legacy caller computes its own
+    placement origin (canvas-relative) and right-anchors against it.
     """
     if not text:
         return Size(0.0, 0.0), lambda _d, _o: None
 
     font_size = _resolve_font_size(text, font_max_size, max_height)
     text_size = _measure_text_size(text, font_size)
-    size = Size(max_width if max_width is not None else text_size.width, text_size.height)
+    size = text_size
 
     def draw_at(d, origin):
         # Text right-anchored at the slot's right edge with
@@ -159,22 +154,17 @@ def Footer(
 ):
     """A right-aligned line of footer text (typically a copyright notice).
 
-    Delegates the text-fitting concern (shrink under ``max_height``,
-    truncate under ``max_width``) to :func:`AdjustableText`. Owns
-    only the slot-fill + right-align layout: when ``max_width`` is
-    set the returned component's width fills the slot exactly and
-    the text right-anchors against the right edge.
-
-    Reads typography from ``ctx.theme.typography.copyright``. Empty
-    ``text`` yields a zero-sized noop so hosts don't need to
-    special-case "no copyright". ``max_height`` shrinks the font
-    when the natural text would otherwise be taller; the floor on
-    that shrink is the local ``_MIN_FONT_SIZE`` constant.
+    Thin wrapper around :func:`AdjustableText` that pins the
+    copyright typography preset and the right-anchored / after-edge
+    layout. When ``max_width`` is set the bbox fills the slot and
+    the text right-anchors at its right edge — no extra layout
+    wrapping needed since :func:`AdjustableText` handles the slot
+    fill internally. Empty ``text`` yields a zero-sized noop via
+    :func:`AdjustableText`. ``max_height`` shrinks the font when
+    the natural text would otherwise be taller; the floor is the
+    local ``_MIN_FONT_SIZE`` constant.
     """
-    if not text:
-        return Spacer()
-
-    text_el = AdjustableText(
+    return AdjustableText(
         text=text,
         style=ctx.theme.typography.copyright,
         max_width=max_width,
@@ -184,14 +174,6 @@ def Footer(
         dominant_baseline="text-after-edge",
         opacity=_FOOTER_OPACITY,
     )
-    if max_width is None:
-        return text_el
-
-    # Right-align inside the slot — pad the leading edge with a
-    # ``Spacer`` so the row reports ``max_width`` as its total width
-    # and the painted text right-anchors at the slot's right edge.
-    leading = max(0.0, max_width - text_el.size.width)
-    return Row([Spacer(width=leading), text_el], gap=0.0, align="end")
 
 
 # ---------------------------------------------------------------------------

@@ -200,10 +200,13 @@ def AdjustableText(
        text at the resolved font size still exceeds it, trim with
        an ``…`` ellipsis via PIL-accurate measurement.
 
-    The reported size is the natural rendered extent of the painted
-    text (after shrink/truncate) — slot-fill and right-alignment
-    are layout concerns the parent composes via :func:`Row` /
-    :func:`Spacer`.
+    ``max_width`` does double duty: it's the budget for shrink/
+    truncate AND the slot width the bbox occupies. When set, the
+    reported ``size.width`` equals ``max_width`` and ``text_anchor``
+    controls where inside that slot the text paints — passing
+    ``text_anchor="end"`` with ``max_width`` gives right-aligned-
+    in-slot behaviour with no extra layout wrapping. When
+    ``max_width`` is ``None`` the bbox snug-fits the rendered text.
 
     ``min_font_size`` is silently clamped to ``style.size`` so a
     caller passing a higher floor doesn't accidentally enlarge the
@@ -247,7 +250,12 @@ def AdjustableText(
 
     rendered_w = _measure_width(rendered_text, style.font, style.color, font_size)
     rendered_h = _measure_height(rendered_text, style.font, font_size)
-    size = Size(rendered_w, rendered_h)
+    # ``max_width`` is the slot the parent allocates — when supplied,
+    # the bbox occupies that full width and ``text_anchor`` controls
+    # where inside the bbox the text paints. When omitted, the bbox
+    # snug-fits the rendered text.
+    bbox_w = max_width if max_width is not None else rendered_w
+    size = Size(bbox_w, rendered_h)
 
     use_system_fonts = ctx.config.output.style.use_system_fonts
     family = (
@@ -270,11 +278,15 @@ def AdjustableText(
 
     # X-offset within the bbox depends on text_anchor. ``start`` puts
     # the bbox left at ``x``; ``end`` puts the bbox right at ``x``;
-    # ``middle`` puts the bbox centre at ``x``.
+    # ``middle`` puts the bbox centre at ``x``. When ``max_width`` is
+    # set the bbox width is the full slot, so right-/centre-anchored
+    # text lands at the slot's right/centre — a parent passing
+    # ``text_anchor="end"`` with ``max_width`` gets right-aligned-in-
+    # slot behaviour for free.
     if text_anchor == "end":
-        x_offset = rendered_w
+        x_offset = bbox_w
     elif text_anchor == "middle":
-        x_offset = rendered_w / 2.0
+        x_offset = bbox_w / 2.0
     else:
         x_offset = 0.0
 
