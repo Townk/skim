@@ -35,7 +35,7 @@ from typing import TYPE_CHECKING
 
 import drawsvg as draw
 
-from .adjustable_text import AdjustableText
+from .adjustable_text import AdjustableText, measure_text_width
 from .composable import Composable
 from .legend import _legend_key_label, _LegendGeometry
 from .primitives import Column, MetricsComponent, Point, Size
@@ -208,39 +208,17 @@ def TapDanceCell(
     rest of the table.
     """
     metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
+    use_system_fonts = ctx.config.output.style.use_system_fonts
     cell_w = cell_width if cell_width is not None else metrics.cell_w
     inner_w = metrics.cell_inner_w * (cell_w / metrics.cell_w)
     row_h = metrics.row_height
     size = Size(cell_w, row_h)
     rect_x_offset = (cell_w - inner_w) / 2.0
 
-    # Pre-build the optional key label as an :func:`AdjustableText` —
-    # the inner rect's width is the slot, and ``AdjustableText``
-    # handles per-cell ellipsis truncation when a label's natural
-    # rendered width overflows. Multi-part Nerd Font tokens
-    # (``"%%nf-md-...; foo"``) are rendered correctly because
-    # ``AdjustableText`` routes through :meth:`Label.build_text`
-    # internally.
-    label_el = (
-        AdjustableText(
-            text=_legend_key_label(content),
-            style=TextStyle(
-                font=Font.FINGER_KEY,
-                size=metrics.cell_label_font_size,
-                color=text_color,
-            ),
-            max_width=inner_w,
-            text_anchor="middle",
-            dominant_baseline="central",
-        )
-        if content is not None
-        else None
-    )
-
     def draw_at(d, origin):
         rect_x = origin.x + rect_x_offset
         rect_y = origin.y
-        if label_el is None:
+        if content is None:
             d.append(
                 draw.Rectangle(
                     x=rect_x,
@@ -269,21 +247,26 @@ def TapDanceCell(
                 stroke_opacity=0.18,
             )
         )
-        # The bbox already fills the inner rect horizontally
-        # (``max_width=inner_w``); vertically the bbox top must be
-        # placed so the bbox centre lands at the inner rect's vertical
-        # centre + the historical ``chip_inner_text_baseline_offset``
-        # tweak (compensates for SVG ``central`` baseline not matching
-        # the font's visual centre — same magic offset the chip glyph
-        # and TD name use). With ``dominant_baseline="central"`` the
-        # painted text lands at ``origin.y + bbox_h/2``, so the origin
-        # y must be at the row-centre target minus half the bbox.
-        label_origin = Point(
-            rect_x,
-            rect_y + row_h / 2 + metrics.chip_inner_text_baseline_offset
-            - label_el.size.height / 2,
+        # Cell labels can carry Nerd Font tokens (icon glyphs alongside
+        # text), which the single-style :func:`AdjustableText` doesn't
+        # render — paint via :meth:`Label.build_text` so the multi-font
+        # ``<text>``+``<tspan>`` shape comes out right. Once a multi-
+        # span ``RichText`` (and key-aware ``KeyLabel``) lands, this
+        # call site moves up a layer.
+        d.append(
+            Label(
+                _legend_key_label(content),
+                font=Font.FINGER_KEY,
+                text_color=text_color,
+                text_anchor="middle",
+                dominant_baseline="central",
+            ).build_text(
+                x=rect_x + inner_w / 2,
+                y=rect_y + row_h / 2 + metrics.chip_inner_text_baseline_offset,
+                font_size=metrics.cell_label_font_size,
+                use_system_fonts=use_system_fonts,
+            )
         )
-        label_el.draw_at(d, label_origin)
 
     return size, draw_at
 
@@ -630,11 +613,13 @@ def _resolve_name_column_width(
     name_font_size = metrics.name_font_size
     leading_gap = metrics.name_gap
     trailing_gap = leading_gap  # symmetric padding inside the chip outline
+    # Tap-dance names are plain text (no Nerd Font tokens), so the
+    # single-style ``measure_text_width`` matches what the rendered
+    # ``AdjustableText`` paints. Routes through the canonical
+    # measurement primitive in :mod:`adjustable_text` rather than
+    # :class:`Label.measure_rendered_width` directly.
     longest_natural = max(
-        Label(td.name or "", Font.FINGER_KEY, text_color="#000").measure_rendered_width(
-            name_font_size
-        )
-        for td in named
+        measure_text_width(td.name or "", Font.FINGER_KEY, name_font_size) for td in named
     )
 
     # The name area reserves leading + text + trailing inside the chip

@@ -7,13 +7,14 @@
 
 from contextlib import contextmanager
 
+from skim.application.render.adjustable_text import measure_text_width
 from skim.application.render.render_context import RenderContext, using_render_context
 from skim.application.render.tap_dance import (
     TapDanceMetrics,
     TapDanceTable,
     _resolve_name_column_width,
 )
-from skim.application.render.text import Font, Label
+from skim.application.render.text import Font
 from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTapDance, SvalboardTargetKey
 
@@ -22,7 +23,7 @@ def _measure(text: str, font_size: float) -> float:
     """Rendered width of ``text`` at ``font_size`` via the canonical
     PIL-accurate path the section's name-column resolver uses.
     """
-    return Label(text, Font.FINGER_KEY, text_color="#000").measure_rendered_width(font_size)
+    return measure_text_width(text, Font.FINGER_KEY, font_size)
 
 
 @contextmanager

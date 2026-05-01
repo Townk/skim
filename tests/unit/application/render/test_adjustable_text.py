@@ -7,13 +7,13 @@
 
 from contextlib import contextmanager
 
-from skim.application.render.adjustable_text import AdjustableText
+from skim.application.render.adjustable_text import AdjustableText, measure_text_width
 from skim.application.render.render_context import (
     RenderContext,
     TextStyle,
     using_render_context,
 )
-from skim.application.render.text import Font, Label
+from skim.application.render.text import Font
 from skim.data import SkimConfig, SvalboardKeymap
 
 _ELLIPSIS = "…"
@@ -38,7 +38,7 @@ def _measure(text: str, font_size: float) -> float:
     """PIL-accurate rendered width — the same path AdjustableText uses
     internally for its truncation / shrink loop.
     """
-    return Label(text, Font.FINGER_KEY, text_color="#000").measure_rendered_width(font_size)
+    return measure_text_width(text, Font.FINGER_KEY, font_size)
 
 
 # ---------------------------------------------------------------------------

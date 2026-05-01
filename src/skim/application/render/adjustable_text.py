@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Auto-sizing / truncating text composable.
+"""Auto-sizing / truncating text composable — single-style base layer.
 
 Pulls together the font-measurement, shrink-to-fit and ellipsis-
 truncate logic that used to live inline in :mod:`header`,
@@ -21,21 +21,38 @@ truncate logic that used to live inline in :mod:`header`,
 
 Truncation only ever applies when ``max_width`` is set — height is
 purely a function of the font size, so an over-tall text never has
-an ``…`` answer. Inputs containing Nerd Font tokens
-(``"foo %%nf-md-keyboard;"``) measure correctly via
-:meth:`Label.measure_rendered_width` but may produce malformed
-output if truncation cuts mid-token; pass plain text when
-truncation is expected.
+an ``…`` answer.
+
+Single-style scope
+------------------
+
+This is the **base layer** of the text-rendering composable stack:
+the input ``text`` is treated as a single style — one font, one
+size, one colour — and the rendered SVG is a flat ``<text>``
+element. The module deliberately doesn't import :class:`Label`;
+multi-format text (mixed fonts, Nerd Font icon glyphs alongside
+text glyphs, per-span colour) is the next layer up: a future
+``RichText`` composable will compose multiple ``AdjustableText``
+elements (or use the same primitives) to handle spans, and a
+``KeyLabel`` composable on top of that will own key-specific
+rendering.
+
+The PIL-driven measurement primitives (``getlength`` for width,
+``getbbox`` for height and reference lines) all live here so this
+module is the canonical measurement source for any text-aware
+composable to build on.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
+import drawsvg as draw
+
 from .composable import Composable
 from .primitives import MetricsComponent, Point, Size
 from .render_context import TextStyle
-from .text import Font, Label
+from .text import Font
 
 # Single-character ellipsis used when truncating. PIL's ``getlength``
 # is character-sensitive, so the measurement helper and the trim
@@ -102,20 +119,26 @@ class AdjustableTextMetrics:
 
 
 # ---------------------------------------------------------------------------
-# Measurement helpers (PIL-accurate, Nerd-Font-aware via ``Label``)
+# Measurement helpers (PIL-accurate, single-style)
 # ---------------------------------------------------------------------------
 
 
-def _measure_width(text: str, font: Font, color: str, font_size: float) -> float:
-    """Rendered width of ``text`` at ``font_size``.
+def measure_text_width(text: str, font: Font, font_size: float) -> float:
+    """Rendered width of ``text`` at ``font_size`` in SVG units.
 
-    Routes through :meth:`Label.measure_rendered_width` so Nerd Font
-    glyph widths are accounted for and the measurement matches what
-    the SVG renderer paints.
+    The canonical "measure single-style text as it'll be painted"
+    primitive for the composable layer — the actual PIL
+    ``getlength`` call lives here. Higher-level composables (a
+    future ``RichText`` for multi-span text, ``KeyLabel`` for
+    key-specific rendering) build on this.
+
+    The text is treated as a single font / size run; mixed-format
+    input (e.g. plain text alongside Nerd Font icon tokens) is a
+    higher-layer concern. Use a multi-span composable for that.
     """
     if not text:
         return 0.0
-    return Label(text, font, text_color=color).measure_rendered_width(font_size)
+    return float(font.load(font_size).getlength(text))
 
 
 def _measure_height(text: str, font: Font, font_size: float) -> float:
@@ -164,7 +187,7 @@ def _reference_lines(
 
 
 def _truncate_to_fit(
-    text: str, font: Font, color: str, font_size: float, max_width: float
+    text: str, font: Font, font_size: float, max_width: float
 ) -> tuple[str, bool]:
     """Trim ``text`` so its rendered width fits inside ``max_width``.
 
@@ -177,17 +200,17 @@ def _truncate_to_fit(
     """
     if max_width <= 0 or not text:
         return "", False
-    natural = _measure_width(text, font, color, font_size)
+    natural = measure_text_width(text, font, font_size)
     if natural <= max_width:
         return text, False
-    ellipsis_w = _measure_width(_ELLIPSIS, font, color, font_size)
+    ellipsis_w = measure_text_width(_ELLIPSIS, font, font_size)
     if ellipsis_w >= max_width:
         return _ELLIPSIS, True
     target = max_width - ellipsis_w
     lo, hi = 0, len(text)
     while lo < hi:
         mid = (lo + hi + 1) // 2
-        if _measure_width(text[:mid], font, color, font_size) <= target:
+        if measure_text_width(text[:mid], font, font_size) <= target:
             lo = mid
         else:
             hi = mid - 1
@@ -198,7 +221,6 @@ def _resolve_font_size(
     *,
     text: str,
     font: Font,
-    color: str,
     style_size: float,
     max_width: float | None,
     max_height: float | None,
@@ -220,7 +242,7 @@ def _resolve_font_size(
         if natural_h > max_height and natural_h > 0:
             target = min(target, style_size * (max_height / natural_h))
     if max_width is not None:
-        natural_w = _measure_width(text, font, color, style_size)
+        natural_w = measure_text_width(text, font, style_size)
         if natural_w > max_width and natural_w > 0:
             target = min(target, style_size * (max_width / natural_w))
     return max(target, min_font_size)
@@ -297,7 +319,6 @@ def AdjustableText(
     font_size = _resolve_font_size(
         text=text,
         font=style.font,
-        color=style.color,
         style_size=style.size,
         max_width=max_width,
         max_height=max_height,
@@ -306,12 +327,12 @@ def AdjustableText(
 
     if max_width is not None:
         rendered_text, truncated = _truncate_to_fit(
-            text, style.font, style.color, font_size, max_width
+            text, style.font, font_size, max_width
         )
     else:
         rendered_text, truncated = text, False
 
-    rendered_w = _measure_width(rendered_text, style.font, style.color, font_size)
+    rendered_w = measure_text_width(rendered_text, style.font, font_size)
     rendered_h = _measure_height(rendered_text, style.font, font_size)
     baseline, meanline, ascender_line = _reference_lines(
         rendered_text, style.font, font_size
@@ -324,6 +345,9 @@ def AdjustableText(
     size = Size(bbox_w, rendered_h)
 
     use_system_fonts = ctx.config.output.style.use_system_fonts
+    family = (
+        style.font.get_system_font_family() if use_system_fonts else style.font.value
+    )
 
     # Y-offset within the bbox depends on which baseline the SVG
     # renderer anchors to. The default ``text-before-edge`` paints
@@ -354,28 +378,23 @@ def AdjustableText(
         x_offset = 0.0
 
     def draw_at(d, origin: Point) -> None:
-        # Route the SVG render through :meth:`Label.build_text` so
-        # mixed-font input — plain text alongside Nerd Font tokens
-        # (``"%%nf-md-keyboard_close;"`` etc.) — produces a multi-
-        # font ``<text>``+``<tspan>`` element with each part's font
-        # family set correctly. For pure-plain-text input the parsed
-        # label collapses to a single :class:`TextPart` and the
-        # output reduces to a flat ``<text>``.
-        text_el = Label(
-            rendered_text,
-            font=style.font,
-            text_color=style.color,
-            text_anchor=text_anchor,
-            dominant_baseline=dominant_baseline,
-        ).build_text(
-            x=origin.x + x_offset,
-            y=origin.y + y_offset,
-            font_size=font_size,
-            use_system_fonts=use_system_fonts,
+        # Single-style render — flat ``<text>`` element with one
+        # font family, one fill, no tspans. Multi-format text (mixed
+        # fonts, Nerd Font icon glyphs) is the next layer's concern;
+        # this base layer paints a single style end-to-end.
+        d.append(
+            draw.Text(
+                rendered_text,
+                font_size=font_size,
+                x=origin.x + x_offset,
+                y=origin.y + y_offset,
+                text_anchor=text_anchor,
+                dominant_baseline=dominant_baseline,
+                font_family=family,
+                fill=style.color,
+                opacity=opacity,
+            )
         )
-        if opacity != 1.0:
-            text_el.args["opacity"] = opacity
-        d.append(text_el)
 
     return MetricsComponent(
         size=size,
