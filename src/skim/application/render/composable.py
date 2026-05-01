@@ -215,7 +215,12 @@ def _make_factory(
             if isinstance(result, BaseComponent):
                 component = result
             elif isinstance(result, _ContainerBuilder):
-                component = result._require_built()
+                if result._built is None:
+                    raise RuntimeError(
+                        "Composable returned a _ContainerBuilder that hasn't "
+                        "been entered/exited; wrap it in a ``with`` block first."
+                    )
+                component = result._built
             else:
                 size, draw_fn = result
                 component = BaseComponent(size=size, draw_fn=draw_fn)

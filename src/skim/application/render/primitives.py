@@ -44,7 +44,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Any, Generic, Protocol, TypeVar, runtime_checkable
+from typing import Any, Generic, Protocol, TypeVar, overload, runtime_checkable
 
 # ---------------------------------------------------------------------------
 # Canvas — the paint target Protocol
@@ -427,15 +427,21 @@ def _build_column(children: list[Component], gap: float, align: str) -> BaseComp
     return BaseComponent(size=size, draw_fn=draw_at)
 
 
+def _noop_draw(d: Canvas, origin: Point) -> None:
+    """Default ``draw_fn`` for a :class:`_ContainerBuilder` before its ``__exit__``."""
+    del d, origin
+
+
 class _ContainerBuilder:
     """Lazily-built :func:`Row` / :func:`Column` for ``with``-block trees.
 
     Returned when ``Row(...)`` / ``Column(...)`` is called WITHOUT a
     ``children`` arg — the child list is collected from composables
     invoked inside the ``with`` block, then the actual component is
-    built on ``__exit__``. After exit the builder transparently
-    delegates ``size`` / ``draw_at`` / ``draw_fn`` to the built
-    component, so it satisfies the :class:`Component` Protocol.
+    built on ``__exit__``. After exit the builder's ``size`` /
+    ``draw_fn`` / ``draw_at`` mirror the built component, so it
+    satisfies the :class:`Component` Protocol and can be passed
+    anywhere a Component is expected.
 
     Usage::
 
@@ -446,9 +452,25 @@ class _ContainerBuilder:
                 Footer(text=..., width=...)
         # ``document`` now satisfies Component — pass to KeymapDocument /
         # render / further composition.
+
+    ``size`` and ``draw_fn`` are real (mutable) attributes — not
+    properties — so they're structurally compatible with the
+    :class:`Component` Protocol's invariant ``size: Size`` /
+    ``draw_fn: DrawFn`` declarations. Pre-``__exit__`` they hold
+    placeholder zero values; ``draw_at`` raises a clearer error
+    when called before the with-block closes.
     """
 
-    __slots__ = ("_kind", "_gap", "_align", "_collected", "_built", "_token")
+    __slots__ = (
+        "_kind",
+        "_gap",
+        "_align",
+        "_collected",
+        "_built",
+        "_token",
+        "size",
+        "draw_fn",
+    )
 
     def __init__(self, kind: str, gap: float, align: str) -> None:
         self._kind = kind
@@ -457,6 +479,9 @@ class _ContainerBuilder:
         self._collected: list[Component] = []
         self._built: BaseComponent | None = None
         self._token = None
+        # Placeholder values until ``__exit__`` builds the real component.
+        self.size: Size = Size(0.0, 0.0)
+        self.draw_fn: DrawFn = _noop_draw
 
     def _add(self, child: Component) -> None:
         if self._built is not None:
@@ -486,31 +511,39 @@ class _ContainerBuilder:
     def __exit__(self, *exc) -> None:
         _pop_collector(self._token)
         if self._kind == "row":
-            self._built = _build_row(self._collected, self._gap, self._align)
+            built = _build_row(self._collected, self._gap, self._align)
         else:
-            self._built = _build_column(self._collected, self._gap, self._align)
+            built = _build_column(self._collected, self._gap, self._align)
+        self._built = built
+        self.size = built.size
+        self.draw_fn = built.draw_fn
         # The completed container itself auto-attaches if we're nested
         # inside an outer ``with``.
-        _maybe_register(self._built)
-
-    def _require_built(self) -> BaseComponent:
-        if self._built is None:
-            raise RuntimeError(
-                "Container builder hasn't been built yet — access ``size`` / "
-                "``draw_at`` after the ``with`` block exits."
-            )
-        return self._built
-
-    @property
-    def size(self) -> Size:
-        return self._require_built().size
-
-    @property
-    def draw_fn(self) -> DrawFn:
-        return self._require_built().draw_fn
+        _maybe_register(built)
 
     def draw_at(self, d: Canvas, origin: Point) -> None:
-        self._require_built().draw_at(d, origin)
+        if self._built is None:
+            raise RuntimeError(
+                "Container builder hasn't been built yet — call ``draw_at`` "
+                "after the ``with`` block exits."
+            )
+        self._built.draw_at(d, origin)
+
+
+@overload
+def Row(
+    children: None = None,
+    gap: float = 0.0,
+    align: str = "center",
+) -> _ContainerBuilder: ...
+
+
+@overload
+def Row(
+    children: Iterable[Component],
+    gap: float = 0.0,
+    align: str = "center",
+) -> BaseComponent: ...
 
 
 def Row(
@@ -538,6 +571,22 @@ def Row(
     component = _build_row(list(children), gap, align)
     _maybe_register(component)
     return component
+
+
+@overload
+def Column(
+    children: None = None,
+    gap: float = 0.0,
+    align: str = "start",
+) -> _ContainerBuilder: ...
+
+
+@overload
+def Column(
+    children: Iterable[Component],
+    gap: float = 0.0,
+    align: str = "start",
+) -> BaseComponent: ...
 
 
 def Column(
