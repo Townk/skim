@@ -263,6 +263,9 @@ def generate_keymap(
     show_symbol_legend: bool = True,
     symbol_legend_flow: str | None = None,
     symbol_legend_columns: int | None = None,
+    macros_scale: float | None = None,
+    tap_dances_scale: float | None = None,
+    symbols_scale: float | None = None,
     title: str | None = None,
     copyright_text: str | None = None,
     double_south: bool = False,
@@ -321,5 +324,8 @@ def generate_keymap(
         targets,
         raw_keymap=input_keymap,
         keycode_mappings=keycode_mappings,
+        macros_scale=macros_scale,
+        tap_dances_scale=tap_dances_scale,
+        symbols_scale=symbols_scale,
     )
     save_drawings(outputs, drawings, outputs.render_engine)

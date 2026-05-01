@@ -251,6 +251,28 @@ def doctor() -> None:
     ),
 )
 @click.option(
+    "--macros-scale",
+    type=click.FloatRange(min=0.1),
+    default=None,
+    help=(
+        "Body-scale multiplier for the standalone macros image (chips and "
+        "pills scale by this factor; chrome stays at the unscaled per-image "
+        "size). Default: 1.5."
+    ),
+)
+@click.option(
+    "--tap-dances-scale",
+    type=click.FloatRange(min=0.1),
+    default=None,
+    help=("Body-scale multiplier for the standalone tap-dances image. Default: 1.5."),
+)
+@click.option(
+    "--symbols-scale",
+    type=click.FloatRange(min=0.1),
+    default=None,
+    help=("Body-scale multiplier for the standalone symbols image. Default: 1.5."),
+)
+@click.option(
     "--title",
     "-t",
     type=str,
@@ -312,6 +334,9 @@ def generate(
     no_symbols: bool,
     symbol_legend_flow: str | None,
     symbol_legend_columns: int | None,
+    macros_scale: float | None,
+    tap_dances_scale: float | None,
+    symbols_scale: float | None,
     title: str | None,
     copyright_text: str | None,
     double_south: bool,
@@ -367,6 +392,9 @@ def generate(
             show_symbol_legend=not no_symbols,
             symbol_legend_flow=symbol_legend_flow,
             symbol_legend_columns=symbol_legend_columns,
+            macros_scale=macros_scale,
+            tap_dances_scale=tap_dances_scale,
+            symbols_scale=symbols_scale,
             title=title,
             copyright_text=copyright_text,
             double_south=double_south,

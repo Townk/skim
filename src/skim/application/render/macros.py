@@ -698,20 +698,28 @@ def _resolve_title(config: SkimConfig) -> str:
 def draw_macros_image(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
+    *,
+    scale: float | None = None,
 ) -> draw.Drawing:
-    """Render the standalone macros image."""
+    """Render the standalone macros image.
+
+    ``scale`` overrides the body-scale multiplier (the default is
+    ``BODY_SCALE`` set inside :func:`KeymapMacroDocument`); pass
+    ``None`` to use that default.
+    """
     # Local import — :mod:`keymap_document` lazy-imports from this
     # module, so importing it eagerly would create a cycle.
     from .keymap_document import KeymapMacroDocument
 
+    doc_kwargs: dict = {
+        "macros": all_macros(keymap.macros),
+        "title": _resolve_title(config),
+        "copyright": config.output.copyright,
+    }
+    if scale is not None:
+        doc_kwargs["scale"] = scale
     with using_render_context(RenderContext.build(config, keymap)):
-        return render(
-            KeymapMacroDocument(
-                macros=all_macros(keymap.macros),
-                title=_resolve_title(config),
-                copyright=config.output.copyright,
-            )
-        )
+        return render(KeymapMacroDocument(**doc_kwargs))
 
 
 __all__ = [

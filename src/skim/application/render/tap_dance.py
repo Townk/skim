@@ -826,12 +826,16 @@ def TapDanceSection(
 # ---------------------------------------------------------------------------
 
 
-def draw_tap_dances_image(config, keymap):
+def draw_tap_dances_image(config, keymap, *, scale: float | None = None):
     """Render the standalone tap-dances image.
 
     Reduces to: build a :func:`KeymapTapDanceDocument`, hand it to
     :func:`render`. All the table sizing, name-column resolution,
     canvas-shrink and chrome assembly live inside the composable.
+
+    ``scale`` overrides the body-scale multiplier (the default is
+    ``BODY_SCALE`` set inside :func:`KeymapTapDanceDocument`); pass
+    ``None`` to use that default.
     """
     # Local imports — :mod:`keymap_document` lazy-imports from this
     # module, so importing it eagerly would create a cycle.
@@ -844,14 +848,15 @@ def draw_tap_dances_image(config, keymap):
     from .macros import _resolve_title
     from .render_context import RenderContext, using_render_context
 
+    doc_kwargs: dict = {
+        "tap_dances": all_tap_dances(keymap.tap_dances),
+        "title": _resolve_title(config),
+        "copyright": config.output.copyright,
+    }
+    if scale is not None:
+        doc_kwargs["scale"] = scale
     with using_render_context(RenderContext.build(config, keymap)):
-        return render(
-            KeymapTapDanceDocument(
-                tap_dances=all_tap_dances(keymap.tap_dances),
-                title=_resolve_title(config),
-                copyright=config.output.copyright,
-            )
-        )
+        return render(KeymapTapDanceDocument(**doc_kwargs))
 
 
 __all__ = [

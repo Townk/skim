@@ -433,6 +433,8 @@ def draw_symbols_image(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
     entries: list[SymbolLegendEntry],
+    *,
+    scale: float | None = None,
 ) -> draw.Drawing:
     """Render the standalone symbols image from a pre-collected entry set.
 
@@ -441,6 +443,10 @@ def draw_symbols_image(
     point doesn't surface "skipping" warnings of its own. Use
     :func:`collect_symbol_entries` to build the entry set in the
     caller's preferred order.
+
+    ``scale`` overrides the body-scale multiplier (the default is
+    ``BODY_SCALE`` set inside :func:`KeymapSymbolDocument`); pass
+    ``None`` to use that default.
     """
     # Local imports — :mod:`keymap_document` lazy-imports from this
     # module, so importing it eagerly would create a cycle.
@@ -451,15 +457,16 @@ def draw_symbols_image(
     flow_str = config.output.style.symbol_legend_flow
     flow: FlowDirection = "row" if flow_str == "row" else "column"
 
+    doc_kwargs: dict = {
+        "entries": entries,
+        "title": _resolve_title(config),
+        "copyright": config.output.copyright,
+        "flow": flow,
+    }
+    if scale is not None:
+        doc_kwargs["scale"] = scale
     with using_render_context(RenderContext.build(config, keymap)):
-        return render(
-            KeymapSymbolDocument(
-                entries=entries,
-                title=_resolve_title(config),
-                copyright=config.output.copyright,
-                flow=flow,
-            )
-        )
+        return render(KeymapSymbolDocument(**doc_kwargs))
 
 
 __all__ = [
