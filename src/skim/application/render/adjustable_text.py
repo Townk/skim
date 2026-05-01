@@ -141,12 +141,13 @@ def measure_text_width(text: str, font: Font, font_size: float) -> float:
     return float(font.load(font_size).getlength(text))
 
 
-def _measure_height(text: str, font: Font, font_size: float) -> float:
-    """Glyph-bbox height of ``text`` at ``font_size``.
+def measure_text_height(text: str, font: Font, font_size: float) -> float:
+    """Rendered glyph-bbox height of ``text`` at ``font_size`` in SVG units.
 
-    Mirrors the existing helpers in :mod:`header` and :mod:`footer` —
-    PIL's ``getbbox`` reports the tight bounding box that the SVG
-    renderer paints, regardless of font ascent/descent slack.
+    Companion to :func:`measure_text_width`. PIL's ``getbbox``
+    reports the tight bounding box of the rendered text, which is
+    what the SVG renderer ends up painting (regardless of the
+    font's full ascent / descent extent).
     """
     if not text:
         return 0.0
@@ -238,7 +239,7 @@ def _resolve_font_size(
         return min_font_size
     target = style_size
     if max_height is not None:
-        natural_h = _measure_height(text, font, style_size)
+        natural_h = measure_text_height(text, font, style_size)
         if natural_h > max_height and natural_h > 0:
             target = min(target, style_size * (max_height / natural_h))
     if max_width is not None:
@@ -333,7 +334,7 @@ def AdjustableText(
         rendered_text, truncated = text, False
 
     rendered_w = measure_text_width(rendered_text, style.font, font_size)
-    rendered_h = _measure_height(rendered_text, style.font, font_size)
+    rendered_h = measure_text_height(rendered_text, style.font, font_size)
     baseline, meanline, ascender_line = _reference_lines(
         rendered_text, style.font, font_size
     )
