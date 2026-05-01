@@ -6,11 +6,13 @@
 """Multi-span text composable, built on :func:`AdjustableText`.
 
 A :func:`RichText` is a left-to-right concatenation of
-:class:`TextSpan` objects, each carrying its own :class:`TextStyle`
-(font, size, colour). Spans are separated by a single space
-character — the separator is appended to a span's text so it picks
-up that span's font / size / colour, which keeps the shape of the
-rendered SVG predictable when adjacent spans have different fonts.
+:class:`TextSpan` objects, each carrying its own (optional)
+:class:`TextStyle`. Spans without an explicit style inherit the
+:func:`RichText`'s default ``style`` argument. Spans are separated
+by a single space character — the separator is appended to a span's
+text so it picks up that span's font / size / colour, which keeps
+the rendered SVG predictable when adjacent spans have different
+fonts.
 
 Layering
 --------
@@ -20,24 +22,38 @@ This is the **multi-span layer** of the text composable stack:
 * :func:`AdjustableText` — single-style base. Owns the PIL
   measurement primitives.
 * :func:`RichText` (this module) — composes ``AdjustableText``
-  per span and keeps font sizes synchronised when shrinking.
-  Resolves Nerd Font tokens (``%%nf-...;``) into glyph
-  characters before measurement / rendering.
+  per span and keeps font sizes synchronised when shrinking, with
+  per-span proportional ``min_font_size`` floors. Resolves Nerd
+  Font tokens (``%%nf-...;``) into glyph characters before
+  measurement / rendering. Adds ``…`` ellipsis spans automatically
+  when the natural extent overflows the budget even at the floor.
 * ``KeyLabel`` (future) — key-specific concerns built on
   ``RichText``.
 
-Synchronised shrink
--------------------
+Synchronised shrink (relaxation)
+--------------------------------
 
-When a width / height budget is set and the natural extent
-overflows, all span font sizes are scaled by a single uniform
-factor so visual proportions between spans are preserved. The
-optional ``min_font_size`` is a global floor — when scaling would
-push a span below it, that span pins at the floor (which may break
-the uniform scaling and cause the rendered text to overflow the
-budget at that point). Truncation isn't supported at this layer
-yet; if you need it, pre-truncate the input or wait for the
-truncation pass to land.
+When the natural extent overflows ``max_width`` / ``max_height``,
+all span font sizes are scaled by a single uniform factor so visual
+proportions between spans are preserved. Each span has its own
+floor — derived proportionally from the ratio
+``min_font_size / style.size`` so a span declared at size 14 with
+a parent style of (size=12, min=8) gets a floor of ``14 * 8/12 ≈
+9.33``. The relaxation loop pins spans at their floor as the scale
+shrinks, redistributes the remaining budget to the still-free
+spans, and repeats until either the rendered text fits or all
+spans are pinned.
+
+Truncation
+----------
+
+If the relaxed sizes still don't fit, :func:`RichText` enters a
+truncation phase: drop spans from the trailing end (or both ends
+for ``text_anchor="middle"``) and prepend / append a synthetic
+``…`` :class:`TextSpan` painted with the parent ``style``. The
+truncated set is re-relaxed each iteration so the ellipsis span
+participates in the floor-pinning math. Truncation stops when the
+set fits or only the ellipsis spans remain.
 
 Baseline alignment
 ------------------
@@ -69,51 +85,57 @@ from .render_context import TextStyle
 # span's measured width.
 _SEPARATOR = " "
 
+# Single-character ellipsis used when truncation appends an extra
+# span. Painted with the parent :func:`RichText`'s ``style`` so the
+# ``…`` consistently matches the document voice rather than the
+# style of whichever span happened to land next to it.
+_ELLIPSIS = "…"
+
 
 @dataclass(frozen=True, slots=True)
 class TextSpan:
-    """One single-style run within a :func:`RichText`.
+    """One run within a :func:`RichText`.
 
-    Carries the typography (:class:`TextStyle`) and the literal text
-    for this span. The text may include Nerd Font tokens
-    (``%%nf-md-keyboard_close;`` etc.); they are resolved to their
-    glyph characters when the span is laid out — the resolved
-    text is what the underlying :func:`AdjustableText` renders.
+    ``text`` may include Nerd Font tokens (``%%nf-md-keyboard;``);
+    they're resolved to their glyph characters before measurement
+    and rendering.
+
+    ``style`` is optional — when omitted the span inherits the
+    parent :func:`RichText`'s ``style``. Setting it explicitly
+    overrides font / size / colour for this span only and lets the
+    parent style remain the document's "voice" while individual
+    spans diverge as needed (e.g. an icon span using
+    ``Font.SYMBOLS``).
     """
 
-    style: TextStyle
     text: str
+    style: TextStyle | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class RichTextMetrics:
-    """Outcome of a :func:`RichText` resolution.
-
-    Exposes the resolved per-span font sizes and the uniform shrink
-    factor that produced them so a parent can align siblings or
-    drive follow-up layout decisions.
-    """
-
-    font_scale: float
-    """Uniform shrink factor applied to every span's ``style.size``.
-
-    ``1.0`` means no shrinking was needed; smaller values mean the
-    natural extent overflowed the budget.
-    """
+    """Outcome of a :func:`RichText` resolution."""
 
     span_font_sizes: tuple[float, ...]
-    """Resolved font size for each span, in input order.
+    """Resolved font size for each span actually painted, in order.
 
-    Equal to ``span.style.size * font_scale`` when no floor was hit;
-    raised to ``min_font_size`` for any span the uniform scale would
-    have pushed below the floor.
+    Length matches ``rendered_spans`` — when truncation kicks in,
+    this includes the synthetic ``…`` span(s) at the relevant end.
     """
 
     rendered_spans: tuple[str, ...]
-    """The text actually painted for each span, in input order.
+    """The text actually painted for each span, in order.
 
-    Equal to each span's input text after Nerd Font glyph resolution
-    (and with a trailing separator on every span except the last).
+    Each entry is the input span's text after Nerd Font glyph
+    resolution. The inter-span ``" "`` separator is NOT folded into
+    these strings (it's appended at measurement / render time
+    instead). When truncation kicks in, ``"…"`` entries appear at
+    the appropriate end(s).
+    """
+
+    truncated: bool
+    """True when one or more input spans were dropped to fit the
+    budget and at least one ``…`` span was inserted.
     """
 
 
@@ -126,9 +148,9 @@ def resolve_nerd_font_glyphs(text: str) -> str:
     """Replace ``%%[nf-]<class>;`` tokens with their glyph characters.
 
     Tokens that don't map to a known glyph in the Nerd Font glyph
-    dictionary are left as-is. The ``nf-`` prefix is optional in the
-    token — ``%%md-keyboard_close;`` and ``%%nf-md-keyboard_close;``
-    resolve identically. Mirrors the parser :class:`Label` uses
+    dictionary are left as-is. The ``nf-`` prefix is optional —
+    ``%%md-keyboard;`` and ``%%nf-md-keyboard;`` resolve to the
+    same character. Mirrors the parser :class:`Label` uses
     internally so a span containing a token resolves to the same
     glyph the legacy ``Label.build_text`` path would paint.
     """
@@ -157,6 +179,218 @@ def resolve_nerd_font_glyphs(text: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Internal: relaxation + truncation
+# ---------------------------------------------------------------------------
+
+
+def _texts_with_separators(raw: list[str]) -> list[str]:
+    """Append the inter-span separator to all entries except the last.
+
+    Built fresh each time the trial set changes (e.g. when a span
+    is dropped during truncation) so the right span always gets the
+    trailing separator regardless of how the list was assembled.
+    """
+    n = len(raw)
+    return [r + (_SEPARATOR if i < n - 1 else "") for i, r in enumerate(raw)]
+
+
+def _measure_widths(styles: list[TextStyle], rendered: list[str], sizes: list[float]) -> list[float]:
+    """Measure each span's painted width at its current font size."""
+    seps = _texts_with_separators(rendered)
+    return [measure_text_width(seps[i], styles[i].font, sizes[i]) for i in range(len(seps))]
+
+
+def _relax_sizes(
+    *,
+    styles: list[TextStyle],
+    mins: list[float],
+    rendered: list[str],
+    max_width: float | None,
+    max_height: float | None,
+) -> list[float]:
+    """Run the synchronised-shrink relaxation loop on a trial set.
+
+    Starts at each span's natural ``style.size``. If the rendered
+    extent overflows, computes a uniform shrink factor for the
+    "free" (un-pinned) spans and applies it. Spans that would fall
+    below their floor pin at ``min``; the loop redistributes the
+    remaining budget to the still-free spans. Repeats until the
+    set fits, no progress is made, or every span is pinned.
+
+    The loop iterates more than once for two reasons: PIL's
+    ``getlength`` is mildly non-linear in font size due to glyph
+    hinting (e.g. ``"alpha"`` at 12pt = 31 units, at 24pt = 58 —
+    ratio 1.87, not 2.0). The closed-form factor undershoots; we
+    re-measure and re-apply until the rendered total lands inside
+    the budget. As scale shrinks, spans hit their floor and pin;
+    each iteration may pin one or more new spans and redistribute.
+
+    Termination: rendered set fits within a half-pixel tolerance
+    (PIL widths are typically integer-valued), every span pinned,
+    no measurable progress in one iteration, or a hard iteration
+    cap as a safety net.
+    """
+    n = len(styles)
+    if n == 0:
+        return []
+    sizes = [s.size for s in styles]
+    pinned = [False] * n
+
+    # Initial height check — all spans scale by the same factor
+    # against the tallest natural height, so pinning isn't relevant
+    # here. The width pass below also clamps against this factor.
+    if max_height is not None:
+        natural_heights = [
+            measure_text_height(rendered[i], styles[i].font, styles[i].size)
+            for i in range(n)
+        ]
+        tallest = max(natural_heights, default=0.0)
+        if tallest > max_height and tallest > 0:
+            height_factor = max_height / tallest
+            sizes = [max(mins[i], sizes[i] * height_factor) for i in range(n)]
+            for i in range(n):
+                if sizes[i] <= mins[i] + 1e-9:
+                    pinned[i] = True
+
+    if max_width is None:
+        return sizes
+
+    # Half-pixel slack — PIL widths come in at integer-ish values
+    # so anything within 0.5 of the budget is effectively a fit.
+    tolerance = 0.5
+    # ``2 * (n + 1)`` is a safety cap; convergence usually happens
+    # in 2–3 iterations even with non-linear hinting.
+    for _ in range(2 * (n + 1)):
+        widths = _measure_widths(styles, rendered, sizes)
+        total = sum(widths)
+        if total <= max_width + tolerance:
+            return sizes
+
+        free = [i for i in range(n) if not pinned[i]]
+        if not free:
+            return sizes  # no headroom anywhere
+
+        free_w = sum(widths[i] for i in free)
+        pinned_w = total - free_w
+        budget = max_width - pinned_w
+
+        if budget <= 0 or free_w == 0:
+            for i in free:
+                sizes[i] = mins[i]
+                pinned[i] = True
+            continue
+
+        factor = budget / free_w
+        if factor >= 1.0:
+            return sizes  # numerical edge — already at-or-under
+
+        progressed = False
+        for i in free:
+            new_size = sizes[i] * factor
+            if new_size <= mins[i] + 1e-9:
+                new_size = mins[i]
+                pinned[i] = True
+            if abs(new_size - sizes[i]) > 1e-6:
+                progressed = True
+            sizes[i] = new_size
+        if not progressed:
+            return sizes  # converged within tolerance
+
+    return sizes
+
+
+def _fits_at_sizes(
+    styles: list[TextStyle], rendered: list[str], sizes: list[float], max_width: float
+) -> bool:
+    """Whether the rendered set fits inside ``max_width`` at ``sizes``.
+
+    Uses the same half-pixel tolerance as :func:`_relax_sizes` so
+    the relaxation's "converged" exit and the truncation-trigger
+    "doesn't fit" check agree on what counts as fitting.
+    """
+    return sum(_measure_widths(styles, rendered, sizes)) <= max_width + 0.5
+
+
+def _truncate_with_ellipses(
+    *,
+    styles: list[TextStyle],
+    mins: list[float],
+    rendered: list[str],
+    max_width: float,
+    max_height: float | None,
+    text_anchor: str,
+    ellipsis_style: TextStyle,
+    ellipsis_min: float,
+) -> tuple[list[TextStyle], list[float], list[str], list[float]]:
+    """Drop spans + insert ellipsis span(s) until the trial set fits.
+
+    For ``text_anchor`` of ``"start"`` (default), the ellipsis is
+    appended once at the end and spans are dropped from the trailing
+    end. For ``"end"`` the ellipsis is prepended and spans are
+    dropped from the leading end. For ``"middle"`` an ellipsis is
+    inserted at both ends and spans are dropped symmetrically (the
+    drop alternates between ends each iteration).
+
+    Returns the trimmed ``(styles, mins, rendered, sizes)`` for the
+    surviving spans plus the inserted ellipsis span(s).
+    """
+    if text_anchor == "end":
+        prefix_count, suffix_count = 1, 0
+    elif text_anchor == "middle":
+        prefix_count, suffix_count = 1, 1
+    else:  # "start" — the default
+        prefix_count, suffix_count = 0, 1
+
+    kept = list(range(len(styles)))
+    # Alternate dropping between ends for "middle" so truncation
+    # stays roughly symmetric across iterations.
+    drop_from_end = True
+
+    while True:
+        trial_styles: list[TextStyle] = []
+        trial_mins: list[float] = []
+        trial_rendered: list[str] = []
+        for _ in range(prefix_count):
+            trial_styles.append(ellipsis_style)
+            trial_mins.append(ellipsis_min)
+            trial_rendered.append(_ELLIPSIS)
+        for k in kept:
+            trial_styles.append(styles[k])
+            trial_mins.append(mins[k])
+            trial_rendered.append(rendered[k])
+        for _ in range(suffix_count):
+            trial_styles.append(ellipsis_style)
+            trial_mins.append(ellipsis_min)
+            trial_rendered.append(_ELLIPSIS)
+
+        sizes = _relax_sizes(
+            styles=trial_styles,
+            mins=trial_mins,
+            rendered=trial_rendered,
+            max_width=max_width,
+            max_height=max_height,
+        )
+        if _fits_at_sizes(trial_styles, trial_rendered, sizes, max_width):
+            return trial_styles, trial_mins, trial_rendered, sizes
+
+        if not kept:
+            # Only the ellipsis span(s) remain — return them even if
+            # they overflow; nothing more can be dropped.
+            return trial_styles, trial_mins, trial_rendered, sizes
+
+        if text_anchor == "middle":
+            if drop_from_end:
+                kept.pop()
+            else:
+                kept.pop(0)
+            drop_from_end = not drop_from_end
+        elif text_anchor == "end":
+            kept.pop(0)
+        else:  # "start"
+            kept.pop()
+
+
+# ---------------------------------------------------------------------------
 # Composable
 # ---------------------------------------------------------------------------
 
@@ -166,6 +400,7 @@ def RichText(
     ctx,
     *,
     spans: list[TextSpan],
+    style: TextStyle,
     max_width: float | None = None,
     max_height: float | None = None,
     min_font_size: float | None = None,
@@ -173,25 +408,31 @@ def RichText(
     dominant_baseline: str = "text-before-edge",
     opacity: float = 1.0,
 ):
-    """Multi-span text with synchronised shrink-to-fit.
+    """Multi-span text with synchronised shrink-to-fit and ellipsis truncation.
 
     Each span renders as an :func:`AdjustableText` with its own
     style; they're laid out left-to-right and baseline-aligned.
-    Inter-span separators (``" "``) are appended to every span's
-    text except the last so the gap takes on the preceding span's
-    font.
 
-    When ``max_width`` is set the bbox occupies that full width and
-    the row of spans is anchored within it via ``text_anchor``
-    (``"start"``, ``"middle"`` or ``"end"``). When omitted the
-    bbox snug-fits the rendered spans.
+    ``style`` is the document's default — spans without an explicit
+    :attr:`TextSpan.style` inherit it. ``min_font_size`` is the
+    floor for the parent ``style``; per-span floors derive
+    proportionally from the ratio ``min_font_size / style.size``,
+    so a span at size 14 under a parent of (size=12, min=8) gets a
+    floor of ``14 * 8/12 ≈ 9.33``.
 
-    Empty ``spans`` yields a zero-sized noop. Currently no
-    truncation pass — if the natural extent overflows even after
-    shrinking, the painted text overflows the budget. (A future
-    pass can add ellipsis truncation across spans.)
+    When the natural extent overflows the budget, the relaxation
+    loop shrinks all spans by a single factor (preserving
+    proportions); spans hitting their floor pin and the remaining
+    budget redistributes to the rest. If the set still doesn't fit
+    after pinning, ``RichText`` enters truncation: it drops spans
+    from the trailing end (or symmetrically for
+    ``text_anchor="middle"``) and inserts ``…`` :class:`TextSpan`
+    objects painted with the parent ``style``. The truncated set is
+    re-relaxed each iteration.
+
+    Empty ``spans`` yields a zero-sized noop.
     """
-    del ctx  # ``AdjustableText`` reads its own context; nothing here.
+    del ctx  # AdjustableText reads its own context; nothing here.
 
     if not spans:
         size = Size(0.0, 0.0)
@@ -203,76 +444,72 @@ def RichText(
             size=size,
             draw_fn=_noop,
             metrics=RichTextMetrics(
-                font_scale=1.0, span_font_sizes=(), rendered_spans=()
+                span_font_sizes=(),
+                rendered_spans=(),
+                truncated=False,
             ),
         )
 
-    # 1. Resolve Nerd Font glyphs and append the inter-span separator
-    #    to every span except the last. The separator picks up the
-    #    preceding span's typography so its width contributes to that
-    #    span's measured width naturally.
-    n = len(spans)
-    rendered = tuple(
-        resolve_nerd_font_glyphs(span.text) + (_SEPARATOR if i < n - 1 else "")
-        for i, span in enumerate(spans)
+    # 1. Resolve effective per-span style. Spans without a style
+    #    inherit the parent's. Resolve glyphs in the same pass.
+    effective_styles = [span.style if span.style is not None else style for span in spans]
+    rendered = [resolve_nerd_font_glyphs(span.text) for span in spans]
+
+    # 2. Resolve per-span min_font_size proportionally from the
+    #    parent ratio. ``min_font_size`` is clamped to ``style.size``
+    #    (a higher floor would enlarge the text — not allowed).
+    parent_min = min(min_font_size, style.size) if min_font_size is not None else style.size
+    parent_ratio = parent_min / style.size if style.size > 0 else 1.0
+    span_mins = [es.size * parent_ratio for es in effective_styles]
+
+    # 3. Run relaxation on the original span set.
+    sizes = _relax_sizes(
+        styles=effective_styles,
+        mins=span_mins,
+        rendered=rendered,
+        max_width=max_width,
+        max_height=max_height,
     )
 
-    # 2. Measure each span at its natural ``style.size``.
-    natural_widths = [
-        measure_text_width(text, span.style.font, span.style.size)
-        for span, text in zip(spans, rendered)
-    ]
-    natural_heights = [
-        measure_text_height(text, span.style.font, span.style.size)
-        for span, text in zip(spans, rendered)
-    ]
-    total_natural_w = sum(natural_widths)
-    tallest_natural_h = max(natural_heights, default=0.0)
-
-    # 3. Compute the uniform shrink factor. Width and height both
-    #    scale linearly with font size for plain text, so taking the
-    #    smaller of the two budget-driven factors is the largest scale
-    #    that satisfies both.
-    scale = 1.0
-    if max_width is not None and total_natural_w > max_width and total_natural_w > 0:
-        scale = min(scale, max_width / total_natural_w)
-    if (
-        max_height is not None
-        and tallest_natural_h > max_height
-        and tallest_natural_h > 0
+    # 4. If the relaxed sizes still overflow ``max_width``, enter
+    #    the truncation phase. Inserts ``…`` span(s) painted with
+    #    the parent style and drops original spans iteratively.
+    truncated = False
+    if max_width is not None and not _fits_at_sizes(
+        effective_styles, rendered, sizes, max_width
     ):
-        scale = min(scale, max_height / tallest_natural_h)
+        effective_styles, span_mins, rendered, sizes = _truncate_with_ellipses(
+            styles=effective_styles,
+            mins=span_mins,
+            rendered=rendered,
+            max_width=max_width,
+            max_height=max_height,
+            text_anchor=text_anchor,
+            ellipsis_style=style,
+            ellipsis_min=parent_min,
+        )
+        truncated = True
 
-    # 4. Apply the uniform scale per span; floor at ``min_font_size``
-    #    when set. Spans pinned at the floor break the uniform scaling
-    #    — accept that here; the rendered output may overflow at that
-    #    point. Truncation across spans is a future pass.
-    floor = min_font_size if min_font_size is not None else 0.0
-    span_font_sizes = tuple(
-        max(floor, span.style.size * scale) for span in spans
-    )
-
-    # 5. Build an ``AdjustableText`` per span with the resolved size
-    #    baked into a fresh ``TextStyle``. No per-span ``max_width`` —
-    #    each span renders at its natural rendered width given the
-    #    resolved font size.
+    # 5. Build an ``AdjustableText`` per (resolved) span. Each
+    #    span's style is replaced with the resolved size; no
+    #    per-span ``max_width`` since the relaxation already
+    #    sized them to fit.
+    sep_rendered = _texts_with_separators(rendered)
     span_elements = [
         AdjustableText(
             text=text,
             style=TextStyle(
-                font=span.style.font, size=size, color=span.style.color
+                font=es.font, size=size_, color=es.color
             ),
             text_anchor="start",
             dominant_baseline=dominant_baseline,
             opacity=opacity,
         )
-        for span, text, size in zip(spans, rendered, span_font_sizes)
+        for es, size_, text in zip(effective_styles, sizes, sep_rendered)
     ]
 
-    # 6. Baseline-aligned layout. ``AdjustableTextMetrics.baseline``
-    #    is each span's y-offset from its own bbox top to the
-    #    alphabetic baseline. Picking the largest baseline as the
-    #    common reference puts every span's bbox top at a
+    # 6. Baseline-aligned layout. Pick the largest baseline as the
+    #    common reference so every span's bbox top sits at a
     #    non-negative offset from the row's bbox top.
     span_widths = [el.size.width for el in span_elements]
     span_heights = [el.size.height for el in span_elements]
@@ -308,9 +545,9 @@ def RichText(
         size=size,
         draw_fn=draw_at,
         metrics=RichTextMetrics(
-            font_scale=scale,
-            span_font_sizes=span_font_sizes,
-            rendered_spans=rendered,
+            span_font_sizes=tuple(sizes),
+            rendered_spans=tuple(rendered),
+            truncated=truncated,
         ),
     )
 
