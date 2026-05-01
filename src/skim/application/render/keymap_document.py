@@ -266,13 +266,10 @@ def KeymapSpecialKeysDocument(
     with Column(gap=metrics.inset, align="start") as content:
         Header(title=title, min_gap=2 * metrics.inset, max_width=target_content_w)
         if macro_section and td_section:
-            with Row(gap=col_gap, align="top") as body_row:
-                body_row.add(macro_section)
-                body_row.add(td_section)
+            Row([macro_section, td_section], gap=col_gap, align="top")
         elif macro_section:
             content.add(macro_section)
-        else:
-            assert td_section is not None
+        elif td_section:
             content.add(td_section)
         if copyright:
             Footer(text=copyright, max_width=target_content_w)
