@@ -9,15 +9,20 @@ from contextlib import contextmanager
 
 from skim.application.render.render_context import RenderContext, using_render_context
 from skim.application.render.tap_dance import (
-    _ELLIPSIS,
     TapDanceMetrics,
     TapDanceTable,
-    _measure_text_width,
-    _resolve_name_column,
-    _truncate_with_ellipsis,
+    _resolve_name_column_width,
 )
+from skim.application.render.text import Font, Label
 from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTapDance, SvalboardTargetKey
+
+
+def _measure(text: str, font_size: float) -> float:
+    """Rendered width of ``text`` at ``font_size`` via the canonical
+    PIL-accurate path the section's name-column resolver uses.
+    """
+    return Label(text, Font.FINGER_KEY, text_color="#000").measure_rendered_width(font_size)
 
 
 @contextmanager
@@ -37,45 +42,6 @@ def _ctx_for_doc_width(doc_width: float):
 
 
 # ---------------------------------------------------------------------------
-# Truncation primitives
-# ---------------------------------------------------------------------------
-
-
-class TestTruncateWithEllipsis:
-    def test_returns_input_when_already_fits(self):
-        result = _truncate_with_ellipsis("short", font_size=12, max_width=10_000)
-        assert result == "short"
-
-    def test_returns_empty_when_max_width_zero(self):
-        assert _truncate_with_ellipsis("anything", font_size=12, max_width=0) == ""
-
-    def test_returns_empty_when_input_empty(self):
-        assert _truncate_with_ellipsis("", font_size=12, max_width=100) == ""
-
-    def test_appends_ellipsis_when_overflow(self):
-        text = "the quick brown fox jumps over the lazy dog"
-        natural = _measure_text_width(text, 12)
-        # Cap at half the natural width to force truncation.
-        result = _truncate_with_ellipsis(text, font_size=12, max_width=natural / 2)
-        assert result.endswith(_ELLIPSIS)
-        assert len(result) < len(text) + len(_ELLIPSIS)
-
-    def test_truncated_output_fits_within_max_width(self):
-        text = "the quick brown fox jumps over the lazy dog"
-        natural = _measure_text_width(text, 12)
-        cap = natural / 2
-        result = _truncate_with_ellipsis(text, font_size=12, max_width=cap)
-        assert _measure_text_width(result, 12) <= cap
-
-    def test_returns_just_ellipsis_when_only_room_for_it(self):
-        # Pick a max_width that's larger than the ellipsis itself but
-        # smaller than ellipsis + any real glyph.
-        ellipsis_w = _measure_text_width(_ELLIPSIS, 12)
-        result = _truncate_with_ellipsis("anything", font_size=12, max_width=ellipsis_w + 0.1)
-        assert result == _ELLIPSIS
-
-
-# ---------------------------------------------------------------------------
 # Dynamic name-column sizing for TapDanceTable
 # ---------------------------------------------------------------------------
 
@@ -84,18 +50,22 @@ def _td(id_: str, name: str | None = None) -> SvalboardTapDance[SvalboardTargetK
     return SvalboardTapDance(id=id_, name=name)
 
 
-class TestResolveNameColumn:
+class TestResolveNameColumnWidth:
+    """Per-row ellipsis truncation now happens inside :func:`AdjustableText`,
+    so this helper only computes the column width the table reserves; the
+    rendered names are no longer mutated up front.
+    """
+
     def test_collapses_to_zero_when_no_names(self):
         metrics = TapDanceMetrics.for_doc_width(1600.0)
         cells_block_w = 4 * metrics.cell_w + metrics.row_content_indent_gap
-        width, adjusted = _resolve_name_column(
+        width = _resolve_name_column_width(
             tap_dances=[_td("0"), _td("1")],
             metrics=metrics,
             cells_block_w=cells_block_w,
             max_width=10_000,
         )
         assert width == 0.0
-        assert [td.name for td in adjusted] == [None, None]
 
     def test_picks_longest_natural_when_budget_allows(self):
         metrics = TapDanceMetrics.for_doc_width(1600.0)
@@ -107,9 +77,9 @@ class TestResolveNameColumn:
             metrics.row_content_indent_gap + 4 * metrics.cell_w - (metrics.cell_w - inner_w) / 2.0
         )
         tds = [_td("0", name="short"), _td("1", name="much longer name")]
-        long_natural = _measure_text_width("much longer name", metrics.name_font_size)
+        long_natural = _measure("much longer name", metrics.name_font_size)
 
-        width, adjusted = _resolve_name_column(
+        width = _resolve_name_column_width(
             tap_dances=tds,
             metrics=metrics,
             cells_block_w=cells_block_w,
@@ -118,10 +88,8 @@ class TestResolveNameColumn:
 
         # name_column_width = leading + text + symmetric trailing gap.
         assert width == 2 * metrics.name_gap + long_natural
-        # Names untouched when they fit.
-        assert [td.name for td in adjusted] == ["short", "much longer name"]
 
-    def test_truncates_longest_when_budget_caps_below_natural(self):
+    def test_caps_column_at_budget_when_longest_overflows(self):
         metrics = TapDanceMetrics.for_doc_width(1600.0)
         inner_w = metrics.cell_inner_w
         cells_block_w = (
@@ -130,9 +98,9 @@ class TestResolveNameColumn:
         long_name = "the quick brown fox jumps over the lazy dog " * 4
         tds = [_td("0", name="short"), _td("1", name=long_name)]
 
-        # Budget so tight the long name MUST truncate; chip + cells +
+        # Budget so tight the long name MUST overflow; chip + cells +
         # gaps consume most of it.
-        natural_long_w = _measure_text_width(long_name, metrics.name_font_size)
+        natural_long_w = _measure(long_name, metrics.name_font_size)
         max_width = (
             metrics.chip_width
             + metrics.name_gap
@@ -140,7 +108,7 @@ class TestResolveNameColumn:
             + cells_block_w
             + (natural_long_w / 4)  # only a quarter of the natural name width
         )
-        width, adjusted = _resolve_name_column(
+        width = _resolve_name_column_width(
             tap_dances=tds,
             metrics=metrics,
             cells_block_w=cells_block_w,
@@ -148,14 +116,10 @@ class TestResolveNameColumn:
         )
 
         # name_column_width is capped at max budget — leading + text +
-        # trailing.
+        # trailing. AdjustableText handles per-row ellipsis truncation
+        # at render time.
         expected_text_w = max_width - metrics.chip_width - 2 * metrics.name_gap - cells_block_w
         assert width == 2 * metrics.name_gap + expected_text_w
-        # Long name truncated; short name preserved
-        assert adjusted[0].name == "short"
-        assert adjusted[1].name is not None
-        assert adjusted[1].name.endswith(_ELLIPSIS)
-        assert adjusted[1].name != long_name
 
 
 # ---------------------------------------------------------------------------
@@ -197,7 +161,7 @@ class TestTapDanceTable:
         # cells block, where the cells block ends at the last inner
         # rect's right edge (not the cell slot's right edge).
         inner_w = metrics.cell_inner_w
-        natural = _measure_text_width("short", metrics.name_font_size)
+        natural = _measure("short", metrics.name_font_size)
         expected = (
             metrics.chip_width
             + 2 * metrics.name_gap  # leading + trailing

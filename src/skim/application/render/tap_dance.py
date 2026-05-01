@@ -19,22 +19,27 @@ Five composables that nest:
   tap-dances image and the combined special-keys image render this
   composable directly.
 
-Plus the section's text-measurement and chip-shape helpers
-(``_truncate_with_ellipsis``, ``_filled_chip_path``,
-``_resolve_name_column``) and the standalone tap-dance image entry
-point :func:`draw_tap_dances_image`.
+Plus the section's chip-shape helper (``_filled_chip_path``), the
+name-column-width resolver (``_resolve_name_column_width``) and the
+standalone tap-dance image entry point :func:`draw_tap_dances_image`.
+
+Tap-dance name rendering and truncation go through
+:func:`AdjustableText`, so this module no longer carries its own
+ellipsis-trim / text-measurement helpers.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import drawsvg as draw
 
+from .adjustable_text import AdjustableText
 from .composable import Composable
 from .legend import _legend_key_label, _LegendGeometry
 from .primitives import Column, MetricsComponent, Point, Size
+from .render_context import TextStyle
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
 from .text import Font, Label
@@ -123,61 +128,6 @@ class TapDanceMetrics:
             column_label_baseline_offset=geom.title_baseline_offset,
             row_content_indent_gap=geom.row_content_indent_gap,
         )
-
-
-# ---------------------------------------------------------------------------
-# Text measurement helpers
-# ---------------------------------------------------------------------------
-
-# Single character used for ellipsis truncation. Kept as a module-level
-# constant so the measurement helper and the truncator agree on the same
-# glyph (PIL's ``getlength`` is sensitive to the exact character).
-_ELLIPSIS = "…"
-
-
-def _measure_text_width(text: str, font_size: float) -> float:
-    """Rendered width of ``text`` at ``font_size`` using the FINGER_KEY font.
-
-    Goes through :meth:`Label.measure_rendered_width` — the canonical
-    "measure as painted" helper, shared with the symbol legend. That
-    path skips the upper-casing that :meth:`Label.measure_width`
-    applies for keymap key labels (which DO render in caps) and so
-    matches the mixed-case glyph run an SVG ``<text>`` element
-    actually paints for tap-dance names.
-    """
-    if not text:
-        return 0.0
-    return Label(text, Font.FINGER_KEY, text_color="#000").measure_rendered_width(
-        int(round(max(font_size, 1.0)))
-    )
-
-
-def _truncate_with_ellipsis(text: str, font_size: float, max_width: float) -> str:
-    """Trim ``text`` so its rendered width fits inside ``max_width``.
-
-    When the natural rendered width already fits, ``text`` is returned
-    unchanged. Otherwise the longest prefix that — once an ellipsis is
-    appended — still fits within ``max_width`` is selected via binary
-    search. When ``max_width`` is so tight that not even the ellipsis
-    fits, the ellipsis is returned alone.
-    """
-    if max_width <= 0 or not text:
-        return ""
-    natural = _measure_text_width(text, font_size)
-    if natural <= max_width:
-        return text
-    ellipsis_w = _measure_text_width(_ELLIPSIS, font_size)
-    if ellipsis_w >= max_width:
-        return _ELLIPSIS
-    target = max_width - ellipsis_w
-    lo, hi = 0, len(text)
-    while lo < hi:
-        mid = (lo + hi + 1) // 2
-        if _measure_text_width(text[:mid], font_size) <= target:
-            lo = mid
-        else:
-            hi = mid - 1
-    return text[:lo].rstrip() + _ELLIPSIS
 
 
 # ---------------------------------------------------------------------------
@@ -363,6 +313,27 @@ def TapDanceRow(
     height = metrics.row_height
     size = Size(width, height)
 
+    # Pre-build the optional name element so :func:`AdjustableText`
+    # handles per-row truncation if the natural rendered width
+    # overflows the column's text slot. The name area reserves
+    # symmetric ``name_gap`` padding inside the chip outline (leading
+    # and trailing), so the text slot is the column width minus those
+    # two gaps.
+    name_text_width = max(0.0, name_column_width - 2 * metrics.name_gap)
+    name_el = (
+        AdjustableText(
+            text=td.name,
+            style=TextStyle(
+                font=Font.FINGER_KEY, size=metrics.name_font_size, color=text_color
+            ),
+            max_width=name_text_width,
+            text_anchor="start",
+            dominant_baseline="central",
+        )
+        if td.name
+        else None
+    )
+
     def draw_at(d, origin):
         x, y = origin.x, origin.y
         cy = y + height / 2  # vertical centre of the row
@@ -416,25 +387,20 @@ def TapDanceRow(
                 use_system_fonts,
             )
         )
-        # Optional name in the chip's outlined extension. Rendered at the
-        # bundled Roboto Regular weight (no ``font_weight`` attribute) so the
-        # painted glyph run matches what :func:`_measure_text_width` reports
-        # via PIL — requesting weight 500 would synthesize a slightly
-        # heavier face since only Regular / Black / Thin are embedded, and
-        # PIL would then under-measure the rendered run.
-        if td.name:
-            d.append(
-                draw.Text(
-                    td.name,
-                    x=x + metrics.chip_width + metrics.name_gap,
-                    y=cy + metrics.chip_inner_text_baseline_offset,
-                    font_size=metrics.name_font_size,
-                    text_anchor="start",
-                    dominant_baseline="central",
-                    font_family="'Roboto', sans-serif",
-                    fill=text_color,
-                )
+        # Optional name in the chip's outlined extension. The
+        # ``AdjustableText`` element handles per-row truncation when the
+        # natural rendered width overflows the column's text slot. The
+        # bbox is positioned so its vertical centre lands at ``cy +
+        # chip_inner_text_baseline_offset`` — same visual placement as
+        # the previous direct ``draw.Text`` call (the offset compensates
+        # for SVG ``central`` baseline not perfectly matching the
+        # font's visual centre).
+        if name_el is not None:
+            name_origin = Point(
+                x + metrics.chip_width + metrics.name_gap,
+                cy - name_el.size.height / 2 + metrics.chip_inner_text_baseline_offset,
             )
+            name_el.draw_at(d, name_origin)
         # Four variant cells. Pass ``scale`` down so the cells derive
         # the same scaled geometry the row was built against.
         variants = (td.tap, td.hold, td.double_tap, td.tap_then_hold)
@@ -541,9 +507,9 @@ def TapDanceTable(
          right.
       3. If the longest natural name doesn't fit even when the cell
          block sits flush against the right edge of ``max_width``, the
-         name column is capped at the maximum room available and any
-         names that still overflow that cap are truncated with an
-         ellipsis (``"…"``).
+         name column is capped at the maximum room available; per-row
+         ellipsis truncation of any names that still overflow happens
+         inside :func:`AdjustableText` at render time.
 
     When ``max_width`` is ``None`` the legacy behaviour is preserved:
     a caller-supplied ``name_column_width`` wins, otherwise the column
@@ -558,19 +524,17 @@ def TapDanceTable(
     # math agrees with :func:`TapDanceRow`'s reported ``size.width``.
     cells_block_w = metrics.row_content_indent_gap + 4 * cell_w - (cell_w - inner_w) / 2.0
 
-    # Resolve name column width and compute possibly-truncated display
-    # names. Three branches:
+    # Resolve the name column width. Three branches:
     #
     #   * caller-pinned width (``name_column_width`` supplied) — pass
-    #     through as-is, no truncation.
+    #     through as-is.
     #   * ``max_width`` budget given — measure names and pick the
     #     tightest column that fits the longest, capped at the budget.
     #   * neither — fall back to the metrics-derived legacy default.
     if name_column_width is not None:
         resolved_name_column_width = name_column_width
-        adjusted_tds = list(tap_dances)
     elif max_width is not None:
-        resolved_name_column_width, adjusted_tds = _resolve_name_column(
+        resolved_name_column_width = _resolve_name_column_width(
             tap_dances=tap_dances,
             metrics=metrics,
             cells_block_w=cells_block_w,
@@ -580,7 +544,6 @@ def TapDanceTable(
         resolved_name_column_width = (
             metrics.name_w - metrics.chip_width if any(td.name for td in tap_dances) else 0.0
         )
-        adjusted_tds = list(tap_dances)
 
     header = TapDanceColumnHeader(
         text_color=text_color,
@@ -598,7 +561,7 @@ def TapDanceTable(
             name_column_width=resolved_name_column_width,
             cell_width=cell_width,
         )
-        for td in adjusted_tds
+        for td in tap_dances
     ]
 
     width = max(header.size.width, *(row.size.width for row in rows)) if rows else header.size.width
@@ -616,39 +579,40 @@ def TapDanceTable(
     return size, draw_at
 
 
-def _resolve_name_column(
+def _resolve_name_column_width(
     *,
     tap_dances: list[SvalboardTapDance[SvalboardTargetKey]],
     metrics: TapDanceMetrics,
     cells_block_w: float,
     max_width: float,
-) -> tuple[float, list[SvalboardTapDance[SvalboardTargetKey]]]:
-    """Compute the dynamic name column width and any truncated names.
+) -> float:
+    """Compute the dynamic name column width.
 
     Implements the sizing rule documented on :func:`TapDanceTable`:
     measure each name, give the longest the smallest column that fits
-    it, cap at the available budget, and truncate any names that still
-    overflow.
+    it, capped at the available budget. Per-row ellipsis truncation
+    of names that still overflow the capped column is handled inside
+    :func:`AdjustableText` at render time, not here.
 
     The name area reserves SYMMETRIC padding inside the chip outline —
     a leading gap between the chip and the name text, and a matching
     trailing gap between the name text and the outline's right edge.
     Without the trailing gap the rightmost glyph reads as "drawn on
     top" of the chip's rounded right border.
-
-    Returns ``(name_column_width, adjusted_tap_dances)`` — adjusted
-    TDs have their ``name`` field replaced with a truncated version
-    when they would have overflowed; untouched otherwise.
     """
     named = [td for td in tap_dances if td.name]
     if not named:
-        return 0.0, list(tap_dances)
+        return 0.0
 
     name_font_size = metrics.name_font_size
     leading_gap = metrics.name_gap
     trailing_gap = leading_gap  # symmetric padding inside the chip outline
-    natural = {td.id: _measure_text_width(td.name or "", name_font_size) for td in named}
-    longest_natural = max(natural.values())
+    longest_natural = max(
+        Label(td.name or "", Font.FINGER_KEY, text_color="#000").measure_rendered_width(
+            name_font_size
+        )
+        for td in named
+    )
 
     # The name area reserves leading + text + trailing inside the chip
     # outline. Solve for the text width that keeps the table — chip,
@@ -657,25 +621,8 @@ def _resolve_name_column(
         0.0,
         max_width - metrics.chip_width - leading_gap - trailing_gap - cells_block_w,
     )
-
-    if longest_natural <= available_for_text:
-        # All names fit at their natural width.
-        name_text_width = longest_natural
-        adjusted = list(tap_dances)
-    else:
-        # Longest name doesn't fit even at the right-most table position;
-        # cap the name area at the available budget and truncate any
-        # names that still exceed it.
-        name_text_width = available_for_text
-        adjusted = [
-            replace(td, name=_truncate_with_ellipsis(td.name, name_font_size, name_text_width))
-            if td.name and natural[td.id] > name_text_width
-            else td
-            for td in tap_dances
-        ]
-
-    name_column_width = leading_gap + name_text_width + trailing_gap
-    return name_column_width, adjusted
+    name_text_width = min(longest_natural, available_for_text)
+    return leading_gap + name_text_width + trailing_gap
 
 
 # ---------------------------------------------------------------------------
