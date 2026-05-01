@@ -262,6 +262,7 @@ def AdjustableText(
     text_anchor: str = "start",
     dominant_baseline: str = "text-before-edge",
     opacity: float = 1.0,
+    letter_spacing: float | None = None,
 ):
     """Render ``text`` as big as it fits inside the given budget.
 
@@ -373,19 +374,24 @@ def AdjustableText(
         # font family, one fill, no tspans. Multi-format text (mixed
         # fonts, Nerd Font icon glyphs) is the next layer's concern;
         # this base layer paints a single style end-to-end.
-        d.append(
-            draw.Text(
-                rendered_text,
-                font_size=font_size,
-                x=origin.x + x_offset,
-                y=origin.y + y_offset,
-                text_anchor=text_anchor,
-                dominant_baseline=dominant_baseline,
-                font_family=family,
-                fill=style.color,
-                opacity=opacity,
-            )
+        text_el = draw.Text(
+            rendered_text,
+            font_size=font_size,
+            x=origin.x + x_offset,
+            y=origin.y + y_offset,
+            text_anchor=text_anchor,
+            dominant_baseline=dominant_baseline,
+            font_family=family,
+            fill=style.color,
+            opacity=opacity,
         )
+        # ``letter_spacing`` is set as a post-build attribute since
+        # ``drawsvg.Text`` doesn't accept it positionally; passing it
+        # via ``args`` keeps the constructor call type-clean while
+        # still emitting the attribute on the SVG element.
+        if letter_spacing is not None:
+            text_el.args["letter_spacing"] = letter_spacing
+        d.append(text_el)
 
     return MetricsComponent(
         size=size,

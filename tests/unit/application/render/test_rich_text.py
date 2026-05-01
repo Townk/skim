@@ -16,6 +16,7 @@ from skim.application.render.render_context import (
 from skim.application.render.rich_text import (
     RichText,
     TextSpan,
+    parse_into_spans,
     resolve_nerd_font_glyphs,
 )
 from skim.application.render.text import Font
@@ -64,6 +65,85 @@ class TestResolveNerdFontGlyphs:
     def test_handles_unterminated_token(self):
         out = resolve_nerd_font_glyphs("%%md-keyboard rest")
         assert "rest" in out
+
+
+# ---------------------------------------------------------------------------
+# parse_into_spans — splits a string into per-font TextSpans
+# ---------------------------------------------------------------------------
+
+
+class TestParseIntoSpans:
+    def test_plain_text_yields_single_span_with_default_style(self):
+        default = _style(12.0)
+        spans = parse_into_spans("hello world", default)
+        assert len(spans) == 1
+        assert spans[0].text == "hello world"
+        assert spans[0].style == default
+
+    def test_token_yields_symbols_span_with_default_size_and_color(self):
+        default = _style(20.0, color="#FF0000")
+        spans = parse_into_spans("%%md-keyboard;", default)
+        assert len(spans) == 1
+        # Symbols span keeps the default size + colour but switches font.
+        assert spans[0].style is not None
+        assert spans[0].style.font == Font.SYMBOLS
+        assert spans[0].style.size == 20.0
+        assert spans[0].style.color == "#FF0000"
+        # Text is the resolved single-character glyph.
+        assert len(spans[0].text) == 1
+
+    def test_mixed_input_splits_into_separate_spans(self):
+        default = _style(12.0)
+        spans = parse_into_spans("Foo %%md-keyboard; bar", default)
+        # ``Foo `` → text span; token → symbols span; `` bar`` → text span.
+        assert len(spans) == 3
+        assert spans[0].text == "Foo "
+        assert spans[0].style == default
+        assert spans[1].style is not None
+        assert spans[1].style.font == Font.SYMBOLS
+        assert spans[2].text == " bar"
+        assert spans[2].style == default
+
+    def test_unknown_token_kept_literal_in_text_span(self):
+        default = _style(12.0)
+        spans = parse_into_spans("foo %%not-a-token; bar", default)
+        # No split because the token doesn't resolve — single text span.
+        assert len(spans) == 1
+        assert spans[0].text == "foo %%not-a-token; bar"
+        assert spans[0].style == default
+
+
+# ---------------------------------------------------------------------------
+# Separator parameter — passing ``""`` disables the auto-inserted gap
+# ---------------------------------------------------------------------------
+
+
+class TestSeparator:
+    def test_default_separator_inserts_space_between_spans(self):
+        with _ctx():
+            el = RichText(
+                spans=[TextSpan(text="foo"), TextSpan(text="bar")],
+                style=_style(12.0),
+            )
+        # Default separator " " — width should match ``measure("foo ") + measure("bar")``.
+        expected = measure_text_width(
+            "foo ", Font.FINGER_KEY, 12.0
+        ) + measure_text_width("bar", Font.FINGER_KEY, 12.0)
+        assert abs(el.size.width - expected) < 0.5
+
+    def test_empty_separator_preserves_input_spacing(self):
+        # When ``separator=""`` the spans render adjacent — the
+        # rendered width sums the per-span natural widths exactly.
+        with _ctx():
+            el = RichText(
+                spans=[TextSpan(text="foo"), TextSpan(text="bar")],
+                style=_style(12.0),
+                separator="",
+            )
+        expected = measure_text_width(
+            "foo", Font.FINGER_KEY, 12.0
+        ) + measure_text_width("bar", Font.FINGER_KEY, 12.0)
+        assert abs(el.size.width - expected) < 0.5
 
 
 # ---------------------------------------------------------------------------

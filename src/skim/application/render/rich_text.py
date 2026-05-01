@@ -78,12 +78,15 @@ from .adjustable_text import (
 from .composable import Composable
 from .primitives import MetricsComponent, Point, Size
 from .render_context import TextStyle
+from .text import Font
 
-# Inter-span separator. Appended to every span's text except the
-# last so the gap between spans is rendered with the preceding
+# Default inter-span separator. Appended to every span's text except
+# the last so the gap between spans is rendered with the preceding
 # span's font / size / colour and naturally contributes to that
-# span's measured width.
-_SEPARATOR = " "
+# span's measured width. Callers that build their own span list
+# (with explicit spacing already in the texts, e.g. ``parse_into_spans``)
+# pass ``separator=""`` to disable.
+_DEFAULT_SEPARATOR = " "
 
 # Single-character ellipsis used when truncation appends an extra
 # span. Painted with the parent :func:`RichText`'s ``style`` so the
@@ -178,27 +181,95 @@ def resolve_nerd_font_glyphs(text: str) -> str:
     return "".join(out)
 
 
+def parse_into_spans(text: str, default_style: TextStyle) -> list[TextSpan]:
+    """Split ``text`` into a list of :class:`TextSpan` objects.
+
+    Plain-text fragments become a span carrying ``default_style``;
+    every Nerd Font token (``%%[nf-]<class>;``) becomes a single-
+    character span carrying a style identical to ``default_style``
+    except for the font, which switches to :attr:`Font.SYMBOLS` so
+    the glyph renders correctly. The size and colour are inherited
+    so the icon scales with the surrounding text.
+
+    Tokens that don't resolve to a known glyph stay literal in
+    their text span — the same fallback :func:`resolve_nerd_font_glyphs`
+    applies. Adjacent text fragments don't merge across token
+    boundaries; the returned list mirrors the structural break.
+
+    Intended for callers that have a single string with mixed
+    plain-text and icon content (e.g. a key label like
+    ``"Foo %%nf-md-arrow-up;"``) and want :func:`RichText` to render
+    each part with the right font. Pair with ``RichText(separator="")``
+    so the inter-span auto-separator doesn't insert extra whitespace
+    on top of the spacing already encoded in the input string.
+    """
+    glyphs = load_nerdfont_glyphs()
+    symbols_style = TextStyle(
+        font=Font.SYMBOLS,
+        size=default_style.size,
+        color=default_style.color,
+    )
+    spans: list[TextSpan] = []
+    text_buffer: list[str] = []
+
+    def _flush_text() -> None:
+        if text_buffer:
+            spans.append(TextSpan(text="".join(text_buffer), style=default_style))
+            text_buffer.clear()
+
+    i = 0
+    n = len(text)
+    while i < n:
+        if i + 2 < n and text[i] == "%" and text[i + 1] == "%":
+            j = i + 2
+            cls = ""
+            while j < n and text[j] != ";":
+                cls += text[j]
+                j += 1
+            if j < n and text[j] == ";":
+                if not cls.startswith("nf-"):
+                    cls = f"nf-{cls}"
+                glyph = glyphs.get(cls)
+                if glyph is not None:
+                    _flush_text()
+                    spans.append(TextSpan(text=glyph, style=symbols_style))
+                    i = j + 1
+                    continue
+        text_buffer.append(text[i])
+        i += 1
+    _flush_text()
+    return spans
+
+
 # ---------------------------------------------------------------------------
 # Internal: relaxation + truncation
 # ---------------------------------------------------------------------------
 
 
-def _texts_with_separators(raw: list[str]) -> list[str]:
-    """Append the inter-span separator to all entries except the last.
+def _texts_with_separators(raw: list[str], separator: str) -> list[str]:
+    """Append ``separator`` to all entries except the last.
 
     Built fresh each time the trial set changes (e.g. when a span
     is dropped during truncation) so the right span always gets the
     trailing separator regardless of how the list was assembled.
+    Pass ``separator=""`` to disable (callers that have explicit
+    spacing baked into their input strings — typically the output
+    of :func:`parse_into_spans`).
     """
+    if not separator:
+        return list(raw)
     n = len(raw)
-    return [r + (_SEPARATOR if i < n - 1 else "") for i, r in enumerate(raw)]
+    return [r + (separator if i < n - 1 else "") for i, r in enumerate(raw)]
 
 
 def _measure_widths(
-    styles: list[TextStyle], rendered: list[str], sizes: list[float]
+    styles: list[TextStyle],
+    rendered: list[str],
+    sizes: list[float],
+    separator: str,
 ) -> list[float]:
     """Measure each span's painted width at its current font size."""
-    seps = _texts_with_separators(rendered)
+    seps = _texts_with_separators(rendered, separator)
     return [measure_text_width(seps[i], styles[i].font, sizes[i]) for i in range(len(seps))]
 
 
@@ -209,6 +280,7 @@ def _relax_sizes(
     rendered: list[str],
     max_width: float | None,
     max_height: float | None,
+    separator: str,
 ) -> list[float]:
     """Run the synchronised-shrink relaxation loop on a trial set.
 
@@ -262,7 +334,7 @@ def _relax_sizes(
     # ``2 * (n + 1)`` is a safety cap; convergence usually happens
     # in 2–3 iterations even with non-linear hinting.
     for _ in range(2 * (n + 1)):
-        widths = _measure_widths(styles, rendered, sizes)
+        widths = _measure_widths(styles, rendered, sizes, separator)
         total = sum(widths)
         if total <= max_width + tolerance:
             return sizes
@@ -301,7 +373,11 @@ def _relax_sizes(
 
 
 def _fits_at_sizes(
-    styles: list[TextStyle], rendered: list[str], sizes: list[float], max_width: float
+    styles: list[TextStyle],
+    rendered: list[str],
+    sizes: list[float],
+    max_width: float,
+    separator: str,
 ) -> bool:
     """Whether the rendered set fits inside ``max_width`` at ``sizes``.
 
@@ -309,7 +385,7 @@ def _fits_at_sizes(
     the relaxation's "converged" exit and the truncation-trigger
     "doesn't fit" check agree on what counts as fitting.
     """
-    return sum(_measure_widths(styles, rendered, sizes)) <= max_width + 0.5
+    return sum(_measure_widths(styles, rendered, sizes, separator)) <= max_width + 0.5
 
 
 def _truncate_with_ellipses(
@@ -322,6 +398,7 @@ def _truncate_with_ellipses(
     text_anchor: str,
     ellipsis_style: TextStyle,
     ellipsis_min: float,
+    separator: str,
 ) -> tuple[list[TextStyle], list[float], list[str], list[float]]:
     """Drop spans + insert ellipsis span(s) until the trial set fits.
 
@@ -370,8 +447,9 @@ def _truncate_with_ellipses(
             rendered=trial_rendered,
             max_width=max_width,
             max_height=max_height,
+            separator=separator,
         )
-        if _fits_at_sizes(trial_styles, trial_rendered, sizes, max_width):
+        if _fits_at_sizes(trial_styles, trial_rendered, sizes, max_width, separator):
             return trial_styles, trial_mins, trial_rendered, sizes
 
         if not kept:
@@ -408,6 +486,7 @@ def RichText(
     text_anchor: str = "start",
     dominant_baseline: str = "text-before-edge",
     opacity: float = 1.0,
+    separator: str = _DEFAULT_SEPARATOR,
 ):
     """Multi-span text with synchronised shrink-to-fit and ellipsis truncation.
 
@@ -420,6 +499,13 @@ def RichText(
     proportionally from the ratio ``min_font_size / style.size``,
     so a span at size 14 under a parent of (size=12, min=8) gets a
     floor of ``14 * 8/12 ≈ 9.33``.
+
+    ``separator`` is auto-appended to every span's text except the
+    last (rendered with that span's font, so it picks up the right
+    metrics). Default is a single space; pass ``""`` when the input
+    spans already encode their own spacing — typically the case when
+    spans came from :func:`parse_into_spans` since the parser
+    preserves the original characters between tokens.
 
     When the natural extent overflows the budget, the relaxation
     loop shrinks all spans by a single factor (preserving
@@ -470,13 +556,16 @@ def RichText(
         rendered=rendered,
         max_width=max_width,
         max_height=max_height,
+        separator=separator,
     )
 
     # 4. If the relaxed sizes still overflow ``max_width``, enter
     #    the truncation phase. Inserts ``…`` span(s) painted with
     #    the parent style and drops original spans iteratively.
     truncated = False
-    if max_width is not None and not _fits_at_sizes(effective_styles, rendered, sizes, max_width):
+    if max_width is not None and not _fits_at_sizes(
+        effective_styles, rendered, sizes, max_width, separator
+    ):
         effective_styles, span_mins, rendered, sizes = _truncate_with_ellipses(
             styles=effective_styles,
             mins=span_mins,
@@ -486,6 +575,7 @@ def RichText(
             text_anchor=text_anchor,
             ellipsis_style=style,
             ellipsis_min=parent_min,
+            separator=separator,
         )
         truncated = True
 
@@ -493,7 +583,7 @@ def RichText(
     #    span's style is replaced with the resolved size; no
     #    per-span ``max_width`` since the relaxation already
     #    sized them to fit.
-    sep_rendered = _texts_with_separators(rendered)
+    sep_rendered = _texts_with_separators(rendered, separator)
     span_elements = [
         AdjustableText(
             text=text,
@@ -553,5 +643,6 @@ __all__ = [
     "RichText",
     "RichTextMetrics",
     "TextSpan",
+    "parse_into_spans",
     "resolve_nerd_font_glyphs",
 ]

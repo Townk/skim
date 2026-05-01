@@ -40,9 +40,10 @@ from .composable import Composable
 from .legend import _legend_key_label, _LegendGeometry
 from .primitives import Column, MetricsComponent, Point, Size
 from .render_context import TextStyle
+from .rich_text import RichText, parse_into_spans
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
-from .text import Font, Label
+from .text import Font
 
 if TYPE_CHECKING:
     from skim.domain import SvalboardTapDance, SvalboardTargetKey
@@ -208,17 +209,42 @@ def TapDanceCell(
     rest of the table.
     """
     metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
-    use_system_fonts = ctx.config.output.style.use_system_fonts
     cell_w = cell_width if cell_width is not None else metrics.cell_w
     inner_w = metrics.cell_inner_w * (cell_w / metrics.cell_w)
     row_h = metrics.row_height
     size = Size(cell_w, row_h)
     rect_x_offset = (cell_w - inner_w) / 2.0
 
+    # Pre-build the optional key label as a :func:`RichText`. Cell
+    # labels can carry Nerd Font tokens (icon glyphs alongside text),
+    # so :func:`parse_into_spans` splits the input into properly-
+    # styled spans — plain-text fragments use ``Font.FINGER_KEY``,
+    # tokens become single-character spans on ``Font.SYMBOLS``.
+    # ``separator=""`` because the parser preserves any whitespace
+    # already in the input string; we don't want an extra space
+    # between adjacent fragments.
+    label_style = TextStyle(
+        font=Font.FINGER_KEY,
+        size=metrics.cell_label_font_size,
+        color=text_color,
+    )
+    label_el = (
+        RichText(
+            spans=parse_into_spans(_legend_key_label(content), label_style),
+            style=label_style,
+            max_width=inner_w,
+            text_anchor="middle",
+            dominant_baseline="central",
+            separator="",
+        )
+        if content is not None
+        else None
+    )
+
     def draw_at(d, origin):
         rect_x = origin.x + rect_x_offset
         rect_y = origin.y
-        if content is None:
+        if label_el is None:
             d.append(
                 draw.Rectangle(
                     x=rect_x,
@@ -247,26 +273,17 @@ def TapDanceCell(
                 stroke_opacity=0.18,
             )
         )
-        # Cell labels can carry Nerd Font tokens (icon glyphs alongside
-        # text), which the single-style :func:`AdjustableText` doesn't
-        # render — paint via :meth:`Label.build_text` so the multi-font
-        # ``<text>``+``<tspan>`` shape comes out right. Once a multi-
-        # span ``RichText`` (and key-aware ``KeyLabel``) lands, this
-        # call site moves up a layer.
-        d.append(
-            Label(
-                _legend_key_label(content),
-                font=Font.FINGER_KEY,
-                text_color=text_color,
-                text_anchor="middle",
-                dominant_baseline="central",
-            ).build_text(
-                x=rect_x + inner_w / 2,
-                y=rect_y + row_h / 2 + metrics.chip_inner_text_baseline_offset,
-                font_size=metrics.cell_label_font_size,
-                use_system_fonts=use_system_fonts,
-            )
+        # Place the bbox top-left so the bbox vertical centre lands
+        # at the inner rect's vertical centre + the historical
+        # ``chip_inner_text_baseline_offset`` tweak (compensates for
+        # SVG ``central`` baseline not matching the font's visual
+        # centre — same magic offset the chip glyph and TD name use).
+        label_origin = Point(
+            rect_x,
+            rect_y + row_h / 2 + metrics.chip_inner_text_baseline_offset
+            - label_el.size.height / 2,
         )
+        label_el.draw_at(d, label_origin)
 
     return size, draw_at
 
@@ -301,7 +318,6 @@ def TapDanceRow(
     :func:`TapDanceCell` instances.
     """
     metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
-    use_system_fonts = ctx.config.output.style.use_system_fonts
     if name_column_width is None:
         name_column_width = metrics.name_w - metrics.chip_width
     cell_w = cell_width if cell_width is not None else metrics.cell_w
@@ -336,6 +352,27 @@ def TapDanceRow(
         )
         if td.name
         else None
+    )
+
+    # Pre-build the chip glyph as a :func:`RichText`. The label
+    # carries a Nerd Font icon token (the ``keyboard_close`` glyph)
+    # followed by the tap-dance id text; :func:`parse_into_spans`
+    # splits it into a symbols-font icon span and a plain-text id
+    # span. ``separator=""`` because the ``" "`` between the token
+    # and the id is already encoded in the input string and comes
+    # out as part of the trailing text span — no need to insert
+    # another gap.
+    chip_label_style = TextStyle(
+        font=Font.FINGER_KEY,
+        size=metrics.chip_inner_font_size,
+        color="#FFF",
+    )
+    chip_glyph_el = RichText(
+        spans=parse_into_spans(f"%%nf-md-keyboard_close; {td.id}", chip_label_style),
+        style=chip_label_style,
+        text_anchor="middle",
+        dominant_baseline="central",
+        separator="",
     )
 
     def draw_at(d, origin):
@@ -374,23 +411,15 @@ def TapDanceRow(
                 stroke_width=metrics.chip_stroke_width,
             )
         )
-        # Chip glyph (the keyboard-close icon + id) centred in the chip.
-        chip_label_text = f"%%nf-md-keyboard_close; {td.id}"
-        d.append(
-            Label(
-                chip_label_text,
-                Font.FINGER_KEY,
-                text_color="#FFF",
-                background_color=accent_fill,
-                text_anchor="middle",
-                dominant_baseline="central",
-            ).build_text(
-                x + metrics.chip_width / 2,
-                cy + metrics.chip_inner_text_baseline_offset,
-                metrics.chip_inner_font_size,
-                use_system_fonts,
-            )
+        # Chip glyph (the keyboard-close icon + id) centred in the
+        # chip. Position the bbox top-left so its centre lands at the
+        # chip's centre + ``chip_inner_text_baseline_offset`` (same
+        # central-baseline tweak the cell labels and TD name use).
+        chip_origin = Point(
+            x + metrics.chip_width / 2 - chip_glyph_el.size.width / 2,
+            cy + metrics.chip_inner_text_baseline_offset - chip_glyph_el.size.height / 2,
         )
+        chip_glyph_el.draw_at(d, chip_origin)
         # Optional name in the chip's outlined extension. The
         # ``AdjustableText`` element handles per-row truncation when the
         # natural rendered width overflows the column's text slot. The
@@ -452,22 +481,43 @@ def TapDanceColumnHeader(
     height = metrics.header_height
     size = Size(width, height)
 
+    # Pre-build each column label as an :func:`AdjustableText`. Plain
+    # text — no Nerd Font tokens — so the single-style base is the
+    # right layer (no need for ``RichText``). ``letter_spacing`` is
+    # threaded through so the painted strip keeps the same tracking
+    # the legacy ``draw.Text`` call applied.
+    column_label_style = TextStyle(
+        font=Font.FINGER_KEY,
+        size=metrics.column_label_font_size,
+        color=text_color,
+    )
+    column_labels = ("TAP", "HOLD", "DOUBLE-TAP", "TAP & HOLD")
+    column_label_els = [
+        AdjustableText(
+            text=label,
+            style=column_label_style,
+            text_anchor="middle",
+            dominant_baseline="alphabetic",
+            letter_spacing=metrics.column_label_letter_spacing,
+        )
+        for label in column_labels
+    ]
+
     def draw_at(d, origin):
         x, y = origin.x, origin.y
-        text_y = y + metrics.column_label_baseline_offset
-        for i, label in enumerate(("TAP", "HOLD", "DOUBLE-TAP", "TAP & HOLD")):
-            d.append(
-                draw.Text(
-                    label,
-                    x=x + cells_start_x + i * cell_w + cell_w / 2,
-                    y=text_y,
-                    font_size=metrics.column_label_font_size,
-                    fill=text_color,
-                    letter_spacing=metrics.column_label_letter_spacing,
-                    text_anchor="middle",
-                    font_family="'Roboto', sans-serif",
-                )
+        # Each label paints with ``dominant_baseline="alphabetic"`` so
+        # its baseline lands at the painted ``y``. We want every
+        # column's baseline at ``y + column_label_baseline_offset`` —
+        # the SVG y for an alphabetic-baseline element equals the
+        # baseline directly, so the bbox-top origin must be at
+        # ``baseline_y - bbox_height``.
+        for i, el in enumerate(column_label_els):
+            cell_centre_x = x + cells_start_x + i * cell_w + cell_w / 2
+            label_origin = Point(
+                cell_centre_x - el.size.width / 2,
+                y + metrics.column_label_baseline_offset - el.size.height,
             )
+            el.draw_at(d, label_origin)
 
     return size, draw_at
 
