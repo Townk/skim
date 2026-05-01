@@ -78,6 +78,9 @@ def _get_config(
     show_symbol_legend: bool = True,
     symbol_legend_flow: str | None = None,
     symbol_legend_columns: int | None = None,
+    macros_scale: float | None = None,
+    tap_dances_scale: float | None = None,
+    symbols_scale: float | None = None,
     title_override: str | None = None,
     copyright_override: str | None = None,
     double_south_override: bool = False,
@@ -146,6 +149,12 @@ def _get_config(
         style_updates["symbol_legend_flow"] = SymbolLegendFlow(symbol_legend_flow)
     if symbol_legend_columns is not None:
         style_updates["symbol_legend_columns"] = symbol_legend_columns
+    if macros_scale is not None:
+        style_updates["macros_scale"] = macros_scale
+    if tap_dances_scale is not None:
+        style_updates["tap_dances_scale"] = tap_dances_scale
+    if symbols_scale is not None:
+        style_updates["symbols_scale"] = symbols_scale
 
     new_style = config.output.style.model_copy(update=style_updates)
 
@@ -308,6 +317,9 @@ def generate_keymap(
         show_symbol_legend=show_symbol_legend,
         symbol_legend_flow=symbol_legend_flow,
         symbol_legend_columns=symbol_legend_columns,
+        macros_scale=macros_scale,
+        tap_dances_scale=tap_dances_scale,
+        symbols_scale=symbols_scale,
         title_override=title,
         copyright_override=copyright_text,
         double_south_override=double_south,
@@ -324,8 +336,5 @@ def generate_keymap(
         targets,
         raw_keymap=input_keymap,
         keycode_mappings=keycode_mappings,
-        macros_scale=macros_scale,
-        tap_dances_scale=tap_dances_scale,
-        symbols_scale=symbols_scale,
     )
     save_drawings(outputs, drawings, outputs.render_engine)

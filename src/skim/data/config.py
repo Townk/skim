@@ -781,6 +781,16 @@ class Style(BaseModel):
             canvas to fit the resulting natural width. ``None`` (default)
             lets the table pick the largest column count that fits the
             canvas budget — current per-layer / overview behaviour.
+        macros_scale: Body-scale multiplier for the standalone macros
+            image. Body chips and pills scale by this factor; the
+            chrome (title, footer, outer padding) stays at the unscaled
+            per-image size. Default 1.5 — matches the per-image
+            ``BODY_SCALE`` constant the composable framework uses for
+            the standalone special-keys images.
+        tap_dances_scale: Body-scale multiplier for the standalone
+            tap-dances image. Default 1.5.
+        symbols_scale: Body-scale multiplier for the standalone symbols
+            image. Default 1.5.
 
     Example:
         >>> style = Style(
@@ -805,6 +815,9 @@ class Style(BaseModel):
     show_symbol_legend: bool = True
     symbol_legend_flow: SymbolLegendFlowStr = Field(default=SymbolLegendFlow.COLUMN_MAJOR)
     symbol_legend_columns: int | None = Field(default=None, gt=0)
+    macros_scale: float = Field(default=1.5, gt=0)
+    tap_dances_scale: float = Field(default=1.5, gt=0)
+    symbols_scale: float = Field(default=1.5, gt=0)
 
 
 class Output(BaseModel):

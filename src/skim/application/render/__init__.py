@@ -408,9 +408,6 @@ def draw_keymap(
     targets: KeymapGeneratorTargets,
     raw_keymap: SvalboardKeymap[str] | None = None,
     keycode_mappings: KeycodeMappings | None = None,
-    macros_scale: float | None = None,
-    tap_dances_scale: float | None = None,
-    symbols_scale: float | None = None,
 ) -> dict[str, draw.Drawing]:
     keymap_images: dict[str, draw.Drawing] = {}
     header_dims = compute_header_dims(config, keymap)
@@ -446,15 +443,13 @@ def draw_keymap(
 
     if targets.macros:
         if has_macros:
-            keymap_images["keymap-macros"] = draw_macros_image(config, keymap, scale=macros_scale)
+            keymap_images["keymap-macros"] = draw_macros_image(config, keymap)
         else:
             logger.warning("Skipping macros image: no macros are defined in the keymap.")
 
     if targets.tap_dances:
         if has_tap_dances:
-            keymap_images["keymap-tap-dances"] = draw_tap_dances_image(
-                config, keymap, scale=tap_dances_scale
-            )
+            keymap_images["keymap-tap-dances"] = draw_tap_dances_image(config, keymap)
         else:
             logger.warning("Skipping tap-dances image: no tap-dances are defined in the keymap.")
 
@@ -472,9 +467,7 @@ def draw_keymap(
         else:
             symbol_entries = collect_symbol_entries(config, raw_keymap, keycode_mappings)
             if symbol_entries:
-                keymap_images["keymap-symbols"] = draw_symbols_image(
-                    config, keymap, symbol_entries, scale=symbols_scale
-                )
+                keymap_images["keymap-symbols"] = draw_symbols_image(config, keymap, symbol_entries)
             else:
                 logger.warning("Skipping symbols image: no resolvable symbols found in the keymap.")
 
