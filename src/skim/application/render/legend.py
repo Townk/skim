@@ -252,6 +252,88 @@ def build_action_glyph(
     )
 
 
+# Action-glyph primitives — coordinates inside ``build_action_glyph``.
+# Lives here (above the LEGACY marker) because :func:`build_action_glyph`
+# itself is still consumed by the active :func:`MacroPill` composable.
+_GLYPH_DOT_RADIUS_RATIO = 3 / 1600
+_GLYPH_TRIANGLE_HALF_RATIO = 3 / 1600
+_GLYPH_DELAY_DIAL_RADIUS_RATIO = 3.5 / 1600
+_GLYPH_DELAY_HOUR_HAND_RATIO = 2.2 / 1600
+_GLYPH_DELAY_MINUTE_HAND_RATIO = 1.6 / 1600
+_GLYPH_DELAY_STROKE_RATIO = 1.1 / 1600
+_GLYPH_TEXT_FONT_SIZE_RATIO = 9 / 1600
+
+
+def _one_line(text: str) -> str:
+    """Collapse newlines to spaces so legend pills/cells stay single-line.
+
+    Multi-line key labels (and macro text actions) work fine on the
+    keymap proper but break legend rendering — the chip/cell is sized
+    for one line of text and additional lines spill outside the rounded
+    rect. The legend treats labels as inline strings.
+    """
+    return text.replace("\n", " ")
+
+
+def _legend_key_label(key: SvalboardTargetKey) -> str:
+    """Return the label string to display for ``key`` in the legend.
+
+    For layer-only functions (``MO(N)``, ``TO(N)``, ``TG(N)`` …), the
+    resolved label is just the layer glyph — ambiguous on its own. We
+    append the target layer number so the reader can tell which layer is
+    being switched to. Compound functions (``LT(N, KC_A)``, ``LM(N,
+    mods)``) already embed the layer digit alongside the tap key via the
+    ``|`` separator, so they pass through unchanged.
+
+    Newlines are collapsed to spaces — see :func:`_one_line`.
+    """
+    label = _one_line(key.label)
+    if key.layer_switch is not None and SEPARATOR_CHAR not in label:
+        return f"{label} {key.layer_switch}"
+    return label
+
+
+def _macro_action_pill_labels(action: SvalboardMacroAction) -> list[str]:
+    """Visible label per pill emitted by an action.
+
+    TAP/DOWN/UP emit one pill per key in ``action.keys``. TEXT emits one
+    pill with the literal text. DELAY emits one pill with ``"<duration>ms"``.
+    """
+    if action.kind in (
+        SvalboardMacroActionKind.TAP,
+        SvalboardMacroActionKind.DOWN,
+        SvalboardMacroActionKind.UP,
+    ):
+        return [_legend_key_label(k) for k in action.keys]
+    if action.kind == SvalboardMacroActionKind.TEXT:
+        return [_one_line(action.text)]
+    if action.kind == SvalboardMacroActionKind.DELAY:
+        return [f"{action.duration_ms}ms"]
+    return []
+
+
+def _flatten_macro_pills(
+    macro: SvalboardMacro[SvalboardTargetKey],
+) -> list[tuple[SvalboardMacroActionKind, str]]:
+    """Pre-flatten ``macro.actions`` into a (kind, label) sequence."""
+    out: list[tuple[SvalboardMacroActionKind, str]] = []
+    for action in macro.actions:
+        for label in _macro_action_pill_labels(action):
+            out.append((action.kind, label))
+    return out
+
+
+# ===========================================================================
+# LEGACY OVERVIEW PATH
+# ---------------------------------------------------------------------------
+# Everything below this marker is the imperative-renderer code that the
+# overview / per-layer image path still consumes. Each composable section
+# (macros / tap-dances) has its own composable-framework equivalents in
+# :mod:`macros` and :mod:`tap_dance`; the helpers here stay live until
+# the overview migrates, at which point this whole block retires.
+# ===========================================================================
+
+
 # --- Geometry ratios (mirrors docs/design/layer.jsx Legend) -----------------
 # Every visual size is expressed as a fraction of the document width so the
 # legend block keeps the same proportions across output sizes. The pixel value
@@ -271,15 +353,6 @@ _ICON_TEXT_GAP_RATIO = 10 / 1600  # gap from icon's right edge to text's left ed
 
 _PILL_MIN_TEXT_WIDTH_RATIO = 8 / 1600  # floor for measured text width inside a pill
 _PILL_MIN_TOTAL_WIDTH_RATIO = 28 / 1600  # absolute minimum pill width
-
-# Action-glyph primitives — coordinates inside ``build_action_glyph``.
-_GLYPH_DOT_RADIUS_RATIO = 3 / 1600
-_GLYPH_TRIANGLE_HALF_RATIO = 3 / 1600
-_GLYPH_DELAY_DIAL_RADIUS_RATIO = 3.5 / 1600
-_GLYPH_DELAY_HOUR_HAND_RATIO = 2.2 / 1600
-_GLYPH_DELAY_MINUTE_HAND_RATIO = 1.6 / 1600
-_GLYPH_DELAY_STROKE_RATIO = 1.1 / 1600
-_GLYPH_TEXT_FONT_SIZE_RATIO = 9 / 1600
 
 # Macro/TD row chrome
 _ROW_CONTENT_INDENT_GAP_RATIO = 12 / 1600  # gap between TAG_W and the indent column
@@ -466,11 +539,10 @@ class _LegendGeometry:
         )
 
 
-# Backwards-compatible module-level constants — these mirror what the legend
-# renders at the canonical 1600-unit document width and are kept primarily for
-# tests and any external consumers that snapshotted the previous public names.
-# Production code should derive sizes from a ``_LegendGeometry`` (or pass
-# ``doc_width`` to the public functions) so the legend scales with the canvas.
+# Backwards-compatible module-level constants — mirror what the legend
+# renders at the canonical 1600-unit document width and are kept primarily
+# for tests and any external consumers that snapshotted the previous
+# public names.
 _DEFAULT_GEOM = _LegendGeometry.for_doc_width(_DEFAULT_DOC_WIDTH)
 TAG_W = _DEFAULT_GEOM.tag_w
 TAG_H = _DEFAULT_GEOM.tag_h
@@ -493,76 +565,6 @@ SECTION_HEADER_HEIGHT = _DEFAULT_GEOM.section_header_height
 COLUMN_GAP = _DEFAULT_GEOM.column_gap
 ACTION_KEY_STRIP_HEIGHT = _DEFAULT_GEOM.action_key_strip_height
 ACTION_KEY_PRE_GAP = _DEFAULT_GEOM.action_key_pre_gap
-
-
-def _one_line(text: str) -> str:
-    """Collapse newlines to spaces so legend pills/cells stay single-line.
-
-    Multi-line key labels (and macro text actions) work fine on the
-    keymap proper but break legend rendering — the chip/cell is sized
-    for one line of text and additional lines spill outside the rounded
-    rect. The legend treats labels as inline strings.
-    """
-    return text.replace("\n", " ")
-
-
-def _legend_key_label(key: SvalboardTargetKey) -> str:
-    """Return the label string to display for ``key`` in the legend.
-
-    For layer-only functions (``MO(N)``, ``TO(N)``, ``TG(N)`` …), the
-    resolved label is just the layer glyph — ambiguous on its own. We
-    append the target layer number so the reader can tell which layer is
-    being switched to. Compound functions (``LT(N, KC_A)``, ``LM(N,
-    mods)``) already embed the layer digit alongside the tap key via the
-    ``|`` separator, so they pass through unchanged.
-
-    Newlines are collapsed to spaces — see :func:`_one_line`.
-    """
-    label = _one_line(key.label)
-    if key.layer_switch is not None and SEPARATOR_CHAR not in label:
-        return f"{label} {key.layer_switch}"
-    return label
-
-
-def _macro_action_pill_labels(action: SvalboardMacroAction) -> list[str]:
-    """Visible label per pill emitted by an action.
-
-    TAP/DOWN/UP emit one pill per key in ``action.keys``. TEXT emits one
-    pill with the literal text. DELAY emits one pill with ``"<duration>ms"``.
-    """
-    if action.kind in (
-        SvalboardMacroActionKind.TAP,
-        SvalboardMacroActionKind.DOWN,
-        SvalboardMacroActionKind.UP,
-    ):
-        return [_legend_key_label(k) for k in action.keys]
-    if action.kind == SvalboardMacroActionKind.TEXT:
-        return [_one_line(action.text)]
-    if action.kind == SvalboardMacroActionKind.DELAY:
-        return [f"{action.duration_ms}ms"]
-    return []
-
-
-def _flatten_macro_pills(
-    macro: SvalboardMacro[SvalboardTargetKey],
-) -> list[tuple[SvalboardMacroActionKind, str]]:
-    """Pre-flatten ``macro.actions`` into a (kind, label) sequence."""
-    out: list[tuple[SvalboardMacroActionKind, str]] = []
-    for action in macro.actions:
-        for label in _macro_action_pill_labels(action):
-            out.append((action.kind, label))
-    return out
-
-
-# ===========================================================================
-# LEGACY OVERVIEW PATH
-# ---------------------------------------------------------------------------
-# Everything below this marker is the imperative-renderer code that the
-# overview / per-layer image path still consumes. Each composable section
-# (macros / tap-dances) has its own composable-framework equivalents in
-# :mod:`macros` and :mod:`tap_dance`; the helpers here stay live until
-# the overview migrates, at which point this whole block retires.
-# ===========================================================================
 
 
 def _pill_width(label: str, geom: _LegendGeometry) -> float:
