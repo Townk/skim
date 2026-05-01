@@ -211,6 +211,8 @@ class TestOverviewLayout:
         Mirrors the per-layer canvas rule — the bottom shouldn't have the larger
         outer padding the sides use.
         """
+        from skim.application.render.layout import KeymapLayoutMetrics
+
         config = _make_config(3)
         layout = OverviewLayout(config, _DEFAULT_BADGE)
 
@@ -218,7 +220,10 @@ class TestOverviewLayout:
         thumb_bottom = layout.thumb_row_y + thumb_height
         bottom_inset = layout.canvas_height - thumb_bottom
 
-        expected = config.output.layout.spacing.inset
+        # The expected one-inset gap matches the resolved inset on the
+        # canonical metrics — the config's ``spacing.inset`` is unset
+        # (None) by default and resolved via :class:`DocumentMetrics`.
+        expected = KeymapLayoutMetrics.from_config(config).inset
         assert bottom_inset == pytest.approx(expected)
 
     def test_canvas_width_no_routing_when_zero_columns(self):

@@ -296,7 +296,8 @@ def _build_ctx() -> RenderContext:
         document_metrics=DocumentMetrics(
             doc_width=1600.0,
             margin=10.0,
-            padding=20.0,
+            border_width=2.0,
+            inset=20.0,
             border_radius=8.0,
             column_gap=24.0,
         ),

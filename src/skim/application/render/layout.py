@@ -100,20 +100,23 @@ class KeymapLayoutMetrics:
 
     @classmethod
     def from_config(cls, config: SkimConfig) -> "KeymapLayoutMetrics":
-        """Create LayoutMetrics from a SkimConfig."""
-        margin = (
-            config.output.layout.spacing.margin
-            if not config.output.style.border
-            else max(
-                # The margin must be at least half the size of the border to
-                # allow the render to draw the full border that is usually
-                # render from its center position to the outter side.
-                config.output.style.border.width / 2.0,
-                config.output.layout.spacing.margin,
-            )
-        )
-        inset = config.output.layout.spacing.inset
-        width = config.output.layout.width
+        """Create LayoutMetrics from a SkimConfig.
+
+        Reads margin and inset off a freshly-built
+        :class:`DocumentMetrics` — that's the canonical source for the
+        document's outer-chrome values, so margin / inset are resolved
+        in exactly one place (including the ``border.width / 2`` margin
+        floor and the width-proportional inset fallback).
+        """
+        # Local import — :mod:`render_context` doesn't depend on this
+        # module, but importing eagerly would make any module that
+        # imports ``layout`` pull in the render context too.
+        from .render_context import DocumentMetrics
+
+        doc_metrics = DocumentMetrics.from_config(config)
+        margin = doc_metrics.margin
+        inset = doc_metrics.inset
+        width = doc_metrics.doc_width
         # Each keyboard side should have a left **and** right padding to
         # make them visually more separated in the keymap
         center_gap = _CENTER_GAP_INSET_COUNT * inset

@@ -173,7 +173,10 @@ class TestKeymapLayoutMetrics:
         default_metrics = KeymapLayoutMetrics.from_config(default_config)
         custom_metrics = KeymapLayoutMetrics.from_config(custom_config)
 
-        assert default_metrics.inset == 20  # Default inset
+        # Default config leaves ``Spacing.inset`` unset, so the
+        # canonical resolution falls back to the width-proportional
+        # default ``doc_width * 40 / 1600`` — i.e. 40 at width 1600.
+        assert default_metrics.inset == 40
         assert custom_metrics.inset == 30  # Custom inset
 
     def test_canvas_width_from_config(self, default_config, custom_config):

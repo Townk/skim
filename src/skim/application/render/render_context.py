@@ -147,15 +147,22 @@ class Theme:
 # ---------------------------------------------------------------------------
 
 
+# Width-proportional fallback for ``Spacing.inset`` when the user
+# hasn't set it explicitly. Matches the canonical 40-unit gap at the
+# canonical 1600-unit document width — the value the legacy
+# ``_outer_padding`` floor was tuned against.
+_INSET_DEFAULT_RATIO = 40.0 / 1600.0
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class DocumentMetrics:
     """Cross-cutting sizes shared by every composable in one image.
 
-    These are the metrics that aren't owned by any single component —
-    page margins, content padding, the base scale factor, the rounded
-    border's radius. Composables that need them read
-    ``ctx.document_metrics.x`` instead of re-deriving from config each
-    time.
+    The canonical source for the document's outer-chrome metrics —
+    margin, border stroke thickness and inset. Composables (and
+    ``KeymapLayoutMetrics``) read these from a built
+    :class:`DocumentMetrics` instead of resolving them from config
+    independently, so a single resolution rule applies everywhere.
 
     Component-specific metrics (cell width, chip width, font sizes
     used by particular composables) do NOT live here — those belong on
@@ -166,14 +173,25 @@ class DocumentMetrics:
     """The document width the image lays out against."""
 
     margin: float
-    """Outer canvas → border gap (matches ``KeymapLayoutMetrics.margin``)."""
+    """Canvas edge → border-line gap.
 
-    padding: float
-    """Outer canvas → content gap (matches ``_outer_padding``).
+    Resolves to ``output.layout.spacing.margin`` when set, ``0``
+    otherwise. When a border is configured the resolved margin is
+    floored at ``border.width / 2`` so the centred stroke isn't
+    clipped by the canvas edge.
+    """
 
-    Applied uniformly on all four sides of the document — no
-    asymmetric bottom inset. Keeps the outer breathing room
-    consistent regardless of which edge it borders.
+    border_width: float
+    """Border stroke thickness, or ``0`` when no border is configured."""
+
+    inset: float
+    """Border line → content gap, applied uniformly on all four sides.
+
+    Also doubles as the inter-element gap inside the document's main
+    Column (and as the basis for header / footer breathing room).
+    Resolves to ``output.layout.spacing.inset`` when set, otherwise
+    falls back to ``doc_width * 40/1600`` — the historical 40-unit
+    gap at the canonical 1600-unit document width.
     """
 
     border_radius: float | None
@@ -184,19 +202,34 @@ class DocumentMetrics:
 
     @classmethod
     def from_config(cls, config: SkimConfig) -> "DocumentMetrics":
-        """Compute document-wide metrics from a config."""
-        from .layout import KeymapLayoutMetrics
-        from .legend import _LegendGeometry
-        from .overview_layout import _outer_padding
+        """Compute document-wide metrics from a config.
 
-        metrics = KeymapLayoutMetrics.from_config(config)
-        legend_geom = _LegendGeometry.for_doc_width(config.output.layout.width)
+        Resolves margin / border_width / inset directly — this is the
+        canonical source for those values. ``KeymapLayoutMetrics``
+        reads them off the resulting :class:`DocumentMetrics`.
+        """
+        from .legend import _LegendGeometry
+
+        doc_width = config.output.layout.width
+        spacing = config.output.layout.spacing
         border = config.output.style.border
+
+        border_width = border.width if border is not None else 0.0
+        configured_margin = spacing.margin if spacing.margin is not None else 0.0
+        # Floor the margin at ``border_width / 2`` so a centred stroke
+        # never extends past the canvas edge.
+        margin = (
+            max(border_width / 2.0, configured_margin) if border is not None else configured_margin
+        )
+        inset = spacing.inset if spacing.inset is not None else doc_width * _INSET_DEFAULT_RATIO
+
+        legend_geom = _LegendGeometry.for_doc_width(doc_width)
         return cls(
-            doc_width=config.output.layout.width,
-            margin=metrics.margin,
-            padding=_outer_padding(metrics),
-            border_radius=border.radius if border else None,
+            doc_width=doc_width,
+            margin=margin,
+            border_width=border_width,
+            inset=inset,
+            border_radius=border.radius if border is not None else None,
             column_gap=legend_geom.column_gap,
         )
 

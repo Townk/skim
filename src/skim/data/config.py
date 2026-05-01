@@ -451,9 +451,13 @@ class Spacing(BaseModel):
 
     Attributes:
         margin: Outer margin around the entire keyboard layout. Space
-            between the keyboard and the image edge. Defaults to 0.
-        inset: Inner padding within the keyboard border. Space between
-            the border and the key clusters. Defaults to 20.
+            between the image edge and the rounded border. ``None`` (the
+            default) falls back to ``0``.
+        inset: Inner padding within the keyboard border — used both as
+            the gap between the border and the content AND as the gap
+            between elements stacked in the document column. ``None``
+            (the default) falls back to a width-proportional value
+            resolved at render time.
 
     Example:
         >>> spacing = Spacing(margin=10, inset=25)
@@ -463,8 +467,8 @@ class Spacing(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    margin: float = 0
-    inset: float = 20
+    margin: float | None = None
+    inset: float | None = None
 
 
 class Layout(BaseModel):

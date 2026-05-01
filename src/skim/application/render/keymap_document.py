@@ -44,8 +44,7 @@ import drawsvg as draw
 from .composable import Composable
 from .footer import Footer
 from .header import Header
-from .legend import _LegendGeometry, _td_name_column_width
-from .primitives import Column, Component, Padding, Row, Size, Spacer
+from .primitives import Column, Component, Row, Size, Spacer
 
 # The body of a standalone special-keys image (the macro / tap-dance
 # section content) renders at this multiple of the configured document
@@ -79,26 +78,30 @@ def _resolve_title(config) -> str:
 
 
 @Composable(use_context=True)
-def KeymapDocument(ctx, *, content: Component, content_padding: Padding):
-    """The outermost composable — rounded background border + content padding.
+def KeymapDocument(ctx, *, content: Component):
+    """The outermost composable — rounded background border + content offset.
 
-    Owns two parent-level layout concerns at once:
+    Owns the document-level chrome on every side:
 
-    * The rounded background border, painted INSIDE the document
-      extent inset by ``ctx.document_metrics.margin``.
-    * The content padding (``content_padding``) that insets the
-      child from the document edges. The document's reported size
-      grows by ``content_padding.horizontal`` /
-      ``content_padding.vertical`` so the canvas wraps the padded
-      content exactly.
+    * The rounded background border, stroked at
+      ``ctx.document_metrics.margin`` from the canvas edge.
+    * The canvas-edge → content offset, computed as
+      ``margin + border_width + inset`` so the content sits inside
+      the border with ``inset`` of breathing room on every side.
+
+    The document's reported size grows by ``2 * (margin + border_width
+    + inset)`` on each axis so the canvas wraps the offset content
+    exactly.
     """
+    metrics = ctx.document_metrics
+    content_offset = metrics.margin + metrics.border_width + metrics.inset
     size = Size(
-        content.size.width + content_padding.horizontal,
-        content.size.height + content_padding.vertical,
+        content.size.width + 2 * content_offset,
+        content.size.height + 2 * content_offset,
     )
     palette = ctx.theme.palette
     border = ctx.config.output.style.border
-    margin = ctx.document_metrics.margin
+    margin = metrics.margin
 
     def draw_at(d, origin):
         d.append(
@@ -114,7 +117,7 @@ def KeymapDocument(ctx, *, content: Component, content_padding: Padding):
                 stroke_width=border.width if border else None,
             )
         )
-        content.draw_at(d, origin.offset(content_padding.left, content_padding.top))
+        content.draw_at(d, origin.offset(content_offset, content_offset))
 
     return size, draw_at
 
@@ -144,7 +147,8 @@ def KeymapMacroDocument(ctx, *, macros: list, scale: float = BODY_SCALE):
     from .macros import MacroSection, macro_natural_widths
 
     metrics = ctx.document_metrics
-    initial_content_w = metrics.doc_width - 2 * metrics.padding
+    content_offset = metrics.margin + metrics.border_width + metrics.inset
+    initial_content_w = metrics.doc_width - 2 * content_offset
 
     natural_widths = macro_natural_widths(macros, metrics.doc_width * scale)
     longest_natural = max(natural_widths) if natural_widths else 0.0
@@ -153,17 +157,17 @@ def KeymapMacroDocument(ctx, *, macros: list, scale: float = BODY_SCALE):
 
     section = MacroSection(macros=macros, content_width=content_w, scale=scale)
 
-    with Column(gap=section.metrics.rule_offset * 0.5, align="start") as content:
+    with Column(gap=metrics.inset, align="start") as content:
         Header(
             title=_resolve_title(ctx.config),
-            gap=2 * metrics.padding,
+            gap=2 * metrics.inset,
             max_width=content_w,
         )
         content.add(section)
         if ctx.config.output.copyright:
             Footer(text=ctx.config.output.copyright, width=content_w)
 
-    return KeymapDocument(content=content, content_padding=Padding(metrics.padding))
+    return KeymapDocument(content=content)
 
 
 @Composable(use_context=True)
@@ -186,22 +190,23 @@ def KeymapTapDanceDocument(ctx, *, tap_dances: list, scale: float = BODY_SCALE):
     from .tap_dance import TapDanceSection
 
     metrics = ctx.document_metrics
-    initial_content_w = metrics.doc_width - 2 * metrics.padding
+    content_offset = metrics.margin + metrics.border_width + metrics.inset
+    initial_content_w = metrics.doc_width - 2 * content_offset
 
     section = TapDanceSection(tap_dances=tap_dances, scale=scale, max_width=initial_content_w)
     content_w = section.size.width
 
-    with Column(gap=section.metrics.rule_offset * 0.5, align="start") as content:
+    with Column(gap=metrics.inset, align="start") as content:
         Header(
             title=_resolve_title(ctx.config),
-            gap=2 * metrics.padding,
+            gap=2 * metrics.inset,
             max_width=content_w,
         )
         content.add(section)
         if ctx.config.output.copyright:
             Footer(text=ctx.config.output.copyright, width=content_w)
 
-    return KeymapDocument(content=content, content_padding=Padding(metrics.padding))
+    return KeymapDocument(content=content)
 
 
 @Composable(use_context=True)
@@ -210,7 +215,6 @@ def KeymapSpecialKeysDocument(
     *,
     macros: list,
     tap_dances: list,
-    scale: float = BODY_SCALE,
 ):
     """The combined macros + tap-dances image as a single composable.
 
@@ -219,8 +223,10 @@ def KeymapSpecialKeysDocument(
     caller skips painting.
 
     Macros section on the left, tap-dances on the right, separated
-    by ``geom.column_gap``. Falls back to a single-column layout
-    when only one of the two has content.
+    by ``metrics.column_gap``. Falls back to a single-column layout
+    when only one of the two has content. Bodies render at their
+    natural (unscaled) size — only the standalone single-section
+    images use ``BODY_SCALE``.
     """
     if not macros and not tap_dances:
         return Spacer()
@@ -230,42 +236,23 @@ def KeymapSpecialKeysDocument(
     from .tap_dance import TapDanceSection
 
     metrics = ctx.document_metrics
-    # Bodies render at ``scale``; the static name-column width and
-    # the cross-column gap are computed against the scaled geom so
-    # the two columns keep their proportions.
-    scaled_geom = _LegendGeometry.for_doc_width(metrics.doc_width * scale)
+    content_offset = metrics.margin + metrics.border_width + metrics.inset
 
-    target_content_w = metrics.doc_width - 2 * metrics.padding
-    col_gap = scaled_geom.column_gap
+    target_content_w = metrics.doc_width - 2 * content_offset
+    col_gap = metrics.column_gap
     col_w = (target_content_w - col_gap) / 2 if macros and tap_dances else target_content_w
 
-    # Build sections first so we can read their ``rule_offset`` for
-    # the document gap and attach them inside the with-block via
-    # ``content.add(...)``. Both sections expose the same
-    # ``rule_offset`` (they derive it from the shared section-stripe
-    # metrics), so either one drives the document gap.
+    # Pre-build sections so they can be attached inside the with-block
+    # via ``content.add(...)`` / ``body_row.add(...)``.
     macro_section = (
-        MacroSection(macros=macros, content_width=col_w, width=col_w, scale=scale)
-        if macros
-        else None
+        MacroSection(macros=macros, content_width=col_w, width=col_w) if macros else None
     )
-    td_section = (
-        TapDanceSection(
-            tap_dances=tap_dances,
-            width=col_w,
-            scale=scale,
-            name_column_width=_td_name_column_width(scaled_geom, tap_dances),
-        )
-        if tap_dances
-        else None
-    )
-    gap_source = macro_section or td_section
-    assert gap_source is not None  # guaranteed by the empty-check above
+    td_section = TapDanceSection(tap_dances=tap_dances, width=col_w) if tap_dances else None
 
-    with Column(gap=gap_source.metrics.rule_offset * 0.5, align="start") as content:
+    with Column(gap=metrics.inset, align="start") as content:
         Header(
             title=_resolve_title(ctx.config),
-            gap=2 * metrics.padding,
+            gap=2 * metrics.inset,
             max_width=target_content_w,
         )
         if macro_section and td_section:
@@ -280,7 +267,7 @@ def KeymapSpecialKeysDocument(
         if ctx.config.output.copyright:
             Footer(text=ctx.config.output.copyright, width=target_content_w)
 
-    return KeymapDocument(content=content, content_padding=Padding(metrics.padding))
+    return KeymapDocument(content=content)
 
 
 __all__ = [
