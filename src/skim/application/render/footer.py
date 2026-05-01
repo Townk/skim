@@ -103,6 +103,7 @@ def _footer_size_and_draw(
     color: str,
     family: str,
     max_height: float | None,
+    width: float | None = None,
 ) -> tuple[Size, DrawFn]:
     """Pure helper that builds the size + draw closure for a footer line.
 
@@ -110,17 +111,25 @@ def _footer_size_and_draw(
     legacy :func:`append_footer` imperative wrapper so both produce
     pixel-identical output. Empty ``text`` yields a zero-sized no-op
     element so hosts don't need to special-case "no copyright".
+
+    When ``width`` is given the returned size's ``width`` matches it
+    (the element fills the slot) and the text is right-anchored at
+    that slot's right edge — Footer is conceptually always
+    right-aligned, so it owns its alignment instead of asking a
+    parent ``Align`` wrapper to do it. When ``width`` is ``None`` the
+    size matches the text's natural bbox.
     """
     if not text:
         return Size(0.0, 0.0), lambda _d, _o: None
 
     font_size = _resolve_font_size(text, font_max_size, max_height)
-    size = _measure_text_size(text, font_size)
+    text_size = _measure_text_size(text, font_size)
+    size = Size(width if width is not None else text_size.width, text_size.height)
 
     def draw_at(d, origin):
-        # Origin is the top-left of the bbox; ``end`` + ``after-edge``
-        # then pin the rendered text to the bbox's right-bottom corner
-        # so the visible glyphs land inside ``size``.
+        # Text right-anchored at the slot's right edge with
+        # ``after-edge`` baseline so the glyph bbox sits flush at the
+        # bottom-right corner of the reported size.
         d.append(
             draw.Text(
                 text,
@@ -143,19 +152,24 @@ def Footer(
     ctx,
     *,
     text: str,
+    width: float | None = None,
     max_height: float | None = None,
 ):
     """A right-aligned line of footer text (typically a copyright notice).
 
-    Reads typography (font, size, color) from ``ctx.theme.copyright``
-    and the ``use_system_fonts`` flag from ``ctx.config.output.style``
-    so call sites don't have to spell those out.
+    Reads typography (font, size, color) from
+    ``ctx.theme.typography.copyright`` and the ``use_system_fonts``
+    flag from ``ctx.config.output.style`` so call sites don't have to
+    spell those out.
 
-    The element's size matches the rendered glyph bbox of ``text`` at
-    the resolved font size — origin passed to :meth:`draw_at` is the
-    top-left of that bbox. Returns a zero-sized, no-op element when
-    ``text`` is empty so hosts don't need to special-case "no
-    copyright".
+    ``width`` is the slot the footer paints into. When supplied the
+    element's size matches that width and the text right-aligns to
+    its right edge — the parent doesn't need an ``Align`` wrapper
+    since right-alignment is part of "what a footer is." When
+    ``None`` the element's size matches the rendered glyph bbox.
+
+    Returns a zero-sized, no-op element when ``text`` is empty so
+    hosts don't need to special-case "no copyright".
 
     ``max_height`` caps the rendered text height; when supplied and
     the natural text would be taller, the font size shrinks
@@ -170,6 +184,7 @@ def Footer(
         color=typo.color,
         family=family,
         max_height=max_height,
+        width=width,
     )
 
 

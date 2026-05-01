@@ -175,14 +175,45 @@ class TestColumn:
 
 
 class TestPadding:
-    def test_pads_all_sides(self):
-        padded = Padding(_Rect(10, 20), all=4)
-        assert padded.size == Size(18.0, 28.0)
+    def test_zero_default(self):
+        p = Padding()
+        assert (p.top, p.right, p.bottom, p.left) == (0.0, 0.0, 0.0, 0.0)
+        assert p.horizontal == 0.0
+        assert p.vertical == 0.0
 
-    def test_per_side_overrides(self):
-        padded = Padding(_Rect(10, 20), all=4, top=2, bottom=6)
-        # 4 (left) + 10 (child) + 4 (right) = 18; 2 (top) + 20 (child) + 6 (bottom) = 28
-        assert padded.size == Size(18.0, 28.0)
+    def test_one_positional_sets_all_sides(self):
+        p = Padding(10)
+        assert (p.top, p.right, p.bottom, p.left) == (10.0, 10.0, 10.0, 10.0)
+
+    def test_two_positional_is_vertical_horizontal(self):
+        p = Padding(10, 20)
+        assert (p.top, p.right, p.bottom, p.left) == (10.0, 20.0, 10.0, 20.0)
+
+    def test_four_positional_top_right_bottom_left(self):
+        p = Padding(1, 2, 3, 4)
+        assert (p.top, p.right, p.bottom, p.left) == (1.0, 2.0, 3.0, 4.0)
+
+    def test_keyword_all(self):
+        assert Padding(all=10) == Padding(10, 10, 10, 10)
+
+    def test_keyword_symmetric(self):
+        assert Padding(vertical=10, horizontal=20) == Padding(10, 20, 10, 20)
+
+    def test_per_side_keyword_overrides(self):
+        # Start from ``all=4`` then override individual sides.
+        p = Padding(all=4, top=2, bottom=6)
+        assert (p.top, p.right, p.bottom, p.left) == (2.0, 4.0, 6.0, 4.0)
+
+    def test_horizontal_vertical_totals(self):
+        p = Padding(top=1, right=2, bottom=3, left=4)
+        assert p.horizontal == 6.0
+        assert p.vertical == 4.0
+
+    def test_too_many_positional_args_raises(self):
+        import pytest
+
+        with pytest.raises(TypeError):
+            Padding(1, 2, 3)  # type: ignore[call-overload]
 
 
 class TestBorderedFrame:

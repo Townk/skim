@@ -198,9 +198,9 @@ class MetricsComponent(BaseComponent, Generic[_M]):
     frozen dataclass that captures everything its parent might want to
     read — resolved widths, dynamic truncation outcomes, per-row
     heights, anchor points, etc. Layout primitives (``Spacer``,
-    ``Padding``, ``Align``, ``Row``, ``Column``, ``BorderedFrame``)
-    keep returning plain :class:`BaseComponent` since they have no
-    component-specific metrics worth exposing.
+    ``Row``, ``Column``, ``BorderedFrame``) keep returning plain
+    :class:`BaseComponent` since they have no component-specific
+    metrics worth exposing.
 
     The two-tier surface keeps ``component.size`` and
     ``component.draw_at`` on the protocol contract while
@@ -420,64 +420,118 @@ def Column(
     return size, draw_at
 
 
-@Composable
-def Padding(
-    child: Component,
-    all: float = 0.0,
-    *,
-    top: float | None = None,
-    right: float | None = None,
-    bottom: float | None = None,
-    left: float | None = None,
-):
-    """Wrap ``child`` in padding.
+@dataclass(frozen=True, slots=True, init=False)
+class Padding:
+    """Per-side inset values — a value object, not a composable.
 
-    ``all`` sets every side; per-side overrides take precedence when
-    supplied.
+    Components that need to apply padding to their content take a
+    :class:`Padding` parameter (or read one from context) and offset
+    their content by ``padding.left`` / ``padding.top`` while
+    growing their reported size by ``padding.horizontal`` /
+    ``padding.vertical``. Padding is the parent's concern, not its
+    own component.
+
+    Several constructors for ergonomic use::
+
+        Padding()  # zero on all sides
+        Padding(10)  # all sides = 10
+        Padding(10, 20)  # vertical=10, horizontal=20
+        Padding(10, 20, 30, 40)  # top, right, bottom, left
+        Padding(all=10)  # same as Padding(10)
+        Padding(vertical=10, horizontal=20)  # same as Padding(10, 20)
+        Padding(top=10, right=20, bottom=5)  # per-side overrides
     """
-    pad_top = all if top is None else top
-    pad_right = all if right is None else right
-    pad_bottom = all if bottom is None else bottom
-    pad_left = all if left is None else left
-    size = Size(
-        child.size.width + pad_left + pad_right,
-        child.size.height + pad_top + pad_bottom,
-    )
 
-    def draw_at(d, origin):
-        child.draw_at(d, origin.offset(pad_left, pad_top))
+    top: float
+    right: float
+    bottom: float
+    left: float
 
-    return size, draw_at
+    def __init__(
+        self,
+        *args: float,
+        all: float | None = None,
+        vertical: float | None = None,
+        horizontal: float | None = None,
+        top: float | None = None,
+        right: float | None = None,
+        bottom: float | None = None,
+        left: float | None = None,
+    ) -> None:
+        # Resolve from positional args first; CSS-style 1/2/4-value forms.
+        if len(args) == 1:
+            t_v = r_v = b_v = l_v = float(args[0])
+        elif len(args) == 2:
+            t_v = b_v = float(args[0])
+            r_v = l_v = float(args[1])
+        elif len(args) == 4:
+            t_v, r_v, b_v, l_v = (float(v) for v in args)
+        elif not args:
+            t_v = r_v = b_v = l_v = 0.0
+        else:
+            raise TypeError(
+                f"Padding() accepts 0, 1, 2, or 4 positional arguments, got {len(args)}"
+            )
+
+        # Then layer keyword groups on top, narrowest first so per-side
+        # wins over symmetric, and symmetric wins over ``all``.
+        if all is not None:
+            t_v = r_v = b_v = l_v = float(all)
+        if vertical is not None:
+            t_v = b_v = float(vertical)
+        if horizontal is not None:
+            r_v = l_v = float(horizontal)
+        if top is not None:
+            t_v = float(top)
+        if right is not None:
+            r_v = float(right)
+        if bottom is not None:
+            b_v = float(bottom)
+        if left is not None:
+            l_v = float(left)
+
+        # Frozen dataclass — bypass the freeze to set the resolved values.
+        object.__setattr__(self, "top", t_v)
+        object.__setattr__(self, "right", r_v)
+        object.__setattr__(self, "bottom", b_v)
+        object.__setattr__(self, "left", l_v)
+
+    @property
+    def horizontal(self) -> float:
+        """Total horizontal inset (``left + right``)."""
+        return self.left + self.right
+
+    @property
+    def vertical(self) -> float:
+        """Total vertical inset (``top + bottom``)."""
+        return self.top + self.bottom
 
 
-@Composable
-def Align(
-    child: Component,
+def align_within(
+    outer: Size,
+    inner: Size,
     *,
-    width: float | None = None,
-    height: float | None = None,
     horizontal: str = "start",
     vertical: str = "start",
-):
-    """Place ``child`` inside a larger box, aligned to one of its edges.
+) -> Point:
+    """Return the offset placing ``inner`` inside ``outer`` per alignment.
 
-    When ``width`` (or ``height``) is supplied and exceeds the child's
-    natural extent, the child is positioned within the resulting box
-    according to ``horizontal`` / ``vertical`` (``start`` / ``center`` /
-    ``end``). When the dimension is omitted it defaults to the child's
-    natural extent. Useful for right-aligning a footer inside a wider
-    column or centring a small child inside a fixed slot.
+    Pure helper used by composables that need to position one rect
+    inside another — replaces the previous ``Align`` wrap composable.
+    Alignment is the parent's concern (it owns the layout decision),
+    so the helper hands back a :class:`Point` and the caller paints
+    accordingly.
+
+    ``horizontal`` accepts ``"start"`` / ``"left"``, ``"center"`` /
+    ``"middle"``, ``"end"`` / ``"right"``; ``vertical`` accepts
+    ``"start"`` / ``"top"``, ``"center"`` / ``"middle"``, ``"end"`` /
+    ``"bottom"``. Misaligned axes (inner larger than outer) snap to
+    the leading edge.
     """
-    box_w = width if width is not None and width > child.size.width else child.size.width
-    box_h = height if height is not None and height > child.size.height else child.size.height
-    size = Size(box_w, box_h)
-
-    def draw_at(d, origin):
-        dx = _align_offset(horizontal, box_w, child.size.width)
-        dy = _align_offset(vertical, box_h, child.size.height)
-        child.draw_at(d, origin.offset(dx, dy))
-
-    return size, draw_at
+    return Point(
+        _align_offset(horizontal, outer.width, inner.width),
+        _align_offset(vertical, outer.height, inner.height),
+    )
 
 
 @Composable

@@ -29,12 +29,12 @@ from __future__ import annotations
 import drawsvg as draw
 
 from .composable import (
-    Align,
     Column,
     Component,
     Composable,
     Padding,
     Point,
+    Size,
     Spacer,
 )
 from .footer import Footer
@@ -106,18 +106,23 @@ def _footer_max_height(*, section_title: str | None) -> float | None:
 
 
 @Composable(use_context=True)
-def KeymapDocument(ctx, *, content: Component):
-    """The outermost composable — rounded background border around ``content``.
+def KeymapDocument(ctx, *, content: Component, content_padding: Padding):
+    """The outermost composable — rounded background border + content padding.
 
-    The natural size matches ``content`` exactly — the border is
-    painted INSIDE that extent, inset by ``ctx.document_metrics.margin``,
-    mirroring the historical positional layout (where the border
-    surrounded the canvas minus margin and the content sat at offset
-    ``padding`` from the canvas edge). The content's :meth:`draw_at`
-    runs at the same origin so its top-left aligns with the document
-    top-left.
+    Owns two parent-level layout concerns at once:
+
+    * The rounded background border, painted INSIDE the document
+      extent inset by ``ctx.document_metrics.margin``.
+    * The content padding (``content_padding``) that insets the
+      child from the document edges. The document's reported size
+      grows by ``content_padding.horizontal`` /
+      ``content_padding.vertical`` so the canvas wraps the padded
+      content exactly.
     """
-    size = content.size
+    size = Size(
+        content.size.width + content_padding.horizontal,
+        content.size.height + content_padding.vertical,
+    )
     palette = ctx.theme.palette
     border = ctx.config.output.style.border
     margin = ctx.document_metrics.margin
@@ -136,7 +141,7 @@ def KeymapDocument(ctx, *, content: Component):
                 stroke_width=border.width if border else None,
             )
         )
-        content.draw_at(d, origin)
+        content.draw_at(d, origin.offset(content_padding.left, content_padding.top))
 
     return size, draw_at
 
@@ -180,26 +185,26 @@ def render(
 
     footer_text = ctx.config.output.copyright or ""
     if footer_text:
+        # Footer knows it's right-aligned — give it the slot width
+        # and it paints the text at the right edge itself, no parent
+        # alignment wrapper needed.
         footer = Footer(
             text=footer_text,
+            width=content_w,
             max_height=_footer_max_height(section_title=footer_section_title),
         )
-        children.extend(
-            [
-                Spacer(height=metrics.bottom_inset),
-                Align(footer, width=content_w, horizontal="end"),
-            ]
-        )
+        children.extend([Spacer(height=metrics.bottom_inset), footer])
 
     column = Column(children, align="start")
-    padded = Padding(
-        column,
-        top=metrics.padding,
-        right=metrics.padding,
-        left=metrics.padding,
-        bottom=metrics.bottom_inset,
+    document = KeymapDocument(
+        content=column,
+        content_padding=Padding(
+            top=metrics.padding,
+            right=metrics.padding,
+            left=metrics.padding,
+            bottom=metrics.bottom_inset,
+        ),
     )
-    document = KeymapDocument(content=padded)
     return _make_drawing(document)
 
 
