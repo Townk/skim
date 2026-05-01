@@ -33,7 +33,7 @@ from .composable import (
     Spacer,
 )
 from .geometry import AspectRatio
-from .render_context import Typography
+from .render_context import TextStyle
 from .text import Font
 
 # The Svalboard logo SVG asset's intrinsic aspect ratio. Logo width is
@@ -236,7 +236,7 @@ def Header(
     When ``max_width`` is ``None`` the header is its natural extent —
     title, fixed ``gap``, logo, no flex spacer.
     """
-    typo: Typography = ctx.theme.title
+    typo: TextStyle = ctx.theme.typography.title
     inner = _build_header(
         title=title,
         title_font_max_size=typo.size,

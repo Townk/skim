@@ -10,25 +10,26 @@ SVGs (no keyboard, no layer-specific filtering). They share the per-layer
 image's outer chrome — rounded border, keymap title top-left, Svalboard
 logo top-right, copyright bottom-right — and reuse the existing macro /
 tap-dance row builders so the rendered chips and pills match the overview's
-legend exactly, just at a larger scale.
+legend exactly.
 
 Rendering pipeline
 ------------------
 
 For all three images:
 
-1. The geometry is built at ``1.5 × config.output.layout.width`` so chips,
-   fonts, paddings and the title scale together. The initial canvas width
-   matches the requested ``--width`` so the layout respects the user's size.
-2. After laying out the body, the canvas width may shrink to wrap the
+1. The outer chrome (header, footer, padding, margin, border) lays out
+   at the user-requested ``config.output.layout.width`` — title and
+   footer typography stay at the same per-layer-equivalent sizes.
+2. The body composables (``_MacrosBody``, ``TapDanceTable``) render
+   their chips, cells, pills and column labels at ``_BODY_SCALE``
+   (currently ``1.5``) so the legend reads at a visual weight
+   comparable to layout keys in a per-layer image.
+3. After laying out the body, the canvas width may shrink to wrap the
    content snugly (TD table always; macros only when no row had to wrap).
-3. The SVG ``width`` attribute is set back to the requested ``--width`` and
-   the natural (possibly shrunken) canvas is exposed via ``viewBox`` — the
-   image displays at the requested width and the content scales
-   proportionally.
-
-The keymap title and Svalboard logo therefore both scale together with the
-chips and pills, since everything lives inside the same viewBox.
+4. The SVG ``width`` attribute is set back to the requested ``--width``
+   and the natural (possibly shrunken) canvas is exposed via
+   ``viewBox`` — the image displays at the requested width and the
+   content scales proportionally.
 """
 
 from dataclasses import dataclass
@@ -70,10 +71,15 @@ from .render_context import RenderContext, using_render_context
 from .styling import derive_accent_line
 from .text import Font
 
-# Every standalone image renders its body geometry at this multiple of the
-# configured document width. Chips, fonts, paddings, gaps, the title text
-# and the Svalboard logo all grow together at this scale.
-_SCALE = 1.5
+# The body of a standalone special-keys image (the macro / tap-dance
+# section content) renders at this multiple of the configured document
+# width — chips, cells, pills and column labels grow against the title
+# / footer / outer paddings, which stay at their unscaled per-image
+# sizes. The chosen multiplier (1.5×) makes the body comparable to the
+# layout-key sizing of the per-layer images so a special-keys page reads
+# at a similar visual weight to a per-layer page when displayed at the
+# same width.
+_BODY_SCALE = 1.5
 
 
 # ---------------------------------------------------------------------------
@@ -85,12 +91,10 @@ _SCALE = 1.5
 class _ImageSetup:
     """Pre-computed per-image rendering parameters.
 
-    ``initial_canvas_w`` is the canvas width used for layout (= the requested
-    output width at the 1.5× geometry scale); ``padding`` and friends share
-    the same scaled coordinate system. The SVG that ships back to the caller
-    sets its ``width`` attribute to ``display_w`` and exposes the natural
-    (possibly shrunken) canvas via ``viewBox`` so everything scales together
-    when the SVG is rendered.
+    Holds the unscaled doc_width-derived metrics the outer chrome
+    (header, footer, padding, margin, border) lays out against. The
+    body composables apply their own scale locally — see
+    ``_BODY_SCALE`` — so this struct never carries a scale factor.
     """
 
     config: SkimConfig
@@ -121,39 +125,31 @@ def _build_setup(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
 ) -> _ImageSetup:
-    """Build the per-image setup at 1.5× geometry scale.
+    """Build the per-image setup at the user-requested document width.
 
-    The initial canvas width is the requested ``--width`` (because the body
-    lays out as if the user-requested canvas is what we have to fill); the
-    SVG ``width`` attribute will be the same ``--width`` so the displayed
-    output respects the user's size after the natural canvas shrinks.
+    Outer chrome (header, footer, padding, margin, border) lays out at
+    the unscaled config — the body composables (``_MacrosBody``,
+    ``TapDanceTable``) carry their own ``scale`` kwarg and apply it
+    locally so only the chips / cells / pills enlarge.
     """
-    real_doc_width = config.output.layout.width
-    scaled_doc_width = real_doc_width * _SCALE
-
-    # Build a config copy with the scaled layout width so all metrics-derived
-    # sizes (logo, title font, padding, copyright font) come out at 1.5×.
-    scaled_layout = config.output.layout.model_copy(update={"width": scaled_doc_width})
-    scaled_output = config.output.model_copy(update={"layout": scaled_layout})
-    scaled_config = config.model_copy(update={"output": scaled_output})
-
-    metrics = KeymapLayoutMetrics.from_config(scaled_config)
+    doc_width = config.output.layout.width
+    metrics = KeymapLayoutMetrics.from_config(config)
     padding = _outer_padding(metrics)
-    geom = _LegendGeometry.for_doc_width(scaled_doc_width)
-    header_dims = compute_header_dims(scaled_config, keymap)
+    geom = _LegendGeometry.for_doc_width(doc_width)
+    header_dims = compute_header_dims(config, keymap)
 
     return _ImageSetup(
-        config=scaled_config,
+        config=config,
         keymap=keymap,
-        palette=scaled_config.output.style.palette,
+        palette=config.output.style.palette,
         geom=geom,
         header_dims=header_dims,
-        initial_canvas_w=scaled_doc_width,
-        display_w=real_doc_width,
+        initial_canvas_w=doc_width,
+        display_w=doc_width,
         padding=padding,
         margin=metrics.margin,
         bottom_inset=metrics.inset + metrics.margin,
-        use_system_fonts=scaled_config.output.style.use_system_fonts,
+        use_system_fonts=config.output.style.use_system_fonts,
         title_text=_resolve_title(config),
     )
 
@@ -387,17 +383,16 @@ def _macro_natural_widths(macros: list, geom: _LegendGeometry) -> list[float]:
     return widths
 
 
-@Composable
+@Composable(use_context=True)
 def _MacrosBody(
+    ctx,
     *,
     macros: list,
     accent_fill: str,
     accent_line: str,
     text_color: str,
-    geom: _LegendGeometry,
-    use_system_fonts: bool,
     content_width: float,
-    doc_width: float,
+    scale: float = 1.0,
 ):
     """Stacked macro rows with the legend's natural row-gap spacing.
 
@@ -405,7 +400,16 @@ def _MacrosBody(
     pills and chips match what the overview's macro section paints.
     Per-row height respects ``content_width`` (pills wrap to additional
     lines when they don't fit).
+
+    ``scale`` multiplies the doc-width the row's geometry is built
+    against — the standalone macros image passes ``1.5`` so chips
+    and pills render larger than they would in an inline appearance,
+    leaving the surrounding title and footer at their unscaled sizes.
     """
+    doc_width = ctx.config.output.layout.width * scale
+    geom = _LegendGeometry.for_doc_width(doc_width)
+    use_system_fonts = ctx.config.output.style.use_system_fonts
+
     row_heights = [macro_row_height(m, content_width, doc_width=doc_width) for m in macros]
     total_h = sum(row_heights) + max(0, len(macros) - 1) * geom.row_gap
     size = Size(content_width, total_h)
@@ -439,10 +443,14 @@ def draw_macros_image(
 ) -> draw.Drawing:
     """Render the standalone macros image."""
     setup = _build_setup(config, keymap)
-    with using_render_context(RenderContext.build(config, keymap, scale=_SCALE)):
+    with using_render_context(RenderContext.build(config, keymap)):
         macros = all_macros(keymap.macros)
         palette = setup.palette
-        geom = setup.geom
+        # The MACROS body renders at ``_BODY_SCALE``; use the scaled
+        # geom for wrap-detection so ``_macro_natural_widths`` reports
+        # the same widths the body composable will lay out against.
+        scaled_doc_width = setup.config.output.layout.width * _BODY_SCALE
+        scaled_geom = _LegendGeometry.for_doc_width(scaled_doc_width)
         macro_line = derive_accent_line(palette.macro_color)
 
         initial_content_w = setup.initial_canvas_w - 2 * setup.padding
@@ -452,7 +460,7 @@ def draw_macros_image(
         # natural row fits within ``initial_content_w`` no row wraps and we can
         # shrink the canvas; otherwise we keep the canvas at ``--width`` and let
         # the existing pill-wrap logic handle the overflow.
-        natural_widths = _macro_natural_widths(macros, geom)
+        natural_widths = _macro_natural_widths(macros, scaled_geom)
         longest_natural = max(natural_widths) if natural_widths else 0.0
         no_wrapping = longest_natural <= initial_content_w
         content_w = longest_natural if (no_wrapping and longest_natural > 0) else initial_content_w
@@ -463,10 +471,8 @@ def draw_macros_image(
                 accent_fill=palette.macro_color,
                 accent_line=macro_line,
                 text_color=palette.text_color,
-                geom=geom,
-                use_system_fonts=setup.use_system_fonts,
                 content_width=content_w,
-                doc_width=setup.initial_canvas_w,
+                scale=_BODY_SCALE,
             )
             if macros
             else Spacer()
@@ -500,10 +506,9 @@ def draw_tap_dances_image(
     can't fit.
     """
     setup = _build_setup(config, keymap)
-    with using_render_context(RenderContext.build(config, keymap, scale=_SCALE)):
+    with using_render_context(RenderContext.build(config, keymap)):
         tap_dances = all_tap_dances(keymap.tap_dances)
         palette = setup.palette
-        geom = setup.geom
         td_line = derive_accent_line(palette.tap_dance_color)
 
         initial_content_w = setup.initial_canvas_w - 2 * setup.padding
@@ -516,8 +521,7 @@ def draw_tap_dances_image(
             accent_fill=palette.tap_dance_color,
             accent_line=td_line,
             text_color=palette.text_color,
-            geom=geom,
-            use_system_fonts=setup.use_system_fonts,
+            scale=_BODY_SCALE,
             max_width=initial_content_w,
         )
         content_w = min(initial_content_w, table.size.width) if tap_dances else initial_content_w
@@ -548,16 +552,19 @@ def draw_special_keys_image(
     Falls back to a single column when only one section has content.
     """
     setup = _build_setup(config, keymap)
-    with using_render_context(RenderContext.build(config, keymap, scale=_SCALE)):
+    with using_render_context(RenderContext.build(config, keymap)):
         macros = all_macros(keymap.macros)
         tap_dances = all_tap_dances(keymap.tap_dances)
         palette = setup.palette
-        geom = setup.geom
+        # Bodies render at ``_BODY_SCALE``; the static name-column
+        # width and the cross-column gap are computed against the
+        # scaled geom so the two columns keep their proportions.
+        scaled_geom = _LegendGeometry.for_doc_width(setup.config.output.layout.width * _BODY_SCALE)
         macro_line = derive_accent_line(palette.macro_color)
         td_line = derive_accent_line(palette.tap_dance_color)
 
         target_content_w = setup.initial_canvas_w - 2 * setup.padding
-        col_gap = geom.column_gap
+        col_gap = scaled_geom.column_gap
         col_w = (target_content_w - col_gap) / 2 if macros and tap_dances else target_content_w
 
         sections: list[Component] = []
@@ -574,10 +581,8 @@ def draw_special_keys_image(
                         accent_fill=palette.macro_color,
                         accent_line=macro_line,
                         text_color=palette.text_color,
-                        geom=geom,
-                        use_system_fonts=setup.use_system_fonts,
                         content_width=col_w,
-                        doc_width=setup.initial_canvas_w,
+                        scale=_BODY_SCALE,
                     ),
                 )
             )
@@ -590,9 +595,8 @@ def draw_special_keys_image(
                 accent_fill=palette.tap_dance_color,
                 accent_line=td_line,
                 text_color=palette.text_color,
-                geom=geom,
-                use_system_fonts=setup.use_system_fonts,
-                name_column_width=_td_name_column_width(geom, tap_dances),
+                scale=_BODY_SCALE,
+                name_column_width=_td_name_column_width(scaled_geom, tap_dances),
             )
             sections.append(
                 _section_block(

@@ -392,15 +392,15 @@ def TapDanceColumnHeader(
     return size, draw_at
 
 
-@Composable
+@Composable(use_context=True)
 def TapDanceTable(
+    ctx,
     *,
     tap_dances: list[SvalboardTapDance[SvalboardTargetKey]],
     accent_fill: str,
     accent_line: str,
     text_color: str,
-    geom: _LegendGeometry,
-    use_system_fonts: bool = False,
+    scale: float = 1.0,
     name_column_width: float | None = None,
     cell_width: float | None = None,
     max_width: float | None = None,
@@ -413,6 +413,12 @@ def TapDanceTable(
     including the trailing gap after the last row. That trailing gap
     keeps :func:`TapDanceTable.size.height` consistent with
     :func:`legend.tap_dance_section_height`.
+
+    ``scale`` multiplies the doc-width the table's geometry is built
+    against — the standalone tap-dances image passes ``1.5`` so chips,
+    cells, paddings and the column header strip render larger than
+    they would in an inline appearance, leaving the surrounding title
+    and footer at their unscaled sizes.
 
     When ``max_width`` is supplied (and ``name_column_width`` is not
     pinned by the caller) the name column is sized dynamically so the
@@ -434,6 +440,8 @@ def TapDanceTable(
     is the geom-derived ``td_name_w - tag_w`` when at least one TD has
     a name and ``0`` when none do.
     """
+    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width * scale)
+    use_system_fonts = ctx.config.output.style.use_system_fonts
     cell_w = cell_width if cell_width is not None else geom.td_cell_w
     inner_w = geom.td_cell_inner_w * (cell_w / geom.td_cell_w)
     # The cells block ends at the LAST inner rect's right edge — the

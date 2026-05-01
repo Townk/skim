@@ -161,7 +161,7 @@ def Footer(
     the natural text would be taller, the font size shrinks
     proportionally so the bbox matches the cap.
     """
-    typo = ctx.theme.copyright
+    typo = ctx.theme.typography.copyright
     use_system_fonts = ctx.config.output.style.use_system_fonts
     family = typo.font.get_system_font_family() if use_system_fonts else typo.font.value
     return _footer_size_and_draw(

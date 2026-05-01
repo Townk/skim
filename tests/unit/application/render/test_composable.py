@@ -249,6 +249,7 @@ def _build_ctx() -> RenderContext:
     """Construct a RenderContext for tests without going through a real config."""
     from skim.application.render.render_context import (
         DocumentMetrics,
+        TextStyle,
         Theme,
         Typography,
     )
@@ -263,12 +264,13 @@ def _build_ctx() -> RenderContext:
         keymap=keymap,
         theme=Theme(
             palette=palette,
-            title=Typography(font=Font.TITLE, size=24.0, color=palette.text_color),
-            copyright=Typography(font=Font.FINGER_KEY, size=12.0, color=palette.text_color),
+            typography=Typography(
+                title=TextStyle(font=Font.TITLE, size=24.0, color=palette.text_color),
+                copyright=TextStyle(font=Font.FINGER_KEY, size=12.0, color=palette.text_color),
+            ),
         ),
         document_metrics=DocumentMetrics(
             doc_width=1600.0,
-            scale=1.0,
             margin=10.0,
             padding=20.0,
             bottom_inset=15.0,

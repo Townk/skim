@@ -5,6 +5,8 @@
 
 """Unit tests for skim.application.render.legend_components."""
 
+from contextlib import contextmanager
+
 from skim.application.render.legend import _LegendGeometry
 from skim.application.render.legend_components import (
     _ELLIPSIS,
@@ -13,7 +15,26 @@ from skim.application.render.legend_components import (
     _resolve_name_column,
     _truncate_with_ellipsis,
 )
+from skim.application.render.render_context import RenderContext, using_render_context
+from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTapDance, SvalboardTargetKey
+
+
+@contextmanager
+def _ctx_for_doc_width(doc_width: float):
+    """Push a :class:`RenderContext` whose ``layout.width`` equals ``doc_width``.
+
+    ``TapDanceTable`` is now a context-aware composable; tests that
+    construct it directly need an active :func:`using_render_context`
+    block. Tests that want to exercise the table at ``doc_width=W``
+    pass ``W`` as the layout width and let the composable derive its
+    own geometry — same path the real renders take.
+    """
+    config = SkimConfig.model_validate({"output": {"layout": {"width": doc_width}}})
+    keymap = SvalboardKeymap(layers={})
+    with using_render_context(RenderContext.build(config, keymap)) as ctx:
+        yield ctx
+
 
 # ---------------------------------------------------------------------------
 # Truncation primitives
@@ -144,20 +165,19 @@ class TestResolveNameColumn:
 
 class TestTapDanceTable:
     def test_table_size_caps_at_max_width(self):
-        geom = _LegendGeometry.for_doc_width(1600.0)
         long_name = "the quick brown fox " * 20
         tds = [_td("0", name=long_name)]
 
         # Tight budget — table must cap and truncate.
         max_width = 600.0
-        table = TapDanceTable(
-            tap_dances=tds,
-            accent_fill="#000",
-            accent_line="#000",
-            text_color="#000",
-            geom=geom,
-            max_width=max_width,
-        )
+        with _ctx_for_doc_width(1600.0):
+            table = TapDanceTable(
+                tap_dances=tds,
+                accent_fill="#000",
+                accent_line="#000",
+                text_color="#000",
+                max_width=max_width,
+            )
         assert table.size.width <= max_width
 
     def test_table_natural_width_when_names_short(self):
@@ -165,14 +185,14 @@ class TestTapDanceTable:
         tds = [_td("0", name="short")]
         # Budget far larger than the table needs — width should be the
         # natural snug width, not the full budget.
-        table = TapDanceTable(
-            tap_dances=tds,
-            accent_fill="#000",
-            accent_line="#000",
-            text_color="#000",
-            geom=geom,
-            max_width=10_000,
-        )
+        with _ctx_for_doc_width(1600.0):
+            table = TapDanceTable(
+                tap_dances=tds,
+                accent_fill="#000",
+                accent_line="#000",
+                text_color="#000",
+                max_width=10_000,
+            )
         # Natural snug = chip + name area (with symmetric padding) +
         # cells block, where the cells block ends at the last inner
         # rect's right edge (not the cell slot's right edge).
@@ -191,14 +211,14 @@ class TestTapDanceTable:
     def test_table_collapses_name_column_when_no_names(self):
         geom = _LegendGeometry.for_doc_width(1600.0)
         tds = [_td("0"), _td("1")]
-        table = TapDanceTable(
-            tap_dances=tds,
-            accent_fill="#000",
-            accent_line="#000",
-            text_color="#000",
-            geom=geom,
-            max_width=10_000,
-        )
+        with _ctx_for_doc_width(1600.0):
+            table = TapDanceTable(
+                tap_dances=tds,
+                accent_fill="#000",
+                accent_line="#000",
+                text_color="#000",
+                max_width=10_000,
+            )
         # No names — chip flush against the cell block (and the cells
         # block ends at the last inner rect's right edge).
         inner_w = geom.td_cell_inner_w

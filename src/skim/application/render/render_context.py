@@ -56,19 +56,20 @@ from .text import Font
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Typography:
-    """A reusable text-style preset.
+class TextStyle:
+    """A reusable text-style preset (the unit a :class:`Typography` registry
+    collects).
 
     The decoupled flat fields mirror what an SVG ``<text>`` element
     needs at paint time. Composables that emit text should accept a
-    :class:`Typography` (or read one off ``ctx.theme``) instead of
-    re-spelling these fields per call site.
+    :class:`TextStyle` (or read one off ``ctx.theme.typography``)
+    instead of re-spelling these fields per call site.
 
-    Letter spacing is intentionally NOT a Typography field — it's a
-    per-glyph-run treatment used in only a handful of places (section
-    titles, the ``N ENTRIES`` count, action key labels) and pinning
-    it to the typography preset would bake one site's tracking into
-    every preset that shared the font.
+    Letter spacing is intentionally NOT a :class:`TextStyle` field —
+    it's a per-glyph-run treatment used in only a handful of places
+    (section titles, the ``N ENTRIES`` count, action key labels) and
+    pinning it to the preset would bake one site's tracking into every
+    preset that shared the font.
     """
 
     font: Font
@@ -78,24 +79,34 @@ class Typography:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Theme:
-    """Resolved colour palette + typography presets for a single render.
+class Typography:
+    """The registry of every :class:`TextStyle` an image render uses.
 
-    Typography presets are added incrementally as composables migrate;
-    the rule is "only add a preset when at least two composables would
-    reference it" (keeps the registry from becoming a junk drawer).
+    One :class:`Typography` instance lives on the :class:`Theme` so
+    composables can grab named presets via
+    ``ctx.theme.typography.<preset>``. New presets are added as
+    composables migrate; the rule is "only add a preset when at least
+    two composables would reference it" (keeps the registry from
+    becoming a junk drawer).
     """
 
-    palette: Palette
-    title: Typography
+    title: TextStyle
     """Keymap title — large, thin, top-left of the image."""
 
-    copyright: Typography
+    copyright: TextStyle
     """Footer copyright text — small, faded, right-aligned."""
 
     # Future presets:
-    #   section_title: Typography
-    #   chip_label: Typography
+    #   section_title: TextStyle
+    #   chip_label: TextStyle
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Theme:
+    """Resolved colour palette + typography registry for a single render."""
+
+    palette: Palette
+    typography: Typography
 
     @classmethod
     def resolve(
@@ -105,7 +116,7 @@ class Theme:
         title_font_size: float,
         copyright_font_size: float,
     ) -> "Theme":
-        """Resolve the theme from a (already-scaled) config + font sizes.
+        """Resolve the theme from a config + per-image font sizes.
 
         ``title_font_size`` and ``copyright_font_size`` both come from
         the overview's badge math (``HeaderDims``) so the same sizes
@@ -116,15 +127,17 @@ class Theme:
         palette = config.output.style.palette
         return cls(
             palette=palette,
-            title=Typography(
-                font=Font.TITLE,
-                size=title_font_size,
-                color=palette.text_color,
-            ),
-            copyright=Typography(
-                font=Font.FINGER_KEY,
-                size=copyright_font_size,
-                color=palette.text_color,
+            typography=Typography(
+                title=TextStyle(
+                    font=Font.TITLE,
+                    size=title_font_size,
+                    color=palette.text_color,
+                ),
+                copyright=TextStyle(
+                    font=Font.FINGER_KEY,
+                    size=copyright_font_size,
+                    color=palette.text_color,
+                ),
             ),
         )
 
@@ -150,10 +163,7 @@ class DocumentMetrics:
     """
 
     doc_width: float
-    """The (possibly scaled) document width the image lays out against."""
-
-    scale: float
-    """Render scale relative to ``config.output.layout.width`` (1.0 / 1.5)."""
+    """The document width the image lays out against."""
 
     margin: float
     """Outer canvas → border gap (matches ``KeymapLayoutMetrics.margin``)."""
@@ -171,13 +181,8 @@ class DocumentMetrics:
     """Horizontal gap between side-by-side sections (e.g. macros + tap-dance)."""
 
     @classmethod
-    def from_config(cls, config: SkimConfig, *, scale: float = 1.0) -> "DocumentMetrics":
-        """Compute document-wide metrics from a (pre-scaled) config.
-
-        ``scale`` is informational only — the config passed in must
-        already have ``config.output.layout.width`` multiplied by
-        ``scale`` (use :meth:`RenderContext.build` to handle that).
-        """
+    def from_config(cls, config: SkimConfig) -> "DocumentMetrics":
+        """Compute document-wide metrics from a config."""
         from .layout import KeymapLayoutMetrics
         from .legend import _LegendGeometry
         from .overview_layout import _outer_padding
@@ -187,7 +192,6 @@ class DocumentMetrics:
         border = config.output.style.border
         return cls(
             doc_width=config.output.layout.width,
-            scale=scale,
             margin=metrics.margin,
             padding=_outer_padding(metrics),
             bottom_inset=metrics.inset + metrics.margin,
@@ -225,42 +229,33 @@ class RenderContext:
         cls,
         config: SkimConfig,
         keymap: SvalboardKeymap[SvalboardTargetKey],
-        *,
-        scale: float = 1.0,
     ) -> "RenderContext":
         """Resolve a context from raw inputs.
 
-        ``scale`` of ``1.0`` (per-layer / overview) leaves the config
-        untouched; ``1.5`` (standalone special-keys images) returns a
-        config copy whose ``layout.width`` is multiplied so every
-        downstream metric scales uniformly.
+        Composables that want to render parts of themselves at a
+        non-default scale (e.g. the ``MACROS`` and ``TAP-DANCE``
+        bodies in the standalone special-keys images) accept a
+        per-component ``scale`` kwarg and apply it locally — the
+        :class:`RenderContext` itself stays at the user's actual
+        ``config.output.layout.width`` so the title and footer don't
+        get pulled along by the body's zoom.
         """
         # Local import — :mod:`overview` imports from this module
         # transitively at startup; importing it eagerly would create a
         # circular import cycle.
         from .overview import compute_header_dims
 
-        scaled = _scale_config(config, scale) if scale != 1.0 else config
-        header_dims = compute_header_dims(scaled, keymap)
+        header_dims = compute_header_dims(config, keymap)
         return cls(
-            config=scaled,
+            config=config,
             keymap=keymap,
             theme=Theme.resolve(
-                scaled,
+                config,
                 title_font_size=header_dims.title_font_size,
                 copyright_font_size=header_dims.copyright_font_size,
             ),
-            document_metrics=DocumentMetrics.from_config(scaled, scale=scale),
+            document_metrics=DocumentMetrics.from_config(config),
         )
-
-
-def _scale_config(config: SkimConfig, scale: float) -> SkimConfig:
-    """Return a config copy whose ``layout.width`` is multiplied by ``scale``."""
-    scaled_layout = config.output.layout.model_copy(
-        update={"width": config.output.layout.width * scale}
-    )
-    scaled_output = config.output.model_copy(update={"layout": scaled_layout})
-    return config.model_copy(update={"output": scaled_output})
 
 
 # Active render context — set via :func:`using_render_context`.
@@ -304,6 +299,7 @@ def current_render_context() -> RenderContext:
 __all__ = [
     "DocumentMetrics",
     "RenderContext",
+    "TextStyle",
     "Theme",
     "Typography",
     "current_render_context",
