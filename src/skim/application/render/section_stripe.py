@@ -19,8 +19,22 @@ from dataclasses import dataclass
 import drawsvg as draw
 
 from .composable import Composable
-from .legend import _LegendGeometry
 from .primitives import Size
+
+# ---------------------------------------------------------------------------
+# Per-doc-width ratios — owned by this module so :class:`SectionStripeMetrics`
+# doesn't reach into the legacy ``_LegendGeometry``. Mirror the same ratios
+# in ``legend.py`` (which still uses them for the overview's imperative
+# title-strip drawer); when the overview migrates the legend copies retire.
+# ---------------------------------------------------------------------------
+
+_TITLE_FONT_SIZE_RATIO = 11.0 / 1600.0
+_TITLE_LETTER_SPACING_RATIO = 3.0 / 1600.0
+_TITLE_BASELINE_OFFSET_RATIO = 12.0 / 1600.0
+_COUNT_FONT_SIZE_RATIO = 10.0 / 1600.0
+_COUNT_LETTER_SPACING_RATIO = 1.0 / 1600.0
+_RULE_OFFSET_RATIO = 20.0 / 1600.0
+_RULE_STROKE_RATIO = 1.2 / 1600.0
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -32,7 +46,7 @@ class SectionStripeMetrics:
     so the component owns its measurements; nothing else in the
     codebase reads these values.
 
-    The five fields cover everything a stripe paints: title
+    The seven fields cover everything a stripe paints: title
     typography (size + tracking), the right-aligned ``N ENTRIES``
     count typography (size + tracking), the rule line's vertical
     offset from the strip's top, and the rule's stroke width. The
@@ -49,22 +63,15 @@ class SectionStripeMetrics:
 
     @classmethod
     def for_doc_width(cls, doc_width: float) -> SectionStripeMetrics:
-        """Build from a (possibly scaled) document width.
-
-        Currently delegates to ``_LegendGeometry`` for the underlying
-        ratios so all section stripes across the app stay aligned;
-        when the legacy legend module retires, the ratios can move
-        here directly.
-        """
-        geom = _LegendGeometry.for_doc_width(doc_width)
+        """Build from a (possibly scaled) document width."""
         return cls(
-            title_font_size=geom.title_font_size,
-            title_letter_spacing=geom.title_letter_spacing,
-            title_baseline_offset=geom.title_baseline_offset,
-            count_font_size=geom.title_count_font_size,
-            count_letter_spacing=geom.title_count_letter_spacing,
-            rule_offset=geom.title_rule_offset,
-            rule_stroke=geom.title_rule_stroke,
+            title_font_size=doc_width * _TITLE_FONT_SIZE_RATIO,
+            title_letter_spacing=doc_width * _TITLE_LETTER_SPACING_RATIO,
+            title_baseline_offset=doc_width * _TITLE_BASELINE_OFFSET_RATIO,
+            count_font_size=doc_width * _COUNT_FONT_SIZE_RATIO,
+            count_letter_spacing=doc_width * _COUNT_LETTER_SPACING_RATIO,
+            rule_offset=doc_width * _RULE_OFFSET_RATIO,
+            rule_stroke=doc_width * _RULE_STROKE_RATIO,
         )
 
 

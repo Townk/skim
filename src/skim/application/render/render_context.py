@@ -153,6 +153,18 @@ class Theme:
 # ``_outer_padding`` floor was tuned against.
 _INSET_DEFAULT_RATIO = 40.0 / 1600.0
 
+# Per-doc-width ratios for the four cross-cutting spacings populated
+# on :class:`DocumentMetrics`. Owned here so :meth:`from_config` no
+# longer reaches into the legacy ``_LegendGeometry``. The values mirror
+# the same ratios in ``legend.py`` (which still uses them for the
+# overview's imperative path); when the overview migrates the legend
+# copies retire and these stay.
+_COLUMN_GAP_RATIO = 40.0 / 1600.0
+_SECTION_SPACING_RATIO = 24.0 / 1600.0
+_TABLE_HEADER_SPACING_RATIO = 12.0 / 1600.0
+_TABLE_COL_SPACING_RATIO = 6.0 / 1600.0
+_TABLE_ROW_SPACING_RATIO = 9.0 / 1600.0
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class DocumentMetrics:
@@ -227,10 +239,8 @@ class DocumentMetrics:
 
         Resolves margin / border_width / inset directly — this is the
         canonical source for those values. ``KeymapLayoutMetrics``
-        reads them off the resulting :class:`DocumentMetrics`.
+        reads them off the resulting :class:`DocumentMetrics``.
         """
-        from .legend import _LegendGeometry
-
         doc_width = config.output.layout.width
         spacing = config.output.layout.spacing
         border = config.output.style.border
@@ -244,23 +254,21 @@ class DocumentMetrics:
         )
         inset = spacing.inset if spacing.inset is not None else doc_width * _INSET_DEFAULT_RATIO
 
-        legend_geom = _LegendGeometry.for_doc_width(doc_width)
         return cls(
             doc_width=doc_width,
             margin=margin,
             border_width=border_width,
             inset=inset,
             border_radius=border.radius if border is not None else None,
-            column_gap=legend_geom.column_gap,
-            # Universal table spacings — sourced from the legend
-            # ratios so they stay aligned with the macro section's
-            # existing visual rhythm. These are unscaled (per
-            # document); the body-scaled standalone TD image
-            # multiplies by ``BODY_SCALE`` locally where needed.
-            section_spacing=2 * legend_geom.title_baseline_offset,
-            table_header_spacing=legend_geom.row_content_indent_gap,
-            table_col_spacing=legend_geom.pill_gap,
-            table_row_spacing=legend_geom.td_row_gap,
+            column_gap=doc_width * _COLUMN_GAP_RATIO,
+            # Universal table spacings — unscaled (per document); the
+            # body-scaled standalone images multiply by ``BODY_SCALE``
+            # locally via the per-component ``MacroMetrics`` /
+            # ``TapDanceMetrics`` ``from_ctx`` factories.
+            section_spacing=doc_width * _SECTION_SPACING_RATIO,
+            table_header_spacing=doc_width * _TABLE_HEADER_SPACING_RATIO,
+            table_col_spacing=doc_width * _TABLE_COL_SPACING_RATIO,
+            table_row_spacing=doc_width * _TABLE_ROW_SPACING_RATIO,
         )
 
 

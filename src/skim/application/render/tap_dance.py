@@ -37,9 +37,9 @@ import drawsvg as draw
 
 from .adjustable_text import AdjustableText, measure_text_width
 from .composable import Composable
-from .legend import _legend_key_label, _LegendGeometry
+from .legend import _legend_key_label
 from .primitives import Column, MetricsComponent, Point, Size
-from .render_context import TextStyle
+from .render_context import RenderContext, TextStyle
 from .rich_text import RichText, parse_into_spans
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
@@ -47,6 +47,36 @@ from .text import Font
 
 if TYPE_CHECKING:
     from skim.domain import SvalboardTapDance, SvalboardTargetKey
+
+
+# ---------------------------------------------------------------------------
+# Per-doc-width ratios — owned by this module so :class:`TapDanceMetrics`
+# doesn't reach into the legacy ``_LegendGeometry``. Mirror the same
+# ratios in ``legend.py`` (which still uses them for the overview's
+# imperative path); when the overview migrates the legend copies retire.
+# ---------------------------------------------------------------------------
+
+_CHIP_WIDTH_RATIO = 56.0 / 1600.0
+_CHIP_STROKE_WIDTH_RATIO = 1.2 / 1600.0
+_CHIP_CORNER_RADIUS_RATIO = 4.0 / 1600.0
+_CHIP_INNER_FONT_SIZE_RATIO = 12.0 / 1600.0
+_CHIP_INNER_TEXT_BASELINE_OFFSET_RATIO = 0.5 / 1600.0
+_NAME_GAP_RATIO = 10.0 / 1600.0
+_NAME_FONT_SIZE_RATIO = 12.0 / 1600.0
+_NAME_W_RATIO = 200.0 / 1600.0
+_CELL_W_RATIO = 80.0 / 1600.0
+_CELL_LABEL_FONT_SIZE_RATIO = 12.0 / 1600.0
+_ROW_HEIGHT_RATIO = 22.0 / 1600.0
+_COLUMN_LABEL_FONT_SIZE_RATIO = 9.0 / 1600.0
+_COLUMN_LABEL_LETTER_SPACING_RATIO = 1.5 / 1600.0
+# Universal table-spacing ratios — mirror :class:`DocumentMetrics`'
+# computation so :meth:`for_doc_width` (used by tests that don't push
+# a render context) produces values identical to what
+# :meth:`from_ctx` returns. Production code reads the spacings
+# from :class:`DocumentMetrics` via :meth:`from_ctx`.
+_TABLE_HEADER_SPACING_RATIO = 12.0 / 1600.0
+_TABLE_COL_SPACING_RATIO = 6.0 / 1600.0
+_TABLE_ROW_SPACING_RATIO = 9.0 / 1600.0
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -73,14 +103,13 @@ class TapDanceSectionMetrics:
 class TapDanceMetrics:
     """Sizing constants for the tap-dance composables.
 
-    Owns every measurement the four tap-dance composables read —
-    chip / cell / row / column-header dimensions plus the
-    title-strip column-label typography. Built from a (possibly
-    scaled) document width via :meth:`for_doc_width`.
-
-    Currently delegates to the shared ``_LegendGeometry`` for the
-    ratios so values stay aligned across the codebase; when the
-    legacy legend module retires the ratios can move here directly.
+    Owns every measurement the tap-dance composables read — chip /
+    cell / row / column-header dimensions plus the title-strip
+    column-label typography. The three universal table spacings come
+    from :class:`DocumentMetrics` so every table-shaped composable in
+    the image agrees on rhythm; the chip / cell / row ratios live on
+    this class so the tap-dance composables don't reach into the
+    legacy ``_LegendGeometry``.
     """
 
     # Chip (the colored tag with the keyboard-close icon + id)
@@ -112,33 +141,60 @@ class TapDanceMetrics:
     table_row_spacing: float
 
     @classmethod
-    def for_doc_width(cls, doc_width: float) -> TapDanceMetrics:
-        geom = _LegendGeometry.for_doc_width(doc_width)
+    def from_ctx(cls, ctx: RenderContext, *, scale: float = 1.0) -> TapDanceMetrics:
+        """Resolve from the active context's document metrics.
+
+        ``scale`` multiplies the underlying doc-width so the body of a
+        body-scaled image (e.g. the standalone tap-dances image, which
+        uses ``BODY_SCALE``) renders larger chips/cells while the
+        chrome stays at its unscaled per-image size.
+        """
+        doc_m = ctx.document_metrics
+        w = doc_m.doc_width * scale
         return cls(
-            chip_width=geom.tag_w,
-            chip_stroke_width=geom.tag_stroke_width,
-            chip_corner_radius=geom.pill_corner_radius,
-            chip_inner_font_size=geom.tag_inner_font_size,
-            chip_inner_text_baseline_offset=geom.tag_inner_text_baseline_offset,
-            name_gap=geom.tag_name_gap,
-            name_font_size=geom.td_name_font_size,
-            name_w=geom.td_name_w,
-            # Use the legacy "inner" rect width as the cell's
-            # visible width — the inter-cell gap comes from
-            # ``table_col_spacing`` below (= ``geom.pill_gap``).
-            cell_w=geom.td_cell_inner_w,
-            cell_label_font_size=geom.td_cell_label_font_size,
-            row_height=geom.td_row_height,
-            column_label_font_size=geom.macro_column_label_font_size,
-            column_label_letter_spacing=geom.macro_column_label_letter_spacing,
-            # Same ratios as :class:`DocumentMetrics` — when this
-            # is built at the unscaled doc width the values are
-            # identical; for the body-scaled standalone TD image
-            # the legend ratios scale linearly so we get the
-            # body-scaled gap automatically.
-            table_header_spacing=geom.row_content_indent_gap,
-            table_col_spacing=geom.pill_gap,
-            table_row_spacing=geom.td_row_gap,
+            chip_width=w * _CHIP_WIDTH_RATIO,
+            chip_stroke_width=w * _CHIP_STROKE_WIDTH_RATIO,
+            chip_corner_radius=w * _CHIP_CORNER_RADIUS_RATIO,
+            chip_inner_font_size=w * _CHIP_INNER_FONT_SIZE_RATIO,
+            chip_inner_text_baseline_offset=w * _CHIP_INNER_TEXT_BASELINE_OFFSET_RATIO,
+            name_gap=w * _NAME_GAP_RATIO,
+            name_font_size=w * _NAME_FONT_SIZE_RATIO,
+            name_w=w * _NAME_W_RATIO,
+            cell_w=w * _CELL_W_RATIO,
+            cell_label_font_size=w * _CELL_LABEL_FONT_SIZE_RATIO,
+            row_height=w * _ROW_HEIGHT_RATIO,
+            column_label_font_size=w * _COLUMN_LABEL_FONT_SIZE_RATIO,
+            column_label_letter_spacing=w * _COLUMN_LABEL_LETTER_SPACING_RATIO,
+            table_header_spacing=doc_m.table_header_spacing * scale,
+            table_col_spacing=doc_m.table_col_spacing * scale,
+            table_row_spacing=doc_m.table_row_spacing * scale,
+        )
+
+    @classmethod
+    def for_doc_width(cls, doc_width: float) -> TapDanceMetrics:
+        """Convenience factory for tests / call sites without a context.
+
+        Produces values identical to what :meth:`from_ctx` would when
+        the active context's ``document_metrics.doc_width`` equals
+        ``doc_width`` and ``scale=1.0``.
+        """
+        return cls(
+            chip_width=doc_width * _CHIP_WIDTH_RATIO,
+            chip_stroke_width=doc_width * _CHIP_STROKE_WIDTH_RATIO,
+            chip_corner_radius=doc_width * _CHIP_CORNER_RADIUS_RATIO,
+            chip_inner_font_size=doc_width * _CHIP_INNER_FONT_SIZE_RATIO,
+            chip_inner_text_baseline_offset=doc_width * _CHIP_INNER_TEXT_BASELINE_OFFSET_RATIO,
+            name_gap=doc_width * _NAME_GAP_RATIO,
+            name_font_size=doc_width * _NAME_FONT_SIZE_RATIO,
+            name_w=doc_width * _NAME_W_RATIO,
+            cell_w=doc_width * _CELL_W_RATIO,
+            cell_label_font_size=doc_width * _CELL_LABEL_FONT_SIZE_RATIO,
+            row_height=doc_width * _ROW_HEIGHT_RATIO,
+            column_label_font_size=doc_width * _COLUMN_LABEL_FONT_SIZE_RATIO,
+            column_label_letter_spacing=doc_width * _COLUMN_LABEL_LETTER_SPACING_RATIO,
+            table_header_spacing=doc_width * _TABLE_HEADER_SPACING_RATIO,
+            table_col_spacing=doc_width * _TABLE_COL_SPACING_RATIO,
+            table_row_spacing=doc_width * _TABLE_ROW_SPACING_RATIO,
         )
 
 
@@ -220,7 +276,7 @@ def TapDanceCell(
     standalone callers can size individual cells consistently with the
     rest of the table.
     """
-    metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
+    metrics = TapDanceMetrics.from_ctx(ctx, scale=scale)
     cell_w = cell_width if cell_width is not None else metrics.cell_w
     row_h = metrics.row_height
     size = Size(cell_w, row_h)
@@ -327,7 +383,7 @@ def TapDanceRow(
     rest of the table; it's forwarded to the per-variant
     :func:`TapDanceCell` instances.
     """
-    metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
+    metrics = TapDanceMetrics.from_ctx(ctx, scale=scale)
     if name_column_width is None:
         name_column_width = metrics.name_w - metrics.chip_width
     cell_w = cell_width if cell_width is not None else metrics.cell_w
@@ -483,7 +539,7 @@ def TapDanceColumnHeader(
     ``scale`` matches the convention :func:`TapDanceTable` uses so
     the header strip stays sized in step with the rows below.
     """
-    metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
+    metrics = TapDanceMetrics.from_ctx(ctx, scale=scale)
     if name_column_width is None:
         name_column_width = metrics.name_w - metrics.chip_width
     cell_w = cell_width if cell_width is not None else metrics.cell_w
@@ -580,7 +636,7 @@ def TapDanceTable(
     is the geom-derived ``td_name_w - tag_w`` when at least one TD has
     a name and ``0`` when none do.
     """
-    metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
+    metrics = TapDanceMetrics.from_ctx(ctx, scale=scale)
     cell_w = cell_width if cell_width is not None else metrics.cell_w
     col_spacing = metrics.table_col_spacing
     # The cells block ends at the LAST cell's right edge — four
