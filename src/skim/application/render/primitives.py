@@ -466,6 +466,19 @@ class _ContainerBuilder:
             )
         self._collected.append(child)
 
+    def add(self, child: Component) -> None:
+        """Attach a pre-built ``Component`` as a child of this container.
+
+        Composables called as functions inside a ``with`` block
+        auto-attach via the ``@Composable`` decorator's collector
+        wiring; this method handles the case where the caller built
+        a component OUTSIDE the block (typically because they need
+        to read the component's :attr:`metrics` to drive a layout
+        decision like the parent's gap value) and now wants to
+        attach it explicitly.
+        """
+        self._add(child)
+
     def __enter__(self) -> _ContainerBuilder:
         self._token = _push_collector(self)
         return self

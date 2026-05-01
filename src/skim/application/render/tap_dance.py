@@ -34,13 +34,28 @@ import drawsvg as draw
 
 from .composable import Composable
 from .legend import _legend_key_label, _LegendGeometry
-from .primitives import Column, Point, Size
+from .primitives import Column, MetricsComponent, Point, Size
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
 from .text import Font, Label
 
 if TYPE_CHECKING:
     from skim.domain import SvalboardTapDance, SvalboardTargetKey
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class TapDanceSectionMetrics:
+    """Metrics exposed by a built :func:`TapDanceSection`.
+
+    The single field is the section title strip's ``rule_offset`` —
+    surfaced so the parent document doesn't need to import
+    :class:`SectionStripeMetrics` just to compute the gap that
+    should sit above and below the section. Document composables
+    use ``section.metrics.rule_offset * 0.5`` as the inter-sibling
+    gap, matching the legacy positional-layout breathing constant.
+    """
+
+    rule_offset: float
 
 
 # ---------------------------------------------------------------------------
@@ -727,7 +742,11 @@ def TapDanceSection(
         gap=2 * stripe_metrics.title_baseline_offset,
         align="start",
     )
-    return inner.size, inner.draw_at
+    return MetricsComponent(
+        size=inner.size,
+        draw_fn=inner.draw_fn,
+        metrics=TapDanceSectionMetrics(rule_offset=stripe_metrics.rule_offset),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -758,6 +777,7 @@ __all__ = [
     "TapDanceColumnHeader",
     "TapDanceRow",
     "TapDanceSection",
+    "TapDanceSectionMetrics",
     "TapDanceTable",
     "draw_tap_dances_image",
 ]

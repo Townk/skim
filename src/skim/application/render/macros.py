@@ -37,10 +37,25 @@ from .legend import (
     build_macro_row,
     macro_row_height,
 )
-from .primitives import Column, Size
+from .primitives import Column, MetricsComponent, Size
 from .render_context import RenderContext, using_render_context
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class MacroSectionMetrics:
+    """Metrics exposed by a built :func:`MacroSection`.
+
+    The single field is the section title strip's ``rule_offset`` —
+    surfaced so the parent document doesn't need to import
+    :class:`SectionStripeMetrics` just to compute the gap that
+    should sit above and below the section. Document composables
+    use ``section.metrics.rule_offset * 0.5`` as the inter-sibling
+    gap, matching the legacy positional-layout breathing constant.
+    """
+
+    rule_offset: float
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -211,7 +226,11 @@ def MacroSection(
         gap=2 * stripe_metrics.title_baseline_offset,
         align="start",
     )
-    return inner.size, inner.draw_at
+    return MetricsComponent(
+        size=inner.size,
+        draw_fn=inner.draw_fn,
+        metrics=MacroSectionMetrics(rule_offset=stripe_metrics.rule_offset),
+    )
 
 
 def draw_macros_image(
@@ -229,6 +248,7 @@ def draw_macros_image(
 
 __all__ = [
     "MacroSection",
+    "MacroSectionMetrics",
     "MacroTable",
     "draw_macros_image",
     "macro_natural_widths",
