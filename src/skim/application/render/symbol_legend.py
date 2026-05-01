@@ -23,7 +23,7 @@ Public entry point: :func:`collect_used_descriptions`.
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -401,7 +401,9 @@ def _collect_raw(
     pre_proc: dict[str, str] = keycode_mappings.get("pre_processing", {})
     macro_functions: dict[str, str] = keycode_mappings.get("macro_functions", {})
     symbol_desc: dict[str, str] = keycode_mappings.get("symbol_descriptions", {})
-    func_desc: dict[str, str | dict] = keycode_mappings.get("function_descriptions", {})
+    func_desc: Mapping[str, str | dict[str, str]] = keycode_mappings.get(
+        "function_descriptions", {}
+    )
     symbol_cats: dict[str, str] = keycode_mappings.get("symbol_categories", {})
     func_cats: dict[str, str] = keycode_mappings.get("function_categories", {})
     legend_aliases: dict[str, str] = keycode_mappings.get("symbol_legend_aliases", {})
@@ -465,7 +467,10 @@ def _collect_raw(
                 from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
 
                 fd_entry = func_desc[func_name]
-                raw_desc = fd_entry["description"] if isinstance(fd_entry, dict) else fd_entry
+                if isinstance(fd_entry, str):
+                    raw_desc = fd_entry
+                else:
+                    raw_desc = fd_entry["description"]
                 adapter = KeycodeLabelAdapter(Keyboard(), keycode_mappings)
 
                 if _is_per_instance_description(raw_desc):

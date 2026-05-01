@@ -850,7 +850,7 @@ class KeycodesTab(Widget):
 
     # Compatibility: expose _enter_edit_mode and _exit_edit_mode for tests
     def _enter_edit_mode(self, section: str) -> None:
-        mapping = {
+        mapping: dict[str, type[ListDetailPane]] = {
             "pre-process": PreProcessListPane,
             "override": OverrideListPane,
             "macro": MacroListPane,

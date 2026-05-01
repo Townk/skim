@@ -97,16 +97,20 @@ class Font(Enum):
         }}
         """
 
-    def load(self, font_size: int) -> ImageFont.FreeTypeFont:
+    def load(self, font_size: float) -> ImageFont.FreeTypeFont:
         """Load this font at the specified size.
 
         Args:
-            font_size: Font size in points.
+            font_size: Font size in points. Floats are accepted and
+                rounded to the nearest int (PIL operates on integer
+                point sizes; rounding here keeps the cache keyed by
+                int and avoids fragmenting it across near-equal
+                floats).
 
         Returns:
             A PIL ImageFont.FreeTypeFont instance.
         """
-        return _load_font(self.path, font_size)
+        return _load_font(self.path, int(round(max(font_size, 1.0))))
 
     def get_system_font_family(self) -> str:
         """Get the system font family name for CSS when not embedding fonts.
@@ -386,7 +390,7 @@ class Label:
         self,
         x: float,
         y: float,
-        font_size: int,
+        font_size: float,
         use_system_fonts: bool = False,
     ) -> draw.DrawingParentElement:
         """Build an SVG text element from this label.
@@ -394,7 +398,9 @@ class Label:
         Args:
             x: The x coordinate for the text.
             y: The y coordinate for the text.
-            font_size: The font size in points.
+            font_size: The font size in SVG units. Floats are accepted —
+                SVG ``font-size`` is unitless and renders at any
+                precision.
             use_system_fonts: Whether to use system font families instead of embedded fonts.
 
         Returns:
