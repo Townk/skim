@@ -41,18 +41,16 @@ from .legend import (
     resolve_macros,
     resolve_tap_dances,
 )
+from .macros import draw_macros_image
 from .overview import HeaderDims, compute_header_dims, draw_overview
-from .special_keys_image import (
-    draw_macros_image,
-    draw_special_keys_image,
-    draw_tap_dances_image,
-)
+from .special_keys import draw_special_keys_image
 from .styling import make_gradient
 from .symbol_legend import (
     build_symbol_legend,
     collect_used_descriptions,
     symbol_legend_height,
 )
+from .tap_dance import draw_tap_dances_image
 from .text import FontSubsetter, FontUsageAnalyzer, Label
 
 logger = logging.getLogger(__name__)

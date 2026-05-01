@@ -3,19 +3,19 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Unit tests for skim.application.render.legend_components."""
+"""Unit tests for skim.application.render.tap_dance."""
 
 from contextlib import contextmanager
 
 from skim.application.render.legend import _LegendGeometry
-from skim.application.render.legend_components import (
+from skim.application.render.render_context import RenderContext, using_render_context
+from skim.application.render.tap_dance import (
     _ELLIPSIS,
     TapDanceTable,
     _measure_text_width,
     _resolve_name_column,
     _truncate_with_ellipsis,
 )
-from skim.application.render.render_context import RenderContext, using_render_context
 from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTapDance, SvalboardTargetKey
 

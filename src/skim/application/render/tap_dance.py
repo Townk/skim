@@ -3,19 +3,22 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Composable components for the macro / tap-dance legend.
+"""Composable building blocks for the tap-dance section.
 
-These mirror the legacy ``build_*`` helpers in
-:mod:`skim.application.render.legend` exactly — same chips, same pills,
-same SVG output — so existing call sites continue to work after the
-``build_*`` helpers are rewritten as thin wrappers around the
-composables. The composables expose the rendered output as
-:class:`Component` instances so new code can compose them with the
-``Row`` / ``Column`` / ``Padding`` primitives.
+Four composables that nest:
 
-This first cut covers the tap-dance side: :func:`TapDanceCell`,
-:func:`TapDanceRow`, :func:`TapDanceColumnHeader`, and
-:func:`TapDanceTable`. The macro composables will follow.
+* :func:`TapDanceCell` — one variant slot (``TAP``, ``HOLD``,
+  ``DOUBLE-TAP``, ``TAP & HOLD``).
+* :func:`TapDanceRow` — chip + optional name + four cells.
+* :func:`TapDanceColumnHeader` — the strip of column labels above
+  the rows.
+* :func:`TapDanceTable` — column header + N rows; the entry point
+  used by both standalone and combined images.
+
+Plus the section's text-measurement and chip-shape helpers
+(``_truncate_with_ellipsis``, ``_filled_chip_path``,
+``_resolve_name_column``) and the standalone tap-dance image entry
+point :func:`draw_tap_dances_image`.
 """
 
 from __future__ import annotations
@@ -587,86 +590,64 @@ def _resolve_name_column(
 
 
 # ---------------------------------------------------------------------------
-# Section title strip (e.g. ``MACROS``, ``TAP-DANCE``)
+# Standalone image entry point
 # ---------------------------------------------------------------------------
 
 
-@Composable(use_context=True)
-def SectionStripe(
-    ctx,
-    *,
-    title: str,
-    count: int,
-    width: float,
-    accent_line: str,
-):
-    """Title text on the left, ``N ENTRIES`` on the right, rule line below.
+def draw_tap_dances_image(config, keymap):
+    """Render the standalone tap-dances image.
 
-    The element occupies the full ``width`` so a host's column layout
-    can stretch the rule across the content area. Vertical extent
-    matches what the legacy ``_draw_section_title`` reserved —
-    ``title_rule_offset`` from the top to the rule line — so the
-    composable can drop into a Column without changing the surrounding
-    image's body offset.
-
-    Reads its sizing constants from a fresh ``_LegendGeometry``
-    derived from ``ctx`` (per the convention that component-specific
-    metrics live with the component, not on the context). Color of
-    the title text and rule comes from ``accent_line`` — the section's
-    derived accent — since that's a per-section value, not a theme
-    preset.
+    Builds the table via the :func:`TapDanceTable` composable with the
+    canvas content width as the budget — the table either snugly wraps
+    its content (and the canvas shrinks to match) or stretches to the
+    budget and truncates the longest names with ``"…"`` when they
+    can't fit.
     """
-    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
-    height = geom.title_rule_offset
-    size = Size(width, height)
+    # Local imports — avoid pulling rendering siblings at module load
+    # time (and avoid a hard dep on the standalone-image stack from
+    # the per-component composables).
+    from .keymap_document import BODY_SCALE, render_single_section_document
+    from .legend import all_tap_dances
+    from .render_context import RenderContext, using_render_context
+    from .styling import derive_accent_line
 
-    def draw_at(d, origin):
-        x, y = origin.x, origin.y
-        d.append(
-            draw.Text(
-                title,
-                x=x,
-                y=y + geom.title_baseline_offset,
-                font_size=geom.title_font_size,
-                font_weight="700",
-                letter_spacing=geom.title_letter_spacing,
-                text_anchor="start",
-                font_family="'Roboto', sans-serif",
-                fill=accent_line,
-            )
-        )
-        d.append(
-            draw.Text(
-                f"{count} ENTRIES",
-                x=x + width,
-                y=y + geom.title_baseline_offset,
-                font_size=geom.title_count_font_size,
-                text_anchor="end",
-                fill="#888",
-                font_weight="400",
-                letter_spacing=geom.title_count_letter_spacing,
-                font_family="'Roboto', sans-serif",
-            )
-        )
-        d.append(
-            draw.Line(
-                sx=x,
-                sy=y + geom.title_rule_offset,
-                ex=x + width,
-                ey=y + geom.title_rule_offset,
-                stroke=accent_line,
-                stroke_opacity=0.5,
-                stroke_width=geom.title_rule_stroke,
-            )
-        )
+    with using_render_context(RenderContext.build(config, keymap)) as ctx:
+        tap_dances = all_tap_dances(keymap.tap_dances)
+        palette = ctx.theme.palette
+        metrics = ctx.document_metrics
+        td_line = derive_accent_line(palette.tap_dance_color)
 
-    return size, draw_at
+        initial_content_w = metrics.doc_width - 2 * metrics.padding
+
+        # Build the table component first so we can shrink the canvas to
+        # match it. ``max_width`` caps the table at the canvas budget;
+        # when names would overflow the cap they're auto-truncated.
+        table = TapDanceTable(
+            tap_dances=tap_dances,
+            accent_fill=palette.tap_dance_color,
+            accent_line=td_line,
+            text_color=palette.text_color,
+            scale=BODY_SCALE,
+            max_width=initial_content_w,
+        )
+        from .composable import Spacer
+
+        content_w = min(initial_content_w, table.size.width) if tap_dances else initial_content_w
+        body = table if tap_dances else Spacer()
+
+        return render_single_section_document(
+            body=body,
+            section_title="TAP-DANCE",
+            section_color=td_line,
+            section_count=len(tap_dances),
+            content_w=content_w,
+        )
 
 
 __all__ = [
-    "SectionStripe",
     "TapDanceCell",
     "TapDanceColumnHeader",
     "TapDanceRow",
     "TapDanceTable",
+    "draw_tap_dances_image",
 ]

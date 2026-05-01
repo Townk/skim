@@ -872,18 +872,17 @@ def build_tap_dance_row(
 ) -> draw.Group:
     """Render a single tap-dance row at ``(x, y)``.
 
-    Imperative wrapper around :func:`legend_components.TapDanceRow` —
-    same SVG output, ``y`` here is still the vertical centre of the
-    row (the composable's origin is the top-left, so the wrapper
-    converts).
+    Imperative wrapper around :func:`tap_dance.TapDanceRow` — same
+    SVG output, ``y`` here is still the vertical centre of the row
+    (the composable's origin is the top-left, so the wrapper converts).
 
-    See :func:`legend_components.TapDanceRow` for the full layout
-    contract; ``column_width`` is unused (kept for backward
-    compatibility with the legacy signature).
+    See :func:`tap_dance.TapDanceRow` for the full layout contract;
+    ``column_width`` is unused (kept for backward compatibility with
+    the legacy signature).
     """
     del column_width  # unused — historical part of the API
-    from .legend_components import TapDanceRow
     from .render_context import using_render_context
+    from .tap_dance import TapDanceRow
 
     geom = _LegendGeometry.for_doc_width(doc_width)
     g = draw.Group()
@@ -910,15 +909,14 @@ def build_tap_dance_column_header(
 ) -> draw.Group:
     """Render the once-per-column TAP/HOLD/DOUBLE-TAP/TAP&HOLD strip.
 
-    Imperative wrapper around
-    :func:`legend_components.TapDanceColumnHeader`. ``y`` here is the
-    text baseline (legacy contract); the composable's origin is the
-    top of its bounding box, so the wrapper subtracts
+    Imperative wrapper around :func:`tap_dance.TapDanceColumnHeader`.
+    ``y`` here is the text baseline (legacy contract); the composable's
+    origin is the top of its bounding box, so the wrapper subtracts
     ``title_baseline_offset`` to land the labels at the same y as
     before.
     """
-    from .legend_components import TapDanceColumnHeader
     from .render_context import using_render_context
+    from .tap_dance import TapDanceColumnHeader
 
     geom = _LegendGeometry.for_doc_width(doc_width)
     g = draw.Group()
