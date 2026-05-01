@@ -277,10 +277,67 @@ def KeymapSpecialKeysDocument(
     return KeymapDocument(content=content)
 
 
+@Composable(use_context=True)
+def KeymapSymbolDocument(
+    ctx,
+    *,
+    entries: list,
+    title: str,
+    copyright: str | None = None,
+    flow: str = "column",
+    scale: float = BODY_SCALE,
+):
+    """The full standalone symbols image as a single composable.
+
+    When ``entries`` is empty there's no document to render — return
+    a zero-sized :func:`Spacer` so the caller skips painting.
+
+    Builds the ``SYMBOLS`` :func:`SymbolSection` using the canvas
+    content width as the table's ``max_width`` budget; the table
+    picks the largest column count that fits and the canvas snugs to
+    the actual painted width.
+
+    ``title`` and ``copyright`` are passed in by the entry point —
+    the composable doesn't reach into ``ctx.config`` for either.
+    A falsy ``copyright`` (``None`` or ``""``) suppresses the footer.
+
+    ``flow`` mirrors :class:`symbols.FlowDirection` — accepts the
+    string ``"row"`` or ``"column"``; anything else falls back to
+    ``"column"``-major (the historical default).
+    """
+    if not entries:
+        return Spacer()
+
+    # Local import — :mod:`symbols` imports from this module.
+    from .symbols import FlowDirection, SymbolSection
+
+    metrics = ctx.document_metrics
+    content_offset = metrics.margin + metrics.border_width + metrics.inset
+    initial_content_w = metrics.doc_width - 2 * content_offset
+    typed_flow: FlowDirection = "row" if flow == "row" else "column"
+
+    section = SymbolSection(
+        entries=entries,
+        max_width=initial_content_w,
+        flow=typed_flow,
+        scale=scale,
+    )
+    content_w = section.size.width
+
+    with Column(gap=metrics.inset, align="start") as content:
+        Header(title=title, min_gap=2 * metrics.inset, max_width=content_w)
+        content.add(section)
+        if copyright:
+            Footer(text=copyright, max_width=content_w)
+
+    return KeymapDocument(content=content)
+
+
 __all__ = [
     "BODY_SCALE",
     "KeymapDocument",
     "KeymapMacroDocument",
     "KeymapSpecialKeysDocument",
+    "KeymapSymbolDocument",
     "KeymapTapDanceDocument",
 ]

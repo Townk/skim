@@ -50,6 +50,7 @@ from .symbol_legend import (
     collect_used_descriptions,
     symbol_legend_height,
 )
+from .symbols import collect_symbol_entries, draw_symbols_image
 from .tap_dance import draw_tap_dances_image
 from .text import FontSubsetter, FontUsageAnalyzer, Label
 
@@ -459,6 +460,16 @@ def draw_keymap(
             logger.warning(
                 "Skipping special-keys image: no macros nor tap-dances are defined in the keymap."
             )
+
+    if targets.symbols:
+        if raw_keymap is None or keycode_mappings is None:
+            logger.warning("Skipping symbols image: keycode mappings are not available.")
+        else:
+            symbol_entries = collect_symbol_entries(config, raw_keymap, keycode_mappings)
+            if symbol_entries:
+                keymap_images["keymap-symbols"] = draw_symbols_image(config, keymap, symbol_entries)
+            else:
+                logger.warning("Skipping symbols image: no resolvable symbols found in the keymap.")
 
     # If the only thing the user asked for were special-key images and the
     # keymap has neither macros nor tap-dances, surface a single overall

@@ -635,9 +635,15 @@ def collect_used_descriptions(
     return sorted(out.values(), key=_entry_sort_key)
 
 
+# ===========================================================================
+# LEGACY OVERVIEW PATH
 # ---------------------------------------------------------------------------
-# Rendering
-# ---------------------------------------------------------------------------
+# Everything below this marker is the imperative-renderer code that the
+# overview / per-layer image path still consumes. The composable-framework
+# equivalents live in :mod:`symbols`; the helpers here stay live until the
+# overview migrates, at which point this whole block retires.
+# ===========================================================================
+
 
 # Geometry ratios — every visible size scales with the document width so the
 # symbol legend keeps the same proportions across output sizes. The raw pixel

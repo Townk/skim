@@ -144,6 +144,7 @@ class KeymapGeneratorTargets:
     macros: bool = False
     tap_dances: bool = False
     special_keys: bool = False
+    symbols: bool = False
     selected_layers: list[int] = field(default_factory=list)
 
     @classmethod
@@ -205,6 +206,7 @@ class KeymapGeneratorTargets:
         macros = False
         tap_dances = False
         special_keys = False
+        symbols = False
         selected_layers: list[int] = []
 
         for token in tokens:
@@ -224,6 +226,7 @@ class KeymapGeneratorTargets:
                         macros=True,
                         tap_dances=True,
                         special_keys=False,
+                        symbols=True,
                         selected_layers=[],
                     )
                 case "all-layers":
@@ -237,6 +240,8 @@ class KeymapGeneratorTargets:
                     tap_dances = True
                 case "special-keys":
                     special_keys = True
+                case "symbols":
+                    symbols = True
                 case _ if "-" in token:
                     try:
                         start_str, end_str = token.split("-")
@@ -259,5 +264,6 @@ class KeymapGeneratorTargets:
             macros=macros,
             tap_dances=tap_dances,
             special_keys=special_keys,
+            symbols=symbols,
             selected_layers=selected_layers,
         )

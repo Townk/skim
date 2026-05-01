@@ -191,7 +191,7 @@ def doctor() -> None:
     multiple=True,
     help=(
         "Layers/images to generate (all, all-layers, overview, macros, "
-        "tap-dances, special-keys, N, N-M)."
+        "tap-dances, special-keys, symbols, N, N-M)."
     ),
 )
 @click.option(
@@ -324,11 +324,13 @@ def generate(
         -l macros         Generate only the macros image
         -l tap-dances     Generate only the tap-dances image
         -l special-keys   Generate only the macros + tap-dances combined image
+        -l symbols        Generate only the symbols image
         -l 1              Generate only layer 1
         -l 1-3            Generate layers 1, 2, and 3
         -l 1 -l 3 -l 5    Generate layers 1, 3, and 5
         -l all-layers     Generate every individual layer
         -l all            Generate every layer + overview + macros + tap-dances
+                          + symbols
                           (skips the combined special-keys image; opt in
                           explicitly with -l special-keys)
         (no -l)           Generate every layer plus overview
