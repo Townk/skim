@@ -260,9 +260,7 @@ def KeymapSpecialKeysDocument(
         MacroSection(macros=macros, content_width=col_w, width=col_w) if macros else None
     )
     td_section = (
-        TapDanceSection(tap_dances=tap_dances, width=col_w, max_width=col_w)
-        if tap_dances
-        else None
+        TapDanceSection(tap_dances=tap_dances, width=col_w, max_width=col_w) if tap_dances else None
     )
 
     with Column(gap=metrics.inset, align="start") as content:
