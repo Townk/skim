@@ -59,7 +59,9 @@ class TestResolveNameColumnWidth:
 
     def test_collapses_to_zero_when_no_names(self):
         metrics = TapDanceMetrics.for_doc_width(1600.0)
-        cells_block_w = metrics.table_header_spacing + 4 * metrics.cell_w + 3 * metrics.table_col_spacing
+        cells_block_w = (
+            metrics.table_header_spacing + 4 * metrics.cell_w + 3 * metrics.table_col_spacing
+        )
         width = _resolve_name_column_width(
             tap_dances=[_td("0"), _td("1")],
             metrics=metrics,
@@ -73,7 +75,9 @@ class TestResolveNameColumnWidth:
         # Cells block: four cells with three ``table_col_spacing``
         # gaps between them, plus the leading ``table_header_spacing``
         # that separates the row header (chip) from the cells.
-        cells_block_w = metrics.table_header_spacing + 4 * metrics.cell_w + 3 * metrics.table_col_spacing
+        cells_block_w = (
+            metrics.table_header_spacing + 4 * metrics.cell_w + 3 * metrics.table_col_spacing
+        )
         tds = [_td("0", name="short"), _td("1", name="much longer name")]
         long_natural = _measure("much longer name", metrics.name_font_size)
 
@@ -89,7 +93,9 @@ class TestResolveNameColumnWidth:
 
     def test_caps_column_at_budget_when_longest_overflows(self):
         metrics = TapDanceMetrics.for_doc_width(1600.0)
-        cells_block_w = metrics.table_header_spacing + 4 * metrics.cell_w + 3 * metrics.table_col_spacing
+        cells_block_w = (
+            metrics.table_header_spacing + 4 * metrics.cell_w + 3 * metrics.table_col_spacing
+        )
         long_name = "the quick brown fox jumps over the lazy dog " * 4
         tds = [_td("0", name="short"), _td("1", name=long_name)]
 
