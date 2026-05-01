@@ -249,10 +249,21 @@ def KeymapSpecialKeysDocument(
 
     # Pre-build sections so they can be attached inside the with-block
     # via ``content.add(...)`` / ``body_row.add(...)``.
+    #
+    # ``max_width=col_w`` on the TD section lets the named-chip area
+    # grow until it either fits the longest name or hits the column's
+    # right edge (which lines up with the document's right padding).
+    # Without it the table falls back to the legacy fixed name-column
+    # width and either over-truncates short names or fails to fit
+    # long ones.
     macro_section = (
         MacroSection(macros=macros, content_width=col_w, width=col_w) if macros else None
     )
-    td_section = TapDanceSection(tap_dances=tap_dances, width=col_w) if tap_dances else None
+    td_section = (
+        TapDanceSection(tap_dances=tap_dances, width=col_w, max_width=col_w)
+        if tap_dances
+        else None
+    )
 
     with Column(gap=metrics.inset, align="start") as content:
         Header(title=title, min_gap=2 * metrics.inset, max_width=target_content_w)
