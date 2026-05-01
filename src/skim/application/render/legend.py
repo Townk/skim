@@ -166,11 +166,13 @@ def build_action_glyph(
     - DELAY → small clock dial (circle + two hands).
 
     Glyph dimensions scale with ``doc_width`` so the legend stays visually
-    consistent across output sizes.
+    consistent across output sizes. Reads its sizing constants directly
+    from the ``_GLYPH_*_RATIO`` constants below — no consult of the
+    legacy ``_LegendGeometry`` god-object — so the call site stays
+    self-contained.
     """
-    geom = _LegendGeometry.for_doc_width(doc_width)
-    r = geom.glyph_dot_radius
-    half = geom.glyph_triangle_half
+    r = doc_width * _GLYPH_DOT_RADIUS_RATIO
+    half = doc_width * _GLYPH_TRIANGLE_HALF_RATIO
     if kind == SvalboardMacroActionKind.TAP:
         return draw.Circle(cx=cx, cy=cy, r=r, fill=color)
     if kind == SvalboardMacroActionKind.DOWN:
@@ -196,15 +198,19 @@ def build_action_glyph(
             fill=color,
         )
     if kind == SvalboardMacroActionKind.DELAY:
+        dial_r = doc_width * _GLYPH_DELAY_DIAL_RADIUS_RATIO
+        stroke_w = doc_width * _GLYPH_DELAY_STROKE_RATIO
+        hour_hand = doc_width * _GLYPH_DELAY_HOUR_HAND_RATIO
+        minute_hand = doc_width * _GLYPH_DELAY_MINUTE_HAND_RATIO
         g = draw.Group()
         g.append(
             draw.Circle(
                 cx=cx,
                 cy=cy,
-                r=geom.glyph_delay_dial_radius,
+                r=dial_r,
                 fill="none",
                 stroke=color,
-                stroke_width=geom.glyph_delay_stroke,
+                stroke_width=stroke_w,
             )
         )
         # Clock hands at 12 o'clock + 3 o'clock.
@@ -213,9 +219,9 @@ def build_action_glyph(
                 sx=cx,
                 sy=cy,
                 ex=cx,
-                ey=cy - geom.glyph_delay_hour_hand,
+                ey=cy - hour_hand,
                 stroke=color,
-                stroke_width=geom.glyph_delay_stroke,
+                stroke_width=stroke_w,
                 stroke_linecap="round",
             )
         )
@@ -223,10 +229,10 @@ def build_action_glyph(
             draw.Line(
                 sx=cx,
                 sy=cy,
-                ex=cx + geom.glyph_delay_minute_hand,
+                ex=cx + minute_hand,
                 ey=cy,
                 stroke=color,
-                stroke_width=geom.glyph_delay_stroke,
+                stroke_width=stroke_w,
                 stroke_linecap="round",
             )
         )
@@ -236,7 +242,7 @@ def build_action_glyph(
         "T",
         x=cx,
         y=cy,
-        font_size=geom.glyph_text_font_size,
+        font_size=doc_width * _GLYPH_TEXT_FONT_SIZE_RATIO,
         fill=color,
         font_weight="700",
         font_style="italic",
@@ -351,13 +357,6 @@ class _LegendGeometry:
     pill_chrome_width: float
     pill_min_text_width: float
     pill_min_total_width: float
-    glyph_dot_radius: float
-    glyph_triangle_half: float
-    glyph_delay_dial_radius: float
-    glyph_delay_hour_hand: float
-    glyph_delay_minute_hand: float
-    glyph_delay_stroke: float
-    glyph_text_font_size: float
     row_content_indent_gap: float
     pill_corner_radius: float
     tag_stroke_width: float
@@ -421,13 +420,6 @@ class _LegendGeometry:
             pill_chrome_width=2 * pill_pad_x + icon_width + icon_text_gap,
             pill_min_text_width=doc_width * _PILL_MIN_TEXT_WIDTH_RATIO,
             pill_min_total_width=doc_width * _PILL_MIN_TOTAL_WIDTH_RATIO,
-            glyph_dot_radius=doc_width * _GLYPH_DOT_RADIUS_RATIO,
-            glyph_triangle_half=doc_width * _GLYPH_TRIANGLE_HALF_RATIO,
-            glyph_delay_dial_radius=doc_width * _GLYPH_DELAY_DIAL_RADIUS_RATIO,
-            glyph_delay_hour_hand=doc_width * _GLYPH_DELAY_HOUR_HAND_RATIO,
-            glyph_delay_minute_hand=doc_width * _GLYPH_DELAY_MINUTE_HAND_RATIO,
-            glyph_delay_stroke=doc_width * _GLYPH_DELAY_STROKE_RATIO,
-            glyph_text_font_size=doc_width * _GLYPH_TEXT_FONT_SIZE_RATIO,
             row_content_indent_gap=doc_width * _ROW_CONTENT_INDENT_GAP_RATIO,
             pill_corner_radius=doc_width * _PILL_CORNER_RADIUS_RATIO,
             tag_stroke_width=doc_width * _TAG_STROKE_WIDTH_RATIO,
