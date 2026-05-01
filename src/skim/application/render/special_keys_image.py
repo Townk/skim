@@ -247,7 +247,7 @@ def _section_block(
     geom = setup.geom
     return Column(
         [
-            SectionStripe(title=title, count=count, width=width, accent_line=color, geom=geom),
+            SectionStripe(title=title, count=count, width=width, accent_line=color),
             Spacer(height=2 * geom.title_baseline_offset),
             body,
         ],
@@ -272,15 +272,11 @@ def _render_image(
     images without a single dominant section title.
     """
     geom = setup.geom
-    palette = setup.palette
 
     header = Header(
         title=setup.title_text,
-        title_font_max_size=setup.header_dims.title_font_size,
         gap=2 * setup.padding,
         max_width=content_w,
-        color=palette.text_color,
-        use_system_fonts=setup.use_system_fonts,
     )
 
     children: list[Component] = [

@@ -567,14 +567,14 @@ def _resolve_name_column(
 # ---------------------------------------------------------------------------
 
 
-@Composable
+@Composable(use_context=True)
 def SectionStripe(
+    ctx,
     *,
     title: str,
     count: int,
     width: float,
     accent_line: str,
-    geom: _LegendGeometry,
 ):
     """Title text on the left, ``N ENTRIES`` on the right, rule line below.
 
@@ -584,7 +584,15 @@ def SectionStripe(
     ``title_rule_offset`` from the top to the rule line — so the
     composable can drop into a Column without changing the surrounding
     image's body offset.
+
+    Reads its sizing constants from a fresh ``_LegendGeometry``
+    derived from ``ctx`` (per the convention that component-specific
+    metrics live with the component, not on the context). Color of
+    the title text and rule comes from ``accent_line`` — the section's
+    derived accent — since that's a per-section value, not a theme
+    preset.
     """
+    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
     height = geom.title_rule_offset
     size = Size(width, height)
 

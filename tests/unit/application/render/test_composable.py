@@ -263,6 +263,7 @@ def _build_ctx() -> RenderContext:
         keymap=keymap,
         theme=Theme(
             palette=palette,
+            title=Typography(font=Font.TITLE, size=24.0, color=palette.text_color),
             copyright=Typography(font=Font.FINGER_KEY, size=12.0, color=palette.text_color),
         ),
         document_metrics=DocumentMetrics(

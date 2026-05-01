@@ -63,12 +63,17 @@ class Typography:
     needs at paint time. Composables that emit text should accept a
     :class:`Typography` (or read one off ``ctx.theme``) instead of
     re-spelling these fields per call site.
+
+    Letter spacing is intentionally NOT a Typography field — it's a
+    per-glyph-run treatment used in only a handful of places (section
+    titles, the ``N ENTRIES`` count, action key labels) and pinning
+    it to the typography preset would bake one site's tracking into
+    every preset that shared the font.
     """
 
     font: Font
     size: float
     weight: int = 400
-    letter_spacing: float = 0.0
     color: str = "black"
 
 
@@ -82,25 +87,40 @@ class Theme:
     """
 
     palette: Palette
+    title: Typography
+    """Keymap title — large, thin, top-left of the image."""
+
     copyright: Typography
     """Footer copyright text — small, faded, right-aligned."""
 
     # Future presets:
-    #   title: Typography
     #   section_title: Typography
     #   chip_label: Typography
 
     @classmethod
-    def resolve(cls, config: SkimConfig, *, copyright_font_size: float) -> "Theme":
+    def resolve(
+        cls,
+        config: SkimConfig,
+        *,
+        title_font_size: float,
+        copyright_font_size: float,
+    ) -> "Theme":
         """Resolve the theme from a (already-scaled) config + font sizes.
 
-        ``copyright_font_size`` comes from the overview's badge math
-        (``HeaderDims.copyright_font_size``) so footers across all
-        image variants stay sized consistently with each other.
+        ``title_font_size`` and ``copyright_font_size`` both come from
+        the overview's badge math (``HeaderDims``) so the same sizes
+        flow through every image variant — title and footer stay
+        visually consistent across per-layer, overview, macros,
+        tap-dances and special-keys renders.
         """
         palette = config.output.style.palette
         return cls(
             palette=palette,
+            title=Typography(
+                font=Font.TITLE,
+                size=title_font_size,
+                color=palette.text_color,
+            ),
             copyright=Typography(
                 font=Font.FINGER_KEY,
                 size=copyright_font_size,
@@ -225,7 +245,11 @@ class RenderContext:
         return cls(
             config=scaled,
             keymap=keymap,
-            theme=Theme.resolve(scaled, copyright_font_size=header_dims.copyright_font_size),
+            theme=Theme.resolve(
+                scaled,
+                title_font_size=header_dims.title_font_size,
+                copyright_font_size=header_dims.copyright_font_size,
+            ),
             document_metrics=DocumentMetrics.from_config(scaled, scale=scale),
         )
 

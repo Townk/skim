@@ -33,6 +33,7 @@ from .composable import (
     Spacer,
 )
 from .geometry import AspectRatio
+from .render_context import Typography
 from .text import Font
 
 # The Svalboard logo SVG asset's intrinsic aspect ratio. Logo width is
@@ -181,20 +182,50 @@ def Logo(height: float):
     return size, draw_at
 
 
-@Composable
-def Header(
+def _build_header(
     *,
     title: str,
     title_font_max_size: float,
     gap: float,
+    max_width: float | None,
+    color: str,
+    use_system_fonts: bool,
+):
+    """Pure helper used by both the ctx-aware composable and ``append_header``.
+
+    Resolves the title font size against ``max_width``, builds the
+    title + spacer + logo Row, and returns the resulting Component.
+    Shared so the ctx-aware :func:`Header` and the legacy imperative
+    :func:`append_header` produce pixel-identical output.
+    """
+    font_size = _resolve_title_font_size(title, title_font_max_size, gap, max_width)
+    title_el = TitleText(title, font_size=font_size, color=color, use_system_fonts=use_system_fonts)
+    logo_el = Logo(height=title_el.size.height)
+
+    if max_width is None:
+        return Row([title_el, logo_el], gap=gap, align="center")
+
+    children_w = title_el.size.width + logo_el.size.width
+    spacer_w = max(gap, max_width - children_w)
+    return Row([title_el, Spacer(width=spacer_w), logo_el], gap=0.0, align="center")
+
+
+@Composable(use_context=True)
+def Header(
+    ctx,
+    *,
+    title: str,
+    gap: float,
     max_width: float | None = None,
-    color: str = "black",
-    use_system_fonts: bool = False,
 ):
     """A keymap title + Svalboard logo header.
 
-    The logo's natural height matches the title's rendered glyph bbox.
-    When ``max_width`` is given:
+    Reads typography (font, size, color) from ``ctx.theme.title`` and
+    the ``use_system_fonts`` flag from
+    ``ctx.config.output.style``.
+
+    The logo's natural height matches the title's rendered glyph
+    bbox. When ``max_width`` is given:
 
       * if the natural ``title + gap + logo`` extent already fits, the
         header keeps its natural size and a flexible spacer between
@@ -205,18 +236,15 @@ def Header(
     When ``max_width`` is ``None`` the header is its natural extent —
     title, fixed ``gap``, logo, no flex spacer.
     """
-    font_size = _resolve_title_font_size(title, title_font_max_size, gap, max_width)
-    title_el = TitleText(title, font_size=font_size, color=color, use_system_fonts=use_system_fonts)
-    logo_el = Logo(height=title_el.size.height)
-
-    if max_width is None:
-        inner = Row([title_el, logo_el], gap=gap, align="center")
-        return inner.size, inner.draw_at
-
-    children_w = title_el.size.width + logo_el.size.width
-    spacer_w = max(gap, max_width - children_w)
-    spacer = Spacer(width=spacer_w)
-    inner = Row([title_el, spacer, logo_el], gap=0.0, align="center")
+    typo: Typography = ctx.theme.title
+    inner = _build_header(
+        title=title,
+        title_font_max_size=typo.size,
+        gap=gap,
+        max_width=max_width,
+        color=typo.color,
+        use_system_fonts=ctx.config.output.style.use_system_fonts,
+    )
     return inner.size, inner.draw_at
 
 
@@ -248,19 +276,19 @@ def append_header(
     use_system_fonts: bool,
     top_y: float | None = None,
 ) -> HeaderRenderResult:
-    """Imperative wrapper around the :func:`Header` composable.
+    """Imperative wrapper that builds and paints a header without a context.
 
-    Constructs the header element with ``gap = 2 × padding`` and
-    ``max_width = canvas_w - 2 × padding`` (matching the historical
-    layout rule), draws it at ``(padding, top_y)``, and returns the
-    rendered extents.
+    Used by call sites (per-layer / overview images) that haven't yet
+    been migrated to a :class:`RenderContext`-aware pipeline. Goes
+    through the same :func:`_build_header` helper as the ctx-aware
+    :func:`Header` composable so output stays pixel-identical.
     """
     if top_y is None:
         top_y = padding
     gap = _MIN_GAP_PADDING_MULTIPLIER * padding
     max_width = canvas_w - 2 * padding
 
-    header = Header(
+    header = _build_header(
         title=title_text,
         title_font_max_size=title_font_max_size,
         gap=gap,
