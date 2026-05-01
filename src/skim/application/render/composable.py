@@ -78,7 +78,16 @@ from typing import Any, Concatenate, Literal, ParamSpec, Protocol, TypeVar, over
 
 import drawsvg as draw
 
-from .primitives import BaseComponent, Component, DrawFn, Point, Size
+from .primitives import (
+    BaseComponent,
+    Component,
+    DrawFn,
+    Point,
+    Size,
+    _collector_stack,
+    _ContainerBuilder,
+    _maybe_register,
+)
 from .render_context import RenderContext, current_render_context
 from .text import Font
 
@@ -173,19 +182,47 @@ def _make_factory(
     *,
     inject_ctx: bool,
 ) -> Callable[..., BaseComponent]:
-    """Build the runtime factory shared by both decorator shapes."""
+    """Build the runtime factory shared by both decorator shapes.
+
+    Three return shapes from the decorated function are recognised:
+
+    * ``BaseComponent`` (or subclass) — passed through unchanged so
+      typed metadata survives.
+    * ``_ContainerBuilder`` — the user returned a ``with``-block
+      builder directly; we extract its built component.
+    * ``(size, draw_fn)`` tuple — auto-wrapped into a ``BaseComponent``.
+
+    After resolving the component, auto-attach it to any active
+    ``with``-block parent so composables called inside a parent's
+    ``with`` block become its children with no explicit list.
+    """
 
     @wraps(builder)
     def factory(*args, **kwargs) -> BaseComponent:
-        if inject_ctx:
-            ctx = current_render_context()
-            result = builder(ctx, *args, **kwargs)
-        else:
-            result = builder(*args, **kwargs)
-        if isinstance(result, BaseComponent):
-            return result
-        size, draw_fn = result
-        return BaseComponent(size=size, draw_fn=draw_fn)
+        # Isolate the collector stack while the body runs so internal
+        # child-building (``with Column()`` blocks, primitive
+        # composables called inside the body, etc.) doesn't leak
+        # registrations to whichever ``with`` block the CALLER opened.
+        # Only the FINAL component this factory returns auto-attaches
+        # to the caller's collector — see ``_maybe_register`` below.
+        saved_token = _collector_stack.set(())
+        try:
+            if inject_ctx:
+                ctx = current_render_context()
+                result = builder(ctx, *args, **kwargs)
+            else:
+                result = builder(*args, **kwargs)
+            if isinstance(result, BaseComponent):
+                component = result
+            elif isinstance(result, _ContainerBuilder):
+                component = result._require_built()
+            else:
+                size, draw_fn = result
+                component = BaseComponent(size=size, draw_fn=draw_fn)
+        finally:
+            _collector_stack.reset(saved_token)
+        _maybe_register(component)
+        return component
 
     return factory
 

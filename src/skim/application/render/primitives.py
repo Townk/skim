@@ -42,6 +42,7 @@ primitive imports it from here::
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any, Generic, Protocol, TypeVar, runtime_checkable
 
@@ -331,6 +332,50 @@ def align_within(
 
 
 # ---------------------------------------------------------------------------
+# Child-collector plumbing for `with`-block tree building
+# ---------------------------------------------------------------------------
+
+
+# Stack of active container builders — when a composable executes inside a
+# ``with Row(...)`` / ``with Column(...)`` block, the freshly-built component
+# auto-attaches to the topmost builder. Tuple instead of list so the
+# ContextVar default doesn't accidentally share mutable state across contexts.
+_collector_stack: ContextVar[tuple[_ContainerBuilder, ...]] = ContextVar(
+    "_skim_collector_stack",
+    default=(),
+)
+
+
+def _push_collector(c: _ContainerBuilder):
+    """Push ``c`` onto the active-collector stack; returns a ContextVar token."""
+    return _collector_stack.set(_collector_stack.get() + (c,))
+
+
+def _pop_collector(token) -> None:
+    """Pop the top collector via the token returned by :func:`_push_collector`."""
+    _collector_stack.reset(token)
+
+
+def _current_collector() -> _ContainerBuilder | None:
+    """Return the topmost active collector, or ``None`` if no ``with`` block is open."""
+    stack = _collector_stack.get()
+    return stack[-1] if stack else None
+
+
+def _maybe_register(component: Component) -> None:
+    """Register ``component`` with the active collector if one is open.
+
+    Called by the ``@Composable`` decorator after building a component, and
+    by the layout primitives below after assembling a child list. No-op
+    when there's no active ``with`` block — the component is just returned
+    to the caller as a value.
+    """
+    parent = _current_collector()
+    if parent is not None:
+        parent._add(component)
+
+
+# ---------------------------------------------------------------------------
 # Layout primitives
 # ---------------------------------------------------------------------------
 
@@ -347,27 +392,19 @@ def Spacer(width: float = 0.0, height: float = 0.0) -> BaseComponent:
     def draw_at(d: Canvas, origin: Point) -> None:
         del d, origin  # nothing to paint
 
-    return BaseComponent(size=size, draw_fn=draw_at)
+    component = BaseComponent(size=size, draw_fn=draw_at)
+    _maybe_register(component)
+    return component
 
 
-def Row(
-    children: Iterable[Component],
-    gap: float = 0.0,
-    align: str = "center",
-) -> BaseComponent:
-    """Lay ``children`` out horizontally, left-to-right.
-
-    ``align`` controls the y-position of children that are shorter than
-    the row: ``"top"``, ``"center"``, or ``"bottom"``.
-    """
-    children_list = list(children)
-    width = sum(c.size.width for c in children_list) + max(0, len(children_list) - 1) * gap
-    height = max((c.size.height for c in children_list), default=0.0)
+def _build_row(children: list[Component], gap: float, align: str) -> BaseComponent:
+    width = sum(c.size.width for c in children) + max(0, len(children) - 1) * gap
+    height = max((c.size.height for c in children), default=0.0)
     size = Size(width, height)
 
     def draw_at(d: Canvas, origin: Point) -> None:
         cursor_x = origin.x
-        for c in children_list:
+        for c in children:
             y_off = _align_offset(align, height, c.size.height)
             c.draw_at(d, Point(cursor_x, origin.y + y_off))
             cursor_x += c.size.width + gap
@@ -375,29 +412,138 @@ def Row(
     return BaseComponent(size=size, draw_fn=draw_at)
 
 
-def Column(
-    children: Iterable[Component],
-    gap: float = 0.0,
-    align: str = "start",
-) -> BaseComponent:
-    """Lay ``children`` out vertically, top-to-bottom.
-
-    ``align`` controls the x-position of children that are narrower
-    than the column: ``"start"``, ``"center"``, or ``"end"``.
-    """
-    children_list = list(children)
-    width = max((c.size.width for c in children_list), default=0.0)
-    height = sum(c.size.height for c in children_list) + max(0, len(children_list) - 1) * gap
+def _build_column(children: list[Component], gap: float, align: str) -> BaseComponent:
+    width = max((c.size.width for c in children), default=0.0)
+    height = sum(c.size.height for c in children) + max(0, len(children) - 1) * gap
     size = Size(width, height)
 
     def draw_at(d: Canvas, origin: Point) -> None:
         cursor_y = origin.y
-        for c in children_list:
+        for c in children:
             x_off = _align_offset(align, width, c.size.width)
             c.draw_at(d, Point(origin.x + x_off, cursor_y))
             cursor_y += c.size.height + gap
 
     return BaseComponent(size=size, draw_fn=draw_at)
+
+
+class _ContainerBuilder:
+    """Lazily-built :func:`Row` / :func:`Column` for ``with``-block trees.
+
+    Returned when ``Row(...)`` / ``Column(...)`` is called WITHOUT a
+    ``children`` arg — the child list is collected from composables
+    invoked inside the ``with`` block, then the actual component is
+    built on ``__exit__``. After exit the builder transparently
+    delegates ``size`` / ``draw_at`` / ``draw_fn`` to the built
+    component, so it satisfies the :class:`Component` Protocol.
+
+    Usage::
+
+        with Column(gap=10) as document:
+            Header(title=..., gap=..., max_width=...)
+            MacroSection(macros=..., content_width=..., scale=...)
+            if has_footer:
+                Footer(text=..., width=...)
+        # ``document`` now satisfies Component — pass to KeymapDocument /
+        # render / further composition.
+    """
+
+    __slots__ = ("_kind", "_gap", "_align", "_collected", "_built", "_token")
+
+    def __init__(self, kind: str, gap: float, align: str) -> None:
+        self._kind = kind
+        self._gap = gap
+        self._align = align
+        self._collected: list[Component] = []
+        self._built: BaseComponent | None = None
+        self._token = None
+
+    def _add(self, child: Component) -> None:
+        if self._built is not None:
+            raise RuntimeError(
+                "Cannot add a child to a closed container builder; "
+                "make sure the composable runs inside the matching ``with`` block."
+            )
+        self._collected.append(child)
+
+    def __enter__(self) -> _ContainerBuilder:
+        self._token = _push_collector(self)
+        return self
+
+    def __exit__(self, *exc) -> None:
+        _pop_collector(self._token)
+        if self._kind == "row":
+            self._built = _build_row(self._collected, self._gap, self._align)
+        else:
+            self._built = _build_column(self._collected, self._gap, self._align)
+        # The completed container itself auto-attaches if we're nested
+        # inside an outer ``with``.
+        _maybe_register(self._built)
+
+    def _require_built(self) -> BaseComponent:
+        if self._built is None:
+            raise RuntimeError(
+                "Container builder hasn't been built yet — access ``size`` / "
+                "``draw_at`` after the ``with`` block exits."
+            )
+        return self._built
+
+    @property
+    def size(self) -> Size:
+        return self._require_built().size
+
+    @property
+    def draw_fn(self) -> DrawFn:
+        return self._require_built().draw_fn
+
+    def draw_at(self, d: Canvas, origin: Point) -> None:
+        self._require_built().draw_at(d, origin)
+
+
+def Row(
+    children: Iterable[Component] | None = None,
+    gap: float = 0.0,
+    align: str = "center",
+) -> BaseComponent | _ContainerBuilder:
+    """Lay children out horizontally, left-to-right.
+
+    Two call shapes:
+
+    * ``Row([a, b, c], gap=...)`` — builds and returns the row component
+      directly. Auto-registers with any active ``with``-block parent.
+    * ``with Row(gap=...) as row:`` — opens a ``with`` block; composables
+      called inside the block auto-attach as the row's children, and the
+      row component is built on ``__exit__``. After exit ``row`` exposes
+      ``size`` / ``draw_at`` / ``draw_fn`` and can be passed anywhere a
+      :class:`Component` is expected.
+
+    ``align`` controls the y-position of children that are shorter than
+    the row: ``"top"``, ``"center"``, or ``"bottom"``.
+    """
+    if children is None:
+        return _ContainerBuilder("row", gap, align)
+    component = _build_row(list(children), gap, align)
+    _maybe_register(component)
+    return component
+
+
+def Column(
+    children: Iterable[Component] | None = None,
+    gap: float = 0.0,
+    align: str = "start",
+) -> BaseComponent | _ContainerBuilder:
+    """Lay children out vertically, top-to-bottom.
+
+    Two call shapes — see :func:`Row` for the full description.
+
+    ``align`` controls the x-position of children that are narrower
+    than the column: ``"start"``, ``"center"``, or ``"end"``.
+    """
+    if children is None:
+        return _ContainerBuilder("column", gap, align)
+    component = _build_column(list(children), gap, align)
+    _maybe_register(component)
+    return component
 
 
 __all__ = [
