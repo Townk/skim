@@ -194,7 +194,9 @@ def _texts_with_separators(raw: list[str]) -> list[str]:
     return [r + (_SEPARATOR if i < n - 1 else "") for i, r in enumerate(raw)]
 
 
-def _measure_widths(styles: list[TextStyle], rendered: list[str], sizes: list[float]) -> list[float]:
+def _measure_widths(
+    styles: list[TextStyle], rendered: list[str], sizes: list[float]
+) -> list[float]:
     """Measure each span's painted width at its current font size."""
     seps = _texts_with_separators(rendered)
     return [measure_text_width(seps[i], styles[i].font, sizes[i]) for i in range(len(seps))]
@@ -241,8 +243,7 @@ def _relax_sizes(
     # here. The width pass below also clamps against this factor.
     if max_height is not None:
         natural_heights = [
-            measure_text_height(rendered[i], styles[i].font, styles[i].size)
-            for i in range(n)
+            measure_text_height(rendered[i], styles[i].font, styles[i].size) for i in range(n)
         ]
         tallest = max(natural_heights, default=0.0)
         if tallest > max_height and tallest > 0:
@@ -475,9 +476,7 @@ def RichText(
     #    the truncation phase. Inserts ``…`` span(s) painted with
     #    the parent style and drops original spans iteratively.
     truncated = False
-    if max_width is not None and not _fits_at_sizes(
-        effective_styles, rendered, sizes, max_width
-    ):
+    if max_width is not None and not _fits_at_sizes(effective_styles, rendered, sizes, max_width):
         effective_styles, span_mins, rendered, sizes = _truncate_with_ellipses(
             styles=effective_styles,
             mins=span_mins,
@@ -498,9 +497,7 @@ def RichText(
     span_elements = [
         AdjustableText(
             text=text,
-            style=TextStyle(
-                font=es.font, size=size_, color=es.color
-            ),
+            style=TextStyle(font=es.font, size=size_, color=es.color),
             text_anchor="start",
             dominant_baseline=dominant_baseline,
             opacity=opacity,

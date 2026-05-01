@@ -95,9 +95,7 @@ class TestTruncation:
         # smaller than ellipsis + any real glyph.
         ellipsis_w = _measure(_ELLIPSIS, 12.0)
         with _ctx():
-            el = AdjustableText(
-                text="anything", style=_style(12.0), max_width=ellipsis_w + 0.1
-            )
+            el = AdjustableText(text="anything", style=_style(12.0), max_width=ellipsis_w + 0.1)
         assert el.metrics.rendered_text == _ELLIPSIS
 
 

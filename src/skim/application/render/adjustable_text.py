@@ -156,9 +156,7 @@ def measure_text_height(text: str, font: Font, font_size: float) -> float:
     return float(bottom - top)
 
 
-def _reference_lines(
-    text: str, font: Font, font_size: float
-) -> tuple[float, float, float]:
+def _reference_lines(text: str, font: Font, font_size: float) -> tuple[float, float, float]:
     """Return ``(baseline, meanline, ascender_line)`` y-offsets within
     the rendered text's bbox.
 
@@ -187,9 +185,7 @@ def _reference_lines(
     return baseline, meanline, ascender_line
 
 
-def _truncate_to_fit(
-    text: str, font: Font, font_size: float, max_width: float
-) -> tuple[str, bool]:
+def _truncate_to_fit(text: str, font: Font, font_size: float, max_width: float) -> tuple[str, bool]:
     """Trim ``text`` so its rendered width fits inside ``max_width``.
 
     Returns ``(trimmed_text, was_truncated)``. When the natural
@@ -327,17 +323,13 @@ def AdjustableText(
     )
 
     if max_width is not None:
-        rendered_text, truncated = _truncate_to_fit(
-            text, style.font, font_size, max_width
-        )
+        rendered_text, truncated = _truncate_to_fit(text, style.font, font_size, max_width)
     else:
         rendered_text, truncated = text, False
 
     rendered_w = measure_text_width(rendered_text, style.font, font_size)
     rendered_h = measure_text_height(rendered_text, style.font, font_size)
-    baseline, meanline, ascender_line = _reference_lines(
-        rendered_text, style.font, font_size
-    )
+    baseline, meanline, ascender_line = _reference_lines(rendered_text, style.font, font_size)
     # ``max_width`` is the slot the parent allocates — when supplied,
     # the bbox occupies that full width and ``text_anchor`` controls
     # where inside the bbox the text paints. When omitted, the bbox
@@ -346,9 +338,7 @@ def AdjustableText(
     size = Size(bbox_w, rendered_h)
 
     use_system_fonts = ctx.config.output.style.use_system_fonts
-    family = (
-        style.font.get_system_font_family() if use_system_fonts else style.font.value
-    )
+    family = style.font.get_system_font_family() if use_system_fonts else style.font.value
 
     # Y-offset within the bbox depends on which baseline the SVG
     # renderer anchors to. The default ``text-before-edge`` paints

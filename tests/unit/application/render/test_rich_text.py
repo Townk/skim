@@ -128,9 +128,9 @@ class TestLayout:
                 spans=[TextSpan(text="alpha"), TextSpan(text="beta")],
                 style=_style(12.0),
             )
-        expected = measure_text_width(
-            "alpha ", Font.FINGER_KEY, 12.0
-        ) + measure_text_width("beta", Font.FINGER_KEY, 12.0)
+        expected = measure_text_width("alpha ", Font.FINGER_KEY, 12.0) + measure_text_width(
+            "beta", Font.FINGER_KEY, 12.0
+        )
         assert abs(el.size.width - expected) < 0.5
 
     def test_no_shrink_when_natural_fits(self):
@@ -176,9 +176,7 @@ class TestSlotFill:
 
     def test_size_matches_natural_when_max_width_omitted(self):
         with _ctx():
-            el = RichText(
-                spans=[TextSpan(text="alpha")], style=_style(12.0)
-            )
+            el = RichText(spans=[TextSpan(text="alpha")], style=_style(12.0))
         natural = measure_text_width("alpha", Font.FINGER_KEY, 12.0)
         assert abs(el.size.width - natural) < 0.5
 

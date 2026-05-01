@@ -329,9 +329,7 @@ def TapDanceRow(
     name_el = (
         AdjustableText(
             text=td.name,
-            style=TextStyle(
-                font=Font.FINGER_KEY, size=metrics.name_font_size, color=text_color
-            ),
+            style=TextStyle(font=Font.FINGER_KEY, size=metrics.name_font_size, color=text_color),
             max_width=name_text_width,
             text_anchor="start",
             dominant_baseline="central",
