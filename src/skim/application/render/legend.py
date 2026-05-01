@@ -12,6 +12,13 @@ when both are non-empty; a single section spans both columns and balances
 its rows when only one type is in use.
 
 Geometry mirrors ``docs/design/layer.jsx::Legend``.
+
+The file is split in two by a clear ``LEGACY OVERVIEW PATH`` marker. The
+top half holds data utilities, the action-glyph builder and the shared
+geometry that the composable framework still consumes; the bottom half
+holds the imperative renderers the overview / per-layer image path
+still needs. The bottom half retires once the overview migrates to
+composables.
 """
 
 from dataclasses import dataclass, field
@@ -525,28 +532,6 @@ def _legend_key_label(key: SvalboardTargetKey) -> str:
     return label
 
 
-def _pill_width(label: str, geom: _LegendGeometry) -> float:
-    """Compute the pill width to wrap ``label`` exactly.
-
-    Walks the parsed :class:`Label` parts and measures each at its actual
-    rendered case. ``TextPart.measure_width`` uppercases the text — that
-    matches keymap-key conventions but overstates legend pills, where
-    ``Label.build_text`` emits the literal text. Bypass the uppercase
-    override for plain text parts; defer to each non-text part's own
-    measurement so symbol and separator parts keep their tuned widths.
-    """
-    label_obj = Label(label, Font.FINGER_KEY, text_color="#000")
-    text_width = 0.0
-    for part in label_obj.parts:
-        font = part.font.load(geom.pill_font_size)
-        if isinstance(part, TextPart):
-            text_width += font.getlength(part.text)
-        else:
-            text_width += part.measure_width(font)
-    text_width = max(text_width, geom.pill_min_text_width)
-    return max(geom.pill_min_total_width, text_width + geom.pill_chrome_width)
-
-
 def _macro_action_pill_labels(action: SvalboardMacroAction) -> list[str]:
     """Visible label per pill emitted by an action.
 
@@ -575,6 +560,39 @@ def _flatten_macro_pills(
         for label in _macro_action_pill_labels(action):
             out.append((action.kind, label))
     return out
+
+
+# ===========================================================================
+# LEGACY OVERVIEW PATH
+# ---------------------------------------------------------------------------
+# Everything below this marker is the imperative-renderer code that the
+# overview / per-layer image path still consumes. Each composable section
+# (macros / tap-dances) has its own composable-framework equivalents in
+# :mod:`macros` and :mod:`tap_dance`; the helpers here stay live until
+# the overview migrates, at which point this whole block retires.
+# ===========================================================================
+
+
+def _pill_width(label: str, geom: _LegendGeometry) -> float:
+    """Compute the pill width to wrap ``label`` exactly.
+
+    Walks the parsed :class:`Label` parts and measures each at its actual
+    rendered case. ``TextPart.measure_width`` uppercases the text — that
+    matches keymap-key conventions but overstates legend pills, where
+    ``Label.build_text`` emits the literal text. Bypass the uppercase
+    override for plain text parts; defer to each non-text part's own
+    measurement so symbol and separator parts keep their tuned widths.
+    """
+    label_obj = Label(label, Font.FINGER_KEY, text_color="#000")
+    text_width = 0.0
+    for part in label_obj.parts:
+        font = part.font.load(geom.pill_font_size)
+        if isinstance(part, TextPart):
+            text_width += font.getlength(part.text)
+        else:
+            text_width += part.measure_width(font)
+    text_width = max(text_width, geom.pill_min_text_width)
+    return max(geom.pill_min_total_width, text_width + geom.pill_chrome_width)
 
 
 def _layout_pill_lines(
