@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""The ``@Composable`` decorator.
+"""The ``@Composable`` decorator and the ``render`` entry point.
 
 Built on top of :mod:`primitives` (which owns :class:`Component`,
 :class:`BaseComponent`, :class:`MetricsComponent`, the layout
@@ -14,6 +14,9 @@ top:
   ``(size, draw_fn)`` tuple return is auto-converted into a
   :class:`BaseComponent`. With ``use_context=True`` it also injects
   the active :class:`RenderContext` as the first positional argument.
+* :func:`render` — paints a fully-formed :class:`Component` into a
+  fresh ``draw.Drawing``. Generic — knows nothing about specific
+  image variants; the document composables encode those.
 
 Why this exists
 ---------------
@@ -73,8 +76,11 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, Concatenate, Literal, ParamSpec, Protocol, TypeVar, overload
 
-from .primitives import BaseComponent, DrawFn, Size
+import drawsvg as draw
+
+from .primitives import BaseComponent, Component, DrawFn, Point, Size
 from .render_context import RenderContext, current_render_context
+from .text import Font
 
 # ---------------------------------------------------------------------------
 # @Composable decorator
@@ -184,4 +190,47 @@ def _make_factory(
     return factory
 
 
-__all__ = ["Composable"]
+# ---------------------------------------------------------------------------
+# render — the generic Component → drawsvg.Drawing entry point
+# ---------------------------------------------------------------------------
+
+
+def render(component: Component) -> draw.Drawing:
+    """Paint ``component`` into a fresh :class:`draw.Drawing`.
+
+    Knows nothing about specific image variants — the active
+    :class:`RenderContext` supplies the displayed canvas width
+    (``ctx.config.output.layout.width``) and the embedded-fonts
+    policy (``ctx.config.output.style.use_system_fonts``); the
+    component supplies its natural size and paints into the
+    drawing's coordinate system.
+
+    The natural canvas (``component.size``) goes into the SVG's
+    ``viewBox`` and the displayed width is the user-requested
+    ``layout.width`` — proportions are preserved when the natural
+    canvas differs from the displayed one.
+
+    Composable tree:: ``draw_macros_image`` /
+    ``draw_tap_dances_image`` / ``draw_special_keys_image`` build a
+    :func:`KeymapMacroDocument` / :func:`KeymapTapDanceDocument` /
+    :func:`KeymapSpecialKeysDocument` (which wraps the section in
+    the standard chrome) and hand it to :func:`render`. That's the
+    whole entry point.
+    """
+    ctx = current_render_context()
+    canvas_w = component.size.width
+    canvas_h = component.size.height
+    display_w = ctx.config.output.layout.width
+    display_h = canvas_h * (display_w / canvas_w) if canvas_w else canvas_h
+
+    d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+
+    if not ctx.config.output.style.use_system_fonts:
+        for font in Font:
+            d.append_css(font.css_style)
+
+    component.draw_at(d, Point(0, 0))
+    return d
+
+
+__all__ = ["Composable", "render"]

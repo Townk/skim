@@ -28,8 +28,7 @@ import drawsvg as draw
 from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTargetKey
 
-from .composable import Composable
-from .keymap_document import BODY_SCALE, render
+from .composable import Composable, render
 from .legend import (
     _flatten_macro_pills,
     _layout_pill_lines,
@@ -38,7 +37,7 @@ from .legend import (
     build_macro_row,
     macro_row_height,
 )
-from .primitives import Column, Component, Size, Spacer
+from .primitives import Column, Size
 from .render_context import RenderContext, using_render_context
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
@@ -220,37 +219,12 @@ def draw_macros_image(
     keymap: SvalboardKeymap[SvalboardTargetKey],
 ) -> draw.Drawing:
     """Render the standalone macros image."""
-    with using_render_context(RenderContext.build(config, keymap)) as ctx:
-        macros = all_macros(keymap.macros)
-        metrics = ctx.document_metrics
-        # The MACROS body renders at ``BODY_SCALE``; pass the scaled
-        # doc_width to ``macro_natural_widths`` so it reports the same
-        # widths the body composable will lay out against.
-        scaled_doc_width = metrics.doc_width * BODY_SCALE
+    # Local import — :mod:`keymap_document` lazy-imports from this
+    # module, so importing it eagerly would create a cycle.
+    from .keymap_document import KeymapMacroDocument
 
-        initial_content_w = metrics.doc_width - 2 * metrics.padding
-
-        # Lay out using the *initial* content width so wrap detection matches
-        # what the user-requested canvas would normally produce. If the longest
-        # natural row fits within ``initial_content_w`` no row wraps and we can
-        # shrink the canvas; otherwise we keep the canvas at ``--width`` and let
-        # the existing pill-wrap logic handle the overflow.
-        natural_widths = macro_natural_widths(macros, scaled_doc_width)
-        longest_natural = max(natural_widths) if natural_widths else 0.0
-        no_wrapping = longest_natural <= initial_content_w
-        content_w = longest_natural if (no_wrapping and longest_natural > 0) else initial_content_w
-
-        body: Component = (
-            MacroSection(macros=macros, content_width=content_w, scale=BODY_SCALE)
-            if macros
-            else Spacer()
-        )
-
-        return render(
-            body=body,
-            content_w=content_w,
-            footer_section_title="MACROS",
-        )
+    with using_render_context(RenderContext.build(config, keymap)):
+        return render(KeymapMacroDocument(macros=all_macros(keymap.macros)))
 
 
 __all__ = [

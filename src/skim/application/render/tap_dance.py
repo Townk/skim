@@ -738,47 +738,19 @@ def TapDanceSection(
 def draw_tap_dances_image(config, keymap):
     """Render the standalone tap-dances image.
 
-    Builds the table via the :func:`TapDanceTable` composable with the
-    canvas content width as the budget — the table either snugly wraps
-    its content (and the canvas shrinks to match) or stretches to the
-    budget and truncates the longest names with ``"…"`` when they
-    can't fit.
+    Reduces to: build a :func:`KeymapTapDanceDocument`, hand it to
+    :func:`render`. All the table sizing, name-column resolution,
+    canvas-shrink and chrome assembly live inside the composable.
     """
-    # Local imports — avoid pulling rendering siblings at module load
-    # time (and avoid a hard dep on the standalone-image stack from
-    # the per-component composables).
-    from .keymap_document import BODY_SCALE, render
+    # Local imports — :mod:`keymap_document` lazy-imports from this
+    # module, so importing it eagerly would create a cycle.
+    from .composable import render
+    from .keymap_document import KeymapTapDanceDocument
     from .legend import all_tap_dances
-    from .primitives import Spacer
     from .render_context import RenderContext, using_render_context
 
-    with using_render_context(RenderContext.build(config, keymap)) as ctx:
-        tap_dances = all_tap_dances(keymap.tap_dances)
-        metrics = ctx.document_metrics
-
-        initial_content_w = metrics.doc_width - 2 * metrics.padding
-
-        # Build the section first so we can shrink the canvas to match it.
-        # ``max_width`` caps the table at the canvas budget; when names
-        # would overflow the cap they're auto-truncated. Omitting
-        # ``width`` lets the section snug-fit the table's natural extent.
-        if tap_dances:
-            section = TapDanceSection(
-                tap_dances=tap_dances,
-                scale=BODY_SCALE,
-                max_width=initial_content_w,
-            )
-            content_w = min(initial_content_w, section.size.width)
-            body = section
-        else:
-            content_w = initial_content_w
-            body = Spacer()
-
-        return render(
-            body=body,
-            content_w=content_w,
-            footer_section_title="TAP-DANCE",
-        )
+    with using_render_context(RenderContext.build(config, keymap)):
+        return render(KeymapTapDanceDocument(tap_dances=all_tap_dances(keymap.tap_dances)))
 
 
 __all__ = [

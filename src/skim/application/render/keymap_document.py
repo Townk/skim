@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""The keymap document chrome and assembly helpers.
+"""The keymap-document composables.
 
 A "keymap document" is the outermost rendered artifact of any
 standalone special-keys image: the rounded background border, the
@@ -13,15 +13,28 @@ copyright footer.
 This module owns:
 
 * :func:`KeymapDocument` — the outermost composable (rounded border
-  around the rest of the content).
-* :func:`render` — assembles header + body + (optional) footer into
-  a :class:`KeymapDocument` and produces the final ``draw.Drawing``.
+  + content padding around any inner content).
+* :func:`KeymapMacroDocument` / :func:`KeymapTapDanceDocument` /
+  :func:`KeymapSpecialKeysDocument` — the three concrete document
+  composables. Each one fully renders itself: it builds its
+  appropriate body section (``MacroSection`` / ``TapDanceSection`` /
+  Row of both), wraps it in the document chrome (header + body +
+  optional footer + border), and returns the complete component.
 * :data:`BODY_SCALE` — the per-image body magnification multiplier
   used by the standalone images so chips and cells read at a visual
   weight comparable to layout keys.
 
-Per-section composables (``MacroSection``, ``TapDanceSection``) are
-in their own modules; this one only owns the chrome that wraps them.
+Entry-point pattern
+-------------------
+
+Each ``draw_*_image`` function reduces to::
+
+    def draw_macros_image(config, keymap):
+        with using_render_context(RenderContext.build(config, keymap)):
+            return render(KeymapMacroDocument(macros=...))
+
+The ``KeymapMacroDocument`` composable encodes the entire layout;
+the generic :func:`composable.render` paints it into an SVG.
 """
 
 from __future__ import annotations
@@ -31,16 +44,10 @@ import drawsvg as draw
 from .composable import Composable
 from .footer import Footer
 from .header import Header
-from .legend import _LegendGeometry
-from .primitives import (
-    Column,
-    Component,
-    Padding,
-    Point,
-    Size,
-    Spacer,
-)
+from .legend import _LegendGeometry, _td_name_column_width
+from .primitives import Column, Component, Padding, Row, Spacer
 from .render_context import current_render_context
+from .section_stripe import SectionStripeMetrics
 from .text import Font
 
 # The body of a standalone special-keys image (the macro / tap-dance
@@ -119,6 +126,8 @@ def KeymapDocument(ctx, *, content: Component, content_padding: Padding):
       ``content_padding.vertical`` so the canvas wraps the padded
       content exactly.
     """
+    from .primitives import Size
+
     size = Size(
         content.size.width + content_padding.horizontal,
         content.size.height + content_padding.vertical,
@@ -147,29 +156,33 @@ def KeymapDocument(ctx, *, content: Component, content_padding: Padding):
 
 
 # ---------------------------------------------------------------------------
-# Render helpers
+# Document chrome assembly
 # ---------------------------------------------------------------------------
 
 
-def render(
-    *,
+def _with_document_chrome(
     body: Component,
-    content_w: float,
+    *,
     footer_section_title: str | None,
-) -> draw.Drawing:
-    """Wrap ``body`` in the standard chrome (header / footer / border).
+) -> Component:
+    """Wrap ``body`` in header + (optional) footer + outer border.
 
-    ``body`` is whatever sits between the header and the footer — for
-    standalone images that's a single :func:`MacroSection` or
+    ``body`` is whatever the document's main content is — for
+    standalone images that's a single :func:`MacroSection` /
     :func:`TapDanceSection`; for the combined image it's a Row of
-    one of each separated by a Spacer. ``footer_section_title``
-    controls the per-image footer height cap (see
-    :func:`_footer_max_height`); pass ``None`` for images without a
-    single dominant section title.
+    one of each. The chrome derives the slot width from
+    ``body.size.width`` so the header spans the same width as the
+    content beneath it (and the footer right-aligns inside the same
+    width).
+
+    ``footer_section_title`` controls the per-image footer height
+    cap (see :func:`_footer_max_height`); pass ``None`` when there's
+    no single dominant section title (the combined image).
     """
     ctx = current_render_context()
     metrics = ctx.document_metrics
-    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
+    stripe_metrics = SectionStripeMetrics.for_doc_width(metrics.doc_width)
+    content_w = body.size.width
 
     header = Header(
         title=_resolve_title(ctx.config),
@@ -177,27 +190,30 @@ def render(
         max_width=content_w,
     )
 
-    children: list[Component] = [
-        header,
-        Spacer(height=geom.title_rule_offset * 0.5),
-        body,
-    ]
+    # Header → body uses half of the section-stripe rule offset (a
+    # tuned breathing-room constant); body → footer uses the
+    # canvas's bottom inset so the footer sits flush against the
+    # bottom margin. Different gaps so the column structure is
+    # nested rather than mixing per-pair gaps in one Column.
+    body_block = Column(
+        [header, body],
+        gap=stripe_metrics.rule_offset * 0.5,
+        align="start",
+    )
 
     footer_text = ctx.config.output.copyright or ""
     if footer_text:
-        # Footer knows it's right-aligned — give it the slot width
-        # and it paints the text at the right edge itself, no parent
-        # alignment wrapper needed.
         footer = Footer(
             text=footer_text,
             width=content_w,
             max_height=_footer_max_height(section_title=footer_section_title),
         )
-        children.extend([Spacer(height=metrics.bottom_inset), footer])
+        full_block = Column([body_block, footer], gap=metrics.bottom_inset, align="start")
+    else:
+        full_block = body_block
 
-    column = Column(children, align="start")
-    document = KeymapDocument(
-        content=column,
+    return KeymapDocument(
+        content=full_block,
         content_padding=Padding(
             top=metrics.padding,
             right=metrics.padding,
@@ -205,34 +221,135 @@ def render(
             bottom=metrics.bottom_inset,
         ),
     )
-    return _make_drawing(document)
 
 
-def _make_drawing(content: Component) -> draw.Drawing:
-    """Create the SVG ``Drawing`` for ``content`` and paint it.
+# ---------------------------------------------------------------------------
+# Concrete document composables
+# ---------------------------------------------------------------------------
 
-    Displays at the user-requested ``layout.width`` and exposes the
-    natural canvas via ``viewBox`` so the requested ``--width`` is
-    honoured while content scales proportionally.
+
+@Composable(use_context=True)
+def KeymapMacroDocument(ctx, *, macros: list, scale: float = BODY_SCALE):
+    """The full standalone macros image as a single composable.
+
+    Builds the ``MACROS`` :func:`MacroSection` at ``scale`` and wraps
+    it in the standard document chrome (header + optional footer +
+    rounded border + content padding). Empty ``macros`` produces a
+    chrome-only document with a zero-sized body.
+
+    Wrap-detection: when no row would wrap at the user-requested
+    canvas width, the section snug-fits its natural width and the
+    canvas shrinks to wrap it. Otherwise the canvas keeps its
+    user-requested width and the existing pill-wrap logic handles
+    the overflow.
     """
-    ctx = current_render_context()
-    canvas_w = content.size.width
-    canvas_h = content.size.height
-    display_w = ctx.config.output.layout.width
-    display_h = canvas_h * (display_w / canvas_w) if canvas_w else canvas_h
+    # Local import — :mod:`macros` imports from this module, so
+    # importing eagerly would create a cycle.
+    from .macros import MacroSection, macro_natural_widths
 
-    d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+    metrics = ctx.document_metrics
+    initial_content_w = metrics.doc_width - 2 * metrics.padding
 
-    if not ctx.config.output.style.use_system_fonts:
-        for font in Font:
-            d.append_css(font.css_style)
+    natural_widths = macro_natural_widths(macros, metrics.doc_width * scale)
+    longest_natural = max(natural_widths) if natural_widths else 0.0
+    no_wrapping = longest_natural <= initial_content_w
+    content_w = longest_natural if (no_wrapping and longest_natural > 0) else initial_content_w
 
-    content.draw_at(d, Point(0, 0))
-    return d
+    body: Component = (
+        MacroSection(macros=macros, content_width=content_w, scale=scale) if macros else Spacer()
+    )
+    document = _with_document_chrome(body, footer_section_title="MACROS")
+    return document.size, document.draw_at
+
+
+@Composable(use_context=True)
+def KeymapTapDanceDocument(ctx, *, tap_dances: list, scale: float = BODY_SCALE):
+    """The full standalone tap-dances image as a single composable.
+
+    Builds the ``TAP-DANCE`` :func:`TapDanceSection` at ``scale``
+    with the canvas content width as the table's ``max_width``
+    budget — the table either snugly wraps its content (and the
+    canvas shrinks to match) or stretches to the budget and
+    truncates the longest names with ``"…"`` when they can't fit.
+    Wraps the result in the standard document chrome.
+    """
+    # Local import — see :func:`KeymapMacroDocument`.
+    from .tap_dance import TapDanceSection
+
+    metrics = ctx.document_metrics
+    initial_content_w = metrics.doc_width - 2 * metrics.padding
+
+    body: Component = (
+        TapDanceSection(tap_dances=tap_dances, scale=scale, max_width=initial_content_w)
+        if tap_dances
+        else Spacer()
+    )
+    document = _with_document_chrome(body, footer_section_title="TAP-DANCE")
+    return document.size, document.draw_at
+
+
+@Composable(use_context=True)
+def KeymapSpecialKeysDocument(
+    ctx,
+    *,
+    macros: list,
+    tap_dances: list,
+    scale: float = BODY_SCALE,
+):
+    """The combined macros + tap-dances image as a single composable.
+
+    Macros section on the left, tap-dances on the right, separated
+    by ``geom.column_gap``. Falls back to a single-column layout
+    when only one of the two has content. Wraps the result in the
+    standard document chrome.
+    """
+    # Local imports — see :func:`KeymapMacroDocument`.
+    from .macros import MacroSection
+    from .tap_dance import TapDanceSection
+
+    metrics = ctx.document_metrics
+    # Bodies render at ``scale``; the static name-column width and
+    # the cross-column gap are computed against the scaled geom so
+    # the two columns keep their proportions.
+    scaled_geom = _LegendGeometry.for_doc_width(metrics.doc_width * scale)
+
+    target_content_w = metrics.doc_width - 2 * metrics.padding
+    col_gap = scaled_geom.column_gap
+    col_w = (target_content_w - col_gap) / 2 if macros and tap_dances else target_content_w
+
+    sections: list[Component] = []
+    if macros:
+        sections.append(MacroSection(macros=macros, content_width=col_w, width=col_w, scale=scale))
+    if tap_dances:
+        # Pin the legacy ``_td_name_column_width`` so the combined image
+        # keeps its overview-style fixed name column instead of the
+        # dynamic sizing the standalone tap-dances image uses.
+        sections.append(
+            TapDanceSection(
+                tap_dances=tap_dances,
+                width=col_w,
+                scale=scale,
+                name_column_width=_td_name_column_width(scaled_geom, tap_dances),
+            )
+        )
+
+    if not sections:
+        body: Component = Spacer()
+    elif len(sections) == 1:
+        body = sections[0]
+    else:
+        body = Row([sections[0], Spacer(width=col_gap), sections[1]], align="top")
+
+    # Combined image has no single dominant section title, so the
+    # footer keeps its natural size (matches the per-layer/overview).
+    document = _with_document_chrome(body, footer_section_title=None)
+    return document.size, document.draw_at
 
 
 __all__ = [
     "BODY_SCALE",
     "KeymapDocument",
-    "render",
+    "KeymapMacroDocument",
+    "KeymapSpecialKeysDocument",
+    "KeymapTapDanceDocument",
 ]
