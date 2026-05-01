@@ -28,18 +28,18 @@ from __future__ import annotations
 
 import drawsvg as draw
 
-from .composable import (
+from .composable import Composable
+from .footer import Footer
+from .header import Header
+from .legend import _LegendGeometry
+from .primitives import (
     Column,
     Component,
-    Composable,
     Padding,
     Point,
     Size,
     Spacer,
 )
-from .footer import Footer
-from .header import Header
-from .legend import _LegendGeometry
 from .render_context import current_render_context
 from .text import Font
 

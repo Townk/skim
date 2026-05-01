@@ -25,7 +25,7 @@ import drawsvg as draw
 from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTargetKey
 
-from .composable import Column, Component, Composable, Size, Spacer
+from .composable import Composable
 from .keymap_document import BODY_SCALE, render
 from .legend import (
     _flatten_macro_pills,
@@ -35,6 +35,7 @@ from .legend import (
     build_macro_row,
     macro_row_height,
 )
+from .primitives import Column, Component, Size, Spacer
 from .render_context import RenderContext, using_render_context
 from .section_stripe import SectionStripe
 from .styling import derive_accent_line

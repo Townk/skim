@@ -21,7 +21,8 @@ from dataclasses import dataclass
 
 import drawsvg as draw
 
-from .composable import Composable, DrawFn, Point, Size
+from .composable import Composable
+from .primitives import DrawFn, Point, Size
 from .text import Font
 
 # Floor on the footer font size when shrinking under ``max_height`` so

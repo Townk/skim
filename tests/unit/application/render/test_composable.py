@@ -10,12 +10,11 @@ from dataclasses import dataclass
 import drawsvg as draw
 import pytest
 
-from skim.application.render.composable import (
+from skim.application.render.composable import Composable
+from skim.application.render.primitives import (
     BaseComponent,
-    BorderedFrame,
     Column,
     Component,
-    Composable,
     MetricsComponent,
     Padding,
     Point,
@@ -214,12 +213,6 @@ class TestPadding:
 
         with pytest.raises(TypeError):
             Padding(1, 2, 3)  # type: ignore[call-overload]
-
-
-class TestBorderedFrame:
-    def test_size_matches_child(self):
-        frame = BorderedFrame(_Rect(10, 20), border_radius=4, background="white")
-        assert frame.size == Size(10.0, 20.0)
 
 
 class TestSpacer:

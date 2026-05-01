@@ -32,8 +32,9 @@ from typing import TYPE_CHECKING
 
 import drawsvg as draw
 
-from .composable import Column, Composable, Point, Size
+from .composable import Composable
 from .legend import _legend_key_label, _LegendGeometry
+from .primitives import Column, Point, Size
 from .section_stripe import SectionStripe
 from .styling import derive_accent_line
 from .text import Font, Label
@@ -679,9 +680,9 @@ def draw_tap_dances_image(config, keymap):
     # Local imports — avoid pulling rendering siblings at module load
     # time (and avoid a hard dep on the standalone-image stack from
     # the per-component composables).
-    from .composable import Spacer
     from .keymap_document import BODY_SCALE, render
     from .legend import all_tap_dances
+    from .primitives import Spacer
     from .render_context import RenderContext, using_render_context
 
     with using_render_context(RenderContext.build(config, keymap)) as ctx:

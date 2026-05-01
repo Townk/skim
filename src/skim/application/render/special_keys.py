@@ -21,10 +21,10 @@ import drawsvg as draw
 from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTargetKey
 
-from .composable import Component, Row, Spacer
 from .keymap_document import BODY_SCALE, render
 from .legend import _LegendGeometry, _td_name_column_width, all_macros, all_tap_dances
 from .macros import MacroSection
+from .primitives import Component, Row, Spacer
 from .render_context import RenderContext, using_render_context
 from .tap_dance import TapDanceSection
 

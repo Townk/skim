@@ -25,14 +25,9 @@ import drawsvg as draw
 
 from skim.assets import ASSETS
 
-from .composable import (
-    Composable,
-    Point,
-    Row,
-    Size,
-    Spacer,
-)
+from .composable import Composable
 from .geometry import AspectRatio
+from .primitives import Point, Row, Size, Spacer
 from .render_context import TextStyle
 from .text import Font
 

@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 
 import drawsvg as draw
 
-from skim.application.render.composable import Point
+from skim.application.render.primitives import Point
 from skim.application.render.styling import derive_accent_line
 from skim.application.render.text import Font, Label, TextPart
 from skim.data import Palette, SvalboardLayout

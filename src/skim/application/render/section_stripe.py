@@ -16,8 +16,9 @@ from __future__ import annotations
 
 import drawsvg as draw
 
-from .composable import Composable, Size
+from .composable import Composable
 from .legend import _LegendGeometry
+from .primitives import Size
 
 
 @Composable(use_context=True)
