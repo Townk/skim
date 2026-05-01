@@ -42,6 +42,12 @@ def test_overview_renders_with_connectors_for_layer_trigger_keymap(tmp_path):
 
 FIXTURE_PATH = Path("tests/integration/fixtures/connector-routing-coverage.vil")
 
+# Connector dashed-stroke pattern. The dot length is fixed at 0.1 SVG
+# units; the gap length is doc-width-proportional (currently
+# ``12.25 / 1600 * doc_width``). Match the dot literally and allow any
+# numeric gap so the regex doesn't depend on the exact ratio.
+_CONNECTOR_DASH_PATTERN = r"stroke-dasharray=\"0\.1 [\d.]+\""
+
 
 def _render_fixture(tmp_path: Path) -> str:
     """Render the synthetic coverage fixture and return the SVG text."""
@@ -74,7 +80,7 @@ def test_path_count_matches_baseline(tmp_path):
     drop or add paths.
     """
     content = _render_fixture(tmp_path)
-    paths = re.findall(r"<path[^>]+stroke-dasharray=\"0\.1 7\"", content)
+    paths = re.findall(rf"<path[^>]+{_CONNECTOR_DASH_PATTERN}", content)
     EXPECTED_PATH_COUNT = 7
     assert len(paths) == EXPECTED_PATH_COUNT
 
@@ -83,7 +89,7 @@ def test_each_path_has_a_real_target_color(tmp_path):
     """Connector strokes should match a real layer color, not the fallback gray."""
     content = _render_fixture(tmp_path)
     # Capture the stroke="..." attr for each path that has stroke-dasharray.
-    pattern = r"<path[^>]+stroke=\"([^\"]+)\"[^>]+stroke-dasharray=\"0\.1 7\""
+    pattern = rf"<path[^>]+stroke=\"([^\"]+)\"[^>]+{_CONNECTOR_DASH_PATTERN}"
     colors = re.findall(pattern, content)
     assert len(colors) > 0
     for color in colors:
@@ -98,13 +104,16 @@ def test_each_path_has_a_real_target_color(tmp_path):
 def test_no_path_coordinate_escapes_canvas_bounds(tmp_path):
     """Every connector path's coordinates should sit within the canvas."""
     content = _render_fixture(tmp_path)
-    svg_match = re.search(r"<svg[^>]+width=\"([^\"]+)\"[^>]+height=\"([^\"]+)\"", content)
-    assert svg_match, "Could not parse SVG dimensions"
-    canvas_w = float(svg_match.group(1))
-    canvas_h = float(svg_match.group(2))
+    # The natural canvas is the SVG ``viewBox`` (the displayed
+    # ``width``/``height`` attributes carry the request-time render
+    # size, which can scale the natural coordinates down).
+    vb_match = re.search(r"<svg[^>]+viewBox=\"0 0 ([\d.]+) ([\d.]+)\"", content)
+    assert vb_match, "Could not parse SVG viewBox"
+    canvas_w = float(vb_match.group(1))
+    canvas_h = float(vb_match.group(2))
 
     path_ds = re.findall(
-        r"<path[^>]+d=\"([^\"]+)\"[^>]+stroke-dasharray=\"0\.1 7\"",
+        rf"<path[^>]+d=\"([^\"]+)\"[^>]+{_CONNECTOR_DASH_PATTERN}",
         content,
     )
     for d in path_ds:
@@ -127,7 +136,7 @@ def test_s_plus_ds_path_has_right_down_right_geometry(tmp_path):
     """
     content = _render_fixture(tmp_path)
     path_ds = re.findall(
-        r"<path[^>]+d=\"([^\"]+)\"[^>]+stroke-dasharray=\"0\.1 7\"",
+        rf"<path[^>]+d=\"([^\"]+)\"[^>]+{_CONNECTOR_DASH_PATTERN}",
         content,
     )
 
@@ -153,9 +162,13 @@ def test_extra_right_padding_grows_canvas_meaningfully(tmp_path):
     keymap_spacing; we just check the routing area is meaningful.
     """
     content = _render_fixture(tmp_path)
-    svg_match = re.search(r"<svg[^>]+width=\"([^\"]+)\"", content)
-    assert svg_match
-    canvas_w = float(svg_match.group(1))
+    # Read the natural canvas from the ``viewBox`` — the displayed
+    # ``width`` attribute carries the request-time render size and is
+    # capped at ``config.output.layout.width``, which would defeat the
+    # check.
+    vb_match = re.search(r"<svg[^>]+viewBox=\"0 0 ([\d.]+) ", content)
+    assert vb_match
+    canvas_w = float(vb_match.group(1))
     # Calibrated from real render: canvas_w ~ 1829.67 at implementation.
     # Use a value just below to alarm if the routing area shrinks
     # unexpectedly while still tolerating minor layout drift.
