@@ -157,6 +157,7 @@ def MacroTable(
     """
     doc_width = ctx.config.output.layout.width * scale
     metrics = MacroMetrics.for_doc_width(doc_width)
+    section_spacing = ctx.document_metrics.section_spacing
     use_system_fonts = ctx.config.output.style.use_system_fonts
 
     row_heights = [
@@ -169,14 +170,25 @@ def MacroTable(
         )
         for m in macros
     ]
-    total_h = sum(row_heights) + max(0, len(macros) - 1) * metrics.table_row_spacing
+
+    # Named macros sort first (see ``all_macros``); a single named→unnamed
+    # transition splits the table into a "named" and "unnamed" sub-block,
+    # separated by ``section_spacing`` instead of the usual row gap. The TD
+    # table doesn't get this treatment — its rows are uniform.
+    def _gap_before(i: int) -> float:
+        if i == 0:
+            return 0.0
+        if macros[i - 1].name and not macros[i].name:
+            return section_spacing
+        return metrics.table_row_spacing
+
+    total_h = sum(row_heights) + sum(_gap_before(i) for i in range(len(macros)))
     size = Size(content_width, total_h)
 
     def draw_at(d, origin):
         cursor = origin.y
         for i, macro in enumerate(macros):
-            if i > 0:
-                cursor += metrics.table_row_spacing
+            cursor += _gap_before(i)
             d.append(
                 build_macro_row(
                     macro,
