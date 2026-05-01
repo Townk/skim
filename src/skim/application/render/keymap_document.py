@@ -33,7 +33,6 @@ import drawsvg as draw
 
 from .composable import (
     Align,
-    BaseComponent,
     Column,
     Component,
     Composable,
@@ -151,24 +150,31 @@ def KeymapDocument(ctx, *, content: Component):
 # ---------------------------------------------------------------------------
 
 
+@Composable(use_context=True)
 def LabeledSection(
+    ctx,
     *,
     title: str,
     color: str,
     count: int,
     width: float,
     body: Component,
-) -> BaseComponent:
+):
     """One section as a Column: ``SectionStripe`` + spacer + body.
 
     The same shape both standalone images and the combined image use —
     the combined image places two of these side-by-side in a Row.
     Reads the inter-strip / body gap from the unscaled section-stripe
     geometry so the spacing matches what every image variant uses.
+
+    Returns the inner :func:`Column`'s ``size`` and ``draw_at`` so the
+    composable framework's pattern-recognition is consistent — every
+    "real" component is decorated; only pure helpers (``render``,
+    ``_make_drawing``, footer-cap measurement) stay as plain
+    functions.
     """
-    ctx = current_render_context()
     geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
-    return Column(
+    inner = Column(
         [
             SectionStripe(title=title, count=count, width=width, accent_line=color),
             Spacer(height=2 * geom.title_baseline_offset),
@@ -176,6 +182,7 @@ def LabeledSection(
         ],
         align="start",
     )
+    return inner.size, inner.draw_at
 
 
 def render(
