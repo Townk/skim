@@ -5,6 +5,7 @@
 
 """The macros section composables and standalone-image entry point.
 
+* :class:`MacroMetrics` — sizing constants for the macro rows.
 * :func:`MacroTable` — stacked macro rows wrapping the legacy
   ``build_macro_row`` so the rendered pills/chips match what the
   overview's macro section paints.
@@ -19,6 +20,8 @@
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 import drawsvg as draw
 
@@ -37,12 +40,53 @@ from .legend import (
 )
 from .primitives import Column, Component, Size, Spacer
 from .render_context import RenderContext, using_render_context
-from .section_stripe import SectionStripe
+from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
 
 
-def macro_natural_widths(macros: list, geom: _LegendGeometry) -> list[float]:
-    """Width each macro would render at if every pill sat on a single line."""
+@dataclass(frozen=True, slots=True, kw_only=True)
+class MacroMetrics:
+    """Sizing constants for the macros composables.
+
+    Owns the chip dimensions (the colored tag at the head of each
+    row) and the row-spacing constants for the macro section. Pill
+    geometry — the per-step pills painted to the right of each chip —
+    isn't owned here yet because :func:`build_macro_row` (the legacy
+    overview-shared helper) still computes its own pill metrics from
+    the underlying ``_LegendGeometry``. When that helper retires,
+    pill metrics will move here.
+
+    Currently delegates to ``_LegendGeometry`` so values stay aligned
+    across the codebase; the ratios can move here directly once the
+    legacy legend module retires.
+    """
+
+    chip_width: float
+    row_gap: float
+    row_content_indent_gap: float
+    pill_gap: float
+
+    @classmethod
+    def for_doc_width(cls, doc_width: float) -> MacroMetrics:
+        geom = _LegendGeometry.for_doc_width(doc_width)
+        return cls(
+            chip_width=geom.tag_w,
+            row_gap=geom.row_gap,
+            row_content_indent_gap=geom.row_content_indent_gap,
+            pill_gap=geom.pill_gap,
+        )
+
+
+def macro_natural_widths(macros: list, doc_width: float) -> list[float]:
+    """Width each macro would render at if every pill sat on a single line.
+
+    Computes against the underlying ``_LegendGeometry`` (the legacy
+    pill-layout helper expects it directly); image entry points pass
+    the same scaled doc_width the body composable will lay out
+    against so the wrap detection matches the rendered widths
+    exactly.
+    """
+    geom = _LegendGeometry.for_doc_width(doc_width)
     indent = geom.tag_w + geom.row_content_indent_gap
     widths: list[float] = []
     for macro in macros:
@@ -84,18 +128,18 @@ def MacroTable(
     leaving the surrounding title and footer at their unscaled sizes.
     """
     doc_width = ctx.config.output.layout.width * scale
-    geom = _LegendGeometry.for_doc_width(doc_width)
+    metrics = MacroMetrics.for_doc_width(doc_width)
     use_system_fonts = ctx.config.output.style.use_system_fonts
 
     row_heights = [macro_row_height(m, content_width, doc_width=doc_width) for m in macros]
-    total_h = sum(row_heights) + max(0, len(macros) - 1) * geom.row_gap
+    total_h = sum(row_heights) + max(0, len(macros) - 1) * metrics.row_gap
     size = Size(content_width, total_h)
 
     def draw_at(d, origin):
         cursor = origin.y
         for i, macro in enumerate(macros):
             if i > 0:
-                cursor += geom.row_gap
+                cursor += metrics.row_gap
             d.append(
                 build_macro_row(
                     macro,
@@ -144,7 +188,7 @@ def MacroSection(
     palette = ctx.theme.palette
     accent_fill = palette.macro_color
     accent_line = derive_accent_line(accent_fill)
-    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
+    stripe_metrics = SectionStripeMetrics.for_doc_width(ctx.config.output.layout.width)
 
     table = MacroTable(
         macros=macros,
@@ -165,7 +209,7 @@ def MacroSection(
             ),
             table,
         ],
-        gap=2 * geom.title_baseline_offset,
+        gap=2 * stripe_metrics.title_baseline_offset,
         align="start",
     )
     return inner.size, inner.draw_at
@@ -179,10 +223,10 @@ def draw_macros_image(
     with using_render_context(RenderContext.build(config, keymap)) as ctx:
         macros = all_macros(keymap.macros)
         metrics = ctx.document_metrics
-        # The MACROS body renders at ``BODY_SCALE``; use the scaled
-        # geom for wrap-detection so ``macro_natural_widths`` reports
-        # the same widths the body composable will lay out against.
-        scaled_geom = _LegendGeometry.for_doc_width(metrics.doc_width * BODY_SCALE)
+        # The MACROS body renders at ``BODY_SCALE``; pass the scaled
+        # doc_width to ``macro_natural_widths`` so it reports the same
+        # widths the body composable will lay out against.
+        scaled_doc_width = metrics.doc_width * BODY_SCALE
 
         initial_content_w = metrics.doc_width - 2 * metrics.padding
 
@@ -191,7 +235,7 @@ def draw_macros_image(
         # natural row fits within ``initial_content_w`` no row wraps and we can
         # shrink the canvas; otherwise we keep the canvas at ``--width`` and let
         # the existing pill-wrap logic handle the overflow.
-        natural_widths = macro_natural_widths(macros, scaled_geom)
+        natural_widths = macro_natural_widths(macros, scaled_doc_width)
         longest_natural = max(natural_widths) if natural_widths else 0.0
         no_wrapping = longest_natural <= initial_content_w
         content_w = longest_natural if (no_wrapping and longest_natural > 0) else initial_content_w

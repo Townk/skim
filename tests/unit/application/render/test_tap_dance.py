@@ -7,10 +7,10 @@
 
 from contextlib import contextmanager
 
-from skim.application.render.legend import _LegendGeometry
 from skim.application.render.render_context import RenderContext, using_render_context
 from skim.application.render.tap_dance import (
     _ELLIPSIS,
+    TapDanceMetrics,
     TapDanceTable,
     _measure_text_width,
     _resolve_name_column,
@@ -86,11 +86,11 @@ def _td(id_: str, name: str | None = None) -> SvalboardTapDance[SvalboardTargetK
 
 class TestResolveNameColumn:
     def test_collapses_to_zero_when_no_names(self):
-        geom = _LegendGeometry.for_doc_width(1600.0)
-        cells_block_w = 4 * geom.td_cell_w + geom.row_content_indent_gap
+        metrics = TapDanceMetrics.for_doc_width(1600.0)
+        cells_block_w = 4 * metrics.cell_w + metrics.row_content_indent_gap
         width, adjusted = _resolve_name_column(
             tap_dances=[_td("0"), _td("1")],
-            geom=geom,
+            metrics=metrics,
             cells_block_w=cells_block_w,
             max_width=10_000,
         )
@@ -98,59 +98,59 @@ class TestResolveNameColumn:
         assert [td.name for td in adjusted] == [None, None]
 
     def test_picks_longest_natural_when_budget_allows(self):
-        geom = _LegendGeometry.for_doc_width(1600.0)
+        metrics = TapDanceMetrics.for_doc_width(1600.0)
         # Effective cells block extent — last inner rect's right edge,
         # not the slot's right edge. ``TapDanceTable`` passes this
         # value through.
-        inner_w = geom.td_cell_inner_w
+        inner_w = metrics.cell_inner_w
         cells_block_w = (
-            geom.row_content_indent_gap + 4 * geom.td_cell_w - (geom.td_cell_w - inner_w) / 2.0
+            metrics.row_content_indent_gap + 4 * metrics.cell_w - (metrics.cell_w - inner_w) / 2.0
         )
         tds = [_td("0", name="short"), _td("1", name="much longer name")]
-        long_natural = _measure_text_width("much longer name", geom.td_name_font_size)
+        long_natural = _measure_text_width("much longer name", metrics.name_font_size)
 
         width, adjusted = _resolve_name_column(
             tap_dances=tds,
-            geom=geom,
+            metrics=metrics,
             cells_block_w=cells_block_w,
             max_width=10_000,  # plenty of slack
         )
 
         # name_column_width = leading + text + symmetric trailing gap.
-        assert width == 2 * geom.tag_name_gap + long_natural
+        assert width == 2 * metrics.name_gap + long_natural
         # Names untouched when they fit.
         assert [td.name for td in adjusted] == ["short", "much longer name"]
 
     def test_truncates_longest_when_budget_caps_below_natural(self):
-        geom = _LegendGeometry.for_doc_width(1600.0)
-        inner_w = geom.td_cell_inner_w
+        metrics = TapDanceMetrics.for_doc_width(1600.0)
+        inner_w = metrics.cell_inner_w
         cells_block_w = (
-            geom.row_content_indent_gap + 4 * geom.td_cell_w - (geom.td_cell_w - inner_w) / 2.0
+            metrics.row_content_indent_gap + 4 * metrics.cell_w - (metrics.cell_w - inner_w) / 2.0
         )
         long_name = "the quick brown fox jumps over the lazy dog " * 4
         tds = [_td("0", name="short"), _td("1", name=long_name)]
 
         # Budget so tight the long name MUST truncate; chip + cells +
         # gaps consume most of it.
-        natural_long_w = _measure_text_width(long_name, geom.td_name_font_size)
+        natural_long_w = _measure_text_width(long_name, metrics.name_font_size)
         max_width = (
-            geom.tag_w
-            + geom.tag_name_gap
-            + geom.tag_name_gap  # trailing gap
+            metrics.chip_width
+            + metrics.name_gap
+            + metrics.name_gap  # trailing gap
             + cells_block_w
             + (natural_long_w / 4)  # only a quarter of the natural name width
         )
         width, adjusted = _resolve_name_column(
             tap_dances=tds,
-            geom=geom,
+            metrics=metrics,
             cells_block_w=cells_block_w,
             max_width=max_width,
         )
 
         # name_column_width is capped at max budget — leading + text +
         # trailing.
-        expected_text_w = max_width - geom.tag_w - 2 * geom.tag_name_gap - cells_block_w
-        assert width == 2 * geom.tag_name_gap + expected_text_w
+        expected_text_w = max_width - metrics.chip_width - 2 * metrics.name_gap - cells_block_w
+        assert width == 2 * metrics.name_gap + expected_text_w
         # Long name truncated; short name preserved
         assert adjusted[0].name == "short"
         assert adjusted[1].name is not None
@@ -181,7 +181,7 @@ class TestTapDanceTable:
         assert table.size.width <= max_width
 
     def test_table_natural_width_when_names_short(self):
-        geom = _LegendGeometry.for_doc_width(1600.0)
+        metrics = TapDanceMetrics.for_doc_width(1600.0)
         tds = [_td("0", name="short")]
         # Budget far larger than the table needs — width should be the
         # natural snug width, not the full budget.
@@ -196,20 +196,20 @@ class TestTapDanceTable:
         # Natural snug = chip + name area (with symmetric padding) +
         # cells block, where the cells block ends at the last inner
         # rect's right edge (not the cell slot's right edge).
-        inner_w = geom.td_cell_inner_w
-        natural = _measure_text_width("short", geom.td_name_font_size)
+        inner_w = metrics.cell_inner_w
+        natural = _measure_text_width("short", metrics.name_font_size)
         expected = (
-            geom.tag_w
-            + 2 * geom.tag_name_gap  # leading + trailing
+            metrics.chip_width
+            + 2 * metrics.name_gap  # leading + trailing
             + natural
-            + geom.row_content_indent_gap
-            + 4 * geom.td_cell_w
-            - (geom.td_cell_w - inner_w) / 2.0
+            + metrics.row_content_indent_gap
+            + 4 * metrics.cell_w
+            - (metrics.cell_w - inner_w) / 2.0
         )
         assert abs(table.size.width - expected) < 0.01
 
     def test_table_collapses_name_column_when_no_names(self):
-        geom = _LegendGeometry.for_doc_width(1600.0)
+        metrics = TapDanceMetrics.for_doc_width(1600.0)
         tds = [_td("0"), _td("1")]
         with _ctx_for_doc_width(1600.0):
             table = TapDanceTable(
@@ -221,11 +221,11 @@ class TestTapDanceTable:
             )
         # No names — chip flush against the cell block (and the cells
         # block ends at the last inner rect's right edge).
-        inner_w = geom.td_cell_inner_w
+        inner_w = metrics.cell_inner_w
         expected = (
-            geom.tag_w
-            + geom.row_content_indent_gap
-            + 4 * geom.td_cell_w
-            - (geom.td_cell_w - inner_w) / 2.0
+            metrics.chip_width
+            + metrics.row_content_indent_gap
+            + 4 * metrics.cell_w
+            - (metrics.cell_w - inner_w) / 2.0
         )
         assert abs(table.size.width - expected) < 0.01

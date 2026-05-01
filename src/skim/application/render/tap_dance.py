@@ -27,7 +27,7 @@ point :func:`draw_tap_dances_image`.
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
 import drawsvg as draw
@@ -35,12 +35,79 @@ import drawsvg as draw
 from .composable import Composable
 from .legend import _legend_key_label, _LegendGeometry
 from .primitives import Column, Point, Size
-from .section_stripe import SectionStripe
+from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
 from .text import Font, Label
 
 if TYPE_CHECKING:
     from skim.domain import SvalboardTapDance, SvalboardTargetKey
+
+
+# ---------------------------------------------------------------------------
+# Metrics
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class TapDanceMetrics:
+    """Sizing constants for the tap-dance composables.
+
+    Owns every measurement the four tap-dance composables read —
+    chip / cell / row / column-header dimensions plus the
+    title-strip column-label typography. Built from a (possibly
+    scaled) document width via :meth:`for_doc_width`.
+
+    Currently delegates to the shared ``_LegendGeometry`` for the
+    ratios so values stay aligned across the codebase; when the
+    legacy legend module retires the ratios can move here directly.
+    """
+
+    # Chip (the colored tag with the keyboard-close icon + id)
+    chip_width: float
+    chip_stroke_width: float
+    chip_corner_radius: float
+    chip_inner_font_size: float
+    chip_inner_text_baseline_offset: float
+    name_gap: float
+    name_font_size: float
+    name_w: float
+    # Cells (one per variant: TAP / HOLD / DOUBLE-TAP / TAP & HOLD)
+    cell_w: float
+    cell_inner_w: float
+    cell_label_font_size: float
+    # Rows
+    row_height: float
+    row_gap: float
+    # Column-header strip + content layout
+    header_height: float
+    column_label_font_size: float
+    column_label_letter_spacing: float
+    column_label_baseline_offset: float
+    row_content_indent_gap: float
+
+    @classmethod
+    def for_doc_width(cls, doc_width: float) -> TapDanceMetrics:
+        geom = _LegendGeometry.for_doc_width(doc_width)
+        return cls(
+            chip_width=geom.tag_w,
+            chip_stroke_width=geom.tag_stroke_width,
+            chip_corner_radius=geom.pill_corner_radius,
+            chip_inner_font_size=geom.tag_inner_font_size,
+            chip_inner_text_baseline_offset=geom.tag_inner_text_baseline_offset,
+            name_gap=geom.tag_name_gap,
+            name_font_size=geom.td_name_font_size,
+            name_w=geom.td_name_w,
+            cell_w=geom.td_cell_w,
+            cell_inner_w=geom.td_cell_inner_w,
+            cell_label_font_size=geom.td_cell_label_font_size,
+            row_height=geom.td_row_height,
+            row_gap=geom.td_row_gap,
+            header_height=geom.td_header_height,
+            column_label_font_size=geom.macro_column_label_font_size,
+            column_label_letter_spacing=geom.macro_column_label_letter_spacing,
+            column_label_baseline_offset=geom.title_baseline_offset,
+            row_content_indent_gap=geom.row_content_indent_gap,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -175,11 +242,11 @@ def TapDanceCell(
     standalone callers can size individual cells consistently with the
     rest of the table.
     """
-    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width * scale)
+    metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
     use_system_fonts = ctx.config.output.style.use_system_fonts
-    cell_w = cell_width if cell_width is not None else geom.td_cell_w
-    inner_w = geom.td_cell_inner_w * (cell_w / geom.td_cell_w)
-    row_h = geom.td_row_height
+    cell_w = cell_width if cell_width is not None else metrics.cell_w
+    inner_w = metrics.cell_inner_w * (cell_w / metrics.cell_w)
+    row_h = metrics.row_height
     size = Size(cell_w, row_h)
     rect_x_offset = (cell_w - inner_w) / 2.0
 
@@ -193,8 +260,8 @@ def TapDanceCell(
                     y=rect_y,
                     width=inner_w,
                     height=row_h,
-                    rx=geom.pill_corner_radius,
-                    ry=geom.pill_corner_radius,
+                    rx=metrics.chip_corner_radius,
+                    ry=metrics.chip_corner_radius,
                     fill="none",
                     stroke=text_color,
                     stroke_opacity=0.08,
@@ -208,8 +275,8 @@ def TapDanceCell(
                 y=rect_y,
                 width=inner_w,
                 height=row_h,
-                rx=geom.pill_corner_radius,
-                ry=geom.pill_corner_radius,
+                rx=metrics.chip_corner_radius,
+                ry=metrics.chip_corner_radius,
                 fill="#FAFAF6",
                 stroke=text_color,
                 stroke_opacity=0.18,
@@ -224,8 +291,8 @@ def TapDanceCell(
                 dominant_baseline="central",
             ).build_text(
                 x=rect_x + inner_w / 2,
-                y=rect_y + row_h / 2 + geom.tag_inner_text_baseline_offset,
-                font_size=geom.td_cell_label_font_size,
+                y=rect_y + row_h / 2 + metrics.chip_inner_text_baseline_offset,
+                font_size=metrics.cell_label_font_size,
                 use_system_fonts=use_system_fonts,
             )
         )
@@ -262,15 +329,15 @@ def TapDanceRow(
     rest of the table; it's forwarded to the per-variant
     :func:`TapDanceCell` instances.
     """
-    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width * scale)
+    metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
     use_system_fonts = ctx.config.output.style.use_system_fonts
     if name_column_width is None:
-        name_column_width = geom.td_name_w - geom.tag_w
-    cell_w = cell_width if cell_width is not None else geom.td_cell_w
+        name_column_width = metrics.name_w - metrics.chip_width
+    cell_w = cell_width if cell_width is not None else metrics.cell_w
 
-    inner_w = geom.td_cell_inner_w * (cell_w / geom.td_cell_w)
-    cells_offset = geom.tag_w + name_column_width
-    cells_start_x = cells_offset + geom.row_content_indent_gap
+    inner_w = metrics.cell_inner_w * (cell_w / metrics.cell_w)
+    cells_offset = metrics.chip_width + name_column_width
+    cells_start_x = cells_offset + metrics.row_content_indent_gap
     # Reported width tracks the last inner rect's right edge — each cell
     # slot reserves ``(cell_w - inner_w) / 2`` of empty padding on each
     # side of its inner rect, and the trailing slack on the right of the
@@ -278,7 +345,7 @@ def TapDanceRow(
     # visible content (e.g. the section stripe rule would extend past
     # the rightmost cell rather than aligning with it).
     width = cells_start_x + 4 * cell_w - (cell_w - inner_w) / 2.0
-    height = geom.td_row_height
+    height = metrics.row_height
     size = Size(width, height)
 
     def draw_at(d, origin):
@@ -295,26 +362,26 @@ def TapDanceRow(
             _filled_chip_path(
                 x=x,
                 y=y,
-                width=geom.tag_w,
+                width=metrics.chip_width,
                 height=height,
-                radius=geom.pill_corner_radius,
+                radius=metrics.chip_corner_radius,
                 round_right=not td.name,
                 fill=accent_fill,
             )
         )
         # Outlined chip — extends across the name area when ``td.name`` is set.
-        chip_outline_width = cells_offset if td.name else geom.tag_w
+        chip_outline_width = cells_offset if td.name else metrics.chip_width
         d.append(
             draw.Rectangle(
                 x=x,
                 y=y,
                 width=chip_outline_width,
                 height=height,
-                rx=geom.pill_corner_radius,
-                ry=geom.pill_corner_radius,
+                rx=metrics.chip_corner_radius,
+                ry=metrics.chip_corner_radius,
                 fill="none",
                 stroke=accent_line,
-                stroke_width=geom.tag_stroke_width,
+                stroke_width=metrics.chip_stroke_width,
             )
         )
         # Chip glyph (the keyboard-close icon + id) centred in the chip.
@@ -328,9 +395,9 @@ def TapDanceRow(
                 text_anchor="middle",
                 dominant_baseline="central",
             ).build_text(
-                x + geom.tag_w / 2,
-                cy + geom.tag_inner_text_baseline_offset,
-                geom.tag_inner_font_size,
+                x + metrics.chip_width / 2,
+                cy + metrics.chip_inner_text_baseline_offset,
+                metrics.chip_inner_font_size,
                 use_system_fonts,
             )
         )
@@ -344,9 +411,9 @@ def TapDanceRow(
             d.append(
                 draw.Text(
                     td.name,
-                    x=x + geom.tag_w + geom.tag_name_gap,
-                    y=cy + geom.tag_inner_text_baseline_offset,
-                    font_size=geom.td_name_font_size,
+                    x=x + metrics.chip_width + metrics.name_gap,
+                    y=cy + metrics.chip_inner_text_baseline_offset,
+                    font_size=metrics.name_font_size,
                     text_anchor="start",
                     dominant_baseline="central",
                     font_family="'Roboto', sans-serif",
@@ -387,31 +454,31 @@ def TapDanceColumnHeader(
     ``scale`` matches the convention :func:`TapDanceTable` uses so
     the header strip stays sized in step with the rows below.
     """
-    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width * scale)
+    metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
     if name_column_width is None:
-        name_column_width = geom.td_name_w - geom.tag_w
-    cell_w = cell_width if cell_width is not None else geom.td_cell_w
-    inner_w = geom.td_cell_inner_w * (cell_w / geom.td_cell_w)
+        name_column_width = metrics.name_w - metrics.chip_width
+    cell_w = cell_width if cell_width is not None else metrics.cell_w
+    inner_w = metrics.cell_inner_w * (cell_w / metrics.cell_w)
 
-    cells_start_x = geom.tag_w + name_column_width + geom.row_content_indent_gap
+    cells_start_x = metrics.chip_width + name_column_width + metrics.row_content_indent_gap
     # See :func:`TapDanceRow` — the reported width matches the rows so
     # the section stripe rule aligns with the last inner rect.
     width = cells_start_x + 4 * cell_w - (cell_w - inner_w) / 2.0
-    height = geom.td_header_height
+    height = metrics.header_height
     size = Size(width, height)
 
     def draw_at(d, origin):
         x, y = origin.x, origin.y
-        text_y = y + geom.title_baseline_offset
+        text_y = y + metrics.column_label_baseline_offset
         for i, label in enumerate(("TAP", "HOLD", "DOUBLE-TAP", "TAP & HOLD")):
             d.append(
                 draw.Text(
                     label,
                     x=x + cells_start_x + i * cell_w + cell_w / 2,
                     y=text_y,
-                    font_size=geom.macro_column_label_font_size,
+                    font_size=metrics.column_label_font_size,
                     fill=text_color,
-                    letter_spacing=geom.macro_column_label_letter_spacing,
+                    letter_spacing=metrics.column_label_letter_spacing,
                     text_anchor="middle",
                     font_family="'Roboto', sans-serif",
                 )
@@ -468,13 +535,13 @@ def TapDanceTable(
     is the geom-derived ``td_name_w - tag_w`` when at least one TD has
     a name and ``0`` when none do.
     """
-    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width * scale)
-    cell_w = cell_width if cell_width is not None else geom.td_cell_w
-    inner_w = geom.td_cell_inner_w * (cell_w / geom.td_cell_w)
+    metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
+    cell_w = cell_width if cell_width is not None else metrics.cell_w
+    inner_w = metrics.cell_inner_w * (cell_w / metrics.cell_w)
     # The cells block ends at the LAST inner rect's right edge — the
     # trailing slack in the last cell slot is excluded so the budget
     # math agrees with :func:`TapDanceRow`'s reported ``size.width``.
-    cells_block_w = geom.row_content_indent_gap + 4 * cell_w - (cell_w - inner_w) / 2.0
+    cells_block_w = metrics.row_content_indent_gap + 4 * cell_w - (cell_w - inner_w) / 2.0
 
     # Resolve name column width and compute possibly-truncated display
     # names. Three branches:
@@ -483,20 +550,20 @@ def TapDanceTable(
     #     through as-is, no truncation.
     #   * ``max_width`` budget given — measure names and pick the
     #     tightest column that fits the longest, capped at the budget.
-    #   * neither — fall back to the geom-derived legacy default.
+    #   * neither — fall back to the metrics-derived legacy default.
     if name_column_width is not None:
         resolved_name_column_width = name_column_width
         adjusted_tds = list(tap_dances)
     elif max_width is not None:
         resolved_name_column_width, adjusted_tds = _resolve_name_column(
             tap_dances=tap_dances,
-            geom=geom,
+            metrics=metrics,
             cells_block_w=cells_block_w,
             max_width=max_width,
         )
     else:
         resolved_name_column_width = (
-            geom.td_name_w - geom.tag_w if any(td.name for td in tap_dances) else 0.0
+            metrics.name_w - metrics.chip_width if any(td.name for td in tap_dances) else 0.0
         )
         adjusted_tds = list(tap_dances)
 
@@ -520,16 +587,16 @@ def TapDanceTable(
     ]
 
     width = max(header.size.width, *(row.size.width for row in rows)) if rows else header.size.width
-    body_h = geom.td_header_height + len(rows) * (geom.td_row_height + geom.td_row_gap)
+    body_h = metrics.header_height + len(rows) * (metrics.row_height + metrics.row_gap)
     size = Size(width, body_h)
 
     def draw_at(d, origin):
         x, y = origin.x, origin.y
         header.draw_at(d, Point(x, y))
-        cursor_y = y + geom.td_header_height
+        cursor_y = y + metrics.header_height
         for row in rows:
             row.draw_at(d, Point(x, cursor_y))
-            cursor_y += geom.td_row_height + geom.td_row_gap
+            cursor_y += metrics.row_height + metrics.row_gap
 
     return size, draw_at
 
@@ -537,7 +604,7 @@ def TapDanceTable(
 def _resolve_name_column(
     *,
     tap_dances: list[SvalboardTapDance[SvalboardTargetKey]],
-    geom: _LegendGeometry,
+    metrics: TapDanceMetrics,
     cells_block_w: float,
     max_width: float,
 ) -> tuple[float, list[SvalboardTapDance[SvalboardTargetKey]]]:
@@ -562,8 +629,8 @@ def _resolve_name_column(
     if not named:
         return 0.0, list(tap_dances)
 
-    name_font_size = geom.td_name_font_size
-    leading_gap = geom.tag_name_gap
+    name_font_size = metrics.name_font_size
+    leading_gap = metrics.name_gap
     trailing_gap = leading_gap  # symmetric padding inside the chip outline
     natural = {td.id: _measure_text_width(td.name or "", name_font_size) for td in named}
     longest_natural = max(natural.values())
@@ -573,7 +640,7 @@ def _resolve_name_column(
     # name area, indent gap, four cells — within ``max_width``.
     available_for_text = max(
         0.0,
-        max_width - geom.tag_w - leading_gap - trailing_gap - cells_block_w,
+        max_width - metrics.chip_width - leading_gap - trailing_gap - cells_block_w,
     )
 
     if longest_natural <= available_for_text:
@@ -635,7 +702,7 @@ def TapDanceSection(
     """
     palette = ctx.theme.palette
     accent_line = derive_accent_line(palette.tap_dance_color)
-    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
+    stripe_metrics = SectionStripeMetrics.for_doc_width(ctx.config.output.layout.width)
 
     table = TapDanceTable(
         tap_dances=tap_dances,
@@ -657,7 +724,7 @@ def TapDanceSection(
             ),
             table,
         ],
-        gap=2 * geom.title_baseline_offset,
+        gap=2 * stripe_metrics.title_baseline_offset,
         align="start",
     )
     return inner.size, inner.draw_at
