@@ -92,9 +92,13 @@ class TapDanceMetrics:
     name_gap: float
     name_font_size: float
     name_w: float
-    # Cells (one per variant: TAP / HOLD / DOUBLE-TAP / TAP & HOLD)
+    # Cells (one per variant: TAP / HOLD / DOUBLE-TAP / TAP & HOLD).
+    # ``cell_w`` is the visible cell rectangle's width; ``cell_gap``
+    # is the explicit horizontal gap between adjacent cells (mirrors
+    # the macro section's ``pill_gap`` so the two sections share the
+    # same rhythm).
     cell_w: float
-    cell_inner_w: float
+    cell_gap: float
     cell_label_font_size: float
     # Rows
     row_height: float
@@ -118,8 +122,13 @@ class TapDanceMetrics:
             name_gap=geom.tag_name_gap,
             name_font_size=geom.td_name_font_size,
             name_w=geom.td_name_w,
-            cell_w=geom.td_cell_w,
-            cell_inner_w=geom.td_cell_inner_w,
+            # Use the legacy "inner" rect width as the cell's
+            # visible width, and reuse the macro section's
+            # ``pill_gap`` as the inter-cell gap so the spacing
+            # between TD cells matches the spacing between macro
+            # pills.
+            cell_w=geom.td_cell_inner_w,
+            cell_gap=geom.pill_gap,
             cell_label_font_size=geom.td_cell_label_font_size,
             row_height=geom.td_row_height,
             row_gap=geom.td_row_gap,
@@ -196,13 +205,14 @@ def TapDanceCell(
 ):
     """One tap-dance variant cell (``TAP`` / ``HOLD`` / ``DOUBLE-TAP`` / ``TAP & HOLD``).
 
-    The cell occupies a ``cell_width × td_row_height`` slot; the inner
-    rect (filled when ``content`` is a key, dashed-empty otherwise) is
-    centred horizontally within the slot. ``cell_width`` defaults to
-    the scaled ``geom.td_cell_w`` so the natural geom-driven sizing is
-    preserved. The inner rect's width tracks ``cell_width``
-    proportionally so a stretched cell stretches its rect too — same
-    rule the legacy helper applies.
+    The cell IS its visible rectangle — ``cell_width`` wide and
+    ``td_row_height`` tall (filled when ``content`` is a key,
+    dashed-empty otherwise). ``cell_width`` defaults to
+    ``metrics.cell_w`` (the per-doc-width geom value) so the
+    natural sizing is preserved. Adjacent cells inside a row /
+    column-header are spaced by ``metrics.cell_gap`` — the gap is
+    the parent's concern, not the cell's, so a cell's reported size
+    contains no leading/trailing padding.
 
     ``scale`` matches the convention :func:`TapDanceTable` uses so
     standalone callers can size individual cells consistently with the
@@ -210,10 +220,8 @@ def TapDanceCell(
     """
     metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
     cell_w = cell_width if cell_width is not None else metrics.cell_w
-    inner_w = metrics.cell_inner_w * (cell_w / metrics.cell_w)
     row_h = metrics.row_height
     size = Size(cell_w, row_h)
-    rect_x_offset = (cell_w - inner_w) / 2.0
 
     # Pre-build the optional key label as a :func:`RichText`. Cell
     # labels can carry Nerd Font tokens (icon glyphs alongside text),
@@ -232,7 +240,7 @@ def TapDanceCell(
         RichText(
             spans=parse_into_spans(_legend_key_label(content), label_style),
             style=label_style,
-            max_width=inner_w,
+            max_width=cell_w,
             text_anchor="middle",
             dominant_baseline="central",
             separator="",
@@ -242,14 +250,14 @@ def TapDanceCell(
     )
 
     def draw_at(d, origin):
-        rect_x = origin.x + rect_x_offset
+        rect_x = origin.x
         rect_y = origin.y
         if label_el is None:
             d.append(
                 draw.Rectangle(
                     x=rect_x,
                     y=rect_y,
-                    width=inner_w,
+                    width=cell_w,
                     height=row_h,
                     rx=metrics.chip_corner_radius,
                     ry=metrics.chip_corner_radius,
@@ -264,7 +272,7 @@ def TapDanceCell(
             draw.Rectangle(
                 x=rect_x,
                 y=rect_y,
-                width=inner_w,
+                width=cell_w,
                 height=row_h,
                 rx=metrics.chip_corner_radius,
                 ry=metrics.chip_corner_radius,
@@ -308,8 +316,9 @@ def TapDanceRow(
 
     ``name_column_width`` defaults to ``td_name_w - tag_w`` so a chip
     with no name still leaves room consistent with the rest of the
-    section. ``cell_width`` overrides each variant cell's slot width
-    (used by the standalone tap-dances image to stretch the table).
+    section. ``cell_width`` overrides each variant cell's visible
+    width (used by the standalone tap-dances image to stretch the
+    table); the inter-cell gap stays at ``metrics.cell_gap``.
 
     ``scale`` matches the convention :func:`TapDanceTable` uses so
     standalone callers can size individual rows consistently with the
@@ -320,17 +329,14 @@ def TapDanceRow(
     if name_column_width is None:
         name_column_width = metrics.name_w - metrics.chip_width
     cell_w = cell_width if cell_width is not None else metrics.cell_w
+    cell_gap = metrics.cell_gap
 
-    inner_w = metrics.cell_inner_w * (cell_w / metrics.cell_w)
     cells_offset = metrics.chip_width + name_column_width
     cells_start_x = cells_offset + metrics.row_content_indent_gap
-    # Reported width tracks the last inner rect's right edge — each cell
-    # slot reserves ``(cell_w - inner_w) / 2`` of empty padding on each
-    # side of its inner rect, and the trailing slack on the right of the
-    # last cell would otherwise stretch the bounding box past the
-    # visible content (e.g. the section stripe rule would extend past
-    # the rightmost cell rather than aligning with it).
-    width = cells_start_x + 4 * cell_w - (cell_w - inner_w) / 2.0
+    # Cells stack with an explicit ``cell_gap`` between them — same
+    # rhythm the macro section uses between pills. Reported width
+    # ends at the last cell's right edge (no trailing slack).
+    width = cells_start_x + 4 * cell_w + 3 * cell_gap
     height = metrics.row_height
     size = Size(width, height)
 
@@ -433,8 +439,9 @@ def TapDanceRow(
                 cy - name_el.size.height / 2 + metrics.chip_inner_text_baseline_offset,
             )
             name_el.draw_at(d, name_origin)
-        # Four variant cells. Pass ``scale`` down so the cells derive
-        # the same scaled geometry the row was built against.
+        # Four variant cells, stacked with explicit ``cell_gap``
+        # between them. Pass ``scale`` down so the cells derive the
+        # same scaled geometry the row was built against.
         variants = (td.tap, td.hold, td.double_tap, td.tap_then_hold)
         for i, variant in enumerate(variants):
             cell = TapDanceCell(
@@ -443,7 +450,7 @@ def TapDanceRow(
                 scale=scale,
                 cell_width=cell_w,
             )
-            cell.draw_at(d, Point(x + cells_start_x + i * cell_w, y))
+            cell.draw_at(d, Point(x + cells_start_x + i * (cell_w + cell_gap), y))
 
     return size, draw_at
 
@@ -471,12 +478,12 @@ def TapDanceColumnHeader(
     if name_column_width is None:
         name_column_width = metrics.name_w - metrics.chip_width
     cell_w = cell_width if cell_width is not None else metrics.cell_w
-    inner_w = metrics.cell_inner_w * (cell_w / metrics.cell_w)
+    cell_gap = metrics.cell_gap
 
     cells_start_x = metrics.chip_width + name_column_width + metrics.row_content_indent_gap
     # See :func:`TapDanceRow` — the reported width matches the rows so
-    # the section stripe rule aligns with the last inner rect.
-    width = cells_start_x + 4 * cell_w - (cell_w - inner_w) / 2.0
+    # the section stripe rule aligns with the last cell.
+    width = cells_start_x + 4 * cell_w + 3 * cell_gap
     height = metrics.header_height
     size = Size(width, height)
 
@@ -511,7 +518,7 @@ def TapDanceColumnHeader(
         # baseline directly, so the bbox-top origin must be at
         # ``baseline_y - bbox_height``.
         for i, el in enumerate(column_label_els):
-            cell_centre_x = x + cells_start_x + i * cell_w + cell_w / 2
+            cell_centre_x = x + cells_start_x + i * (cell_w + cell_gap) + cell_w / 2
             label_origin = Point(
                 cell_centre_x - el.size.width / 2,
                 y + metrics.column_label_baseline_offset - el.size.height,
@@ -571,11 +578,11 @@ def TapDanceTable(
     """
     metrics = TapDanceMetrics.for_doc_width(ctx.config.output.layout.width * scale)
     cell_w = cell_width if cell_width is not None else metrics.cell_w
-    inner_w = metrics.cell_inner_w * (cell_w / metrics.cell_w)
-    # The cells block ends at the LAST inner rect's right edge — the
-    # trailing slack in the last cell slot is excluded so the budget
-    # math agrees with :func:`TapDanceRow`'s reported ``size.width``.
-    cells_block_w = metrics.row_content_indent_gap + 4 * cell_w - (cell_w - inner_w) / 2.0
+    cell_gap = metrics.cell_gap
+    # The cells block ends at the LAST cell's right edge — four
+    # cells with three explicit ``cell_gap`` gaps between them, no
+    # trailing slack. Matches :func:`TapDanceRow`'s reported width.
+    cells_block_w = metrics.row_content_indent_gap + 4 * cell_w + 3 * cell_gap
 
     # Resolve the name column width. Three branches:
     #
