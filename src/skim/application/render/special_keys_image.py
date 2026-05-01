@@ -32,11 +32,9 @@ For all three images:
    content scales proportionally.
 """
 
-from dataclasses import dataclass
-
 import drawsvg as draw
 
-from skim.data import Palette, SkimConfig, SvalboardKeymap
+from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTargetKey
 
 from .composable import (
@@ -53,7 +51,6 @@ from .composable import (
 )
 from .footer import Footer
 from .header import Header
-from .layout import KeymapLayoutMetrics
 from .legend import (
     _flatten_macro_pills,
     _layout_pill_lines,
@@ -65,9 +62,7 @@ from .legend import (
     macro_row_height,
 )
 from .legend_components import SectionStripe, TapDanceTable
-from .overview import HeaderDims, compute_header_dims
-from .overview_layout import _outer_padding
-from .render_context import RenderContext, using_render_context
+from .render_context import RenderContext, current_render_context, using_render_context
 from .styling import derive_accent_line
 from .text import Font
 
@@ -83,32 +78,8 @@ _BODY_SCALE = 1.5
 
 
 # ---------------------------------------------------------------------------
-# Setup helpers
+# Helpers (ctx-aware)
 # ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True, slots=True)
-class _ImageSetup:
-    """Pre-computed per-image rendering parameters.
-
-    Holds the unscaled doc_width-derived metrics the outer chrome
-    (header, footer, padding, margin, border) lays out against. The
-    body composables apply their own scale locally — see
-    ``_BODY_SCALE`` — so this struct never carries a scale factor.
-    """
-
-    config: SkimConfig
-    keymap: SvalboardKeymap[SvalboardTargetKey]
-    palette: Palette
-    geom: _LegendGeometry
-    header_dims: HeaderDims
-    initial_canvas_w: float
-    display_w: float
-    padding: float
-    margin: float
-    bottom_inset: float
-    use_system_fonts: bool
-    title_text: str
 
 
 def _resolve_title(config: SkimConfig) -> str:
@@ -121,54 +92,24 @@ def _resolve_title(config: SkimConfig) -> str:
     return "Keymap Layout"
 
 
-def _build_setup(
-    config: SkimConfig,
-    keymap: SvalboardKeymap[SvalboardTargetKey],
-) -> _ImageSetup:
-    """Build the per-image setup at the user-requested document width.
-
-    Outer chrome (header, footer, padding, margin, border) lays out at
-    the unscaled config — the body composables (``_MacrosBody``,
-    ``TapDanceTable``) carry their own ``scale`` kwarg and apply it
-    locally so only the chips / cells / pills enlarge.
-    """
-    doc_width = config.output.layout.width
-    metrics = KeymapLayoutMetrics.from_config(config)
-    padding = _outer_padding(metrics)
-    geom = _LegendGeometry.for_doc_width(doc_width)
-    header_dims = compute_header_dims(config, keymap)
-
-    return _ImageSetup(
-        config=config,
-        keymap=keymap,
-        palette=config.output.style.palette,
-        geom=geom,
-        header_dims=header_dims,
-        initial_canvas_w=doc_width,
-        display_w=doc_width,
-        padding=padding,
-        margin=metrics.margin,
-        bottom_inset=metrics.inset + metrics.margin,
-        use_system_fonts=config.output.style.use_system_fonts,
-        title_text=_resolve_title(config),
-    )
-
-
-def _section_title_max_height(setup: _ImageSetup, label: str) -> float:
+def _section_title_max_height(label: str) -> float:
     """Rendered height of a section title label (e.g. ``"MACROS"``).
 
     Used as the ``max_height`` cap for the footer in the standalone solo
     images so the copyright never reads taller than the section title
     above the body. Measured with ``getbbox()`` for the same font and
-    size :class:`SectionStripe` actually paints with.
+    size :class:`SectionStripe` actually paints with — the geometry is
+    derived from the active :class:`RenderContext`.
     """
-    pil_font = Font.FINGER_KEY.load(int(round(max(setup.geom.title_font_size, 1.0))))
+    ctx = current_render_context()
+    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
+    pil_font = Font.FINGER_KEY.load(int(round(max(geom.title_font_size, 1.0))))
     left, top, right, bottom = pil_font.getbbox(label)
     del left, right
     return float(bottom - top)
 
 
-def _footer_max_height(setup: _ImageSetup, *, section_title: str | None) -> float | None:
+def _footer_max_height(*, section_title: str | None) -> float | None:
     """Pick the ``max_height`` cap for the footer based on the host image.
 
     The standalone solo images (macros / tap-dances) cap the footer at
@@ -179,7 +120,7 @@ def _footer_max_height(setup: _ImageSetup, *, section_title: str | None) -> floa
     """
     if section_title is None:
         return None
-    return _section_title_max_height(setup, section_title)
+    return _section_title_max_height(section_title)
 
 
 # ---------------------------------------------------------------------------
@@ -187,25 +128,22 @@ def _footer_max_height(setup: _ImageSetup, *, section_title: str | None) -> floa
 # ---------------------------------------------------------------------------
 
 
-@Composable
-def _CanvasFrame(
-    *,
-    content: Component,
-    setup: _ImageSetup,
-):
+@Composable(use_context=True)
+def _CanvasFrame(ctx, *, content: Component):
     """Outer chrome: rounded background border around ``content``.
 
     The natural size matches ``content`` exactly — the border is
-    painted INSIDE that extent, inset by ``setup.margin``, mirroring
-    the historical positional layout (where the border surrounded the
-    canvas minus margin and the content sat at offset ``padding`` from
-    the canvas edge). The content's :meth:`draw_at` runs at the same
-    origin so its top-left aligns with the canvas top-left.
+    painted INSIDE that extent, inset by ``ctx.document_metrics.margin``,
+    mirroring the historical positional layout (where the border
+    surrounded the canvas minus margin and the content sat at offset
+    ``padding`` from the canvas edge). The content's :meth:`draw_at`
+    runs at the same origin so its top-left aligns with the canvas
+    top-left.
     """
     size = content.size
-    border = setup.config.output.style.border
-    palette = setup.palette
-    margin = setup.margin
+    palette = ctx.theme.palette
+    border = ctx.config.output.style.border
+    margin = ctx.document_metrics.margin
 
     def draw_at(d, origin):
         d.append(
@@ -228,7 +166,6 @@ def _CanvasFrame(
 
 def _section_block(
     *,
-    setup: _ImageSetup,
     title: str,
     color: str,
     count: int,
@@ -239,8 +176,11 @@ def _section_block(
 
     The same shape both standalone images and the combined image use —
     the combined image places two of these side-by-side in a Row.
+    Reads the inter-strip / body gap from the unscaled section-stripe
+    geometry so the spacing matches what every image variant uses.
     """
-    geom = setup.geom
+    ctx = current_render_context()
+    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
     return Column(
         [
             SectionStripe(title=title, count=count, width=width, accent_line=color),
@@ -252,7 +192,6 @@ def _section_block(
 
 
 def _render_image(
-    setup: _ImageSetup,
     *,
     body: Component,
     content_w: float,
@@ -267,11 +206,13 @@ def _render_image(
     height cap (see :func:`_footer_max_height`); pass ``None`` for
     images without a single dominant section title.
     """
-    geom = setup.geom
+    ctx = current_render_context()
+    metrics = ctx.document_metrics
+    geom = _LegendGeometry.for_doc_width(ctx.config.output.layout.width)
 
     header = Header(
-        title=setup.title_text,
-        gap=2 * setup.padding,
+        title=_resolve_title(ctx.config),
+        gap=2 * metrics.padding,
         max_width=content_w,
     )
 
@@ -281,15 +222,15 @@ def _render_image(
         body,
     ]
 
-    footer_text = setup.config.output.copyright or ""
+    footer_text = ctx.config.output.copyright or ""
     if footer_text:
         footer = Footer(
             text=footer_text,
-            max_height=_footer_max_height(setup, section_title=footer_section_title),
+            max_height=_footer_max_height(section_title=footer_section_title),
         )
         children.extend(
             [
-                Spacer(height=setup.bottom_inset),
+                Spacer(height=metrics.bottom_inset),
                 Align(footer, width=content_w, horizontal="end"),
             ]
         )
@@ -297,30 +238,31 @@ def _render_image(
     column = Column(children, align="start")
     padded = Padding(
         column,
-        top=setup.padding,
-        right=setup.padding,
-        left=setup.padding,
-        bottom=setup.bottom_inset,
+        top=metrics.padding,
+        right=metrics.padding,
+        left=metrics.padding,
+        bottom=metrics.bottom_inset,
     )
-    image = _CanvasFrame(content=padded, setup=setup)
-    return _make_drawing(setup, image)
+    image = _CanvasFrame(content=padded)
+    return _make_drawing(image)
 
 
-def _make_drawing(setup: _ImageSetup, content: Component) -> draw.Drawing:
+def _make_drawing(content: Component) -> draw.Drawing:
     """Create the SVG ``Drawing`` for ``content`` and paint it.
 
-    Sets the displayed width to ``setup.display_w`` and exposes the
+    Displays at the user-requested ``layout.width`` and exposes the
     natural canvas via ``viewBox`` so the requested ``--width`` is
     honoured while content scales proportionally.
     """
+    ctx = current_render_context()
     canvas_w = content.size.width
     canvas_h = content.size.height
-    display_w = setup.display_w
+    display_w = ctx.config.output.layout.width
     display_h = canvas_h * (display_w / canvas_w) if canvas_w else canvas_h
 
     d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
 
-    if not setup.use_system_fonts:
+    if not ctx.config.output.style.use_system_fonts:
         for font in Font:
             d.append_css(font.css_style)
 
@@ -329,7 +271,6 @@ def _make_drawing(setup: _ImageSetup, content: Component) -> draw.Drawing:
 
 
 def _render_section_image(
-    setup: _ImageSetup,
     *,
     body: Component,
     section_title: str,
@@ -344,7 +285,6 @@ def _render_section_image(
     a single :class:`SectionStripe`.
     """
     section = _section_block(
-        setup=setup,
         title=section_title,
         color=section_color,
         count=section_count,
@@ -352,7 +292,6 @@ def _render_section_image(
         body=body,
     )
     return _render_image(
-        setup,
         body=section,
         content_w=content_w,
         footer_section_title=section_title,
@@ -442,18 +381,17 @@ def draw_macros_image(
     keymap: SvalboardKeymap[SvalboardTargetKey],
 ) -> draw.Drawing:
     """Render the standalone macros image."""
-    setup = _build_setup(config, keymap)
-    with using_render_context(RenderContext.build(config, keymap)):
+    with using_render_context(RenderContext.build(config, keymap)) as ctx:
         macros = all_macros(keymap.macros)
-        palette = setup.palette
+        palette = ctx.theme.palette
+        metrics = ctx.document_metrics
         # The MACROS body renders at ``_BODY_SCALE``; use the scaled
         # geom for wrap-detection so ``_macro_natural_widths`` reports
         # the same widths the body composable will lay out against.
-        scaled_doc_width = setup.config.output.layout.width * _BODY_SCALE
-        scaled_geom = _LegendGeometry.for_doc_width(scaled_doc_width)
+        scaled_geom = _LegendGeometry.for_doc_width(metrics.doc_width * _BODY_SCALE)
         macro_line = derive_accent_line(palette.macro_color)
 
-        initial_content_w = setup.initial_canvas_w - 2 * setup.padding
+        initial_content_w = metrics.doc_width - 2 * metrics.padding
 
         # Lay out using the *initial* content width so wrap detection matches
         # what the user-requested canvas would normally produce. If the longest
@@ -479,7 +417,6 @@ def draw_macros_image(
         )
 
         return _render_section_image(
-            setup,
             body=body,
             section_title="MACROS",
             section_color=macro_line,
@@ -505,13 +442,13 @@ def draw_tap_dances_image(
     budget and truncates the longest names with ``"…"`` when they
     can't fit.
     """
-    setup = _build_setup(config, keymap)
-    with using_render_context(RenderContext.build(config, keymap)):
+    with using_render_context(RenderContext.build(config, keymap)) as ctx:
         tap_dances = all_tap_dances(keymap.tap_dances)
-        palette = setup.palette
+        palette = ctx.theme.palette
+        metrics = ctx.document_metrics
         td_line = derive_accent_line(palette.tap_dance_color)
 
-        initial_content_w = setup.initial_canvas_w - 2 * setup.padding
+        initial_content_w = metrics.doc_width - 2 * metrics.padding
 
         # Build the table component first so we can shrink the canvas to
         # match it. ``max_width`` caps the table at the canvas budget;
@@ -528,7 +465,6 @@ def draw_tap_dances_image(
         body: Component = table if tap_dances else Spacer()
 
         return _render_section_image(
-            setup,
             body=body,
             section_title="TAP-DANCE",
             section_color=td_line,
@@ -551,19 +487,19 @@ def draw_special_keys_image(
     Mirrors the overview's two-column legend, just at the standalone scale.
     Falls back to a single column when only one section has content.
     """
-    setup = _build_setup(config, keymap)
-    with using_render_context(RenderContext.build(config, keymap)):
+    with using_render_context(RenderContext.build(config, keymap)) as ctx:
         macros = all_macros(keymap.macros)
         tap_dances = all_tap_dances(keymap.tap_dances)
-        palette = setup.palette
+        palette = ctx.theme.palette
+        metrics = ctx.document_metrics
         # Bodies render at ``_BODY_SCALE``; the static name-column
         # width and the cross-column gap are computed against the
         # scaled geom so the two columns keep their proportions.
-        scaled_geom = _LegendGeometry.for_doc_width(setup.config.output.layout.width * _BODY_SCALE)
+        scaled_geom = _LegendGeometry.for_doc_width(metrics.doc_width * _BODY_SCALE)
         macro_line = derive_accent_line(palette.macro_color)
         td_line = derive_accent_line(palette.tap_dance_color)
 
-        target_content_w = setup.initial_canvas_w - 2 * setup.padding
+        target_content_w = metrics.doc_width - 2 * metrics.padding
         col_gap = scaled_geom.column_gap
         col_w = (target_content_w - col_gap) / 2 if macros and tap_dances else target_content_w
 
@@ -571,7 +507,6 @@ def draw_special_keys_image(
         if macros:
             sections.append(
                 _section_block(
-                    setup=setup,
                     title="MACROS",
                     color=macro_line,
                     count=len(macros),
@@ -600,7 +535,6 @@ def draw_special_keys_image(
             )
             sections.append(
                 _section_block(
-                    setup=setup,
                     title="TAP-DANCE",
                     color=td_line,
                     count=len(tap_dances),
@@ -617,7 +551,6 @@ def draw_special_keys_image(
             body = Row([sections[0], Spacer(width=col_gap), sections[1]], align="top")
 
         return _render_image(
-            setup,
             body=body,
             content_w=target_content_w,
             # Combined image has no single dominant section title, so the
