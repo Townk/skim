@@ -300,6 +300,10 @@ def _build_ctx() -> RenderContext:
             inset=20.0,
             border_radius=8.0,
             column_gap=24.0,
+            section_spacing=12.0,
+            table_header_spacing=4.0,
+            table_col_spacing=4.0,
+            table_row_spacing=8.0,
         ),
     )
 

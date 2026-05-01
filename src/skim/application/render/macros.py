@@ -223,7 +223,7 @@ def MacroSection(
             ),
             table,
         ],
-        gap=2 * stripe_metrics.title_baseline_offset,
+        gap=ctx.document_metrics.section_spacing,
         align="start",
     )
     return MetricsComponent(

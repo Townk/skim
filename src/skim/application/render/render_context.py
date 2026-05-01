@@ -200,6 +200,27 @@ class DocumentMetrics:
     column_gap: float
     """Horizontal gap between side-by-side sections (e.g. macros + tap-dance)."""
 
+    section_spacing: float
+    """Vertical gap between a section title strip and the section's body
+    (e.g. between the ``MACROS`` rule and its first row)."""
+
+    table_header_spacing: float
+    """Gap between a table header and the content it labels.
+
+    Used universally:
+
+    * Column header text → first data row.
+    * Row header (e.g. the TD chip with name+id) → row's content.
+    * Named-macro name strip → the macro's pill row.
+    * Macro ID chip → its action pills.
+    """
+
+    table_col_spacing: float
+    """Horizontal gap between adjacent table columns (TD cells, macro pills)."""
+
+    table_row_spacing: float
+    """Vertical gap between adjacent table rows (TD rows, macro rows)."""
+
     @classmethod
     def from_config(cls, config: SkimConfig) -> "DocumentMetrics":
         """Compute document-wide metrics from a config.
@@ -231,6 +252,15 @@ class DocumentMetrics:
             inset=inset,
             border_radius=border.radius if border is not None else None,
             column_gap=legend_geom.column_gap,
+            # Universal table spacings — sourced from the legend
+            # ratios so they stay aligned with the macro section's
+            # existing visual rhythm. These are unscaled (per
+            # document); the body-scaled standalone TD image
+            # multiplies by ``BODY_SCALE`` locally where needed.
+            section_spacing=2 * legend_geom.title_baseline_offset,
+            table_header_spacing=legend_geom.row_content_indent_gap,
+            table_col_spacing=legend_geom.pill_gap,
+            table_row_spacing=legend_geom.td_row_gap,
         )
 
 

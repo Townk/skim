@@ -59,7 +59,7 @@ class TestResolveNameColumnWidth:
 
     def test_collapses_to_zero_when_no_names(self):
         metrics = TapDanceMetrics.for_doc_width(1600.0)
-        cells_block_w = metrics.row_content_indent_gap + 4 * metrics.cell_w + 3 * metrics.cell_gap
+        cells_block_w = metrics.table_header_spacing + 4 * metrics.cell_w + 3 * metrics.table_col_spacing
         width = _resolve_name_column_width(
             tap_dances=[_td("0"), _td("1")],
             metrics=metrics,
@@ -70,9 +70,10 @@ class TestResolveNameColumnWidth:
 
     def test_picks_longest_natural_when_budget_allows(self):
         metrics = TapDanceMetrics.for_doc_width(1600.0)
-        # Cells block: four cells with three explicit ``cell_gap``s
-        # between them, plus the leading ``row_content_indent_gap``.
-        cells_block_w = metrics.row_content_indent_gap + 4 * metrics.cell_w + 3 * metrics.cell_gap
+        # Cells block: four cells with three ``table_col_spacing``
+        # gaps between them, plus the leading ``table_header_spacing``
+        # that separates the row header (chip) from the cells.
+        cells_block_w = metrics.table_header_spacing + 4 * metrics.cell_w + 3 * metrics.table_col_spacing
         tds = [_td("0", name="short"), _td("1", name="much longer name")]
         long_natural = _measure("much longer name", metrics.name_font_size)
 
@@ -88,7 +89,7 @@ class TestResolveNameColumnWidth:
 
     def test_caps_column_at_budget_when_longest_overflows(self):
         metrics = TapDanceMetrics.for_doc_width(1600.0)
-        cells_block_w = metrics.row_content_indent_gap + 4 * metrics.cell_w + 3 * metrics.cell_gap
+        cells_block_w = metrics.table_header_spacing + 4 * metrics.cell_w + 3 * metrics.table_col_spacing
         long_name = "the quick brown fox jumps over the lazy dog " * 4
         tds = [_td("0", name="short"), _td("1", name=long_name)]
 
@@ -153,16 +154,16 @@ class TestTapDanceTable:
             )
         # Natural snug = chip + name area (with symmetric padding) +
         # cells block. The cells block is four cells with three
-        # explicit ``cell_gap``s between them — same rhythm as the
-        # macro section's pill row.
+        # ``table_col_spacing`` gaps between them — same rhythm as
+        # the macro section's pill row.
         natural = _measure("short", metrics.name_font_size)
         expected = (
             metrics.chip_width
             + 2 * metrics.name_gap  # leading + trailing
             + natural
-            + metrics.row_content_indent_gap
+            + metrics.table_header_spacing
             + 4 * metrics.cell_w
-            + 3 * metrics.cell_gap
+            + 3 * metrics.table_col_spacing
         )
         assert abs(table.size.width - expected) < 0.01
 
@@ -181,8 +182,8 @@ class TestTapDanceTable:
         # at the last cell's right edge, no trailing slack).
         expected = (
             metrics.chip_width
-            + metrics.row_content_indent_gap
+            + metrics.table_header_spacing
             + 4 * metrics.cell_w
-            + 3 * metrics.cell_gap
+            + 3 * metrics.table_col_spacing
         )
         assert abs(table.size.width - expected) < 0.01
