@@ -321,11 +321,12 @@ class Label:
         """
         self.parts.append(SymbolPart(class_name, char, self.text_color))
 
-    def measure_width(self, font_size: int) -> float:
+    def measure_width(self, font_size: float) -> float:
         """Measure the total width of this label at a given font size.
 
         Args:
-            font_size: The font size in points.
+            font_size: The font size in points. Floats are accepted —
+                ``Font.load`` rounds internally for the LRU cache.
 
         Returns:
             The total width in pixels.
@@ -335,7 +336,7 @@ class Label:
             width += part.measure_width(part.font.load(font_size))
         return width
 
-    def measure_rendered_width(self, font_size: int) -> float:
+    def measure_rendered_width(self, font_size: float) -> float:
         """Measure the label's width as it is actually painted in the SVG.
 
         Differs from :meth:`measure_width` in one detail: text parts

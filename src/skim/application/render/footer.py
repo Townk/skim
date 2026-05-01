@@ -21,8 +21,9 @@ from dataclasses import dataclass
 
 import drawsvg as draw
 
+from .adjustable_text import AdjustableText
 from .composable import Composable
-from .primitives import DrawFn, Point, Size
+from .primitives import DrawFn, Point, Row, Size, Spacer
 from .text import Font
 
 # Floor on the footer font size when shrinking under ``max_height`` so
@@ -158,41 +159,39 @@ def Footer(
 ):
     """A right-aligned line of footer text (typically a copyright notice).
 
-    Reads typography (font, size, color) from
-    ``ctx.theme.typography.copyright`` and the ``use_system_fonts``
-    flag from ``ctx.config.output.style`` so call sites don't have to
-    spell those out.
+    Delegates the text-fitting concern (shrink under ``max_height``,
+    truncate under ``max_width``) to :func:`AdjustableText`. Owns
+    only the slot-fill + right-align layout: when ``max_width`` is
+    set the returned component's width fills the slot exactly and
+    the text right-anchors against the right edge.
 
-    ``max_width`` is the slot the footer paints into — named to
-    match :func:`Header.max_width` so a parent passing the same
-    document-content width to both gets the same vocabulary. When
-    supplied the element's size matches that width and the text
-    right-aligns to its right edge — the parent doesn't need an
-    ``Align`` wrapper since right-alignment is part of "what a
-    footer is." When ``None`` the element's size matches the
-    rendered glyph bbox. Note: unlike :func:`Header`, the footer
-    text doesn't shrink horizontally if its natural width somehow
-    exceeded the slot — copyright strings are short enough in
-    practice that horizontal overflow doesn't come up.
-
-    Returns a zero-sized, no-op element when ``text`` is empty so
-    hosts don't need to special-case "no copyright".
-
-    ``max_height`` caps the rendered text height; when supplied and
-    the natural text would be taller, the font size shrinks
-    proportionally so the bbox matches the cap.
+    Reads typography from ``ctx.theme.typography.copyright``. Empty
+    ``text`` yields a zero-sized noop so hosts don't need to
+    special-case "no copyright". ``max_height`` shrinks the font
+    when the natural text would otherwise be taller; the floor on
+    that shrink is the local ``_MIN_FONT_SIZE`` constant.
     """
-    typo = ctx.theme.typography.copyright
-    use_system_fonts = ctx.config.output.style.use_system_fonts
-    family = typo.font.get_system_font_family() if use_system_fonts else typo.font.value
-    return _footer_size_and_draw(
-        text,
-        font_max_size=typo.size,
-        color=typo.color,
-        family=family,
-        max_height=max_height,
+    if not text:
+        return Spacer()
+
+    text_el = AdjustableText(
+        text=text,
+        style=ctx.theme.typography.copyright,
         max_width=max_width,
+        max_height=max_height,
+        min_font_size=_MIN_FONT_SIZE,
+        text_anchor="end",
+        dominant_baseline="text-after-edge",
+        opacity=_FOOTER_OPACITY,
     )
+    if max_width is None:
+        return text_el
+
+    # Right-align inside the slot — pad the leading edge with a
+    # ``Spacer`` so the row reports ``max_width`` as its total width
+    # and the painted text right-anchors at the slot's right edge.
+    leading = max(0.0, max_width - text_el.size.width)
+    return Row([Spacer(width=leading), text_el], gap=0.0, align="end")
 
 
 # ---------------------------------------------------------------------------

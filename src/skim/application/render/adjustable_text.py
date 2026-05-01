@@ -1,0 +1,305 @@
+# Copyright (c) 2024 Thiago Alves
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+"""Auto-sizing / truncating text composable.
+
+Pulls together the font-measurement, shrink-to-fit and ellipsis-
+truncate logic that used to live inline in :mod:`header`,
+:mod:`footer` and :mod:`tap_dance`. The behaviour matrix:
+
+* ``min_font_size`` (defaulted to ``style.size``) sets how far the
+  font can shrink. When the default applies there's no headroom to
+  shrink, so the composable goes straight to truncation.
+* ``max_height`` shrinks the font to fit when the natural rendered
+  glyph bbox would be taller than the budget.
+* ``max_width`` shrinks the font to fit when the natural rendered
+  width exceeds the budget. If shrinking bottoms out at
+  ``min_font_size`` and the rendered text still doesn't fit, the
+  text is trimmed with an ``…`` ellipsis (PIL-accurate).
+
+Truncation only ever applies when ``max_width`` is set — height is
+purely a function of the font size, so an over-tall text never has
+an ``…`` answer. Inputs containing Nerd Font tokens
+(``"foo %%nf-md-keyboard;"``) measure correctly via
+:meth:`Label.measure_rendered_width` but may produce malformed
+output if truncation cuts mid-token; pass plain text when
+truncation is expected.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import drawsvg as draw
+
+from .composable import Composable
+from .primitives import MetricsComponent, Point, Size
+from .render_context import TextStyle
+from .text import Font, Label
+
+# Single-character ellipsis used when truncating. PIL's ``getlength``
+# is character-sensitive, so the measurement helper and the trim
+# loop must agree on the same glyph.
+_ELLIPSIS = "…"
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AdjustableTextMetrics:
+    """Outcome of an :func:`AdjustableText` resolution.
+
+    Exposed so callers that need to size or align a sibling element
+    based on the resolved text (e.g. the header sizing the logo to
+    the title's resolved height, or a tap-dance row using the
+    resolved font size for cell label positioning) can read the
+    final values directly off the component.
+    """
+
+    font_size: float
+    """Resolved font size after the shrink pass.
+
+    Equals ``style.size`` when no shrinking was needed; otherwise
+    bounded below by ``min_font_size``.
+    """
+
+    rendered_text: str
+    """The text actually painted.
+
+    Equal to the input ``text`` unless ``max_width`` forced a trim,
+    in which case it ends with ``…``.
+    """
+
+    truncated: bool
+    """True when the painted text has been ellipsized."""
+
+
+# ---------------------------------------------------------------------------
+# Measurement helpers (PIL-accurate, Nerd-Font-aware via ``Label``)
+# ---------------------------------------------------------------------------
+
+
+def _measure_width(text: str, font: Font, color: str, font_size: float) -> float:
+    """Rendered width of ``text`` at ``font_size``.
+
+    Routes through :meth:`Label.measure_rendered_width` so Nerd Font
+    glyph widths are accounted for and the measurement matches what
+    the SVG renderer paints.
+    """
+    if not text:
+        return 0.0
+    return Label(text, font, text_color=color).measure_rendered_width(font_size)
+
+
+def _measure_height(text: str, font: Font, font_size: float) -> float:
+    """Glyph-bbox height of ``text`` at ``font_size``.
+
+    Mirrors the existing helpers in :mod:`header` and :mod:`footer` —
+    PIL's ``getbbox`` reports the tight bounding box that the SVG
+    renderer paints, regardless of font ascent/descent slack.
+    """
+    if not text:
+        return 0.0
+    pil_font = font.load(font_size)
+    _, top, _, bottom = pil_font.getbbox(text)
+    return float(bottom - top)
+
+
+def _truncate_to_fit(
+    text: str, font: Font, color: str, font_size: float, max_width: float
+) -> tuple[str, bool]:
+    """Trim ``text`` so its rendered width fits inside ``max_width``.
+
+    Returns ``(trimmed_text, was_truncated)``. When the natural
+    rendered width already fits, ``text`` is returned unchanged with
+    ``was_truncated=False``. Otherwise the longest prefix that —
+    once an ellipsis is appended — still fits within ``max_width``
+    is selected via binary search. When ``max_width`` is so tight
+    that not even the ellipsis fits, the ellipsis is returned alone.
+    """
+    if max_width <= 0 or not text:
+        return "", False
+    natural = _measure_width(text, font, color, font_size)
+    if natural <= max_width:
+        return text, False
+    ellipsis_w = _measure_width(_ELLIPSIS, font, color, font_size)
+    if ellipsis_w >= max_width:
+        return _ELLIPSIS, True
+    target = max_width - ellipsis_w
+    lo, hi = 0, len(text)
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if _measure_width(text[:mid], font, color, font_size) <= target:
+            lo = mid
+        else:
+            hi = mid - 1
+    return text[:lo].rstrip() + _ELLIPSIS, True
+
+
+def _resolve_font_size(
+    *,
+    text: str,
+    font: Font,
+    color: str,
+    style_size: float,
+    max_width: float | None,
+    max_height: float | None,
+    min_font_size: float,
+) -> float:
+    """Largest font size in ``[min_font_size, style_size]`` that fits.
+
+    "Fits" means the rendered text's natural width is at most
+    ``max_width`` (when set) and its rendered height is at most
+    ``max_height`` (when set). When both budgets are met at the
+    style's natural size, returns ``style_size``. When neither is
+    set, returns ``style_size`` directly.
+    """
+    if not text:
+        return min_font_size
+    target = style_size
+    if max_height is not None:
+        natural_h = _measure_height(text, font, style_size)
+        if natural_h > max_height and natural_h > 0:
+            target = min(target, style_size * (max_height / natural_h))
+    if max_width is not None:
+        natural_w = _measure_width(text, font, color, style_size)
+        if natural_w > max_width and natural_w > 0:
+            target = min(target, style_size * (max_width / natural_w))
+    return max(target, min_font_size)
+
+
+# ---------------------------------------------------------------------------
+# Composable
+# ---------------------------------------------------------------------------
+
+
+@Composable(use_context=True)
+def AdjustableText(
+    ctx,
+    *,
+    text: str,
+    style: TextStyle,
+    max_width: float | None = None,
+    max_height: float | None = None,
+    min_font_size: float | None = None,
+    text_anchor: str = "start",
+    dominant_baseline: str = "text-before-edge",
+    opacity: float = 1.0,
+):
+    """Render ``text`` as big as it fits inside the given budget.
+
+    The resolution runs in two passes:
+
+    1. **Shrink pass.** Pick the largest font size in
+       ``[min_font_size, style.size]`` such that the rendered text
+       fits within ``max_width`` (when supplied) and ``max_height``
+       (when supplied). When ``min_font_size`` is omitted (or
+       coincides with ``style.size``) there's no headroom to
+       shrink — the composable goes straight to the truncate pass.
+    2. **Truncate pass.** If ``max_width`` is set and the rendered
+       text at the resolved font size still exceeds it, trim with
+       an ``…`` ellipsis via PIL-accurate measurement.
+
+    The reported size is the natural rendered extent of the painted
+    text (after shrink/truncate) — slot-fill and right-alignment
+    are layout concerns the parent composes via :func:`Row` /
+    :func:`Spacer`.
+
+    ``min_font_size`` is silently clamped to ``style.size`` so a
+    caller passing a higher floor doesn't accidentally enlarge the
+    text. Empty text yields a zero-sized no-op so hosts don't need
+    to special-case "no string here".
+    """
+    if not text:
+        size = Size(0.0, 0.0)
+
+        def _noop(d, origin):
+            del d, origin
+
+        return MetricsComponent(
+            size=size,
+            draw_fn=_noop,
+            metrics=AdjustableTextMetrics(
+                font_size=0.0, rendered_text="", truncated=False
+            ),
+        )
+
+    # Clamp the floor to the ceiling so a misuse doesn't enlarge the
+    # text past the requested style.
+    floor = min(min_font_size if min_font_size is not None else style.size, style.size)
+
+    font_size = _resolve_font_size(
+        text=text,
+        font=style.font,
+        color=style.color,
+        style_size=style.size,
+        max_width=max_width,
+        max_height=max_height,
+        min_font_size=floor,
+    )
+
+    if max_width is not None:
+        rendered_text, truncated = _truncate_to_fit(
+            text, style.font, style.color, font_size, max_width
+        )
+    else:
+        rendered_text, truncated = text, False
+
+    rendered_w = _measure_width(rendered_text, style.font, style.color, font_size)
+    rendered_h = _measure_height(rendered_text, style.font, font_size)
+    size = Size(rendered_w, rendered_h)
+
+    use_system_fonts = ctx.config.output.style.use_system_fonts
+    family = (
+        style.font.get_system_font_family() if use_system_fonts else style.font.value
+    )
+
+    # Y-offset within the bbox depends on which baseline the SVG
+    # renderer anchors to. The default ``text-before-edge`` paints
+    # the bbox top at ``y``; ``text-after-edge`` paints the bbox
+    # bottom at ``y``; ``central``/``middle`` paints the visual
+    # centre at ``y``. Map each to a y_offset so the painted glyphs
+    # land inside the reported bbox regardless of which baseline
+    # the parent picks.
+    if dominant_baseline in ("text-after-edge", "alphabetic", "ideographic"):
+        y_offset = rendered_h
+    elif dominant_baseline in ("central", "middle"):
+        y_offset = rendered_h / 2.0
+    else:  # "text-before-edge", "hanging", default
+        y_offset = 0.0
+
+    # X-offset within the bbox depends on text_anchor. ``start`` puts
+    # the bbox left at ``x``; ``end`` puts the bbox right at ``x``;
+    # ``middle`` puts the bbox centre at ``x``.
+    if text_anchor == "end":
+        x_offset = rendered_w
+    elif text_anchor == "middle":
+        x_offset = rendered_w / 2.0
+    else:
+        x_offset = 0.0
+
+    def draw_at(d, origin: Point) -> None:
+        d.append(
+            draw.Text(
+                rendered_text,
+                font_size=font_size,
+                x=origin.x + x_offset,
+                y=origin.y + y_offset,
+                text_anchor=text_anchor,
+                dominant_baseline=dominant_baseline,
+                font_family=family,
+                fill=style.color,
+                opacity=opacity,
+            )
+        )
+
+    return MetricsComponent(
+        size=size,
+        draw_fn=draw_at,
+        metrics=AdjustableTextMetrics(
+            font_size=font_size, rendered_text=rendered_text, truncated=truncated
+        ),
+    )
+
+
+__all__ = ["AdjustableText", "AdjustableTextMetrics"]
