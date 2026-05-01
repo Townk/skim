@@ -146,7 +146,7 @@ def KeymapMacroDocument(
     content_offset = metrics.margin + metrics.border_width + metrics.inset
     initial_content_w = metrics.doc_width - 2 * content_offset
 
-    natural_widths = macro_natural_widths(macros, metrics.doc_width * scale)
+    natural_widths = macro_natural_widths(macros, scale=scale)
     longest_natural = max(natural_widths) if natural_widths else 0.0
     no_wrapping = longest_natural <= initial_content_w
     content_w = longest_natural if (no_wrapping and longest_natural > 0) else initial_content_w
