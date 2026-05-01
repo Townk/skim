@@ -21,7 +21,7 @@ from dataclasses import dataclass
 
 import drawsvg as draw
 
-from .composable import Composable, Point, Size
+from .composable import Composable, DrawFn, Point, Size
 from .text import Font
 
 # Floor on the footer font size when shrinking under ``max_height`` so
@@ -96,38 +96,26 @@ def _resolve_font_size(
 # ---------------------------------------------------------------------------
 
 
-@Composable
-def Footer(
-    *,
+def _footer_size_and_draw(
     text: str,
+    *,
     font_max_size: float,
-    color: str = "black",
-    max_height: float | None = None,
-    use_system_fonts: bool = False,
-):
-    """A right-aligned line of footer text (typically a copyright notice).
+    color: str,
+    family: str,
+    max_height: float | None,
+) -> tuple[Size, DrawFn]:
+    """Pure helper that builds the size + draw closure for a footer line.
 
-    The element's size matches the rendered glyph bbox of ``text`` at
-    the resolved font size — origin passed to :meth:`draw_at` is the
-    top-left of that bbox. Returns a zero-sized, no-op element when
-    ``text`` is empty so hosts don't need to special-case "no
-    copyright".
-
-    ``max_height`` caps the rendered text height; when supplied and
-    the natural text would be taller, the font size shrinks
-    proportionally so the bbox matches the cap.
+    Shared between the :func:`Footer` composable (ctx-aware) and the
+    legacy :func:`append_footer` imperative wrapper so both produce
+    pixel-identical output. Empty ``text`` yields a zero-sized no-op
+    element so hosts don't need to special-case "no copyright".
     """
     if not text:
-        size = Size(0.0, 0.0)
-
-        def draw_at(d, origin):
-            del d, origin
-
-        return size, draw_at
+        return Size(0.0, 0.0), lambda _d, _o: None
 
     font_size = _resolve_font_size(text, font_max_size, max_height)
     size = _measure_text_size(text, font_size)
-    family = Font.FINGER_KEY.get_system_font_family() if use_system_fonts else Font.FINGER_KEY.value
 
     def draw_at(d, origin):
         # Origin is the top-left of the bbox; ``end`` + ``after-edge``
@@ -150,6 +138,41 @@ def Footer(
     return size, draw_at
 
 
+@Composable(use_context=True)
+def Footer(
+    ctx,
+    *,
+    text: str,
+    max_height: float | None = None,
+):
+    """A right-aligned line of footer text (typically a copyright notice).
+
+    Reads typography (font, size, color) from ``ctx.theme.copyright``
+    and the ``use_system_fonts`` flag from ``ctx.config.output.style``
+    so call sites don't have to spell those out.
+
+    The element's size matches the rendered glyph bbox of ``text`` at
+    the resolved font size — origin passed to :meth:`draw_at` is the
+    top-left of that bbox. Returns a zero-sized, no-op element when
+    ``text`` is empty so hosts don't need to special-case "no
+    copyright".
+
+    ``max_height`` caps the rendered text height; when supplied and
+    the natural text would be taller, the font size shrinks
+    proportionally so the bbox matches the cap.
+    """
+    typo = ctx.theme.copyright
+    use_system_fonts = ctx.config.output.style.use_system_fonts
+    family = typo.font.get_system_font_family() if use_system_fonts else typo.font.value
+    return _footer_size_and_draw(
+        text,
+        font_max_size=typo.size,
+        color=typo.color,
+        family=family,
+        max_height=max_height,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Backward-compatible imperative helpers
 # ---------------------------------------------------------------------------
@@ -160,10 +183,22 @@ def footer_layout_height(
     font_max_size: float,
     max_height: float | None = None,
 ) -> float:
-    """Predicted footer height for use in canvas-height calculations."""
+    """Predicted footer height for use in canvas-height calculations.
+
+    Independent of any active :class:`RenderContext` so the legacy
+    per-layer / overview imperative paths can call it before they're
+    migrated to a context-aware pipeline.
+    """
     if not text:
         return 0.0
-    return Footer(text=text, font_max_size=font_max_size, max_height=max_height).size.height
+    size, _ = _footer_size_and_draw(
+        text,
+        font_max_size=font_max_size,
+        color="#000",
+        family=Font.FINGER_KEY.value,
+        max_height=max_height,
+    )
+    return size.height
 
 
 def append_footer(
@@ -179,30 +214,32 @@ def append_footer(
     use_system_fonts: bool,
     max_height: float | None = None,
 ) -> FooterRenderResult:
-    """Imperative wrapper around the :func:`Footer` composable.
+    """Imperative wrapper around :func:`_footer_size_and_draw`.
 
-    Builds the footer element, anchors its bottom-right corner at
-    ``(canvas_w - padding, canvas_h - bottom_inset)``, and returns the
-    rendered extents.
+    Built directly from the pure helper (not the :func:`Footer`
+    composable) so call sites that haven't yet been migrated to a
+    :class:`RenderContext`-aware pipeline can keep working without
+    setting up a context first.
     """
     if not text:
         return FooterRenderResult(height=0.0, font_size=0.0)
 
-    footer = Footer(
-        text=text,
+    family = Font.FINGER_KEY.get_system_font_family() if use_system_fonts else Font.FINGER_KEY.value
+    size, draw_at = _footer_size_and_draw(
+        text,
         font_max_size=font_max_size,
         color=text_color,
+        family=family,
         max_height=max_height,
-        use_system_fonts=use_system_fonts,
     )
     origin = Point(
-        canvas_w - padding - footer.size.width,
-        canvas_h - bottom_inset - footer.size.height,
+        canvas_w - padding - size.width,
+        canvas_h - bottom_inset - size.height,
     )
-    footer.draw_at(d, origin)
+    draw_at(d, origin)
 
     final_font_size = _resolve_font_size(text, font_max_size, max_height)
-    return FooterRenderResult(height=footer.size.height, font_size=final_font_size)
+    return FooterRenderResult(height=size.height, font_size=final_font_size)
 
 
 __all__ = [

@@ -66,6 +66,7 @@ from .legend import (
 from .legend_components import SectionStripe, TapDanceTable
 from .overview import HeaderDims, compute_header_dims
 from .overview_layout import _outer_padding
+from .render_context import RenderContext, using_render_context
 from .styling import derive_accent_line
 from .text import Font
 
@@ -292,10 +293,7 @@ def _render_image(
     if footer_text:
         footer = Footer(
             text=footer_text,
-            font_max_size=setup.header_dims.copyright_font_size,
-            color=palette.text_color,
             max_height=_footer_max_height(setup, section_title=footer_section_title),
-            use_system_fonts=setup.use_system_fonts,
         )
         children.extend(
             [
@@ -445,46 +443,47 @@ def draw_macros_image(
 ) -> draw.Drawing:
     """Render the standalone macros image."""
     setup = _build_setup(config, keymap)
-    macros = all_macros(keymap.macros)
-    palette = setup.palette
-    geom = setup.geom
-    macro_line = derive_accent_line(palette.macro_color)
+    with using_render_context(RenderContext.build(config, keymap, scale=_SCALE)):
+        macros = all_macros(keymap.macros)
+        palette = setup.palette
+        geom = setup.geom
+        macro_line = derive_accent_line(palette.macro_color)
 
-    initial_content_w = setup.initial_canvas_w - 2 * setup.padding
+        initial_content_w = setup.initial_canvas_w - 2 * setup.padding
 
-    # Lay out using the *initial* content width so wrap detection matches
-    # what the user-requested canvas would normally produce. If the longest
-    # natural row fits within ``initial_content_w`` no row wraps and we can
-    # shrink the canvas; otherwise we keep the canvas at ``--width`` and let
-    # the existing pill-wrap logic handle the overflow.
-    natural_widths = _macro_natural_widths(macros, geom)
-    longest_natural = max(natural_widths) if natural_widths else 0.0
-    no_wrapping = longest_natural <= initial_content_w
-    content_w = longest_natural if (no_wrapping and longest_natural > 0) else initial_content_w
+        # Lay out using the *initial* content width so wrap detection matches
+        # what the user-requested canvas would normally produce. If the longest
+        # natural row fits within ``initial_content_w`` no row wraps and we can
+        # shrink the canvas; otherwise we keep the canvas at ``--width`` and let
+        # the existing pill-wrap logic handle the overflow.
+        natural_widths = _macro_natural_widths(macros, geom)
+        longest_natural = max(natural_widths) if natural_widths else 0.0
+        no_wrapping = longest_natural <= initial_content_w
+        content_w = longest_natural if (no_wrapping and longest_natural > 0) else initial_content_w
 
-    body: Component = (
-        _MacrosBody(
-            macros=macros,
-            accent_fill=palette.macro_color,
-            accent_line=macro_line,
-            text_color=palette.text_color,
-            geom=geom,
-            use_system_fonts=setup.use_system_fonts,
-            content_width=content_w,
-            doc_width=setup.initial_canvas_w,
+        body: Component = (
+            _MacrosBody(
+                macros=macros,
+                accent_fill=palette.macro_color,
+                accent_line=macro_line,
+                text_color=palette.text_color,
+                geom=geom,
+                use_system_fonts=setup.use_system_fonts,
+                content_width=content_w,
+                doc_width=setup.initial_canvas_w,
+            )
+            if macros
+            else Spacer()
         )
-        if macros
-        else Spacer()
-    )
 
-    return _render_section_image(
-        setup,
-        body=body,
-        section_title="MACROS",
-        section_color=macro_line,
-        section_count=len(macros),
-        content_w=content_w,
-    )
+        return _render_section_image(
+            setup,
+            body=body,
+            section_title="MACROS",
+            section_color=macro_line,
+            section_count=len(macros),
+            content_w=content_w,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -505,36 +504,37 @@ def draw_tap_dances_image(
     can't fit.
     """
     setup = _build_setup(config, keymap)
-    tap_dances = all_tap_dances(keymap.tap_dances)
-    palette = setup.palette
-    geom = setup.geom
-    td_line = derive_accent_line(palette.tap_dance_color)
+    with using_render_context(RenderContext.build(config, keymap, scale=_SCALE)):
+        tap_dances = all_tap_dances(keymap.tap_dances)
+        palette = setup.palette
+        geom = setup.geom
+        td_line = derive_accent_line(palette.tap_dance_color)
 
-    initial_content_w = setup.initial_canvas_w - 2 * setup.padding
+        initial_content_w = setup.initial_canvas_w - 2 * setup.padding
 
-    # Build the table component first so we can shrink the canvas to
-    # match it. ``max_width`` caps the table at the canvas budget;
-    # when names would overflow the cap they're auto-truncated.
-    table = TapDanceTable(
-        tap_dances=tap_dances,
-        accent_fill=palette.tap_dance_color,
-        accent_line=td_line,
-        text_color=palette.text_color,
-        geom=geom,
-        use_system_fonts=setup.use_system_fonts,
-        max_width=initial_content_w,
-    )
-    content_w = min(initial_content_w, table.size.width) if tap_dances else initial_content_w
-    body: Component = table if tap_dances else Spacer()
+        # Build the table component first so we can shrink the canvas to
+        # match it. ``max_width`` caps the table at the canvas budget;
+        # when names would overflow the cap they're auto-truncated.
+        table = TapDanceTable(
+            tap_dances=tap_dances,
+            accent_fill=palette.tap_dance_color,
+            accent_line=td_line,
+            text_color=palette.text_color,
+            geom=geom,
+            use_system_fonts=setup.use_system_fonts,
+            max_width=initial_content_w,
+        )
+        content_w = min(initial_content_w, table.size.width) if tap_dances else initial_content_w
+        body: Component = table if tap_dances else Spacer()
 
-    return _render_section_image(
-        setup,
-        body=body,
-        section_title="TAP-DANCE",
-        section_color=td_line,
-        section_count=len(tap_dances),
-        content_w=content_w,
-    )
+        return _render_section_image(
+            setup,
+            body=body,
+            section_title="TAP-DANCE",
+            section_color=td_line,
+            section_count=len(tap_dances),
+            content_w=content_w,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -552,74 +552,75 @@ def draw_special_keys_image(
     Falls back to a single column when only one section has content.
     """
     setup = _build_setup(config, keymap)
-    macros = all_macros(keymap.macros)
-    tap_dances = all_tap_dances(keymap.tap_dances)
-    palette = setup.palette
-    geom = setup.geom
-    macro_line = derive_accent_line(palette.macro_color)
-    td_line = derive_accent_line(palette.tap_dance_color)
+    with using_render_context(RenderContext.build(config, keymap, scale=_SCALE)):
+        macros = all_macros(keymap.macros)
+        tap_dances = all_tap_dances(keymap.tap_dances)
+        palette = setup.palette
+        geom = setup.geom
+        macro_line = derive_accent_line(palette.macro_color)
+        td_line = derive_accent_line(palette.tap_dance_color)
 
-    target_content_w = setup.initial_canvas_w - 2 * setup.padding
-    col_gap = geom.column_gap
-    col_w = (target_content_w - col_gap) / 2 if macros and tap_dances else target_content_w
+        target_content_w = setup.initial_canvas_w - 2 * setup.padding
+        col_gap = geom.column_gap
+        col_w = (target_content_w - col_gap) / 2 if macros and tap_dances else target_content_w
 
-    sections: list[Component] = []
-    if macros:
-        sections.append(
-            _section_block(
-                setup=setup,
-                title="MACROS",
-                color=macro_line,
-                count=len(macros),
-                width=col_w,
-                body=_MacrosBody(
-                    macros=macros,
-                    accent_fill=palette.macro_color,
-                    accent_line=macro_line,
-                    text_color=palette.text_color,
-                    geom=geom,
-                    use_system_fonts=setup.use_system_fonts,
-                    content_width=col_w,
-                    doc_width=setup.initial_canvas_w,
-                ),
+        sections: list[Component] = []
+        if macros:
+            sections.append(
+                _section_block(
+                    setup=setup,
+                    title="MACROS",
+                    color=macro_line,
+                    count=len(macros),
+                    width=col_w,
+                    body=_MacrosBody(
+                        macros=macros,
+                        accent_fill=palette.macro_color,
+                        accent_line=macro_line,
+                        text_color=palette.text_color,
+                        geom=geom,
+                        use_system_fonts=setup.use_system_fonts,
+                        content_width=col_w,
+                        doc_width=setup.initial_canvas_w,
+                    ),
+                )
             )
-        )
-    if tap_dances:
-        # Pin the legacy ``_td_name_column_width`` so the combined image
-        # keeps its overview-style fixed name column instead of the
-        # dynamic sizing the standalone tap-dances image uses.
-        td_table = TapDanceTable(
-            tap_dances=tap_dances,
-            accent_fill=palette.tap_dance_color,
-            accent_line=td_line,
-            text_color=palette.text_color,
-            geom=geom,
-            use_system_fonts=setup.use_system_fonts,
-            name_column_width=_td_name_column_width(geom, tap_dances),
-        )
-        sections.append(
-            _section_block(
-                setup=setup,
-                title="TAP-DANCE",
-                color=td_line,
-                count=len(tap_dances),
-                width=col_w,
-                body=td_table,
+        if tap_dances:
+            # Pin the legacy ``_td_name_column_width`` so the combined image
+            # keeps its overview-style fixed name column instead of the
+            # dynamic sizing the standalone tap-dances image uses.
+            td_table = TapDanceTable(
+                tap_dances=tap_dances,
+                accent_fill=palette.tap_dance_color,
+                accent_line=td_line,
+                text_color=palette.text_color,
+                geom=geom,
+                use_system_fonts=setup.use_system_fonts,
+                name_column_width=_td_name_column_width(geom, tap_dances),
             )
+            sections.append(
+                _section_block(
+                    setup=setup,
+                    title="TAP-DANCE",
+                    color=td_line,
+                    count=len(tap_dances),
+                    width=col_w,
+                    body=td_table,
+                )
+            )
+
+        if not sections:
+            body: Component = Spacer()
+        elif len(sections) == 1:
+            body = sections[0]
+        else:
+            body = Row([sections[0], Spacer(width=col_gap), sections[1]], align="top")
+
+        return _render_image(
+            setup,
+            body=body,
+            content_w=target_content_w,
+            # Combined image has no single dominant section title, so the
+            # footer keeps its natural size (matches the per-layer/overview).
+            footer_section_title=None,
         )
-
-    if not sections:
-        body: Component = Spacer()
-    elif len(sections) == 1:
-        body = sections[0]
-    else:
-        body = Row([sections[0], Spacer(width=col_gap), sections[1]], align="top")
-
-    return _render_image(
-        setup,
-        body=body,
-        content_w=target_content_w,
-        # Combined image has no single dominant section title, so the
-        # footer keeps its natural size (matches the per-layer/overview).
-        footer_section_title=None,
-    )

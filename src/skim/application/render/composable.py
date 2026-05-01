@@ -81,7 +81,7 @@ parents that only need ``size`` / ``draw_at`` rely on the
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Concatenate, Generic, ParamSpec, Protocol, TypeVar, overload
+from typing import Any, Concatenate, Generic, Literal, ParamSpec, Protocol, TypeVar, overload
 
 import drawsvg as draw
 
@@ -234,95 +234,96 @@ _C = TypeVar("_C", bound=BaseComponent)
 _BuilderResult = tuple[Size, DrawFn]
 
 
-@overload
-def Composable(builder: Callable[_P, _C]) -> Callable[_P, _C]: ...
+# Inner-decorator Protocols used in the typing of ``Composable(...)`` when
+# called WITH parens. They overload ``__call__`` so pyright picks the right
+# return type based on whether the decorated function returns a typed
+# component subclass or a ``(size, draw_fn)`` tuple.
+class _NoCtxDecorator(Protocol):
+    @overload
+    def __call__(self, builder: Callable[_P, _C], /) -> Callable[_P, _C]: ...
+    @overload
+    def __call__(self, builder: Callable[_P, _BuilderResult], /) -> Callable[_P, BaseComponent]: ...
+
+
+class _CtxDecorator(Protocol):
+    @overload
+    def __call__(
+        self, builder: Callable[Concatenate[RenderContext, _P], _C], /
+    ) -> Callable[_P, _C]: ...
+    @overload
+    def __call__(
+        self, builder: Callable[Concatenate[RenderContext, _P], _BuilderResult], /
+    ) -> Callable[_P, BaseComponent]: ...
 
 
 @overload
-def Composable(builder: Callable[_P, _BuilderResult]) -> Callable[_P, BaseComponent]: ...
+def Composable(builder: Callable[_P, _C], /) -> Callable[_P, _C]: ...
 
 
-def Composable(
-    builder: Callable[_P, BaseComponent | _BuilderResult],
-) -> Callable[_P, BaseComponent]:
+@overload
+def Composable(builder: Callable[_P, _BuilderResult], /) -> Callable[_P, BaseComponent]: ...
+
+
+@overload
+def Composable(*, use_context: Literal[False] = ...) -> _NoCtxDecorator: ...
+
+
+@overload
+def Composable(*, use_context: Literal[True]) -> _CtxDecorator: ...
+
+
+def Composable(builder: Any = None, *, use_context: bool = False) -> Any:
     """Mark a function as a composable.
 
-    The decorated function may return either:
+    Two call shapes:
 
-      * ``(size, draw_fn)`` — auto-wrapped into a plain
-        :class:`BaseComponent`.
-      * a :class:`BaseComponent` instance (or subclass) — passed
-        through unchanged so typed subclasses keep their extra
-        metadata.
+    * ``@Composable`` (no parens) — the function takes its own props
+      as kwargs and returns either a ``(size, draw_fn)`` tuple
+      (auto-wrapped into :class:`BaseComponent`) or a
+      :class:`BaseComponent` instance / subclass (passed through
+      unchanged so typed subclasses keep their extra metadata).
+    * ``@Composable(use_context=True)`` — the function declares
+      ``ctx: RenderContext`` as its first positional parameter
+      (equivalent of ``self`` on a method). Callers don't pass
+      ``ctx`` — the decorator pulls the active
+      :class:`RenderContext` from the :func:`using_render_context`
+      block and prepends it to every call. The :class:`Concatenate`
+      typing on the public-facing signature drops the first param so
+      pyright sees the call shape as the function MINUS the context.
 
-    Composition is just calling decorated functions and using the
-    components they produce as children of other composables.
-    """
-
-    @wraps(builder)
-    def factory(*args: _P.args, **kwargs: _P.kwargs) -> BaseComponent:
-        result = builder(*args, **kwargs)
-        if isinstance(result, BaseComponent):
-            return result
-        size, draw_fn = result
-        return BaseComponent(size=size, draw_fn=draw_fn)
-
-    return factory
-
-
-# ---------------------------------------------------------------------------
-# Context-injecting decorator (transitional name; will replace
-# :func:`Composable` after the migration completes)
-# ---------------------------------------------------------------------------
-
-
-@overload
-def CtxComposable(
-    builder: Callable[Concatenate[RenderContext, _P], _C],
-) -> Callable[_P, _C]: ...
-
-
-@overload
-def CtxComposable(
-    builder: Callable[Concatenate[RenderContext, _P], _BuilderResult],
-) -> Callable[_P, BaseComponent]: ...
-
-
-def CtxComposable(
-    builder: Callable[Concatenate[RenderContext, _P], BaseComponent | _BuilderResult],
-) -> Callable[_P, BaseComponent]:
-    """Mark a function as a context-aware composable.
-
-    The decorated function declares ``ctx: RenderContext`` as its
-    first positional parameter (the equivalent of ``self`` on a
-    method). Callers don't pass ``ctx`` explicitly — the decorator
-    pulls the active :class:`RenderContext` from the
-    :func:`using_render_context` block and prepends it to every call.
-    The :class:`Concatenate` typing on the public-facing signature
-    drops the first param so pyright sees the call shape as the
-    function MINUS the context.
-
-    The body returns the same shapes as :func:`Composable`: either a
-    ``(size, draw_fn)`` tuple (auto-wrapped into :class:`BaseComponent`)
-    or a :class:`BaseComponent` / :class:`MetricsComponent` instance
-    that's passed through unchanged.
-
-    Calling a decorated composable outside of a
+    Calling a context-aware composable outside of a
     :func:`using_render_context` block raises ``LookupError`` at the
     very first lookup — failure is loud and obvious rather than
     silently producing a degenerate render.
 
-    This decorator coexists with :func:`Composable` during the
-    migration: composables flip from the old shape to the new one as
-    they're migrated. Once every composable uses the new shape, this
-    decorator will be renamed to :func:`Composable` and the old one
-    will be removed.
+    Composition is just calling decorated functions and using the
+    components they produce as children of other composables.
     """
+    if builder is not None:
+        # @Composable used without parens — delegate as if
+        # ``use_context=False``.
+        return _make_factory(builder, inject_ctx=False)
+
+    def decorator(b):
+        return _make_factory(b, inject_ctx=use_context)
+
+    return decorator
+
+
+def _make_factory(
+    builder: Callable[..., BaseComponent | _BuilderResult],
+    *,
+    inject_ctx: bool,
+) -> Callable[..., BaseComponent]:
+    """Build the runtime factory shared by both decorator shapes."""
 
     @wraps(builder)
-    def factory(*args: _P.args, **kwargs: _P.kwargs) -> BaseComponent:
-        ctx = current_render_context()
-        result = builder(ctx, *args, **kwargs)
+    def factory(*args, **kwargs) -> BaseComponent:
+        if inject_ctx:
+            ctx = current_render_context()
+            result = builder(ctx, *args, **kwargs)
+        else:
+            result = builder(*args, **kwargs)
         if isinstance(result, BaseComponent):
             return result
         size, draw_fn = result

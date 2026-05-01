@@ -16,7 +16,6 @@ from skim.application.render.composable import (
     Column,
     Component,
     Composable,
-    CtxComposable,
     MetricsComponent,
     Padding,
     Point,
@@ -251,15 +250,21 @@ def _build_ctx() -> RenderContext:
     from skim.application.render.render_context import (
         DocumentMetrics,
         Theme,
+        Typography,
     )
+    from skim.application.render.text import Font
     from skim.data import SkimConfig, SvalboardKeymap
 
     config = SkimConfig()
     keymap = SvalboardKeymap(layers={})
+    palette = config.output.style.palette
     return RenderContext(
         config=config,
         keymap=keymap,
-        theme=Theme(palette=config.output.style.palette),
+        theme=Theme(
+            palette=palette,
+            copyright=Typography(font=Font.FINGER_KEY, size=12.0, color=palette.text_color),
+        ),
         document_metrics=DocumentMetrics(
             doc_width=1600.0,
             scale=1.0,
@@ -301,11 +306,11 @@ class TestRenderContext:
 
 
 # ---------------------------------------------------------------------------
-# @CtxComposable — context auto-injected as first positional argument
+# @Composable(use_context=True) — context auto-injected as first positional argument
 # ---------------------------------------------------------------------------
 
 
-@CtxComposable
+@Composable(use_context=True)
 def _CtxRect(ctx, *, width: float, height: float, color: str = "blue"):
     """A composable that reads doc_width from ctx.document_metrics."""
     # Touch ctx so the test can verify it was passed in.
@@ -318,7 +323,7 @@ def _CtxRect(ctx, *, width: float, height: float, color: str = "blue"):
     return size, draw_at
 
 
-class TestCtxComposable:
+class TestComposableWithContext:
     def test_injects_ctx_from_active_context(self):
         ctx = _build_ctx()
         with using_render_context(ctx):

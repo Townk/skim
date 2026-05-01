@@ -76,25 +76,37 @@ class Typography:
 class Theme:
     """Resolved colour palette + typography presets for a single render.
 
-    Phase 1 ships the bare minimum — :class:`Palette` plus a
-    placeholder for typography presets. Presets are added incrementally
-    as composables migrate; the rule is "only add a preset when at
-    least two composables would reference it" (avoids the registry
-    becoming a junk drawer).
+    Typography presets are added incrementally as composables migrate;
+    the rule is "only add a preset when at least two composables would
+    reference it" (keeps the registry from becoming a junk drawer).
     """
 
     palette: Palette
-    # Typography presets — populated as composables migrate.
-    # Example future fields:
+    copyright: Typography
+    """Footer copyright text — small, faded, right-aligned."""
+
+    # Future presets:
     #   title: Typography
     #   section_title: Typography
     #   chip_label: Typography
-    #   copyright: Typography
 
     @classmethod
-    def from_config(cls, config: SkimConfig) -> "Theme":
-        """Resolve the theme from a :class:`SkimConfig` (already scaled)."""
-        return cls(palette=config.output.style.palette)
+    def resolve(cls, config: SkimConfig, *, copyright_font_size: float) -> "Theme":
+        """Resolve the theme from a (already-scaled) config + font sizes.
+
+        ``copyright_font_size`` comes from the overview's badge math
+        (``HeaderDims.copyright_font_size``) so footers across all
+        image variants stay sized consistently with each other.
+        """
+        palette = config.output.style.palette
+        return cls(
+            palette=palette,
+            copyright=Typography(
+                font=Font.FINGER_KEY,
+                size=copyright_font_size,
+                color=palette.text_color,
+            ),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -203,11 +215,17 @@ class RenderContext:
         config copy whose ``layout.width`` is multiplied so every
         downstream metric scales uniformly.
         """
+        # Local import — :mod:`overview` imports from this module
+        # transitively at startup; importing it eagerly would create a
+        # circular import cycle.
+        from .overview import compute_header_dims
+
         scaled = _scale_config(config, scale) if scale != 1.0 else config
+        header_dims = compute_header_dims(scaled, keymap)
         return cls(
             config=scaled,
             keymap=keymap,
-            theme=Theme.from_config(scaled),
+            theme=Theme.resolve(scaled, copyright_font_size=header_dims.copyright_font_size),
             document_metrics=DocumentMetrics.from_config(scaled, scale=scale),
         )
 
