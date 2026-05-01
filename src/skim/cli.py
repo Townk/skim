@@ -239,6 +239,18 @@ def doctor() -> None:
     ),
 )
 @click.option(
+    "--symbol-columns",
+    "symbol_legend_columns",
+    type=click.IntRange(min=1),
+    default=None,
+    help=(
+        "Force the standalone symbols image to lay out at exactly N "
+        "columns; the canvas shrinks to fit the resulting natural width. "
+        "Without this flag the table picks the largest column count that "
+        "fits the canvas budget."
+    ),
+)
+@click.option(
     "--title",
     "-t",
     type=str,
@@ -299,6 +311,7 @@ def generate(
     no_special_keys: bool,
     no_symbols: bool,
     symbol_legend_flow: str | None,
+    symbol_legend_columns: int | None,
     title: str | None,
     copyright_text: str | None,
     double_south: bool,
@@ -353,6 +366,7 @@ def generate(
             show_special_keys_legend=not no_special_keys,
             show_symbol_legend=not no_symbols,
             symbol_legend_flow=symbol_legend_flow,
+            symbol_legend_columns=symbol_legend_columns,
             title=title,
             copyright_text=copyright_text,
             double_south=double_south,

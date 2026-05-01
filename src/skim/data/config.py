@@ -776,6 +776,11 @@ class Style(BaseModel):
             multi-column layout. ``COLUMN_MAJOR`` (default) fills each
             column top-to-bottom before moving to the next. ``ROW_MAJOR``
             fills each row left-to-right before dropping to the next row.
+        symbol_legend_columns: When set, force the standalone symbols
+            image to lay out at exactly this many columns and shrink the
+            canvas to fit the resulting natural width. ``None`` (default)
+            lets the table pick the largest column count that fits the
+            canvas budget — current per-layer / overview behaviour.
 
     Example:
         >>> style = Style(
@@ -799,6 +804,7 @@ class Style(BaseModel):
     show_special_keys_legend: bool = True
     show_symbol_legend: bool = True
     symbol_legend_flow: SymbolLegendFlowStr = Field(default=SymbolLegendFlow.COLUMN_MAJOR)
+    symbol_legend_columns: int | None = Field(default=None, gt=0)
 
 
 class Output(BaseModel):

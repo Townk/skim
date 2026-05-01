@@ -315,10 +315,12 @@ def KeymapSymbolDocument(
     content_offset = metrics.margin + metrics.border_width + metrics.inset
     initial_content_w = metrics.doc_width - 2 * content_offset
     typed_flow: FlowDirection = "row" if flow == "row" else "column"
+    column_count = ctx.config.output.style.symbol_legend_columns
 
     section = SymbolSection(
         entries=entries,
         max_width=initial_content_w,
+        column_count=column_count,
         flow=typed_flow,
         scale=scale,
     )

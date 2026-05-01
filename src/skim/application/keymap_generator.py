@@ -77,6 +77,7 @@ def _get_config(
     show_special_keys_legend: bool = True,
     show_symbol_legend: bool = True,
     symbol_legend_flow: str | None = None,
+    symbol_legend_columns: int | None = None,
     title_override: str | None = None,
     copyright_override: str | None = None,
     double_south_override: bool = False,
@@ -143,6 +144,8 @@ def _get_config(
     }
     if symbol_legend_flow is not None:
         style_updates["symbol_legend_flow"] = SymbolLegendFlow(symbol_legend_flow)
+    if symbol_legend_columns is not None:
+        style_updates["symbol_legend_columns"] = symbol_legend_columns
 
     new_style = config.output.style.model_copy(update=style_updates)
 
@@ -259,6 +262,7 @@ def generate_keymap(
     show_special_keys_legend: bool = True,
     show_symbol_legend: bool = True,
     symbol_legend_flow: str | None = None,
+    symbol_legend_columns: int | None = None,
     title: str | None = None,
     copyright_text: str | None = None,
     double_south: bool = False,
@@ -300,6 +304,7 @@ def generate_keymap(
         show_special_keys_legend=show_special_keys_legend,
         show_symbol_legend=show_symbol_legend,
         symbol_legend_flow=symbol_legend_flow,
+        symbol_legend_columns=symbol_legend_columns,
         title_override=title,
         copyright_override=copyright_text,
         double_south_override=double_south,

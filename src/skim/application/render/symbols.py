@@ -236,16 +236,25 @@ def SymbolTable(
     entries: list[SymbolLegendEntry],
     text_color: str,
     max_width: float,
+    column_count: int | None = None,
     flow: FlowDirection = "column",
     scale: float = 1.0,
 ):
     """Multi-column grid of :func:`SymbolEntry` instances.
 
-    Picks the largest column count that fits under ``max_width`` (using
-    a uniform per-entry width = widest glyph + ``table_header_spacing``
-    + widest description). Adjacent columns are separated by
-    ``table_col_spacing``; rows by ``table_row_spacing``. Empty
-    ``entries`` returns a zero-sized noop component.
+    When ``column_count`` is ``None`` (default), picks the largest
+    column count that fits under ``max_width`` — same shape the legacy
+    inline legend used. When a positive ``column_count`` is supplied,
+    forces that exact count and reports the resulting natural width;
+    callers that want the canvas to shrink to the table read
+    ``size.width`` after the fact (the standalone symbols image does
+    this — it's how the macros / tap-dances images already behave).
+
+    Per-entry width is uniform across the grid: widest glyph +
+    ``table_header_spacing`` + widest description. Adjacent columns
+    are separated by ``table_col_spacing``; rows by
+    ``table_row_spacing``. Empty ``entries`` returns a zero-sized
+    noop component.
 
     ``flow`` controls the index → cell mapping:
 
@@ -281,11 +290,15 @@ def SymbolTable(
     # The column-count formula treats one slot as ``entry_w + table_col_spacing``
     # and adds back the trailing ``table_col_spacing`` since the last column
     # has no right-side gap. ``max_width + table_col_spacing`` lets the
-    # formula reduce cleanly.
-    col_count = max(
-        1,
-        int((max_width + metrics.table_col_spacing) / (entry_w + metrics.table_col_spacing)),
-    )
+    # formula reduce cleanly. When the caller pinned ``column_count``, skip
+    # the budget-fit search and use that value directly (clamped to >= 1).
+    if column_count is not None:
+        col_count = max(1, column_count)
+    else:
+        col_count = max(
+            1,
+            int((max_width + metrics.table_col_spacing) / (entry_w + metrics.table_col_spacing)),
+        )
     n = len(entries)
     row_count = (n + col_count - 1) // col_count
 
@@ -330,6 +343,7 @@ def SymbolSection(
     entries: list[SymbolLegendEntry],
     max_width: float,
     width: float | None = None,
+    column_count: int | None = None,
     flow: FlowDirection = "column",
     scale: float = 1.0,
 ):
@@ -341,7 +355,10 @@ def SymbolSection(
     selection. ``width`` sets the :func:`SectionStripe`'s extent
     (where the count text lands and where the rule ends); when
     ``None`` the stripe snugs to the table's actual width, when given
-    it spans the slot.
+    it spans the slot. ``column_count``, when set, forces the table
+    to that exact column count and the stripe snugs to the resulting
+    natural width (mirrors how the macros / tap-dances images shrink
+    the canvas to their table's width).
 
     ``scale`` is forwarded to the underlying :func:`SymbolTable` so
     the entries enlarge while the section title strip stays at the
@@ -354,6 +371,7 @@ def SymbolSection(
         entries=entries,
         text_color=palette.text_color,
         max_width=max_width,
+        column_count=column_count,
         flow=flow,
         scale=scale,
     )
