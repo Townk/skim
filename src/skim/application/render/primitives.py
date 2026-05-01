@@ -446,10 +446,10 @@ class _ContainerBuilder:
     Usage::
 
         with Column(gap=10) as document:
-            Header(title=..., gap=..., max_width=...)
+            Header(title=..., min_gap=..., max_width=...)
             MacroSection(macros=..., content_width=..., scale=...)
             if has_footer:
-                Footer(text=..., width=...)
+                Footer(text=..., max_width=...)
         # ``document`` now satisfies Component — pass to KeymapDocument /
         # render / further composition.
 

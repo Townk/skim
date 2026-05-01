@@ -21,6 +21,7 @@ from skim.domain import SvalboardTargetKey
 from .composable import render
 from .keymap_document import KeymapSpecialKeysDocument
 from .legend import all_macros, all_tap_dances
+from .macros import _resolve_title
 from .render_context import RenderContext, using_render_context
 
 
@@ -28,12 +29,19 @@ def draw_special_keys_image(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
 ) -> draw.Drawing:
-    """Render the combined special-keys image (macros left, tap-dances right)."""
+    """Render the combined special-keys image (macros left, tap-dances right).
+
+    ``_resolve_title`` lives next to :func:`macros.draw_macros_image`
+    since it's an entry-point concern (config → title binding) shared
+    by every standalone-image entry point.
+    """
     with using_render_context(RenderContext.build(config, keymap)):
         return render(
             KeymapSpecialKeysDocument(
                 macros=all_macros(keymap.macros),
                 tap_dances=all_tap_dances(keymap.tap_dances),
+                title=_resolve_title(config),
+                copyright=config.output.copyright,
             )
         )
 

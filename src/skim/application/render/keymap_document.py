@@ -58,21 +58,6 @@ BODY_SCALE = 1.5
 
 
 # ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _resolve_title(config) -> str:
-    """Pick the keymap title to render in the top-left of the image."""
-    if config.output.keymap_title:
-        return config.output.keymap_title
-    if config.keyboard.layers:
-        first = config.keyboard.layers[0]
-        return f"{first.variant or first.name} Layers Layout"
-    return "Keymap Layout"
-
-
-# ---------------------------------------------------------------------------
 # Outer chrome
 # ---------------------------------------------------------------------------
 
@@ -128,7 +113,14 @@ def KeymapDocument(ctx, *, content: Component):
 
 
 @Composable(use_context=True)
-def KeymapMacroDocument(ctx, *, macros: list, scale: float = BODY_SCALE):
+def KeymapMacroDocument(
+    ctx,
+    *,
+    macros: list,
+    title: str,
+    copyright: str | None = None,
+    scale: float = BODY_SCALE,
+):
     """The full standalone macros image as a single composable.
 
     When ``macros`` is empty there's no document to render — return
@@ -139,6 +131,10 @@ def KeymapMacroDocument(ctx, *, macros: list, scale: float = BODY_SCALE):
     canvas shrinks to wrap it. Otherwise the canvas keeps its
     user-requested width and the existing pill-wrap logic handles
     the overflow.
+
+    ``title`` and ``copyright`` are passed in by the entry point —
+    the composable doesn't reach into ``ctx.config`` for either.
+    A falsy ``copyright`` (``None`` or ``""``) suppresses the footer.
     """
     if not macros:
         return Spacer()
@@ -158,20 +154,23 @@ def KeymapMacroDocument(ctx, *, macros: list, scale: float = BODY_SCALE):
     section = MacroSection(macros=macros, content_width=content_w, scale=scale)
 
     with Column(gap=metrics.inset, align="start") as content:
-        Header(
-            title=_resolve_title(ctx.config),
-            gap=2 * metrics.inset,
-            max_width=content_w,
-        )
+        Header(title=title, min_gap=2 * metrics.inset, max_width=content_w)
         content.add(section)
-        if ctx.config.output.copyright:
-            Footer(text=ctx.config.output.copyright, width=content_w)
+        if copyright:
+            Footer(text=copyright, max_width=content_w)
 
     return KeymapDocument(content=content)
 
 
 @Composable(use_context=True)
-def KeymapTapDanceDocument(ctx, *, tap_dances: list, scale: float = BODY_SCALE):
+def KeymapTapDanceDocument(
+    ctx,
+    *,
+    tap_dances: list,
+    title: str,
+    copyright: str | None = None,
+    scale: float = BODY_SCALE,
+):
     """The full standalone tap-dances image as a single composable.
 
     When ``tap_dances`` is empty there's no document to render —
@@ -182,6 +181,10 @@ def KeymapTapDanceDocument(ctx, *, tap_dances: list, scale: float = BODY_SCALE):
     either snugly wraps its content (and the canvas shrinks to
     match) or stretches to the budget and truncates the longest
     names with ``"…"`` when they can't fit.
+
+    ``title`` and ``copyright`` are passed in by the entry point —
+    the composable doesn't reach into ``ctx.config`` for either.
+    A falsy ``copyright`` (``None`` or ``""``) suppresses the footer.
     """
     if not tap_dances:
         return Spacer()
@@ -197,14 +200,10 @@ def KeymapTapDanceDocument(ctx, *, tap_dances: list, scale: float = BODY_SCALE):
     content_w = section.size.width
 
     with Column(gap=metrics.inset, align="start") as content:
-        Header(
-            title=_resolve_title(ctx.config),
-            gap=2 * metrics.inset,
-            max_width=content_w,
-        )
+        Header(title=title, min_gap=2 * metrics.inset, max_width=content_w)
         content.add(section)
-        if ctx.config.output.copyright:
-            Footer(text=ctx.config.output.copyright, width=content_w)
+        if copyright:
+            Footer(text=copyright, max_width=content_w)
 
     return KeymapDocument(content=content)
 
@@ -215,6 +214,8 @@ def KeymapSpecialKeysDocument(
     *,
     macros: list,
     tap_dances: list,
+    title: str,
+    copyright: str | None = None,
 ):
     """The combined macros + tap-dances image as a single composable.
 
@@ -227,6 +228,10 @@ def KeymapSpecialKeysDocument(
     when only one of the two has content. Bodies render at their
     natural (unscaled) size — only the standalone single-section
     images use ``BODY_SCALE``.
+
+    ``title`` and ``copyright`` are passed in by the entry point —
+    the composable doesn't reach into ``ctx.config`` for either.
+    A falsy ``copyright`` (``None`` or ``""``) suppresses the footer.
     """
     if not macros and not tap_dances:
         return Spacer()
@@ -250,11 +255,7 @@ def KeymapSpecialKeysDocument(
     td_section = TapDanceSection(tap_dances=tap_dances, width=col_w) if tap_dances else None
 
     with Column(gap=metrics.inset, align="start") as content:
-        Header(
-            title=_resolve_title(ctx.config),
-            gap=2 * metrics.inset,
-            max_width=target_content_w,
-        )
+        Header(title=title, min_gap=2 * metrics.inset, max_width=target_content_w)
         if macro_section and td_section:
             with Row(gap=col_gap, align="top") as body_row:
                 body_row.add(macro_section)
@@ -264,8 +265,8 @@ def KeymapSpecialKeysDocument(
         else:
             assert td_section is not None
             content.add(td_section)
-        if ctx.config.output.copyright:
-            Footer(text=ctx.config.output.copyright, width=target_content_w)
+        if copyright:
+            Footer(text=copyright, max_width=target_content_w)
 
     return KeymapDocument(content=content)
 

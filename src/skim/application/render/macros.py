@@ -233,6 +233,26 @@ def MacroSection(
     )
 
 
+def _resolve_title(config: SkimConfig) -> str:
+    """Pick the keymap title to render in the top-left of the image.
+
+    Lives at the entry-point layer (next to :func:`draw_macros_image`)
+    rather than inside the document composable so the binding from
+    config to the rendered title string sits at the boundary where
+    config is consumed; the document composable just receives the
+    final string. The other two image entry points
+    (:func:`tap_dance.draw_tap_dances_image`,
+    :func:`special_keys.draw_special_keys_image`) import from here so
+    every standalone-image render goes through the same resolver.
+    """
+    if config.output.keymap_title:
+        return config.output.keymap_title
+    if config.keyboard.layers:
+        first = config.keyboard.layers[0]
+        return f"{first.variant or first.name} Layers Layout"
+    return "Keymap Layout"
+
+
 def draw_macros_image(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
@@ -243,7 +263,13 @@ def draw_macros_image(
     from .keymap_document import KeymapMacroDocument
 
     with using_render_context(RenderContext.build(config, keymap)):
-        return render(KeymapMacroDocument(macros=all_macros(keymap.macros)))
+        return render(
+            KeymapMacroDocument(
+                macros=all_macros(keymap.macros),
+                title=_resolve_title(config),
+                copyright=config.output.copyright,
+            )
+        )
 
 
 __all__ = [

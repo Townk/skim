@@ -104,7 +104,7 @@ def _footer_size_and_draw(
     color: str,
     family: str,
     max_height: float | None,
-    width: float | None = None,
+    max_width: float | None = None,
 ) -> tuple[Size, DrawFn]:
     """Pure helper that builds the size + draw closure for a footer line.
 
@@ -113,19 +113,19 @@ def _footer_size_and_draw(
     pixel-identical output. Empty ``text`` yields a zero-sized no-op
     element so hosts don't need to special-case "no copyright".
 
-    When ``width`` is given the returned size's ``width`` matches it
-    (the element fills the slot) and the text is right-anchored at
-    that slot's right edge — Footer is conceptually always
+    When ``max_width`` is given the returned size's ``width`` matches
+    it (the element fills the slot) and the text is right-anchored
+    at that slot's right edge — Footer is conceptually always
     right-aligned, so it owns its alignment instead of asking a
-    parent ``Align`` wrapper to do it. When ``width`` is ``None`` the
-    size matches the text's natural bbox.
+    parent ``Align`` wrapper to do it. When ``max_width`` is
+    ``None`` the size matches the text's natural bbox.
     """
     if not text:
         return Size(0.0, 0.0), lambda _d, _o: None
 
     font_size = _resolve_font_size(text, font_max_size, max_height)
     text_size = _measure_text_size(text, font_size)
-    size = Size(width if width is not None else text_size.width, text_size.height)
+    size = Size(max_width if max_width is not None else text_size.width, text_size.height)
 
     def draw_at(d, origin):
         # Text right-anchored at the slot's right edge with
@@ -153,7 +153,7 @@ def Footer(
     ctx,
     *,
     text: str,
-    width: float | None = None,
+    max_width: float | None = None,
     max_height: float | None = None,
 ):
     """A right-aligned line of footer text (typically a copyright notice).
@@ -163,11 +163,17 @@ def Footer(
     flag from ``ctx.config.output.style`` so call sites don't have to
     spell those out.
 
-    ``width`` is the slot the footer paints into. When supplied the
-    element's size matches that width and the text right-aligns to
-    its right edge — the parent doesn't need an ``Align`` wrapper
-    since right-alignment is part of "what a footer is." When
-    ``None`` the element's size matches the rendered glyph bbox.
+    ``max_width`` is the slot the footer paints into — named to
+    match :func:`Header.max_width` so a parent passing the same
+    document-content width to both gets the same vocabulary. When
+    supplied the element's size matches that width and the text
+    right-aligns to its right edge — the parent doesn't need an
+    ``Align`` wrapper since right-alignment is part of "what a
+    footer is." When ``None`` the element's size matches the
+    rendered glyph bbox. Note: unlike :func:`Header`, the footer
+    text doesn't shrink horizontally if its natural width somehow
+    exceeded the slot — copyright strings are short enough in
+    practice that horizontal overflow doesn't come up.
 
     Returns a zero-sized, no-op element when ``text`` is empty so
     hosts don't need to special-case "no copyright".
@@ -185,7 +191,7 @@ def Footer(
         color=typo.color,
         family=family,
         max_height=max_height,
-        width=width,
+        max_width=max_width,
     )
 
 

@@ -763,13 +763,23 @@ def draw_tap_dances_image(config, keymap):
     """
     # Local imports — :mod:`keymap_document` lazy-imports from this
     # module, so importing it eagerly would create a cycle.
+    # ``_resolve_title`` lives next to :func:`draw_macros_image` since
+    # it's an entry-point concern (config → title binding) shared by
+    # every standalone-image entry point.
     from .composable import render
     from .keymap_document import KeymapTapDanceDocument
     from .legend import all_tap_dances
+    from .macros import _resolve_title
     from .render_context import RenderContext, using_render_context
 
     with using_render_context(RenderContext.build(config, keymap)):
-        return render(KeymapTapDanceDocument(tap_dances=all_tap_dances(keymap.tap_dances)))
+        return render(
+            KeymapTapDanceDocument(
+                tap_dances=all_tap_dances(keymap.tap_dances),
+                title=_resolve_title(config),
+                copyright=config.output.copyright,
+            )
+        )
 
 
 __all__ = [

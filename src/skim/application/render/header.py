@@ -94,26 +94,27 @@ def _title_rendered_size(text: str, font_size: float) -> Size:
 def _resolve_title_font_size(
     title: str,
     font_max_size: float,
-    gap: float,
+    min_gap: float,
     max_width: float | None,
 ) -> float:
     """Pick the title font size that fits inside ``max_width``.
 
-    Returns ``font_max_size`` when the natural ``title + gap + logo``
-    extent already fits (or when ``max_width`` is ``None``); otherwise
-    returns the largest size that — applied to both title and logo
-    proportionally — keeps the gap and the bounds intact.
+    Returns ``font_max_size`` when the natural ``title + min_gap +
+    logo`` extent already fits (or when ``max_width`` is ``None``);
+    otherwise returns the largest size that — applied to both title
+    and logo proportionally — keeps the gap floor and the bounds
+    intact.
     """
     if not title or max_width is None:
         return font_max_size
     natural = _title_rendered_size(title, font_max_size)
     natural_logo_w = _LOGO_ASPECT_RATIO.width_from_height(natural.height)
-    if natural.width + natural_logo_w + gap <= max_width:
+    if natural.width + natural_logo_w + min_gap <= max_width:
         return font_max_size
     denom = natural.width + natural_logo_w
     if denom <= 0:
         return font_max_size
-    scale = (max_width - gap) / denom
+    scale = (max_width - min_gap) / denom
     return max(_MIN_TITLE_FONT_SIZE, font_max_size * scale)
 
 
@@ -181,7 +182,7 @@ def _build_header(
     *,
     title: str,
     title_font_max_size: float,
-    gap: float,
+    min_gap: float,
     max_width: float | None,
     color: str,
     use_system_fonts: bool,
@@ -193,15 +194,15 @@ def _build_header(
     Shared so the ctx-aware :func:`Header` and the legacy imperative
     :func:`append_header` produce pixel-identical output.
     """
-    font_size = _resolve_title_font_size(title, title_font_max_size, gap, max_width)
+    font_size = _resolve_title_font_size(title, title_font_max_size, min_gap, max_width)
     title_el = TitleText(title, font_size=font_size, color=color, use_system_fonts=use_system_fonts)
     logo_el = Logo(height=title_el.size.height)
 
     if max_width is None:
-        return Row([title_el, logo_el], gap=gap, align="center")
+        return Row([title_el, logo_el], gap=min_gap, align="center")
 
     children_w = title_el.size.width + logo_el.size.width
-    spacer_w = max(gap, max_width - children_w)
+    spacer_w = max(min_gap, max_width - children_w)
     return Row([title_el, Spacer(width=spacer_w), logo_el], gap=0.0, align="center")
 
 
@@ -210,7 +211,7 @@ def Header(
     ctx,
     *,
     title: str,
-    gap: float,
+    min_gap: float,
     max_width: float | None = None,
 ):
     """A keymap title + Svalboard logo header.
@@ -220,22 +221,26 @@ def Header(
     ``ctx.config.output.style``.
 
     The logo's natural height matches the title's rendered glyph
-    bbox. When ``max_width`` is given:
+    bbox. ``min_gap`` is a floor on the space between title and logo
+    — the actual gap can grow when there's extra room, but never
+    drops below ``min_gap``. When ``max_width`` is given:
 
-      * if the natural ``title + gap + logo`` extent already fits, the
-        header keeps its natural size and a flexible spacer between
-        title and logo grows so the header occupies ``max_width``;
-      * otherwise both title and logo shrink by the same factor so the
-        header width equals ``max_width`` while preserving ``gap``.
+      * if the natural ``title + min_gap + logo`` extent already
+        fits, the header keeps its natural size and a flexible
+        spacer between title and logo grows so the header occupies
+        ``max_width``;
+      * otherwise both title and logo shrink by the same factor so
+        the header width equals ``max_width`` while preserving
+        ``min_gap``.
 
     When ``max_width`` is ``None`` the header is its natural extent —
-    title, fixed ``gap``, logo, no flex spacer.
+    title, ``min_gap`` between, logo (no flex spacer to grow into).
     """
     typo: TextStyle = ctx.theme.typography.title
     inner = _build_header(
         title=title,
         title_font_max_size=typo.size,
-        gap=gap,
+        min_gap=min_gap,
         max_width=max_width,
         color=typo.color,
         use_system_fonts=ctx.config.output.style.use_system_fonts,
@@ -280,13 +285,13 @@ def append_header(
     """
     if top_y is None:
         top_y = padding
-    gap = _MIN_GAP_PADDING_MULTIPLIER * padding
+    min_gap = _MIN_GAP_PADDING_MULTIPLIER * padding
     max_width = canvas_w - 2 * padding
 
     header = _build_header(
         title=title_text,
         title_font_max_size=title_font_max_size,
-        gap=gap,
+        min_gap=min_gap,
         max_width=max_width,
         color=title_color,
         use_system_fonts=use_system_fonts,
@@ -294,7 +299,7 @@ def append_header(
     header.draw_at(d, Point(padding, top_y))
 
     # Recover the per-element values for the legacy result type.
-    final_font_size = _resolve_title_font_size(title_text, title_font_max_size, gap, max_width)
+    final_font_size = _resolve_title_font_size(title_text, title_font_max_size, min_gap, max_width)
     final_title_size = _title_rendered_size(title_text, final_font_size)
     final_logo_h = final_title_size.height
     final_logo_w = _LOGO_ASPECT_RATIO.width_from_height(final_logo_h)
