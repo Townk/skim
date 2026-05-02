@@ -142,6 +142,19 @@ class CompassDirection(Enum):
         """
         return _HORIZONTAL_MIRROR[self]
 
+    @property
+    def unit_vector(self) -> tuple[float, float]:
+        """``(dx, dy)`` unit vector pointing in this compass direction.
+
+        SVG screen coords — y grows downward — so ``SOUTH`` is
+        ``(0, 1)`` and ``NORTH`` is ``(0, -1)``. The diagonal
+        directions return a normalised ``±1/√2`` on each axis so
+        the magnitude is unit-length. Useful for translating an
+        anchor point in a given direction by a known distance:
+        ``anchor.offset(dist * dx, dist * dy)``.
+        """
+        return _UNIT_VECTOR[self]
+
 
 _HORIZONTAL_MIRROR: dict[CompassDirection, CompassDirection] = {
     CompassDirection.NORTH: CompassDirection.NORTH,
@@ -152,6 +165,22 @@ _HORIZONTAL_MIRROR: dict[CompassDirection, CompassDirection] = {
     CompassDirection.SOUTH_WEST: CompassDirection.SOUTH_EAST,
     CompassDirection.WEST: CompassDirection.EAST,
     CompassDirection.NORTH_WEST: CompassDirection.NORTH_EAST,
+}
+
+# 1 / sqrt(2) — diagonal unit-vector component. Cached as a constant
+# so the lookup table below stays a plain dict literal rather than a
+# computed-at-import expression.
+_DIAG = 0.7071067811865476
+
+_UNIT_VECTOR: dict[CompassDirection, tuple[float, float]] = {
+    CompassDirection.NORTH: (0.0, -1.0),
+    CompassDirection.NORTH_EAST: (_DIAG, -_DIAG),
+    CompassDirection.EAST: (1.0, 0.0),
+    CompassDirection.SOUTH_EAST: (_DIAG, _DIAG),
+    CompassDirection.SOUTH: (0.0, 1.0),
+    CompassDirection.SOUTH_WEST: (-_DIAG, _DIAG),
+    CompassDirection.WEST: (-1.0, 0.0),
+    CompassDirection.NORTH_WEST: (-_DIAG, -_DIAG),
 }
 
 
