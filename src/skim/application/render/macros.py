@@ -613,7 +613,7 @@ def MacroSection(
     *,
     macros: list,
     content_width: float,
-    width: float | None = None,
+    wrap_content: bool = False,
     scale: float = 1.0,
 ):
     """The MACROS section — :func:`SectionStripe` + :func:`MacroTable`.
@@ -625,10 +625,13 @@ def MacroSection(
 
     ``content_width`` is the layout budget passed to :func:`MacroTable`
     for pill-wrap detection — pills wrap to extra lines when they
-    don't fit. ``width`` sets the :func:`SectionStripe`'s extent
-    (where the count text lands and where the rule ends); when
-    ``None`` (standalone-image case) the stripe snugs to the table's
-    actual width, when given (combined-image case) it spans the slot.
+    don't fit. ``wrap_content`` controls whether the
+    :func:`SectionStripe` snugs to the table's natural width
+    (``True`` — standalone-image case, the section reports a tight
+    width and the canvas wraps it) or spans the full
+    ``content_width`` slot (``False`` — combined / per-layer case,
+    the section reports ``content_width`` so the parent column gets
+    the slot width it asked for).
 
     ``scale`` is forwarded to the underlying :func:`MacroTable` so the
     chips / pills enlarge while the section title strip stays at the
@@ -647,7 +650,7 @@ def MacroSection(
         content_width=content_width,
         scale=scale,
     )
-    stripe_width = width if width is not None else table.size.width
+    stripe_width = table.size.width if wrap_content else content_width
     inner = Column(
         [
             SectionStripe(

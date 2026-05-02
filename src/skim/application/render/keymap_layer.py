@@ -225,19 +225,11 @@ def KeymapLayerDocument(
     # each when both have content; the full content width when
     # only one section is present.
     col_gap = metrics.column_gap
-    col_w = (
-        (target_content_w - col_gap) / 2
-        if macro_entries and td_entries
-        else target_content_w
-    )
+    col_w = (target_content_w - col_gap) / 2 if macro_entries and td_entries else target_content_w
     macro_section = (
-        MacroSection(macros=macro_entries, content_width=col_w, width=col_w)
-        if macro_entries
-        else None
+        MacroSection(macros=macro_entries, content_width=col_w) if macro_entries else None
     )
-    td_section = (
-        TapDanceSection(tap_dances=td_entries, width=col_w, max_width=col_w) if td_entries else None
-    )
+    td_section = TapDanceSection(tap_dances=td_entries, max_width=col_w) if td_entries else None
 
     symbol_section = None
     if config.output.style.show_symbol_legend and raw_layer_keycodes and keycode_mappings:

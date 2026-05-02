@@ -441,6 +441,22 @@ def TapDanceRow(
         dominant_baseline="central",
     )
 
+    # Pre-build the four variant cells at build time so the row's
+    # painting closure doesn't re-enter the composable factory (which
+    # reads the active render context). Cell width is independent of
+    # variant content, so build-time construction is sufficient and
+    # the row's reported :class:`Size` is fully accurate before paint.
+    variants = (td.tap, td.hold, td.double_tap, td.tap_then_hold)
+    variant_cells = [
+        TapDanceCell(
+            content=variant,
+            text_color=text_color,
+            scale=scale,
+            cell_width=cell_w,
+        )
+        for variant in variants
+    ]
+
     def draw_at(d, origin):
         x, y = origin.x, origin.y
         cy = y + height / 2  # vertical centre of the row
@@ -501,16 +517,10 @@ def TapDanceRow(
             )
             name_el.draw_at(d, name_origin)
         # Four variant cells, stacked with ``table_col_spacing``
-        # between them. Pass ``scale`` down so the cells derive the
-        # same scaled geometry the row was built against.
-        variants = (td.tap, td.hold, td.double_tap, td.tap_then_hold)
-        for i, variant in enumerate(variants):
-            cell = TapDanceCell(
-                content=variant,
-                text_color=text_color,
-                scale=scale,
-                cell_width=cell_w,
-            )
+        # between them. The cells were pre-built at build time so the
+        # row's reported size is accurate before paint and the closure
+        # doesn't have to re-enter the composable factory.
+        for i, cell in enumerate(variant_cells):
             cell.draw_at(d, Point(x + cells_start_x + i * (cell_w + col_spacing), y))
 
     return size, draw_at
@@ -758,7 +768,7 @@ def TapDanceSection(
     ctx,
     *,
     tap_dances: list[SvalboardTapDance[SvalboardTargetKey]],
-    width: float | None = None,
+    wrap_content: bool = False,
     scale: float = 1.0,
     name_column_width: float | None = None,
     max_width: float | None = None,
@@ -771,12 +781,15 @@ def TapDanceSection(
     image and the combined special-keys image render this composable
     directly.
 
-    ``width`` is the section's slot width — it sets the
-    :func:`SectionStripe`'s extent (where the count text lands and
-    where the rule ends). When ``None`` (standalone-image case) the
-    stripe snugs to the table's natural width so the rule lines up
-    with the rightmost cell. When given (combined-image case) the
-    stripe spans the slot, even if the table is narrower.
+    ``wrap_content`` controls whether the :func:`SectionStripe`
+    snugs to the table's natural width (``True`` — standalone-image
+    case, the rule lines up with the rightmost cell and the canvas
+    wraps the section) or spans ``max_width`` (``False`` —
+    combined / per-layer case, the section reports ``max_width``
+    even if the table is narrower so the parent column gets the
+    slot width it asked for). When ``wrap_content=False`` and
+    ``max_width`` is not given, the stripe falls back to the
+    table's natural width.
 
     ``scale`` is forwarded to the underlying :func:`TapDanceTable` so
     the chips / cells enlarge while the section title strip stays at
@@ -798,7 +811,7 @@ def TapDanceSection(
         name_column_width=name_column_width,
         max_width=max_width,
     )
-    stripe_width = width if width is not None else table.size.width
+    stripe_width = table.size.width if (wrap_content or max_width is None) else max_width
     inner = Column(
         [
             SectionStripe(

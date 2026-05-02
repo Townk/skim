@@ -151,7 +151,7 @@ def KeymapMacroDocument(
     no_wrapping = longest_natural <= initial_content_w
     content_w = longest_natural if (no_wrapping and longest_natural > 0) else initial_content_w
 
-    section = MacroSection(macros=macros, content_width=content_w, scale=scale)
+    section = MacroSection(macros=macros, content_width=content_w, wrap_content=True, scale=scale)
 
     with Column(gap=metrics.inset, align="start") as content:
         Header(title=title, min_gap=2 * metrics.inset, max_width=content_w)
@@ -196,7 +196,12 @@ def KeymapTapDanceDocument(
     content_offset = metrics.margin + metrics.border_width + metrics.inset
     initial_content_w = metrics.doc_width - 2 * content_offset
 
-    section = TapDanceSection(tap_dances=tap_dances, scale=scale, max_width=initial_content_w)
+    section = TapDanceSection(
+        tap_dances=tap_dances,
+        wrap_content=True,
+        scale=scale,
+        max_width=initial_content_w,
+    )
     content_w = section.size.width
 
     with Column(gap=metrics.inset, align="start") as content:
@@ -256,12 +261,8 @@ def KeymapSpecialKeysDocument(
     # Without it the table falls back to the legacy fixed name-column
     # width and either over-truncates short names or fails to fit
     # long ones.
-    macro_section = (
-        MacroSection(macros=macros, content_width=col_w, width=col_w) if macros else None
-    )
-    td_section = (
-        TapDanceSection(tap_dances=tap_dances, width=col_w, max_width=col_w) if tap_dances else None
-    )
+    macro_section = MacroSection(macros=macros, content_width=col_w) if macros else None
+    td_section = TapDanceSection(tap_dances=tap_dances, max_width=col_w) if tap_dances else None
 
     with Column(gap=metrics.inset, align="start") as content:
         Header(title=title, min_gap=2 * metrics.inset, max_width=target_content_w)
