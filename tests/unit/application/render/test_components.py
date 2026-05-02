@@ -18,9 +18,31 @@ from skim.application.render.components import (
 )
 from skim.application.render.context import ClusterRenderContext, RenderContext
 from skim.application.render.layout import Boundary, Position
+from skim.application.render.render_context import (
+    RenderContext as ComposableRenderContext,
+    using_render_context,
+)
+from skim.data import SkimConfig, SvalboardKeymap
 from skim.data.config import LayerColor, Palette, SplitSidePosition
 from skim.data.keyboard import FingerCluster, ThumbCluster
 from skim.domain.domain_types import KeyboardSide, SvalboardTargetKey
+
+
+@pytest.fixture(autouse=True)
+def _composable_render_context():
+    """Autouse — set up the composable :class:`RenderContext` so the
+    legacy :class:`FingerClusterComponent` (which now delegates to the
+    new :func:`svalboard_clusters.FingerCluster` composable inside
+    ``build()``) can read its context off the ContextVar.
+
+    Tests that call ``component.build()`` would otherwise raise
+    :class:`LookupError` because the composable's ``ctx`` is fetched
+    from a ContextVar that's only set inside :func:`using_render_context`.
+    """
+    with using_render_context(
+        ComposableRenderContext.build(SkimConfig(), SvalboardKeymap(layers={}))
+    ):
+        yield
 
 
 @pytest.fixture

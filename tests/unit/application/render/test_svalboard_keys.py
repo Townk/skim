@@ -50,6 +50,24 @@ def _draw(component, origin: Point) -> draw.Drawing:
     return d
 
 
+def _label_text_x(svg: str | None) -> float:
+    """Return the ``x`` attribute of the first ``<text>`` element in
+    a rendered SVG — the rendered label's left-hand starting position
+    after RichText's text-anchor normalisation.
+
+    Used by label-position tests that need to assert which side of a
+    key the label visually sits on without depending on the
+    ``text-anchor`` attribute (RichText emits all anchors as ``start``
+    with the x adjusted for visual equivalence).
+    """
+    import re
+
+    assert svg is not None, "expected rendered SVG"
+    match = re.search(r'<text[^>]*\sx="([\d.\-]+)"', svg)
+    assert match is not None, f"no <text> element found in: {svg[:200]}"
+    return float(match.group(1))
+
+
 # ---------------------------------------------------------------------------
 # Test helpers — small constructors that fill in defaults so tests only
 # spell the parameters under test. Default ``side`` is RIGHT (the
@@ -568,14 +586,25 @@ class TestDownKey:
             key = _down_key(side=KeyboardSide.LEFT)
         assert key.metrics.indicator_direction is CompassDirection.WEST
 
-    def test_anchor_at_outward_edge_midpoint(self, ctx: RenderContext):
+    def test_anchor_at_outward_edge_lower_band(self, ctx: RenderContext):
+        """The DownKey's indicator anchor sits on the OUTWARD edge in
+        the bottom band of the key — the upper half is occluded by
+        adjacent thumb keys at typing time, so the indicator badge
+        belongs on the visible (lower) part of the outward edge."""
         width = 60.0
         height = width * 2.6
         with using_render_context(ctx):
             right = _down_key(side=KeyboardSide.RIGHT, width=width)
             left = _down_key(side=KeyboardSide.LEFT, width=width)
-        assert right.metrics.indicator_anchor == Point(width, height / 2)
-        assert left.metrics.indicator_anchor == Point(0.0, height / 2)
+        # Right hand: outward edge is the right side, x = width.
+        assert right.metrics.indicator_anchor.x == pytest.approx(width)
+        # Left hand: outward edge is the left side, x = 0.
+        assert left.metrics.indicator_anchor.x == pytest.approx(0.0)
+        # Both: anchor sits well below the key's vertical centre — in
+        # the bottom band of the key.
+        assert right.metrics.indicator_anchor.y > height / 2.0
+        assert left.metrics.indicator_anchor.y > height / 2.0
+        assert right.metrics.indicator_anchor.y == pytest.approx(left.metrics.indicator_anchor.y)
 
     def test_drawing_is_side_invariant(self, ctx: RenderContext):
         """Symmetric trapezoid — same SVG on both sides."""
@@ -720,6 +749,25 @@ class TestPadKey:
             _draw(left, Point(0.0, 0.0)).as_svg()
         )
 
+    def test_label_anchors_inward(self, ctx: RenderContext):
+        """Pad's label sits on the side facing the cluster's centre.
+        Right-hand pad sits on the outward (right) side of the cluster
+        so its label hugs the LEFT (inward) edge; left-hand pad
+        mirrors. RichText normalises ``text-anchor`` to ``start`` and
+        offsets the x — so we assert on the rendered ``<text>`` x
+        being near the LEFT edge for right-hand and the RIGHT edge for
+        left-hand."""
+        width = 185.0
+        with using_render_context(ctx):
+            right = _pad_key(side=KeyboardSide.RIGHT, width=width)
+            left = _pad_key(side=KeyboardSide.LEFT, width=width)
+        right_x = _label_text_x(_draw(right, Point(0.0, 0.0)).as_svg())
+        left_x = _label_text_x(_draw(left, Point(0.0, 0.0)).as_svg())
+        # Right pad: label x sits in the LEFT half of the key.
+        assert right_x < width / 2.0
+        # Left pad: label x sits in the RIGHT half of the key.
+        assert left_x > width / 2.0
+
 
 # ---------------------------------------------------------------------------
 # NailKey — vertical trapezoid, narrow bottom INWARD
@@ -762,6 +810,22 @@ class TestNailKey:
         assert pad.metrics.indicator_direction is CompassDirection.EAST
         assert nail.metrics.indicator_direction is CompassDirection.WEST
 
+    def test_label_anchors_inward(self, ctx: RenderContext):
+        """Nail's label sits on the side facing the cluster's centre.
+        Right-hand nail sits on the inward (left) side of the cluster
+        — cluster centre is to its RIGHT — so the label hugs the right
+        edge of the nail key. Left-hand mirrors."""
+        width = 195.0
+        with using_render_context(ctx):
+            right = _nail_key(side=KeyboardSide.RIGHT, width=width)
+            left = _nail_key(side=KeyboardSide.LEFT, width=width)
+        right_x = _label_text_x(_draw(right, Point(0.0, 0.0)).as_svg())
+        left_x = _label_text_x(_draw(left, Point(0.0, 0.0)).as_svg())
+        # Right nail: label hugs the RIGHT edge (inward to cluster).
+        assert right_x > width / 2.0
+        # Left nail: label hugs the LEFT edge (inward to cluster).
+        assert left_x < width / 2.0
+
 
 # ---------------------------------------------------------------------------
 # KnuckleKey — same shape pattern as Nail, different proportions
@@ -796,3 +860,14 @@ class TestKnuckleKey:
             knuckle = _knuckle_key(width=187.0)
             nail = _nail_key(width=187.0)
         assert knuckle.size.height > nail.size.height
+
+    def test_label_anchors_inward(self, ctx: RenderContext):
+        """Knuckle uses the same inward-label convention as Nail."""
+        width = 187.0
+        with using_render_context(ctx):
+            right = _knuckle_key(side=KeyboardSide.RIGHT, width=width)
+            left = _knuckle_key(side=KeyboardSide.LEFT, width=width)
+        right_x = _label_text_x(_draw(right, Point(0.0, 0.0)).as_svg())
+        left_x = _label_text_x(_draw(left, Point(0.0, 0.0)).as_svg())
+        assert right_x > width / 2.0
+        assert left_x < width / 2.0

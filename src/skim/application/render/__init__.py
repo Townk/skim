@@ -30,6 +30,7 @@ from skim.domain import KeyboardSide, SvalboardMacro, SvalboardTapDance, Svalboa
 
 from .components import FingerClusterComponent, ThumbClusterComponent
 from .context import RenderContext
+from .render_context import RenderContext as ComposableRenderContext, using_render_context
 from .footer import append_footer, footer_layout_height
 from .header import append_header, header_layout_height
 from .layout import Boundary, KeymapLayout
@@ -63,6 +64,7 @@ _SYMBOL_LEGEND_GAP_RATIO = 24 / 1600
 
 def _draw_layer(
     config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
     layer: SvalboardLayout[SvalboardTargetKey],
     config_position: int,
     qmk_index: int,
@@ -323,11 +325,18 @@ def _draw_layer(
         )
     )
 
-    # Append all clusters
-    for cluster in finger_clusters:
-        d.append(cluster.build())
-    d.append(left_thumb.build())
-    d.append(right_thumb.build())
+    # Append all clusters. The legacy finger / thumb cluster
+    # components delegate to the new
+    # :func:`svalboard_clusters.FingerCluster` /
+    # :func:`svalboard_clusters.ThumbCluster` composables inside
+    # ``build()``; those composables read their render context
+    # (config + keymap → derived theme + document metrics) from a
+    # ContextVar set by :func:`using_render_context`.
+    with using_render_context(ComposableRenderContext.build(config, keymap)):
+        for cluster in finger_clusters:
+            d.append(cluster.build())
+        d.append(left_thumb.build())
+        d.append(right_thumb.build())
 
     append_header(
         d,
@@ -419,6 +428,7 @@ def draw_keymap(
             raw_layer_keycodes = [k for k in raw_layer if k is not None]
         keymap_images[f"keymap-layer-{qmk_idx}"] = _draw_layer(
             config,
+            keymap,
             layer,
             pos,
             qmk_idx,

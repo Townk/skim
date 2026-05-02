@@ -129,6 +129,15 @@ _DOWN_CORNER_RADIUS_MULTIPLIER = 0.12
 _DOWN_FONT_HEIGHT_MULTIPLIER = 0.15
 _DOWN_LABEL_WIDTH_MULTIPLIER = 0.8 - _DOWN_SLANT_MULTIPLIER / 2
 _DOWN_LABEL_BOTTOM_MARGIN_MULTIPLIER = 0.10
+# DownKey indicator anchors at the bottom-ish of the key — most of
+# the upper half is occluded by the pad / up / nail / knuckle keys
+# at typing time, so the indicator badge wants to sit on the visible
+# (lower) part of the outward edge. The 0.84 ratio matches the
+# legacy ``LayerIndicatorOverlay.for_thumb_cluster`` placement
+# (``down_target_cy = up_cy + (up_cy - pad_cy)`` evaluated at the
+# legacy thumb-cluster proportions, divided by the down key's
+# height).
+_DOWN_INDICATOR_ANCHOR_Y_RATIO = 0.84
 
 # DoubleDownKey — squat trapezoid with stroke outline; centred label.
 _DOUBLE_DOWN_SLANT_MULTIPLIER = 0.08
@@ -227,13 +236,12 @@ def CenterKey(
     # the correct overflow response.
     label_style = TextStyle(font=Font.FINGER_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style),
+        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
         text_anchor="middle",
         dominant_baseline="central",
-        separator="",
     )
 
     size = Size(width, width)
@@ -337,13 +345,12 @@ def DirectionalKey(
 
     label_style = TextStyle(font=Font.FINGER_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style),
+        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
         text_anchor="middle",
         dominant_baseline="central",
-        separator="",
     )
 
     size = Size(width, width)
@@ -443,13 +450,12 @@ def DoubleSouthKey(
 
     label_style = TextStyle(font=Font.FINGER_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style),
+        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
         text_anchor="middle",
         dominant_baseline="central",
-        separator="",
     )
 
     # Right-hand reference: indicator on the outward / east edge.
@@ -547,17 +553,16 @@ def DownKey(
 
     label_style = TextStyle(font=Font.THUMB_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style),
+        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
         text_anchor="middle",
         dominant_baseline="central",
-        separator="",
     )
 
     indicator_anchor, indicator_direction = _mirror_metrics(
-        anchor=Point(width, height / 2.0),
+        anchor=Point(width, height * _DOWN_INDICATOR_ANCHOR_Y_RATIO),
         direction=CompassDirection.EAST,
         width=width,
         side=side,
@@ -628,13 +633,12 @@ def DoubleDownKey(
 
     label_style = TextStyle(font=Font.THUMB_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style),
+        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
         text_anchor="middle",
         dominant_baseline="central",
-        separator="",
     )
 
     indicator_anchor, indicator_direction = _mirror_metrics(
@@ -752,13 +756,12 @@ def UpKey(
 
     label_style = TextStyle(font=Font.THUMB_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style),
+        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
         text_anchor=label_text_anchor,
         dominant_baseline="central",
-        separator="",
     )
 
     indicator_anchor, indicator_direction = _mirror_metrics(
@@ -869,14 +872,22 @@ def _vertical_trapezoid_thumb_key(
     )
     align_x = Alignment.END if narrow_on_right else Alignment.START
 
-    # Label anchored on the side opposite the narrow face.
-    # ``label_x_factor`` is the fraction of width from the LEFT edge.
+    # Label anchored on the slanted edge — the side that faces the
+    # cluster's centre. With ``narrow_bottom`` trapezoids the wider
+    # face sits at the top and the slant runs from the wide top to
+    # the narrow bottom along the OPPOSITE side from the bottom-narrow
+    # corner: when the narrow bottom is right-aligned, the slant runs
+    # along the LEFT edge (from top-left out to bottom-narrow-left).
+    # The label sits on that slanted side because — for both pad
+    # (narrow-bottom-outward) and nail / knuckle (narrow-bottom-inward) —
+    # that orients the text toward the cluster's centre line, matching
+    # the legacy thumb-key conventions.
     if narrow_on_right:
-        label_text_anchor = "end"
-        label_x_factor = 1.0 - label_margin_multiplier
-    else:
         label_text_anchor = "start"
         label_x_factor = label_margin_multiplier
+    else:
+        label_text_anchor = "end"
+        label_x_factor = 1.0 - label_margin_multiplier
 
     # Indicator: outward edge on the right hand vs. left hand differs;
     # the mirror helper does the reflection. ``ref_anchor`` is the
@@ -893,13 +904,12 @@ def _vertical_trapezoid_thumb_key(
 
     label_style = TextStyle(font=Font.THUMB_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style),
+        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
         text_anchor=label_text_anchor,
         dominant_baseline="central",
-        separator="",
     )
 
     size = Size(width, height)

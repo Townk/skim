@@ -21,6 +21,7 @@ from skim.data import KeycodeMappings, SkimConfig, SvalboardKeymap, SvalboardLay
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .components import FingerClusterComponent, ThumbClusterComponent
+from .render_context import RenderContext as ComposableRenderContext, using_render_context
 from .connectors import (
     ConnectorRouting,
     OverviewLayerSource,
@@ -972,23 +973,27 @@ def draw_overview(
         )
     )
 
-    # Finger clusters
-    for row_idx, (pos, qmk_idx) in enumerate(row_to_layer):
-        layer_data = keymap.layers[qmk_idx]
-        left_clusters, right_clusters = _build_finger_clusters_for_layer(
-            config, layer_data, pos, row_idx, layout, use_system_fonts
-        )
-        for c in left_clusters:
-            d.append(c.build())
-        for c in right_clusters:
-            d.append(c.build())
+    # Finger clusters. Each ``FingerClusterComponent.build()`` delegates
+    # to the new :func:`svalboard_clusters.FingerCluster` composable,
+    # which reads its render context (config + keymap → derived theme +
+    # document metrics) from a ContextVar.
+    with using_render_context(ComposableRenderContext.build(config, keymap)):
+        for row_idx, (pos, qmk_idx) in enumerate(row_to_layer):
+            layer_data = keymap.layers[qmk_idx]
+            left_clusters, right_clusters = _build_finger_clusters_for_layer(
+                config, layer_data, pos, row_idx, layout, use_system_fonts
+            )
+            for c in left_clusters:
+                d.append(c.build())
+            for c in right_clusters:
+                d.append(c.build())
 
-    # Thumb clusters at final position
-    left_thumb, right_thumb = _build_thumb_clusters(config, keymap, layout, use_system_fonts)
-    if left_thumb:
-        d.append(left_thumb.build())
-    if right_thumb:
-        d.append(right_thumb.build())
+        # Thumb clusters at final position
+        left_thumb, right_thumb = _build_thumb_clusters(config, keymap, layout, use_system_fonts)
+        if left_thumb:
+            d.append(left_thumb.build())
+        if right_thumb:
+            d.append(right_thumb.build())
 
     # Connector lines
     if routing is not None:

@@ -32,7 +32,6 @@ from .context import (
     RenderContext,
 )
 from .geometry import AspectRatio
-from .indicators import LayerIndicatorOverlay
 from .keys import (
     CenterKey,
     DirectionalKey,
@@ -54,6 +53,11 @@ from .layout import (
     Size,
     ThumbClusterKeyProportions,
     ThumbClusterLayout,
+)
+from .primitives import Point as ComposablePoint
+from .svalboard_clusters import (
+    FingerCluster as FingerClusterComposable,
+    ThumbCluster as ThumbClusterComposable,
 )
 
 
@@ -293,27 +297,29 @@ class ThumbClusterComponent(KeyCluster[ThumbCluster[SvalboardTargetKey]]):
     def build(self) -> DrawingElement:
         """Build the SVG element for this thumb cluster.
 
-        Returns:
-            This component with all key elements appended.
+        Delegates to the new
+        :func:`svalboard_clusters.ThumbCluster` composable. The
+        cluster paints relative to ``(0, 0)`` because the legacy
+        :meth:`override_args` already applies a ``translate``
+        transform aligning the bbox to the canvas. ``self._cluster``
+        (legacy ``Key`` instances) is still built in
+        :meth:`_build_key_cluster` and exposed via :attr:`cluster`
+        because :func:`_draw_layer` reaches into ``cluster.<slot>.label``
+        for font subsetting; the legacy ``Key`` SVG groups themselves
+        are NOT appended.
         """
-        for key in self._cluster:
-            self.append(key)
-
-        if self._render_context.show_layer_indicators:
-            overlay = LayerIndicatorOverlay.for_thumb_cluster(
-                keys=self._keymap_cluster,
-                metrics=self._layout.metrics,
-                down_key_metrics=self._layout.metrics.down_key,
-                side=self._side,
-                palette=self._render_context.palette,
-                circle_diameter=self._layout.metrics.down_key.width * 0.4,
-                gap=self._layout.metrics.down_key.width * 0.18,
-                doc_width=self._render_context.doc_width,
-                qmk_index_to_position=self._render_context.qmk_index_to_position,
-            )
-            for indicator_group in overlay.build():
-                self.append(indicator_group)
-
+        composable = ThumbClusterComposable(
+            cluster=self._keymap_cluster,
+            side=self._side,
+            width=self._boundary.width,
+            layer_colors=self._render_context.layer_colors,
+            palette=self._render_context.palette,
+            use_layer_colors_on_keys=self._render_context.use_layer_colors_on_keys,
+            show_layer_indicators=self._render_context.show_layer_indicators,
+            hold_symbol_position=self._render_context.hold_symbol_position,
+            qmk_index_to_position=self._render_context.qmk_index_to_position,
+        )
+        composable.draw_at(self, ComposablePoint(0.0, 0.0))
         return self
 
     def _adjust_hold_symbol_positions(
@@ -497,28 +503,33 @@ class FingerClusterComponent(KeyCluster[FingerCluster[SvalboardTargetKey]]):
     def build(self) -> DrawingElement:
         """Build the SVG element for this finger cluster.
 
-        Returns:
-            This component with all key elements appended.
+        Delegates the actual painting to the
+        :func:`svalboard_clusters.FingerCluster` composable — the new
+        rendering path for finger clusters. The cluster is laid out
+        relative to ``(0, 0)`` because the legacy
+        :meth:`override_args` already applies a ``translate`` transform
+        on this group, putting it at the right place on the canvas.
+
+        ``self._cluster`` (legacy ``Key`` instances) is still built
+        in :meth:`_build_key_cluster` and exposed via :attr:`cluster`
+        because :func:`_draw_layer` reaches into ``cluster.<slot>.label``
+        for font subsetting. The legacy ``Key`` SVG groups themselves
+        are NOT appended — the composable's draw output is the only
+        path that contributes to the rendered SVG.
         """
-        for key in self._cluster:
-            if key:
-                self.append(key)
-
-        if self._render_context.show_layer_indicators:
-            overlay = LayerIndicatorOverlay.for_finger_cluster(
-                keys=self._keymap_cluster,
-                metrics=self._layout.metrics,
-                side=self._side,
-                palette=self._render_context.palette,
-                circle_diameter=self._layout.metrics.north_key.width * 0.55,
-                gap=self._layout.metrics.north_key.width * 0.18,
-                has_double_south=self._render_context.has_double_south,
-                doc_width=self._render_context.doc_width,
-                qmk_index_to_position=self._render_context.qmk_index_to_position,
-            )
-            for indicator_group in overlay.build():
-                self.append(indicator_group)
-
+        composable = FingerClusterComposable(
+            cluster=self._keymap_cluster,
+            side=self._side,
+            width=self._boundary.width,
+            layer_colors=self._render_context.layer_colors,
+            palette=self._render_context.palette,
+            has_double_south=self._render_context.has_double_south,
+            use_layer_colors_on_keys=self._render_context.use_layer_colors_on_keys,
+            show_layer_indicators=self._render_context.show_layer_indicators,
+            hold_symbol_position=self._render_context.hold_symbol_position,
+            qmk_index_to_position=self._render_context.qmk_index_to_position,
+        )
+        composable.draw_at(self, ComposablePoint(0.0, 0.0))
         return self
 
     def _adjust_hold_symbol_positions(
