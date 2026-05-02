@@ -21,9 +21,12 @@ from skim.application.render.primitives import CompassDirection, Point, Size
 from skim.application.render.render_context import RenderContext, using_render_context
 from skim.application.render.svalboard_keys import (
     CenterKey,
+    DirectionalKey,
+    DoubleSouthKey,
     SvalboardKeyMetrics,
 )
 from skim.data import SkimConfig, SvalboardKeymap
+from skim.domain import KeyDirection
 
 
 @pytest.fixture
@@ -166,3 +169,200 @@ class TestCenterKey:
 
         sizes = [float(m) for m in re.findall(r'font-size="([\d.]+)"', svg)]
         assert any(0 < s < 24.0 for s in sizes), f"no shrunk font sizes in {sizes!r}"
+
+
+# ---------------------------------------------------------------------------
+# DirectionalKey — N / S / E / W finger-cluster keys (rounded rect + accent bar)
+# ---------------------------------------------------------------------------
+
+
+class TestDirectionalKey:
+    """Unified composable for the four directional finger keys."""
+
+    @pytest.mark.parametrize(
+        "direction,expected_compass",
+        [
+            (KeyDirection.NORTH, CompassDirection.NORTH),
+            (KeyDirection.EAST, CompassDirection.NORTH),
+            (KeyDirection.WEST, CompassDirection.NORTH),
+            (KeyDirection.SOUTH, CompassDirection.EAST),
+        ],
+    )
+    def test_indicator_direction(
+        self,
+        ctx: RenderContext,
+        direction: KeyDirection,
+        expected_compass: CompassDirection,
+    ):
+        """N / E / W carry the indicator above; S carries it on the
+        outward (east) side in the right-hand reference orientation.
+        """
+        with using_render_context(ctx):
+            key = DirectionalKey(
+                direction=direction,
+                width=80.0,
+                label_text="A",
+                fill_color="#abcdef",
+                accent_color="#012345",
+                label_color="#ffffff",
+            )
+        assert key.metrics.indicator_direction is expected_compass
+
+    @pytest.mark.parametrize(
+        "direction,expected_anchor",
+        [
+            (KeyDirection.NORTH, Point(40.0, 0.0)),
+            (KeyDirection.EAST, Point(40.0, 0.0)),
+            (KeyDirection.WEST, Point(40.0, 0.0)),
+            (KeyDirection.SOUTH, Point(80.0, 40.0)),
+        ],
+    )
+    def test_indicator_anchor(
+        self,
+        ctx: RenderContext,
+        direction: KeyDirection,
+        expected_anchor: Point,
+    ):
+        """N / E / W anchor at the top-edge midpoint; S anchors at the
+        right-edge midpoint (right-hand reference)."""
+        with using_render_context(ctx):
+            key = DirectionalKey(
+                direction=direction,
+                width=80.0,
+                label_text="A",
+                fill_color="#abcdef",
+                accent_color="#012345",
+                label_color="#ffffff",
+            )
+        assert key.metrics.indicator_anchor == expected_anchor
+
+    def test_size_is_square(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = DirectionalKey(
+                direction=KeyDirection.NORTH,
+                width=80.0,
+                label_text="A",
+                fill_color="#abcdef",
+                accent_color="#012345",
+                label_color="#ffffff",
+            )
+        assert key.size == Size(80.0, 80.0)
+
+    @pytest.mark.parametrize(
+        "direction,expected_bar",
+        [
+            # NORTH: bar on the south edge (y = top + width - accent_size).
+            (KeyDirection.NORTH, ('y="68.0"', 'width="80.0"', 'height="12.0"')),
+            # SOUTH: bar on the north edge (y = top).
+            (KeyDirection.SOUTH, ('y="0.0"', 'width="80.0"', 'height="12.0"')),
+            # EAST: bar on the west edge (x = left).
+            (KeyDirection.EAST, ('x="0.0"', 'width="12.0"', 'height="80.0"')),
+            # WEST: bar on the east edge (x = left + width - accent_size).
+            (KeyDirection.WEST, ('x="68.0"', 'width="12.0"', 'height="80.0"')),
+        ],
+    )
+    def test_accent_bar_on_opposite_edge(
+        self,
+        ctx: RenderContext,
+        direction: KeyDirection,
+        expected_bar: tuple[str, str, str],
+    ):
+        """The accent bar sits on the edge opposite the key's direction.
+
+        Width 80 × accent multiplier 0.15 = bar thickness 12. The
+        rendered SVG should contain a rectangle filled with the
+        accent colour at the right position.
+        """
+        with using_render_context(ctx):
+            key = DirectionalKey(
+                direction=direction,
+                width=80.0,
+                label_text="A",
+                fill_color="#abcdef",
+                accent_color="#012345",
+                label_color="#ffffff",
+            )
+        d = _draw(key, Point(0.0, 0.0))
+        svg = str(d.as_svg())
+        for piece in expected_bar:
+            assert piece in svg, f"missing {piece!r} for {direction}"
+        # The accent rectangle must use the accent colour.
+        assert 'fill="#012345"' in svg
+
+
+# ---------------------------------------------------------------------------
+# DoubleSouthKey — trapezoid + accent bar on top
+# ---------------------------------------------------------------------------
+
+
+class TestDoubleSouthKey:
+    """Trapezoid below the south key with an accent bar on top."""
+
+    def test_size_is_square(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = DoubleSouthKey(
+                width=80.0,
+                label_text="A",
+                fill_color="#abcdef",
+                accent_color="#012345",
+                label_color="#ffffff",
+            )
+        assert key.size == Size(80.0, 80.0)
+
+    def test_metrics_indicator_direction_is_east(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = DoubleSouthKey(
+                width=80.0,
+                label_text="A",
+                fill_color="#abcdef",
+                accent_color="#012345",
+                label_color="#ffffff",
+            )
+        assert key.metrics.indicator_direction is CompassDirection.EAST
+
+    def test_metrics_indicator_anchor_at_right_edge_midpoint(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = DoubleSouthKey(
+                width=80.0,
+                label_text="A",
+                fill_color="#abcdef",
+                accent_color="#012345",
+                label_color="#ffffff",
+            )
+        assert key.metrics.indicator_anchor == Point(80.0, 40.0)
+
+    def test_draw_emits_trapezoid_and_accent_bar(self, ctx: RenderContext):
+        """The shape SVG should contain a path (the trapezoid) and a
+        rectangle filled with the accent colour at the top edge."""
+        with using_render_context(ctx):
+            key = DoubleSouthKey(
+                width=80.0,
+                label_text="A",
+                fill_color="#abcdef",
+                accent_color="#012345",
+                label_color="#ffffff",
+            )
+        d = _draw(key, Point(0.0, 0.0))
+        svg = str(d.as_svg())
+        # Trapezoid renders as a <path>.
+        assert "<path" in svg
+        assert 'fill="#abcdef"' in svg
+        # Accent bar — rect at the top edge with the accent colour.
+        # ``y="0.0"`` + accent height = ``width * 0.15 = 12``.
+        assert 'y="0.0"' in svg
+        assert 'height="12.0"' in svg
+        assert 'fill="#012345"' in svg
+
+    def test_draw_emits_label_text(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = DoubleSouthKey(
+                width=80.0,
+                label_text="DS",
+                fill_color="#abcdef",
+                accent_color="#012345",
+                label_color="#ffffff",
+            )
+        d = _draw(key, Point(0.0, 0.0))
+        svg = str(d.as_svg())
+        assert "DS" in svg
+        assert 'fill="#ffffff"' in svg
