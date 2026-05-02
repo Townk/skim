@@ -23,7 +23,7 @@ from dataclasses import dataclass
 
 import drawsvg as draw
 
-from skim.domain import KeyDirection
+from skim.domain import KeyboardSide, KeyDirection
 
 from .composable import Composable
 from .geometry import Trapezoid
@@ -31,6 +31,24 @@ from .primitives import CompassDirection, MetricsComponent, Point, Size
 from .render_context import TextStyle
 from .rich_text import RichText, parse_into_spans
 from .text import Font
+
+
+def _mirror_metrics(
+    *, anchor: Point, direction: CompassDirection, width: float, side: KeyboardSide
+) -> tuple[Point, CompassDirection]:
+    """Reflect ``(anchor, direction)`` across the key's vertical centre
+    when ``side == LEFT``.
+
+    The Svalboard's two halves are mirror images of each other, and the
+    layer-indicator badge sits on the cluster-outward / cluster-inward
+    edge accordingly. Each per-shape composable defines its anchor +
+    direction in the right-hand reference orientation; this helper does
+    the side-aware flip in one place so the composables don't each
+    re-spell the mapping.
+    """
+    if side is KeyboardSide.RIGHT:
+        return anchor, direction
+    return Point(width - anchor.x, anchor.y), direction.mirrored_horizontal
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -99,6 +117,7 @@ _DOUBLE_SOUTH_ACCENT_SIZE_MULTIPLIER = 0.15
 def CenterKey(
     ctx,
     *,
+    side: KeyboardSide,
     width: float,
     label_text: str,
     fill_color: str,
@@ -108,12 +127,14 @@ def CenterKey(
 
     Reports ``Size(width, width)`` (the key is square-bounded; the
     circle inscribes that bbox) and :class:`SvalboardKeyMetrics`
-    with the SW-corner indicator anchor (the cluster on a left-hand
-    keyboard mirrors the side externally — the metrics describe the
-    key's natural / right-hand orientation).
+    with the diagonal-toward-thumb indicator anchor — ``SOUTH_WEST``
+    on the right hand, ``SOUTH_EAST`` on the left.
 
     Inputs are pre-resolved by the caller:
 
+    * ``side`` — which half of the keyboard this key renders for.
+      The shape is symmetric (a circle) so the drawing doesn't
+      change; the indicator metrics flip horizontally.
     * ``width`` — the cluster has already chosen the cell size.
     * ``label_text`` — the parsed-target-key's display label
       (the cluster reads this off ``SvalboardTargetKey.label``).
@@ -130,12 +151,16 @@ def CenterKey(
     label_width_budget = width * _CENTER_LABEL_WIDTH_MULTIPLIER
     label_font_size = width * _CENTER_FONT_HEIGHT_MULTIPLIER
 
-    # The cluster on a right-hand keyboard places the indicator at
-    # the key's SW (lower-left); a left-hand cluster mirrors. Spell
-    # the natural orientation here; mirroring is the cluster's job.
+    # Right-hand reference: indicator at the key's SW (lower-left,
+    # toward the thumb). The mirror helper flips for the left hand.
     inset_x = half * _SQRT_HALF
     inset_y = half * _SQRT_HALF
-    indicator_anchor = Point(half - inset_x, half + inset_y)
+    indicator_anchor, indicator_direction = _mirror_metrics(
+        anchor=Point(half - inset_x, half + inset_y),
+        direction=CompassDirection.SOUTH_WEST,
+        width=width,
+        side=side,
+    )
 
     # ``min_font_size=1`` lets the relaxation shrink the label as
     # far as needed to fit the cell. Without it RichText pins at
@@ -173,7 +198,7 @@ def CenterKey(
         draw_fn=draw_at,
         metrics=SvalboardKeyMetrics(
             indicator_anchor=indicator_anchor,
-            indicator_direction=CompassDirection.SOUTH_WEST,
+            indicator_direction=indicator_direction,
         ),
     )
 
@@ -182,6 +207,7 @@ def CenterKey(
 def DirectionalKey(
     ctx,
     *,
+    side: KeyboardSide,
     direction: KeyDirection,
     width: float,
     label_text: str,
@@ -195,14 +221,15 @@ def DirectionalKey(
     accent bar on the edge OPPOSITE ``direction`` — a NORTH key's
     bar sits on the south edge, an EAST key's bar on the west edge,
     etc. — so the unaccented edge always points toward the cluster
-    centre.
+    centre. Shape and accent placement are symmetric across the two
+    keyboard halves; only the indicator metrics flip per side.
 
-    Reports :class:`SvalboardKeyMetrics` with the indicator anchor
-    on the right-hand-keyboard reference orientation. The cluster
-    mirrors east/west for left-hand renders. ``NORTH``, ``EAST``
-    and ``WEST`` keys all carry their indicator above the key; the
-    ``SOUTH`` key carries its indicator on the outward side (east
-    on the right hand, west mirrored on the left).
+    Reports :class:`SvalboardKeyMetrics`. ``NORTH`` / ``EAST`` /
+    ``WEST`` carry the indicator above the key on both sides
+    (``CompassDirection.NORTH``, anchor at the top-edge midpoint).
+    ``SOUTH`` carries it on the outward (away-from-thumb) side —
+    ``EAST`` on the right hand, ``WEST`` on the left — with the
+    anchor at the corresponding edge's vertical centre.
 
     The label sits at the cell centre, nudged a fraction toward the
     unaccented edge so the accent bar doesn't visually crowd it. East
@@ -236,15 +263,19 @@ def DirectionalKey(
     else:  # WEST
         label_dx, label_dy = -accent_size / 2.0, 0.0
 
-    # Indicator anchor + direction. N / E / W carry the indicator
-    # above (anchor at the top edge midpoint); S carries it on the
-    # outward side — east in the right-hand reference orientation.
+    # Right-hand reference indicator metrics. N / E / W carry the
+    # indicator above the key (no horizontal flip when mirrored); S
+    # carries it on the outward / east edge — flipped to west for the
+    # left hand by the mirror helper.
     if direction == KeyDirection.SOUTH:
-        indicator_anchor = Point(width, half)
-        indicator_direction = CompassDirection.EAST
+        ref_anchor = Point(width, half)
+        ref_direction = CompassDirection.EAST
     else:
-        indicator_anchor = Point(half, 0.0)
-        indicator_direction = CompassDirection.NORTH
+        ref_anchor = Point(half, 0.0)
+        ref_direction = CompassDirection.NORTH
+    indicator_anchor, indicator_direction = _mirror_metrics(
+        anchor=ref_anchor, direction=ref_direction, width=width, side=side
+    )
 
     label_style = TextStyle(font=Font.FINGER_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
@@ -322,6 +353,7 @@ def DirectionalKey(
 def DoubleSouthKey(
     ctx,
     *,
+    side: KeyboardSide,
     width: float,
     label_text: str,
     fill_color: str,
@@ -335,11 +367,12 @@ def DoubleSouthKey(
     accent bar sits on the top edge — visually separating it from
     the south key directly above. The label is centred on the cell
     and nudged downward a fraction so the accent bar doesn't crowd
-    it.
+    it. Shape and accent are symmetric across the two halves;
+    indicator metrics flip per ``side``.
 
     Reports :class:`SvalboardKeyMetrics` with the indicator on the
-    outward (east) side in the right-hand reference orientation;
-    the cluster mirrors for the left hand.
+    outward (away-from-thumb) side: ``EAST`` on the right hand,
+    ``WEST`` on the left.
     """
     del ctx  # RichText reads ``use_system_fonts`` from its own ctx.
 
@@ -361,10 +394,14 @@ def DoubleSouthKey(
         separator="",
     )
 
-    # Indicator on the outward (east) side in the right-hand reference
-    # — anchor at the right edge's vertical centre.
-    indicator_anchor = Point(width, half)
-    indicator_direction = CompassDirection.EAST
+    # Right-hand reference: indicator on the outward / east edge.
+    # The mirror helper flips for the left hand.
+    indicator_anchor, indicator_direction = _mirror_metrics(
+        anchor=Point(width, half),
+        direction=CompassDirection.EAST,
+        width=width,
+        side=side,
+    )
 
     size = Size(width, width)
 

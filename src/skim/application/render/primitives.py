@@ -129,6 +129,31 @@ class CompassDirection(Enum):
     WEST = "west"
     NORTH_WEST = "north-west"
 
+    @property
+    def mirrored_horizontal(self) -> CompassDirection:
+        """Reflection across a vertical axis — east ↔ west.
+
+        ``NORTH`` and ``SOUTH`` stay put (they're on the axis);
+        the eastern half (``E``, ``NE``, ``SE``) swaps with the
+        western half (``W``, ``NW``, ``SW``). Used by the Svalboard
+        key composables to flip indicator placement for the
+        opposite-hand cluster — the right hand's outward-facing
+        ``EAST`` becomes the left hand's outward-facing ``WEST``.
+        """
+        return _HORIZONTAL_MIRROR[self]
+
+
+_HORIZONTAL_MIRROR: dict[CompassDirection, CompassDirection] = {
+    CompassDirection.NORTH: CompassDirection.NORTH,
+    CompassDirection.NORTH_EAST: CompassDirection.NORTH_WEST,
+    CompassDirection.EAST: CompassDirection.WEST,
+    CompassDirection.SOUTH_EAST: CompassDirection.SOUTH_WEST,
+    CompassDirection.SOUTH: CompassDirection.SOUTH,
+    CompassDirection.SOUTH_WEST: CompassDirection.SOUTH_EAST,
+    CompassDirection.WEST: CompassDirection.EAST,
+    CompassDirection.NORTH_WEST: CompassDirection.NORTH_EAST,
+}
+
 
 DrawFn = Callable[[Canvas, Point], None]
 """Signature of the closure produced by a composable's body."""
