@@ -44,6 +44,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from contextvars import ContextVar
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Generic, Protocol, TypeVar, overload, runtime_checkable
 
 # ---------------------------------------------------------------------------
@@ -98,6 +99,35 @@ class Size:
     @classmethod
     def zero(cls) -> Size:
         return cls(0.0, 0.0)
+
+
+class CompassDirection(Enum):
+    """Eight-compass direction primitive for the rendering layer.
+
+    Used wherever a 2D direction needs naming — layer-indicator
+    placement around a Svalboard key, the heading of an
+    overview-connector path, the offset side of an inline badge,
+    etc. Lives here next to :class:`Point` because it's a
+    presentational value type with no domain semantics; the
+    domain-side :class:`~skim.domain.KeyDirection` (cardinals only,
+    "physical finger position") stays separate.
+
+    String values use kebab-case (``"north-east"``) — the
+    presentational kebab convention you'd see in CSS / map data —
+    rather than the snake_case the Python member name uses.
+    Existing single-word direction enums in the codebase
+    (e.g. :class:`~skim.domain.KeyboardSide`) didn't have a
+    multi-word case to set precedent; this is the first.
+    """
+
+    NORTH = "north"
+    NORTH_EAST = "north-east"
+    EAST = "east"
+    SOUTH_EAST = "south-east"
+    SOUTH = "south"
+    SOUTH_WEST = "south-west"
+    WEST = "west"
+    NORTH_WEST = "north-west"
 
 
 DrawFn = Callable[[Canvas, Point], None]
