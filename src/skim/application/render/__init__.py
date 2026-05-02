@@ -104,51 +104,6 @@ def _draw_layer(
     # difference as header_offset.
     header_offset = outer_padding - m.margin - m.inset + header_height + gap_below_header
 
-    # Reserve extra space only when a key with a layer_switch will actually render
-    # an indicator that overflows the cluster bounds. The horizontal and top
-    # offsets are still computed here because they shift the entire keyboard
-    # half on the canvas; the vertical (thumb-top) offset is now owned by
-    # :func:`KeyboardHalf`, which reads the actual overhang off the thumb
-    # cluster's metrics — see ``thumb_top_overhang`` in
-    # :class:`KeyboardHalfMetrics`. When the horizontal offset kicks in, both
-    # finger clusters and the thumb on each side shift outward together so
-    # the keyboard reads as one unit per side.
-    horizontal_indicator_offset = 0.0
-    top_indicator_offset = 0.0
-    if config.output.style.show_layer_indicators:
-        thumb_indicator_offset = m.thumb_cluster_width * 0.25 * (0.4 + 0.18)
-        finger_indicator_offset = m.finger_cluster_width * 0.328 * (0.55 + 0.18)
-        if any(
-            getattr(side.thumb, key).layer_switch is not None
-            for side in (layer.left, layer.right)
-            for key in ("nail_key", "knuckle_key")
-        ):
-            horizontal_indicator_offset = thumb_indicator_offset
-        # Only the middle and ring clusters sit at the unshifted top — their
-        # north_key indicators are the only ones that extend above the canvas
-        # margin. Index and pinky clusters are offset down by one key, and
-        # east/west indicators sit above their key (mid-cluster), not above
-        # the cluster top.
-        if any(
-            getattr(side, finger).north_key.layer_switch is not None
-            for side in (layer.left, layer.right)
-            for finger in ("middle", "ring")
-        ):
-            top_indicator_offset = finger_indicator_offset
-
-    # Each :func:`KeyboardHalf` paints its four finger clusters + thumb as
-    # a single unit. Origins position the half at the canvas's outer edge
-    # for each side: left-half left edge at ``margin + inset``; right-half
-    # left edge at the mirrored position on the right side, plus
-    # ``2 * horizontal_indicator_offset`` so the half follows the canvas's
-    # right edge when it grows for inward thumb-key indicators.
-    half_origin_y = m.margin + m.inset + header_offset + top_indicator_offset
-    left_half_origin = ComposablePoint(m.margin + m.inset, half_origin_y)
-    right_half_origin_x = (
-        m.width - (m.margin + m.inset) - m.side_width + 2 * horizontal_indicator_offset
-    )
-    right_half_origin = ComposablePoint(right_half_origin_x, half_origin_y)
-
     common_half_kwargs = {
         "min_width": m.side_width,
         "layer_qmk_index": qmk_index,
@@ -173,13 +128,46 @@ def _draw_layer(
             **common_half_kwargs,
         )
 
+    # Canvas chrome — read the halves' overflow metrics. Each half's
+    # ``overflow_offset`` measures how far its overflow bbox extends
+    # PAST its keys-only ``(0, 0)`` (i.e., above and left of the
+    # half's top-left); ``overflow_size - size - overflow_offset``
+    # measures how far past the bottom-right. We aggregate across
+    # both halves to size the canvas.
+    top_indicator_offset = max(
+        left_half.metrics.overflow_offset.y,
+        right_half.metrics.overflow_offset.y,
+    )
+    # Inward bleed — left half's RIGHT edge, right half's LEFT edge.
+    # When inward indicators (nail / knuckle) bleed past the keys-only
+    # bbox, halves push apart so the centre gap stays clear. Mirroring
+    # the legacy growth pattern: canvas grows by ``2 * offset`` on the
+    # right and the right half shifts right by the same amount, which
+    # leaves the keyboard area centred on the (now wider) canvas.
+    left_inward = max(
+        0.0,
+        left_half.metrics.overflow_size.width
+        - left_half.size.width
+        - left_half.metrics.overflow_offset.x,
+    )
+    right_inward = right_half.metrics.overflow_offset.x
+    horizontal_indicator_offset = max(left_inward, right_inward)
+
+    half_origin_y = m.margin + m.inset + header_offset + top_indicator_offset
+    left_half_origin = ComposablePoint(m.margin + m.inset, half_origin_y)
+    right_half_origin_x = (
+        m.width - (m.margin + m.inset) - m.side_width + 2 * horizontal_indicator_offset
+    )
+    right_half_origin = ComposablePoint(right_half_origin_x, half_origin_y)
+
     canvas_width = layer_layout.canvas_width(
         horizontal_indicator_offset=horizontal_indicator_offset
     )
     # Keyboard-area height — the half is positioned at ``half_origin_y``
-    # and its size already covers fingers + thumb plus any
-    # ``thumb_top_overhang`` it absorbed into the gap. Add a one-inset +
-    # margin band below the half to mirror the top spacing.
+    # and its size already covers fingers + thumb (the thumb's top
+    # overflow is absorbed into the inset gap inside KeyboardHalf). Add
+    # a one-inset + margin band below the half to mirror the top
+    # spacing.
     keyboard_canvas_h = half_origin_y + left_half.size.height + m.inset + m.margin
     bottom_inset = m.inset + m.margin
     copyright_font_size = header_dims.copyright_font_size

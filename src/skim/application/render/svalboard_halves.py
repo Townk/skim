@@ -23,12 +23,21 @@ and overview images need:
   :func:`KeyboardHalf` per side; the overview uses :func:`FingerHalf`
   directly without the thumb.
 
-``FingerHalf.size`` reports the bbox of the keys only — indicator
-overhang past the half's top / left / right edges is the parent
-composable's responsibility to reserve. ``KeyboardHalf.size``
-absorbs the thumb cluster's top overhang into the gap between
-fingers and thumb, so the half's height already includes it; the
-parent only has to reserve overhang past its OUTER edges.
+Both halves expose two bbox shapes via their metrics:
+
+* ``size`` — the keys-only / alignment bbox (the parent uses this
+  to position the half on the canvas).
+* ``overflow_size`` + ``overflow_offset`` — the bbox enclosing
+  every layer-switch indicator that paints past the keys-only
+  edges, plus the offset from that overflow bbox's top-left
+  corner to the half's own ``(0, 0)`` origin. Callers reserve
+  ``overflow_size`` of canvas chrome around the half to keep all
+  indicators on-canvas.
+
+``KeyboardHalf`` additionally absorbs the thumb cluster's TOP
+overflow into the inset gap between fingers and thumb, so the
+keys-only bbox already covers it — only LEFT / RIGHT / BOTTOM
+overflow survives in ``overflow_size`` for the parent to reserve.
 """
 
 from __future__ import annotations
@@ -46,6 +55,7 @@ from .svalboard_clusters import (
     FingerClusterMetrics,
     ThumbCluster,
     ThumbClusterMetrics,
+    _overflow_from_children,
 )
 
 # Number of finger clusters in one keyboard half (index, middle, ring,
@@ -94,6 +104,14 @@ class FingerHalfMetrics:
         carried through verbatim so the parent can read indicator
         anchors / routing geometry without re-instantiating the
         clusters.
+    overflow_size / overflow_offset
+        The half's overflow bbox and origin offset, aggregated by
+        bbox-union of the four clusters' overflows against their
+        placement origins. Mirrors
+        :class:`FingerClusterMetrics`'s overflow contract — callers
+        position the overflow bbox at ``parent_origin -
+        overflow_offset`` to land the half's keys-only ``(0, 0)``
+        at ``parent_origin``.
     """
 
     index_origin: Point
@@ -104,6 +122,8 @@ class FingerHalfMetrics:
     middle: FingerClusterMetrics
     ring: FingerClusterMetrics
     pinky: FingerClusterMetrics
+    overflow_size: Size
+    overflow_offset: Point
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -115,20 +135,20 @@ class KeyboardHalfMetrics:
     thumb. The thumb's origin is in :func:`KeyboardHalf`-local
     coordinates so the parent treats the half as a single unit.
 
-    ``thumb_top_overhang`` mirrors
-    :attr:`ThumbClusterMetrics.top_overhang` — how far above the
-    thumb cluster's top edge any present indicator extends. The
-    half places the thumb so that this overhang sits inside the
-    finger / thumb gap, and ``Size.height`` already includes it; the
-    parent layer composable can still read this when it wants to
-    know the gap layout reasoning explicitly (e.g. to keep the
-    canvas-height calculation symmetric with the legacy helpers).
+    ``overflow_size`` and ``overflow_offset`` aggregate the finger
+    half's and thumb's overflow bboxes against their placement
+    origins inside the keyboard half. ``Size.height`` (the half's
+    keys-only bbox) already absorbs the thumb's TOP overflow into
+    the finger / thumb gap so the keys-only frame stays clean —
+    only the LEFT / RIGHT / BOTTOM overflows survive in
+    ``overflow_size`` for the parent to reserve canvas chrome.
     """
 
     fingers: FingerHalfMetrics
     thumb_origin: Point
     thumb: ThumbClusterMetrics
-    thumb_top_overhang: float
+    overflow_size: Size
+    overflow_offset: Point
 
 
 # ---------------------------------------------------------------------------
@@ -265,6 +285,32 @@ def FingerHalf(
     half_height = cluster_height + dropped_y
     size = Size(min_width, half_height)
 
+    overflow_size, overflow_offset = _overflow_from_children(
+        parent_size=size,
+        children=(
+            (
+                index_origin,
+                index_cluster.metrics.overflow_size,
+                index_cluster.metrics.overflow_offset,
+            ),
+            (
+                middle_origin,
+                middle_cluster.metrics.overflow_size,
+                middle_cluster.metrics.overflow_offset,
+            ),
+            (
+                ring_origin,
+                ring_cluster.metrics.overflow_size,
+                ring_cluster.metrics.overflow_offset,
+            ),
+            (
+                pinky_origin,
+                pinky_cluster.metrics.overflow_size,
+                pinky_cluster.metrics.overflow_offset,
+            ),
+        ),
+    )
+
     def draw_at(d, origin):
         index_cluster.draw_at(d, Point(origin.x + index_origin.x, origin.y + index_origin.y))
         middle_cluster.draw_at(d, Point(origin.x + middle_origin.x, origin.y + middle_origin.y))
@@ -283,6 +329,8 @@ def FingerHalf(
             middle=middle_cluster.metrics,
             ring=ring_cluster.metrics,
             pinky=pinky_cluster.metrics,
+            overflow_size=overflow_size,
+            overflow_offset=overflow_offset,
         ),
     )
 
@@ -369,24 +417,41 @@ def KeyboardHalf(
     )
 
     # 3. Place the thumb. Vertical: one-inset gap below the finger
-    #    half, plus any overhang the thumb's NORTH-pointing
-    #    indicators (notably the double-down badge) extend above
-    #    the cluster's top edge — pushing the thumb down so that
-    #    overhang sits inside the gap rather than encroaching on
-    #    the finger cluster above. Horizontal: hugs the INWARD edge
-    #    — right hand → thumb's left edge at the half's left edge
-    #    (x=0); left hand → thumb's right edge at the half's right
-    #    edge (so x = min_width - thumb_cluster_width).
-    thumb_top_overhang = thumb_cluster.metrics.top_overhang
-    thumb_y = finger_half.size.height + inset + thumb_top_overhang
+    #    half, plus any TOP overflow the thumb cluster carries
+    #    (notably the double-down badge poking above the cluster's
+    #    top edge) — pushing the thumb down so that overflow sits
+    #    inside the gap rather than encroaching on the finger
+    #    cluster above. Horizontal: hugs the INWARD edge — right
+    #    hand → thumb's left edge at the half's left edge (x=0);
+    #    left hand → thumb's right edge at the half's right edge
+    #    (so x = min_width - thumb_cluster_width).
+    thumb_y = finger_half.size.height + inset + thumb_cluster.metrics.overflow_offset.y
     thumb_x = 0.0 if side is KeyboardSide.RIGHT else min_width - thumb_cluster_width
     thumb_origin = Point(thumb_x, thumb_y)
 
-    # 4. Half size — the bbox of the keys plus any thumb-indicator
-    #    overhang we've already absorbed into the gap above. Width
-    #    matches the finger half (== ``min_width`` by construction);
-    #    the thumb sits inside that horizontal extent.
+    # 4. Half size — the keys-only bbox. Height runs from the
+    #    finger-half top to the thumb's bottom edge; the gap
+    #    inflation we just applied keeps the thumb cluster's
+    #    top-edge indicator overflow INSIDE this bbox, so callers
+    #    don't have to think about it. Width matches the finger
+    #    half (== ``min_width`` by construction).
     size = Size(min_width, thumb_y + thumb_cluster.size.height)
+
+    overflow_size, overflow_offset = _overflow_from_children(
+        parent_size=size,
+        children=(
+            (
+                Point(0.0, 0.0),
+                finger_half.metrics.overflow_size,
+                finger_half.metrics.overflow_offset,
+            ),
+            (
+                thumb_origin,
+                thumb_cluster.metrics.overflow_size,
+                thumb_cluster.metrics.overflow_offset,
+            ),
+        ),
+    )
 
     def draw_at(d, origin):
         finger_half.draw_at(d, origin)
@@ -399,7 +464,8 @@ def KeyboardHalf(
             fingers=finger_half.metrics,
             thumb_origin=thumb_origin,
             thumb=thumb_cluster.metrics,
-            thumb_top_overhang=thumb_top_overhang,
+            overflow_size=overflow_size,
+            overflow_offset=overflow_offset,
         ),
     )
 

@@ -99,6 +99,92 @@ _INDICATOR_FALLBACK_STROKE = "#606060"
 
 
 # ---------------------------------------------------------------------------
+# Overflow geometry
+# ---------------------------------------------------------------------------
+
+
+def _overflow_from_indicators(
+    *,
+    component_size: Size,
+    indicator_slots: tuple[tuple[Point, LayerIndicator | None], ...],
+) -> tuple[Size, Point]:
+    """Bbox-union a component's keys-only size with its indicators.
+
+    The component's :attr:`Size` is its keys-only / alignment bbox,
+    starting at component-local ``(0, 0)``. Each
+    ``(slot_origin, indicator)`` pair places an indicator inside
+    that frame: ``slot_origin`` is the indicator's draw origin in
+    component-local coords (typically the key's origin), and the
+    indicator's own :attr:`circle_center` / :attr:`circle_radius`
+    sit in indicator-local coords. ``None`` indicators contribute
+    nothing.
+
+    Returns ``(overflow_size, overflow_offset)`` — the strictly-
+    enclosing bbox covering both the keys-only bbox and every
+    present indicator's circle, plus the offset from that overflow
+    bbox's top-left corner to the component's own ``(0, 0)``
+    origin. Mirror of ``Size`` / ``Point`` semantics used by
+    :class:`MetricsComponent`: callers position the overflow bbox
+    on the parent at ``parent_origin - overflow_offset`` to align
+    the keys-only origin at ``parent_origin``.
+    """
+    min_x = 0.0
+    min_y = 0.0
+    max_x = component_size.width
+    max_y = component_size.height
+    for slot_origin, ind in indicator_slots:
+        if ind is None:
+            continue
+        cx = slot_origin.x + ind.metrics.circle_center.x
+        cy = slot_origin.y + ind.metrics.circle_center.y
+        r = ind.metrics.circle_radius
+        min_x = min(min_x, cx - r)
+        min_y = min(min_y, cy - r)
+        max_x = max(max_x, cx + r)
+        max_y = max(max_y, cy + r)
+    return (
+        Size(max_x - min_x, max_y - min_y),
+        Point(-min_x, -min_y),
+    )
+
+
+def _overflow_from_children(
+    *,
+    parent_size: Size,
+    children: tuple[tuple[Point, Size, Point], ...],
+) -> tuple[Size, Point]:
+    """Bbox-union a parent's keys-only size with its children's overflows.
+
+    Each child contributes its own overflow rectangle, expressed in
+    parent-local coords by subtracting the child's
+    ``overflow_offset`` from its placement origin to recover the
+    overflow box's top-left corner. The result encloses both the
+    parent's keys-only bbox starting at ``(0, 0)`` and every
+    child's overflow rectangle.
+
+    ``children`` is a sequence of ``(origin, overflow_size,
+    overflow_offset)`` tuples — the child's draw origin in parent
+    coords, plus the child's own
+    ``(metrics.overflow_size, metrics.overflow_offset)``.
+    """
+    min_x = 0.0
+    min_y = 0.0
+    max_x = parent_size.width
+    max_y = parent_size.height
+    for origin, ovr_size, ovr_offset in children:
+        tl_x = origin.x - ovr_offset.x
+        tl_y = origin.y - ovr_offset.y
+        min_x = min(min_x, tl_x)
+        min_y = min(min_y, tl_y)
+        max_x = max(max_x, tl_x + ovr_size.width)
+        max_y = max(max_y, tl_y + ovr_size.height)
+    return (
+        Size(max_x - min_x, max_y - min_y),
+        Point(-min_x, -min_y),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Cluster metrics
 # ---------------------------------------------------------------------------
 
@@ -115,6 +201,15 @@ class FingerClusterMetrics:
     ``layer_switch`` set — the parent's connector router consumes
     these to start its routing paths from the indicator's outward
     edge instead of recomputing the geometry.
+
+    ``overflow_size`` and ``overflow_offset`` describe the cluster's
+    overflow bbox — the strictly-enclosing rectangle covering both
+    the keys-only bbox (the cluster's :attr:`Size`) and every
+    present indicator. The offset is measured from the overflow
+    bbox's top-left corner to the cluster's own ``(0, 0)`` origin,
+    so the parent :func:`FingerHalf` / :func:`KeyboardHalf` can
+    bbox-union these against its placement to surface its own
+    overflow without re-walking the indicators.
     """
 
     center_key: SvalboardKeyMetrics
@@ -124,6 +219,8 @@ class FingerClusterMetrics:
     west_key: SvalboardKeyMetrics
     double_south_key: SvalboardKeyMetrics | None
     indicators: FingerClusterData[LayerIndicatorMetrics | None]
+    overflow_size: Size
+    overflow_offset: Point
 
 
 # ---------------------------------------------------------------------------
@@ -707,6 +804,18 @@ def FingerCluster(
         ),
     )
 
+    overflow_size, overflow_offset = _overflow_from_indicators(
+        component_size=size,
+        indicator_slots=(
+            (slots.center_origin, center_indicator),
+            (slots.north_origin, north_indicator),
+            (slots.east_origin, east_indicator),
+            (slots.south_origin, south_indicator),
+            (slots.west_origin, west_indicator),
+            (slots.double_south_origin, double_south_indicator),
+        ),
+    )
+
     return MetricsComponent(
         size=size,
         draw_fn=draw_at,
@@ -718,6 +827,8 @@ def FingerCluster(
             west_key=west.metrics,
             double_south_key=double_south.metrics if double_south is not None else None,
             indicators=indicators_metrics,
+            overflow_size=overflow_size,
+            overflow_offset=overflow_offset,
         ),
     )
 
@@ -767,14 +878,15 @@ class ThumbClusterMetrics:
     slots whose key has a ``layer_switch`` set (or ``None`` for
     slots without one).
 
-    ``top_overhang`` reports how far any present indicator extends
-    ABOVE the cluster's top edge (y=0 in cluster-local coords),
-    measured as a positive magnitude. Zero when no indicator is
-    above-extending. The double-down key's NORTH indicator dominates
-    in practice — it sits on top of the down key whose top edge IS
-    the cluster top, so its full ``gap + diameter`` overhang shows
-    up here. The parent :func:`KeyboardHalf` reads this to inflate
-    the gap between the finger half and the thumb cluster.
+    ``overflow_size`` and ``overflow_offset`` describe the
+    cluster's overflow bbox vs its keys-only :attr:`Size`. The
+    double-down key's NORTH indicator dominates the top edge in
+    practice (it sits on top of the down key whose top edge IS the
+    cluster top, so its full ``gap + diameter`` overhang shows up
+    in ``overflow_offset.y``); nail / knuckle indicators contribute
+    to the inward side and pad / up to the outward side. The
+    parent :func:`KeyboardHalf` bbox-unions these against the
+    thumb's placement to surface the half's own overflow.
     """
 
     down_key: SvalboardKeyMetrics
@@ -784,7 +896,8 @@ class ThumbClusterMetrics:
     knuckle_key: SvalboardKeyMetrics
     double_down_key: SvalboardKeyMetrics
     indicators: ThumbClusterData[LayerIndicatorMetrics | None]
-    top_overhang: float
+    overflow_size: Size
+    overflow_offset: Point
 
 
 # ---------------------------------------------------------------------------
@@ -1208,28 +1321,17 @@ def ThumbCluster(
         ),
     )
 
-    # Top overhang — how far any present indicator extends above the
-    # cluster's top edge (y=0). Each indicator's ``circle_center`` is
-    # in key-local coords; add the key's slot origin to get its
-    # cluster-local top edge, then take the most negative across all
-    # present indicators. Zero when none extend above the cluster.
-    indicator_slots = (
-        (slots.down_origin, down_indicator),
-        (slots.pad_origin, pad_indicator),
-        (slots.up_origin, up_indicator),
-        (slots.nail_origin, nail_indicator),
-        (slots.knuckle_origin, knuckle_indicator),
-        (slots.double_down_origin, double_down_indicator),
-    )
-    top_overhang = max(
-        (
-            -(slot_origin.y + ind.metrics.circle_center.y - ind.metrics.circle_radius)
-            for slot_origin, ind in indicator_slots
-            if ind is not None
+    overflow_size, overflow_offset = _overflow_from_indicators(
+        component_size=size,
+        indicator_slots=(
+            (slots.down_origin, down_indicator),
+            (slots.pad_origin, pad_indicator),
+            (slots.up_origin, up_indicator),
+            (slots.nail_origin, nail_indicator),
+            (slots.knuckle_origin, knuckle_indicator),
+            (slots.double_down_origin, double_down_indicator),
         ),
-        default=0.0,
     )
-    top_overhang = max(0.0, top_overhang)
 
     return MetricsComponent(
         size=size,
@@ -1242,7 +1344,8 @@ def ThumbCluster(
             knuckle_key=knuckle.metrics,
             double_down_key=double_down.metrics,
             indicators=indicators_metrics,
-            top_overhang=top_overhang,
+            overflow_size=overflow_size,
+            overflow_offset=overflow_offset,
         ),
     )
 
