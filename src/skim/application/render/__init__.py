@@ -28,12 +28,9 @@ from skim.data import (
 )
 from skim.domain import KeyboardSide, SvalboardMacro, SvalboardTapDance, SvalboardTargetKey
 
-from .components import FingerClusterComponent, ThumbClusterComponent
-from .context import RenderContext
-from .render_context import RenderContext as ComposableRenderContext, using_render_context
 from .footer import append_footer, footer_layout_height
 from .header import append_header, header_layout_height
-from .layout import Boundary, KeymapLayout
+from .layout import KeymapLayout
 from .legend import (
     build_legend,
     collect_used_ids,
@@ -44,8 +41,11 @@ from .legend import (
 )
 from .macros import draw_macros_image
 from .overview import HeaderDims, compute_header_dims, draw_overview
+from .primitives import Point as ComposablePoint
+from .render_context import RenderContext as ComposableRenderContext, using_render_context
 from .special_keys import draw_special_keys_image
 from .styling import make_gradient
+from .svalboard_halves import KeyboardHalf
 from .symbol_legend import (
     build_symbol_legend,
     collect_used_descriptions,
@@ -53,7 +53,7 @@ from .symbol_legend import (
 )
 from .symbols import collect_symbol_entries, draw_symbols_image
 from .tap_dance import draw_tap_dances_image
-from .text import FontSubsetter, FontUsageAnalyzer, Label
+from .text import Font, FontSubsetter, FontUsageAnalyzer, Label
 
 logger = logging.getLogger(__name__)
 
@@ -76,18 +76,6 @@ def _draw_layer(
     keycode_mappings: KeycodeMappings | None = None,
 ) -> draw.Drawing:
     use_system_fonts = config.output.style.use_system_fonts
-    render_context = RenderContext(
-        palette=config.output.style.palette,
-        layer_index=config_position,
-        layer_qmk_index=qmk_index,
-        qmk_index_to_position=config.keyboard.qmk_index_to_position,
-        has_double_south=config.keyboard.features.double_south,
-        use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
-        hold_symbol_position=config.output.style.hold_symbol_position,
-        doc_width=config.output.layout.width,
-        use_system_fonts=use_system_fonts,
-        show_layer_indicators=config.output.style.show_layer_indicators,
-    )
     layer_layout = KeymapLayout(config)
     m = layer_layout.metrics
 
@@ -119,9 +107,9 @@ def _draw_layer(
     # Reserve extra space only when a key with a layer_switch will actually render
     # an indicator that overflows the cluster bounds. The indicator dimensions
     # (circle diameter + gap) are derived from each cluster's outer-key width —
-    # see ThumbClusterComponent / FingerClusterComponent for the source proportions.
-    # When the horizontal offset kicks in, both finger clusters and the thumb on
-    # each side shift outward together so the keyboard reads as one unit per side.
+    # see ThumbCluster / FingerCluster for the source proportions. When the
+    # horizontal offset kicks in, both finger clusters and the thumb on each
+    # side shift outward together so the keyboard reads as one unit per side.
     vertical_indicator_offset = 0.0
     horizontal_indicator_offset = 0.0
     top_indicator_offset = 0.0
@@ -151,73 +139,60 @@ def _draw_layer(
         ):
             top_indicator_offset = finger_indicator_offset
 
-    finger_clusters: list[FingerClusterComponent] = []
+    # Each :func:`KeyboardHalf` paints its four finger clusters + thumb as
+    # a single unit. Origins position the half at the canvas's outer edge
+    # for each side: left-half left edge at ``margin + inset``; right-half
+    # left edge at the mirrored position on the right side, plus
+    # ``2 * horizontal_indicator_offset`` so the half follows the canvas's
+    # right edge when it grows for inward thumb-key indicators.
+    half_origin_y = m.margin + m.inset + header_offset + top_indicator_offset
+    left_half_origin = ComposablePoint(m.margin + m.inset, half_origin_y)
+    right_half_origin_x = (
+        m.width - (m.margin + m.inset) - m.side_width + 2 * horizontal_indicator_offset
+    )
+    right_half_origin = ComposablePoint(right_half_origin_x, half_origin_y)
 
-    for i, pos in enumerate(
-        layer_layout.left_finger_positions(
-            horizontal_indicator_offset=horizontal_indicator_offset,
-            top_indicator_offset=top_indicator_offset,
-            header_offset=header_offset,
-        )
-    ):
-        cluster = FingerClusterComponent(
-            keymap_cluster=layer.left.fingers[i],
+    common_half_kwargs = {
+        "min_width": m.side_width,
+        "layer_qmk_index": qmk_index,
+        "has_double_south": config.keyboard.features.double_south,
+        "use_layer_colors_on_keys": config.output.style.use_layer_colors_on_keys,
+        "show_layer_indicators": config.output.style.show_layer_indicators,
+        "hold_symbol_position": config.output.style.hold_symbol_position,
+    }
+
+    composable_ctx = ComposableRenderContext.build(config, keymap)
+    with using_render_context(composable_ctx):
+        left_half = KeyboardHalf(
             side=KeyboardSide.LEFT,
-            layout=Boundary(width=m.finger_cluster_width, pos=pos),
-            render_context=render_context,
+            fingers=layer.left.fingers,
+            thumb=layer.left.thumb,
+            **common_half_kwargs,
         )
-        finger_clusters.append(cluster)
-
-    for i, pos in enumerate(
-        layer_layout.right_finger_positions(
-            horizontal_indicator_offset=horizontal_indicator_offset,
-            top_indicator_offset=top_indicator_offset,
-            header_offset=header_offset,
-        )
-    ):
-        cluster = FingerClusterComponent(
-            keymap_cluster=layer.right.fingers[i],
+        right_half = KeyboardHalf(
             side=KeyboardSide.RIGHT,
-            layout=Boundary(width=m.finger_cluster_width, pos=pos),
-            render_context=render_context,
+            fingers=layer.right.fingers,
+            thumb=layer.right.thumb,
+            **common_half_kwargs,
         )
-        finger_clusters.append(cluster)
 
-    # Reference cluster for height calculation (any things will do since they
-    # all have the same height)
-    cluster_height = finger_clusters[0].height
-
-    # Create thumb clusters
-    left_thumb_pos, right_thumb_pos = layer_layout.thumb_positions(
-        cluster_height,
-        vertical_indicator_offset=vertical_indicator_offset,
-        horizontal_indicator_offset=horizontal_indicator_offset,
-        top_indicator_offset=top_indicator_offset,
-        header_offset=header_offset,
-    )
-
-    left_thumb = ThumbClusterComponent(
-        keymap_cluster=layer.left.thumb,
-        side=KeyboardSide.LEFT,
-        layout=Boundary(width=m.thumb_cluster_width, pos=left_thumb_pos),
-        render_context=render_context,
-    )
-
-    right_thumb = ThumbClusterComponent(
-        keymap_cluster=layer.right.thumb,
-        side=KeyboardSide.RIGHT,
-        layout=Boundary(width=m.thumb_cluster_width, pos=right_thumb_pos),
-        render_context=render_context,
-    )
+    # The legacy layout helper takes the height of ONE finger cluster (no
+    # stagger). The half exposes ``thumb_origin.y == finger_half_height +
+    # inset`` and ``finger_half_height == cluster_height + finger_key_size``
+    # (the stagger drop), so subtract both to recover the single-cluster
+    # height the helper expects.
+    cluster_height = left_half.metrics.thumb_origin.y - m.inset - m.finger_key_size
 
     canvas_width = layer_layout.canvas_width(
         horizontal_indicator_offset=horizontal_indicator_offset
     )
     # Keyboard-area height as the existing layout helper computes it. This
-    # already includes the bottom inset below the thumb cluster.
+    # already includes the bottom inset below the thumb cluster. We feed it
+    # the cluster + thumb heights derived from the half's metrics.
+    thumb_height = left_half.size.height - left_half.metrics.thumb_origin.y
     keyboard_canvas_h = layer_layout.canvas_height(
         cluster_height,
-        left_thumb.height,
+        thumb_height,
         vertical_indicator_offset=vertical_indicator_offset,
         top_indicator_offset=top_indicator_offset,
         header_offset=header_offset,
@@ -279,22 +254,28 @@ def _draw_layer(
     display_h = canvas_height * (display_w / canvas_width) if canvas_width else canvas_height
     d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_width} {canvas_height}")
 
+    def _finger_label(key: SvalboardTargetKey | None) -> Label | None:
+        return Label(key.label, Font.FINGER_KEY, text_color="#000") if key and key.label else None
+
+    def _thumb_label(key: SvalboardTargetKey | None) -> Label | None:
+        return Label(key.label, Font.THUMB_KEY, text_color="#000") if key and key.label else None
+
     labels_keymap: SvalboardLayout[Label | None] = SvalboardLayout(
         left=SplitSide(
-            index=finger_clusters[0].cluster,
-            middle=finger_clusters[1].cluster,
-            ring=finger_clusters[2].cluster,
-            pinky=finger_clusters[3].cluster,
-            thumb=left_thumb.cluster,
+            index=layer.left.fingers[0].map(_finger_label),
+            middle=layer.left.fingers[1].map(_finger_label),
+            ring=layer.left.fingers[2].map(_finger_label),
+            pinky=layer.left.fingers[3].map(_finger_label),
+            thumb=layer.left.thumb.map(_thumb_label),
         ),
         right=SplitSide(
-            index=finger_clusters[4].cluster,
-            middle=finger_clusters[5].cluster,
-            ring=finger_clusters[6].cluster,
-            pinky=finger_clusters[7].cluster,
-            thumb=right_thumb.cluster,
+            index=layer.right.fingers[0].map(_finger_label),
+            middle=layer.right.fingers[1].map(_finger_label),
+            ring=layer.right.fingers[2].map(_finger_label),
+            pinky=layer.right.fingers[3].map(_finger_label),
+            thumb=layer.right.thumb.map(_thumb_label),
         ),
-    ).map(lambda key: None if key is None else key.label)
+    )
 
     use_system_fonts = config.output.style.use_system_fonts
 
@@ -326,18 +307,12 @@ def _draw_layer(
         )
     )
 
-    # Append all clusters. The legacy finger / thumb cluster
-    # components delegate to the new
-    # :func:`svalboard_clusters.FingerCluster` /
-    # :func:`svalboard_clusters.ThumbCluster` composables inside
-    # ``build()``; those composables read their render context
-    # (config + keymap → derived theme + document metrics) from a
-    # ContextVar set by :func:`using_render_context`.
-    with using_render_context(ComposableRenderContext.build(config, keymap)):
-        for cluster in finger_clusters:
-            d.append(cluster.build())
-        d.append(left_thumb.build())
-        d.append(right_thumb.build())
+    # Paint the keyboard area — one :func:`KeyboardHalf` per side. The
+    # halves were built inside ``using_render_context`` above; their
+    # ``draw_at`` closures already captured everything they need from
+    # the context, so the paint calls don't need to re-enter it.
+    left_half.draw_at(d, left_half_origin)
+    right_half.draw_at(d, right_half_origin)
 
     append_header(
         d,
