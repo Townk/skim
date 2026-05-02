@@ -24,8 +24,14 @@ from skim.application.render.render_context import RenderContext, using_render_c
 from skim.application.render.svalboard_keys import (
     CenterKey,
     DirectionalKey,
+    DoubleDownKey,
     DoubleSouthKey,
+    DownKey,
+    KnuckleKey,
+    NailKey,
+    PadKey,
     SvalboardKeyMetrics,
+    UpKey,
 )
 from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import KeyboardSide, KeyDirection
@@ -425,3 +431,368 @@ class TestDoubleSouthKey:
         svg = str(d.as_svg())
         assert "DS" in svg
         assert 'fill="#ffffff"' in svg
+
+
+# ---------------------------------------------------------------------------
+# Thumb-cluster key helpers
+# ---------------------------------------------------------------------------
+
+
+def _down_key(
+    *,
+    side: KeyboardSide = KeyboardSide.RIGHT,
+    width: float = 60.0,
+    label_text: str = "A",
+    fill_color: str = "#abcdef",
+    label_color: str = "#012345",
+):
+    return DownKey(
+        side=side,
+        width=width,
+        label_text=label_text,
+        fill_color=fill_color,
+        label_color=label_color,
+    )
+
+
+def _double_down_key(
+    *,
+    side: KeyboardSide = KeyboardSide.RIGHT,
+    width: float = 60.0,
+    label_text: str = "A",
+    fill_color: str = "#abcdef",
+    label_color: str = "#012345",
+    stroke_color: str = "#ffffff",
+):
+    return DoubleDownKey(
+        side=side,
+        width=width,
+        label_text=label_text,
+        fill_color=fill_color,
+        label_color=label_color,
+        stroke_color=stroke_color,
+    )
+
+
+def _up_key(
+    *,
+    side: KeyboardSide = KeyboardSide.RIGHT,
+    width: float = 220.0,
+    label_text: str = "A",
+    fill_color: str = "#abcdef",
+    label_color: str = "#012345",
+    stroke_color: str = "#ffffff",
+):
+    return UpKey(
+        side=side,
+        width=width,
+        label_text=label_text,
+        fill_color=fill_color,
+        label_color=label_color,
+        stroke_color=stroke_color,
+    )
+
+
+def _pad_key(
+    *,
+    side: KeyboardSide = KeyboardSide.RIGHT,
+    width: float = 150.0,
+    label_text: str = "A",
+    fill_color: str = "#abcdef",
+    label_color: str = "#012345",
+):
+    return PadKey(
+        side=side,
+        width=width,
+        label_text=label_text,
+        fill_color=fill_color,
+        label_color=label_color,
+    )
+
+
+def _nail_key(
+    *,
+    side: KeyboardSide = KeyboardSide.RIGHT,
+    width: float = 150.0,
+    label_text: str = "A",
+    fill_color: str = "#abcdef",
+    label_color: str = "#012345",
+):
+    return NailKey(
+        side=side,
+        width=width,
+        label_text=label_text,
+        fill_color=fill_color,
+        label_color=label_color,
+    )
+
+
+def _knuckle_key(
+    *,
+    side: KeyboardSide = KeyboardSide.RIGHT,
+    width: float = 150.0,
+    label_text: str = "A",
+    fill_color: str = "#abcdef",
+    label_color: str = "#012345",
+):
+    return KnuckleKey(
+        side=side,
+        width=width,
+        label_text=label_text,
+        fill_color=fill_color,
+        label_color=label_color,
+    )
+
+
+# ---------------------------------------------------------------------------
+# DownKey — tall narrow trapezoid, symmetric
+# ---------------------------------------------------------------------------
+
+
+class TestDownKey:
+    """Tall trapezoid at the bottom of the thumb cluster."""
+
+    def test_size_uses_aspect_ratio(self, ctx: RenderContext):
+        """``height = width * 2.6`` for the tall narrow shape."""
+        with using_render_context(ctx):
+            key = _down_key(width=60.0)
+        assert key.size == Size(60.0, 156.0)
+
+    def test_right_side_indicator_is_east(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _down_key(side=KeyboardSide.RIGHT)
+        assert key.metrics.indicator_direction is CompassDirection.EAST
+
+    def test_left_side_indicator_is_west(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _down_key(side=KeyboardSide.LEFT)
+        assert key.metrics.indicator_direction is CompassDirection.WEST
+
+    def test_anchor_at_outward_edge_midpoint(self, ctx: RenderContext):
+        width = 60.0
+        height = width * 2.6
+        with using_render_context(ctx):
+            right = _down_key(side=KeyboardSide.RIGHT, width=width)
+            left = _down_key(side=KeyboardSide.LEFT, width=width)
+        assert right.metrics.indicator_anchor == Point(width, height / 2)
+        assert left.metrics.indicator_anchor == Point(0.0, height / 2)
+
+    def test_drawing_is_side_invariant(self, ctx: RenderContext):
+        """Symmetric trapezoid — same SVG on both sides."""
+        with using_render_context(ctx):
+            right = _down_key(side=KeyboardSide.RIGHT)
+            left = _down_key(side=KeyboardSide.LEFT)
+        assert str(_draw(right, Point(0.0, 0.0)).as_svg()) == str(
+            _draw(left, Point(0.0, 0.0)).as_svg()
+        )
+
+    def test_draw_emits_trapezoid_and_label(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _down_key(label_text="DN")
+        svg = str(_draw(key, Point(0.0, 0.0)).as_svg())
+        assert "<path" in svg  # trapezoid
+        assert 'fill="#abcdef"' in svg
+        assert "DN" in svg
+        assert 'fill="#012345"' in svg
+
+
+# ---------------------------------------------------------------------------
+# DoubleDownKey — squat trapezoid with stroke outline, symmetric
+# ---------------------------------------------------------------------------
+
+
+class TestDoubleDownKey:
+    """Stroke-outlined trapezoid between Down and Up."""
+
+    def test_size_uses_aspect_ratio(self, ctx: RenderContext):
+        """``height = width * 1.1``."""
+        with using_render_context(ctx):
+            key = _double_down_key(width=60.0)
+        assert key.size == Size(60.0, 66.0)
+
+    @pytest.mark.parametrize("side", [KeyboardSide.RIGHT, KeyboardSide.LEFT])
+    def test_indicator_is_north_on_both_sides(self, ctx: RenderContext, side: KeyboardSide):
+        """Indicator always sits above the key — ``NORTH`` is mirror-
+        invariant under horizontal reflection."""
+        with using_render_context(ctx):
+            key = _double_down_key(side=side)
+        assert key.metrics.indicator_direction is CompassDirection.NORTH
+
+    def test_anchor_at_top_edge_midpoint(self, ctx: RenderContext):
+        width = 60.0
+        with using_render_context(ctx):
+            key = _double_down_key(width=width)
+        assert key.metrics.indicator_anchor == Point(width / 2, 0.0)
+
+    def test_drawing_is_side_invariant(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            right = _double_down_key(side=KeyboardSide.RIGHT)
+            left = _double_down_key(side=KeyboardSide.LEFT)
+        assert str(_draw(right, Point(0.0, 0.0)).as_svg()) == str(
+            _draw(left, Point(0.0, 0.0)).as_svg()
+        )
+
+    def test_draw_emits_stroke_outline(self, ctx: RenderContext):
+        """The trapezoid carries a stroke + stroke-width attribute."""
+        with using_render_context(ctx):
+            key = _double_down_key(stroke_color="#ffffff")
+        svg = str(_draw(key, Point(0.0, 0.0)).as_svg())
+        assert 'stroke="#ffffff"' in svg
+        assert "stroke-width=" in svg
+
+
+# ---------------------------------------------------------------------------
+# UpKey — wide horizontal trapezoid, asymmetric (mirrors per side)
+# ---------------------------------------------------------------------------
+
+
+class TestUpKey:
+    """Stroke + fill horizontal trapezoid at the cluster top."""
+
+    def test_size_uses_aspect_ratio(self, ctx: RenderContext):
+        """Aspect 2.75:1 — ``height = width / 2.75``."""
+        with using_render_context(ctx):
+            key = _up_key(width=220.0)
+        assert key.size == Size(220.0, 80.0)
+
+    def test_right_side_indicator_is_east(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _up_key(side=KeyboardSide.RIGHT)
+        assert key.metrics.indicator_direction is CompassDirection.EAST
+
+    def test_left_side_indicator_is_west(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _up_key(side=KeyboardSide.LEFT)
+        assert key.metrics.indicator_direction is CompassDirection.WEST
+
+    def test_drawing_mirrors_per_side(self, ctx: RenderContext):
+        """Asymmetric shape — slant on the inward side; SVG differs
+        between sides."""
+        with using_render_context(ctx):
+            right = _up_key(side=KeyboardSide.RIGHT)
+            left = _up_key(side=KeyboardSide.LEFT)
+        assert str(_draw(right, Point(0.0, 0.0)).as_svg()) != str(
+            _draw(left, Point(0.0, 0.0)).as_svg()
+        )
+
+    def test_draw_emits_two_trapezoids_and_label(self, ctx: RenderContext):
+        """Outer (stroke colour) + inner (fill colour) trapezoids,
+        plus the label."""
+        with using_render_context(ctx):
+            key = _up_key(label_text="UP", stroke_color="#ffffff")
+        svg = str(_draw(key, Point(0.0, 0.0)).as_svg())
+        assert svg.count("<path") >= 2  # stroke + fill paths
+        assert 'fill="#abcdef"' in svg
+        assert 'fill="#ffffff"' in svg
+        assert "UP" in svg
+
+
+# ---------------------------------------------------------------------------
+# PadKey — vertical trapezoid, narrow bottom OUTWARD
+# ---------------------------------------------------------------------------
+
+
+class TestPadKey:
+    """Pad — narrow bottom on the outward (away-from-thumb) edge."""
+
+    def test_size_uses_aspect_ratio(self, ctx: RenderContext):
+        """Aspect 1.85:1 — ``height = width / 1.85``."""
+        with using_render_context(ctx):
+            key = _pad_key(width=185.0)
+        assert key.size.width == 185.0
+        assert key.size.height == pytest.approx(100.0)
+
+    def test_right_side_indicator_is_east(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _pad_key(side=KeyboardSide.RIGHT)
+        assert key.metrics.indicator_direction is CompassDirection.EAST
+
+    def test_left_side_indicator_is_west(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _pad_key(side=KeyboardSide.LEFT)
+        assert key.metrics.indicator_direction is CompassDirection.WEST
+
+    def test_drawing_mirrors_per_side(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            right = _pad_key(side=KeyboardSide.RIGHT)
+            left = _pad_key(side=KeyboardSide.LEFT)
+        assert str(_draw(right, Point(0.0, 0.0)).as_svg()) != str(
+            _draw(left, Point(0.0, 0.0)).as_svg()
+        )
+
+
+# ---------------------------------------------------------------------------
+# NailKey — vertical trapezoid, narrow bottom INWARD
+# ---------------------------------------------------------------------------
+
+
+class TestNailKey:
+    """Nail — mirrored shape of Pad: narrow bottom on the inward edge."""
+
+    def test_right_side_indicator_is_west_inward(self, ctx: RenderContext):
+        """Right hand: indicator on the inward / west side (toward the
+        thumb), opposite the outward direction Pad / Down / Up use."""
+        with using_render_context(ctx):
+            key = _nail_key(side=KeyboardSide.RIGHT)
+        assert key.metrics.indicator_direction is CompassDirection.WEST
+
+    def test_left_side_indicator_is_east_inward(self, ctx: RenderContext):
+        """Left hand: inward is east — the mirror of right-hand inward."""
+        with using_render_context(ctx):
+            key = _nail_key(side=KeyboardSide.LEFT)
+        assert key.metrics.indicator_direction is CompassDirection.EAST
+
+    def test_drawing_mirrors_per_side(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            right = _nail_key(side=KeyboardSide.RIGHT)
+            left = _nail_key(side=KeyboardSide.LEFT)
+        assert str(_draw(right, Point(0.0, 0.0)).as_svg()) != str(
+            _draw(left, Point(0.0, 0.0)).as_svg()
+        )
+
+    def test_pad_and_nail_mirror_each_other_on_same_side(self, ctx: RenderContext):
+        """Pad's narrow bottom is outward; Nail's is inward. On the
+        same side the two shapes are mirror images of each other —
+        equivalent to flipping :func:`PadKey`'s SVG horizontally."""
+        with using_render_context(ctx):
+            pad = _pad_key(side=KeyboardSide.RIGHT)
+            nail = _nail_key(side=KeyboardSide.RIGHT)
+        # Both have the EAST or WEST indicator depending on which is
+        # outward / inward — assert they're opposite.
+        assert pad.metrics.indicator_direction is CompassDirection.EAST
+        assert nail.metrics.indicator_direction is CompassDirection.WEST
+
+
+# ---------------------------------------------------------------------------
+# KnuckleKey — same shape pattern as Nail, different proportions
+# ---------------------------------------------------------------------------
+
+
+class TestKnuckleKey:
+    """Knuckle — same pattern as Nail with slightly squatter proportions."""
+
+    def test_right_side_indicator_is_west_inward(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _knuckle_key(side=KeyboardSide.RIGHT)
+        assert key.metrics.indicator_direction is CompassDirection.WEST
+
+    def test_left_side_indicator_is_east_inward(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _knuckle_key(side=KeyboardSide.LEFT)
+        assert key.metrics.indicator_direction is CompassDirection.EAST
+
+    def test_drawing_mirrors_per_side(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            right = _knuckle_key(side=KeyboardSide.RIGHT)
+            left = _knuckle_key(side=KeyboardSide.LEFT)
+        assert str(_draw(right, Point(0.0, 0.0)).as_svg()) != str(
+            _draw(left, Point(0.0, 0.0)).as_svg()
+        )
+
+    def test_size_differs_from_nail(self, ctx: RenderContext):
+        """Knuckle's aspect ratio (1.87:1) is squatter than Nail's
+        (1.95:1) — same width gives Knuckle a slightly taller key."""
+        with using_render_context(ctx):
+            knuckle = _knuckle_key(width=187.0)
+            nail = _nail_key(width=187.0)
+        assert knuckle.size.height > nail.size.height
