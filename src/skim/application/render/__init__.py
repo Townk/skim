@@ -79,6 +79,7 @@ def _draw_layer(
     render_context = RenderContext(
         palette=config.output.style.palette,
         layer_index=config_position,
+        layer_qmk_index=qmk_index,
         qmk_index_to_position=config.keyboard.qmk_index_to_position,
         has_double_south=config.keyboard.features.double_south,
         use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,

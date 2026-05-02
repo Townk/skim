@@ -312,12 +312,10 @@ class ThumbClusterComponent(KeyCluster[ThumbCluster[SvalboardTargetKey]]):
             cluster=self._keymap_cluster,
             side=self._side,
             width=self._boundary.width,
-            layer_colors=self._render_context.layer_colors,
-            palette=self._render_context.palette,
+            layer_qmk_index=self._render_context.layer_qmk_index,
             use_layer_colors_on_keys=self._render_context.use_layer_colors_on_keys,
             show_layer_indicators=self._render_context.show_layer_indicators,
             hold_symbol_position=self._render_context.hold_symbol_position,
-            qmk_index_to_position=self._render_context.qmk_index_to_position,
         )
         composable.draw_at(self, ComposablePoint(0.0, 0.0))
         return self
@@ -521,13 +519,11 @@ class FingerClusterComponent(KeyCluster[FingerCluster[SvalboardTargetKey]]):
             cluster=self._keymap_cluster,
             side=self._side,
             width=self._boundary.width,
-            layer_colors=self._render_context.layer_colors,
-            palette=self._render_context.palette,
+            layer_qmk_index=self._render_context.layer_qmk_index,
             has_double_south=self._render_context.has_double_south,
             use_layer_colors_on_keys=self._render_context.use_layer_colors_on_keys,
             show_layer_indicators=self._render_context.show_layer_indicators,
             hold_symbol_position=self._render_context.hold_symbol_position,
-            qmk_index_to_position=self._render_context.qmk_index_to_position,
         )
         composable.draw_at(self, ComposablePoint(0.0, 0.0))
         return self

@@ -20,14 +20,33 @@ from skim.application.render.svalboard_clusters import (
     ThumbClusterMetrics,
 )
 from skim.data import LayerColor, Palette, SkimConfig, SvalboardKeymap
+from skim.data.config import Keyboard, KeyboardLayer, Output, Style
 from skim.data.keyboard import FingerCluster as FingerClusterData
 from skim.data.keyboard import ThumbCluster as ThumbClusterData
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
+# QMK firmware index used by every test that doesn't care about the
+# specific layer — there's only one configured layer in the default
+# fixture, and it's at this index.
+_LAYER_0 = 0
 
-@pytest.fixture
-def ctx() -> RenderContext:
-    return RenderContext.build(SkimConfig(), SvalboardKeymap(layers={}))
+
+def _build_config(palette: Palette, layer_qmk_indices: tuple[int, ...] = (_LAYER_0,)) -> SkimConfig:
+    """Build a :class:`SkimConfig` whose ``Keyboard.layers`` align with
+    the given palette. Each ``layer_qmk_indices`` entry registers a
+    :class:`KeyboardLayer` at that QMK firmware index, paired with the
+    next palette entry.
+
+    Tests that exercise layer-switch resolution (where a key's
+    ``layer_switch`` looks up a destination palette entry by firmware
+    index) use this to wire up multi-layer fixtures.
+    """
+    return SkimConfig(
+        keyboard=Keyboard(
+            layers=tuple(KeyboardLayer(index=idx, name=f"Layer{idx}") for idx in layer_qmk_indices),
+        ),
+        output=Output(style=Style(palette=palette)),
+    )
 
 
 @pytest.fixture
@@ -49,6 +68,16 @@ def palette() -> Palette:
         tap_dance_color="#000000",
         neutral_color="#666666",
     )
+
+
+@pytest.fixture
+def ctx(palette: Palette) -> RenderContext:
+    """Render context wired with a one-layer keyboard config (QMK
+    index 0) whose palette matches the ``palette`` fixture. Tests
+    pass ``layer_qmk_index=_LAYER_0`` to render against this layer's
+    colours."""
+    config = _build_config(palette)
+    return RenderContext.build(config, SvalboardKeymap(layers={}))
 
 
 def _td_key(label: str = "A", **kwargs) -> SvalboardTargetKey:
@@ -94,8 +123,7 @@ class TestLayout:
                 cluster=_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
                 has_double_south=False,
             )
         # north (outer 0.328) + centre (0.309) + south (0.328) +
@@ -118,16 +146,14 @@ class TestLayout:
                 cluster=_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
                 has_double_south=False,
             )
             with_ds = FingerCluster(
                 cluster=_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
                 has_double_south=True,
             )
         outer_w = 600.0 * 0.328
@@ -149,8 +175,7 @@ class TestMetrics:
                 cluster=_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         assert isinstance(cluster.metrics, FingerClusterMetrics)
 
@@ -162,8 +187,7 @@ class TestMetrics:
                 cluster=_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         m = cluster.metrics
         assert m.center_key.indicator_direction is CompassDirection.SOUTH_WEST
@@ -180,8 +204,7 @@ class TestMetrics:
                 cluster=_cluster_data(),
                 side=KeyboardSide.LEFT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         m = cluster.metrics
         assert m.center_key.indicator_direction is CompassDirection.SOUTH_EAST
@@ -194,16 +217,14 @@ class TestMetrics:
                 cluster=_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
                 has_double_south=True,
             )
             without_ds = FingerCluster(
                 cluster=_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
                 has_double_south=False,
             )
         assert with_ds.metrics.double_south_key is not None
@@ -226,8 +247,7 @@ class TestDrawing:
                 cluster=_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
                 has_double_south=False,
             )
         svg = str(_draw(cluster, Point(0.0, 0.0)).as_svg())
@@ -242,8 +262,7 @@ class TestDrawing:
                 cluster=_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
                 has_double_south=True,
             )
         svg = str(_draw(cluster, Point(0.0, 0.0)).as_svg())
@@ -260,8 +279,7 @@ class TestDrawing:
                 cluster=_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=width,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         center_w = width * 0.309
         outer_w = width * 0.328
@@ -284,7 +302,7 @@ class TestColorResolution:
     """The cluster picks per-key colours based on layer-switch and
     transparency state."""
 
-    def test_layer_switch_key_uses_destination_layer_color(self, ctx: RenderContext):
+    def test_layer_switch_key_uses_destination_layer_color(self):
         """A key whose ``layer_switch=1`` paints in layer 1's gradient
         colour (when ``use_layer_colors_on_keys`` is enabled)."""
         # Two-layer palette so layer_switch=1 resolves.
@@ -301,6 +319,7 @@ class TestColorResolution:
             layers=(layer0, layer1),
             key_label_color="#ffffff",
         )
+        ctx = RenderContext.build(_build_config(palette, (0, 1)), SvalboardKeymap(layers={}))
 
         # North key on layer 0 has layer_switch=1 — should paint with
         # layer 1's color (gradient[layer1.color_index]) = "#cc00cc".
@@ -317,8 +336,7 @@ class TestColorResolution:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=layer0,
-                palette=palette,
+                layer_qmk_index=0,
                 use_layer_colors_on_keys=True,
             )
         svg = str(_draw(cluster, Point(0.0, 0.0)).as_svg())
@@ -326,7 +344,7 @@ class TestColorResolution:
         # key's fill).
         assert "#cc00cc" in svg.lower()
 
-    def test_layer_switch_disabled_keeps_default_color(self, ctx: RenderContext):
+    def test_layer_switch_disabled_keeps_default_color(self):
         """With ``use_layer_colors_on_keys=False`` the layer_switch is
         ignored for fill — slot defaults apply uniformly."""
         layer0 = LayerColor(
@@ -341,6 +359,7 @@ class TestColorResolution:
             layers=(layer0, layer1),
             key_label_color="#ffffff",
         )
+        ctx = RenderContext.build(_build_config(palette, (0, 1)), SvalboardKeymap(layers={}))
 
         cluster_data = FingerClusterData(
             center_key=_td_key("C"),
@@ -355,8 +374,7 @@ class TestColorResolution:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=layer0,
-                palette=palette,
+                layer_qmk_index=0,
                 use_layer_colors_on_keys=False,
             )
         svg = str(_draw(cluster, Point(0.0, 0.0)).as_svg())
@@ -380,8 +398,7 @@ class TestColorResolution:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         # Centre key's label colour is computed from its fill — it
         # should NOT be the standard ``#ffffff`` palette label
@@ -422,6 +439,16 @@ def _two_layer_palette() -> Palette:
     )
 
 
+def _two_layer_ctx() -> RenderContext:
+    """Render context wired with the two-layer palette (QMK indices
+    0 and 1). Tests that exercise layer-switch destination resolution
+    use this to make sure ``ctx.theme.palette`` knows about layer 1."""
+    return RenderContext.build(
+        _build_config(_two_layer_palette(), (0, 1)),
+        SvalboardKeymap(layers={}),
+    )
+
+
 class TestLayerIndicators:
     """Per-slot layer indicators wired into the cluster."""
 
@@ -436,8 +463,7 @@ class TestLayerIndicators:
                 cluster=_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         ind = cluster.metrics.indicators
         assert ind.center_key is None
@@ -447,12 +473,12 @@ class TestLayerIndicators:
         assert ind.west_key is None
         assert ind.double_south_key is None
 
-    def test_indicator_metrics_present_for_layer_switch_slot(self, ctx: RenderContext):
+    def test_indicator_metrics_present_for_layer_switch_slot(self):
         """A slot with ``layer_switch=1`` exposes a populated
         :class:`LayerIndicatorMetrics` — the parent reads
         ``routing_origin`` / ``routing_direction`` off it without
         reaching back into the per-key composable."""
-        palette = _two_layer_palette()
+        ctx = _two_layer_ctx()
         cluster_data = FingerClusterData(
             center_key=_td_key("C"),
             north_key=_td_key("N", layer_switch=1),
@@ -466,8 +492,7 @@ class TestLayerIndicators:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         ind = cluster.metrics.indicators.north_key
         assert ind is not None
@@ -476,10 +501,10 @@ class TestLayerIndicators:
         # top edge); routing direction matches indicator direction.
         assert ind.routing_direction is CompassDirection.NORTH
 
-    def test_show_layer_indicators_false_suppresses_metrics_and_paint(self, ctx: RenderContext):
+    def test_show_layer_indicators_false_suppresses_metrics_and_paint(self):
         """Disabling indicators removes them from both the metrics
         and the SVG — the cluster paints keys only."""
-        palette = _two_layer_palette()
+        ctx = _two_layer_ctx()
         cluster_data = FingerClusterData(
             center_key=_td_key("C"),
             north_key=_td_key("N", layer_switch=1),
@@ -493,8 +518,7 @@ class TestLayerIndicators:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
                 show_layer_indicators=False,
             )
         assert cluster.metrics.indicators.north_key is None
@@ -503,10 +527,10 @@ class TestLayerIndicators:
         # appear when indicators are disabled.
         assert "#11ee2e" not in svg.lower()
 
-    def test_indicator_fill_uses_destination_layer_base_color(self, ctx: RenderContext):
+    def test_indicator_fill_uses_destination_layer_base_color(self):
         """The badge fills with the destination layer's
         ``base_color`` — visual cue for "this jumps to layer N"."""
-        palette = _two_layer_palette()
+        ctx = _two_layer_ctx()
         cluster_data = FingerClusterData(
             center_key=_td_key("C"),
             north_key=_td_key("N", layer_switch=1),
@@ -520,8 +544,7 @@ class TestLayerIndicators:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
                 use_layer_colors_on_keys=False,
             )
         svg = str(_draw(cluster, Point(0.0, 0.0)).as_svg())
@@ -530,10 +553,10 @@ class TestLayerIndicators:
         # Layer 1's gradient[4] is the indicator stroke.
         assert "#11ee2e" in svg.lower()
 
-    def test_indicator_label_shows_target_layer_number(self, ctx: RenderContext):
+    def test_indicator_label_shows_target_layer_number(self):
         """The badge carries the destination layer's index as its
         text label."""
-        palette = _two_layer_palette()
+        ctx = _two_layer_ctx()
         cluster_data = FingerClusterData(
             center_key=_td_key("C"),
             north_key=_td_key("N", layer_switch=1),
@@ -547,20 +570,19 @@ class TestLayerIndicators:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         svg = str(_draw(cluster, Point(0.0, 0.0)).as_svg())
         # The ``>1<`` text content is the indicator label.
         assert ">1<" in svg
 
-    def test_indicator_metrics_anchor_to_key_origin(self, ctx: RenderContext):
+    def test_indicator_metrics_anchor_to_key_origin(self):
         """The indicator's ``circle_center`` lies in cluster-local
         coordinates: it's the key origin plus the key-local anchor
         plus the gap+radius offset along the indicator direction.
         The cluster paints the indicator at the key's slot origin so
         the indicator metrics' coordinates remain key-local."""
-        palette = _two_layer_palette()
+        ctx = _two_layer_ctx()
         cluster_data = FingerClusterData(
             center_key=_td_key("C"),
             north_key=_td_key("N", layer_switch=1),
@@ -574,8 +596,7 @@ class TestLayerIndicators:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         north_ind = cluster.metrics.indicators.north_key
         north_key = cluster.metrics.north_key
@@ -607,8 +628,7 @@ class TestLayerIndicators:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         center_ind = cluster.metrics.indicators.center_key
         north_ind = cluster.metrics.indicators.north_key
@@ -651,8 +671,7 @@ class TestLayerIndicators:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         svg = str(_draw(cluster, Point(0.0, 0.0)).as_svg())
         # Neutral fallback fill / stroke from the cluster module.
@@ -693,8 +712,7 @@ class TestThumbLayout:
                 cluster=_thumb_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         assert cluster.size.width == 600.0
         assert cluster.size.height == pytest.approx(600.0 / 1.5)
@@ -714,8 +732,7 @@ class TestThumbMetrics:
                 cluster=_thumb_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         assert isinstance(cluster.metrics, ThumbClusterMetrics)
 
@@ -727,8 +744,7 @@ class TestThumbMetrics:
                 cluster=_thumb_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         m = cluster.metrics
         assert m.down_key.indicator_direction is CompassDirection.EAST
@@ -747,8 +763,7 @@ class TestThumbMetrics:
                 cluster=_thumb_cluster_data(),
                 side=KeyboardSide.LEFT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         m = cluster.metrics
         assert m.down_key.indicator_direction is CompassDirection.WEST
@@ -771,8 +786,7 @@ class TestThumbDrawing:
                 cluster=_thumb_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         svg = str(_draw(cluster, Point(0.0, 0.0)).as_svg())
         for label in ("DN", "PD", "UP", "NL", "KN", "DD"):
@@ -785,8 +799,7 @@ class TestThumbDrawing:
                 cluster=_thumb_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=width,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         assert cluster.size.width == width
 
@@ -799,7 +812,7 @@ class TestThumbDrawing:
 class TestThumbColorResolution:
     """Per-slot defaults pull from the right palette / layer source."""
 
-    def test_pad_default_uses_palette_neutral(self, ctx: RenderContext):
+    def test_pad_default_uses_palette_neutral(self):
         """Pad / nail / knuckle paint in ``palette.neutral_color`` by
         default — flat keys that don't carry the layer colour."""
         layer = LayerColor(
@@ -816,18 +829,18 @@ class TestThumbColorResolution:
             tap_dance_color="#000000",
             neutral_color="#deadbe",  # distinctive — easy to spot in SVG
         )
+        ctx = RenderContext.build(_build_config(palette), SvalboardKeymap(layers={}))
         with using_render_context(ctx):
             cluster = ThumbCluster(
                 cluster=_thumb_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=layer,
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         svg = str(_draw(cluster, Point(0.0, 0.0)).as_svg())
         assert "#deadbe" in svg.lower()  # neutral colour landed somewhere
 
-    def test_layer_switch_key_uses_destination_layer_color(self, ctx: RenderContext):
+    def test_layer_switch_key_uses_destination_layer_color(self):
         """Same layer-switch behaviour as :class:`FingerCluster`: a
         thumb key with ``layer_switch=1`` paints in layer 1's
         gradient colour when ``use_layer_colors_on_keys=True``."""
@@ -844,6 +857,7 @@ class TestThumbColorResolution:
             layers=(layer0, layer1),
             key_label_color="#ffffff",
         )
+        ctx = RenderContext.build(_build_config(palette, (0, 1)), SvalboardKeymap(layers={}))
         cluster_data = ThumbClusterData(
             down_key=_td_key("DN"),
             pad_key=_td_key("PD", layer_switch=1),
@@ -857,8 +871,7 @@ class TestThumbColorResolution:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=layer0,
-                palette=palette,
+                layer_qmk_index=0,
                 use_layer_colors_on_keys=True,
             )
         svg = str(_draw(cluster, Point(0.0, 0.0)).as_svg())
@@ -881,8 +894,7 @@ class TestThumbLayerIndicators:
                 cluster=_thumb_cluster_data(),
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=palette.layers[0],
-                palette=palette,
+                layer_qmk_index=_LAYER_0,
             )
         ind = cluster.metrics.indicators
         assert ind.down_key is None
@@ -892,7 +904,7 @@ class TestThumbLayerIndicators:
         assert ind.knuckle_key is None
         assert ind.double_down_key is None
 
-    def test_indicator_metrics_present_for_layer_switch_slot(self, ctx: RenderContext):
+    def test_indicator_metrics_present_for_layer_switch_slot(self):
         """A slot with ``layer_switch`` exposes a populated
         :class:`LayerIndicatorMetrics` with the routing direction
         matching the slot's outward / inward orientation."""
@@ -905,6 +917,7 @@ class TestThumbLayerIndicators:
             gradient=("#11ee2a", "#11ee2b", "#11ee2c", "#11ee2d", "#11ee2e", "#11ee2f"),
         )
         palette = Palette(layers=(layer0, layer1), key_label_color="#ffffff")
+        ctx = RenderContext.build(_build_config(palette, (0, 1)), SvalboardKeymap(layers={}))
         cluster_data = ThumbClusterData(
             down_key=_td_key("DN"),
             pad_key=_td_key("PD"),
@@ -918,15 +931,14 @@ class TestThumbLayerIndicators:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=layer0,
-                palette=palette,
+                layer_qmk_index=0,
             )
         ind = cluster.metrics.indicators.double_down_key
         assert ind is not None
         assert isinstance(ind, LayerIndicatorMetrics)
         assert ind.routing_direction is CompassDirection.NORTH
 
-    def test_show_layer_indicators_false_suppresses_metrics(self, ctx: RenderContext):
+    def test_show_layer_indicators_false_suppresses_metrics(self):
         layer0 = LayerColor(
             base_color="#000000",
             gradient=("#100000", "#200000", "#300000", "#400000", "#500000", "#600000"),
@@ -936,6 +948,7 @@ class TestThumbLayerIndicators:
             gradient=("#11ee2a", "#11ee2b", "#11ee2c", "#11ee2d", "#11ee2e", "#11ee2f"),
         )
         palette = Palette(layers=(layer0, layer1), key_label_color="#ffffff")
+        ctx = RenderContext.build(_build_config(palette, (0, 1)), SvalboardKeymap(layers={}))
         cluster_data = ThumbClusterData(
             down_key=_td_key("DN", layer_switch=1),
             pad_key=_td_key("PD"),
@@ -949,13 +962,12 @@ class TestThumbLayerIndicators:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=600.0,
-                layer_colors=layer0,
-                palette=palette,
+                layer_qmk_index=0,
                 show_layer_indicators=False,
             )
         assert cluster.metrics.indicators.down_key is None
 
-    def test_dd_indicator_clears_down_top(self, ctx: RenderContext):
+    def test_dd_indicator_clears_down_top(self):
         """The double-down indicator's circle should sit clear of the
         DOWN key's top edge — not just the DD key's top edge. Down
         starts at ``y=0``; DD starts at ``y=2*inset``, so DD's
@@ -971,6 +983,7 @@ class TestThumbLayerIndicators:
             gradient=("#11ee2a", "#11ee2b", "#11ee2c", "#11ee2d", "#11ee2e", "#11ee2f"),
         )
         palette = Palette(layers=(layer0, layer1), key_label_color="#ffffff")
+        ctx = RenderContext.build(_build_config(palette, (0, 1)), SvalboardKeymap(layers={}))
         cluster_data = ThumbClusterData(
             down_key=_td_key("DN"),
             pad_key=_td_key("PD"),
@@ -985,8 +998,7 @@ class TestThumbLayerIndicators:
                 cluster=cluster_data,
                 side=KeyboardSide.RIGHT,
                 width=cluster_width,
-                layer_colors=layer0,
-                palette=palette,
+                layer_qmk_index=0,
             )
         dd_ind = cluster.metrics.indicators.double_down_key
         dd_metrics = cluster.metrics.double_down_key

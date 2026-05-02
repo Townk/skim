@@ -36,10 +36,9 @@ The cluster does four jobs the per-key composables don't:
 from __future__ import annotations
 
 import colorsys
-from collections.abc import Callable
 from dataclasses import dataclass
 
-from skim.data import LayerColor, Palette, SplitSidePosition
+from skim.data import LayerColor, SplitSidePosition
 from skim.data.keyboard import FingerCluster as FingerClusterData
 from skim.data.keyboard import ThumbCluster as ThumbClusterData
 from skim.domain import KeyboardSide, KeyDirection, SvalboardTargetKey
@@ -47,6 +46,7 @@ from skim.domain import KeyboardSide, KeyDirection, SvalboardTargetKey
 from .composable import Composable
 from .layer_indicator import LayerIndicator, LayerIndicatorMetrics
 from .primitives import MetricsComponent, Point, Size
+from .render_context import RenderPalette
 from .styling import lighten, str_to_rgb
 from .svalboard_keys import (
     CenterKey,
@@ -152,9 +152,8 @@ def _resolve_fill(
     key: SvalboardTargetKey,
     default: str,
     use_accent: bool,
-    palette: Palette,
+    palette: RenderPalette,
     use_layer_colors_on_keys: bool,
-    qmk_index_to_position: Callable[[int], int | None],
 ) -> str:
     """Pick the fill colour for a key.
 
@@ -167,18 +166,17 @@ def _resolve_fill(
         return default
     if key.layer_switch is None:
         return default
-    position = qmk_index_to_position(key.layer_switch)
-    if position is not None and 0 <= position < len(palette.layers):
-        lc = palette.layers[position]
-        return lc[lc.color_index - (1 if use_accent else 0)]
-    return default
+    lc = palette.layers.get(key.layer_switch)
+    if lc is None:
+        return default
+    return lc[lc.color_index - (1 if use_accent else 0)]
 
 
 def _resolve_label_color(
     *,
     key: SvalboardTargetKey,
     fill_color: str,
-    palette: Palette,
+    palette: RenderPalette,
     layer_base_color: str,
 ) -> str:
     """Pick the label text colour.
@@ -206,10 +204,9 @@ def _resolve_key_colors(
     key: SvalboardTargetKey,
     default_primary: str,
     default_accent: str,
-    palette: Palette,
+    palette: RenderPalette,
     layer_base_color: str,
     use_layer_colors_on_keys: bool,
-    qmk_index_to_position: Callable[[int], int | None],
 ) -> _FingerKeyColors:
     """Resolve fill + accent + label colours for one slot."""
     fill = _resolve_fill(
@@ -218,7 +215,6 @@ def _resolve_key_colors(
         use_accent=False,
         palette=palette,
         use_layer_colors_on_keys=use_layer_colors_on_keys,
-        qmk_index_to_position=qmk_index_to_position,
     )
     accent = _resolve_fill(
         key=key,
@@ -226,7 +222,6 @@ def _resolve_key_colors(
         use_accent=True,
         palette=palette,
         use_layer_colors_on_keys=use_layer_colors_on_keys,
-        qmk_index_to_position=qmk_index_to_position,
     )
     label = _resolve_label_color(
         key=key,
@@ -298,24 +293,23 @@ def _slot_defaults(
 def _resolve_indicator_colors(
     *,
     target_layer: int,
-    palette: Palette,
-    qmk_index_to_position: Callable[[int], int | None],
+    palette: RenderPalette,
 ) -> tuple[str, str]:
     """Pick an indicator's ``(fill, stroke)`` for ``target_layer``.
 
-    The indicator paints in the destination layer's palette so the
-    badge visually identifies the layer it jumps to. Fill is the
-    layer's :attr:`LayerColor.base_color`; stroke is the gradient's
-    fifth stop (``lc[4]``) — both mirror legacy
-    :class:`indicators.LayerIndicator`. Out-of-range positions fall
-    back to neutral grey rather than raising, since a stray
-    ``layer_switch`` index shouldn't crash rendering.
+    ``target_layer`` is the QMK firmware index stored on a key's
+    ``layer_switch`` field. The indicator paints in the destination
+    layer's palette so the badge visually identifies the layer it
+    jumps to: fill is the layer's :attr:`LayerColor.base_color`;
+    stroke is the gradient's fifth stop (``lc[4]``) — both mirror
+    legacy :class:`indicators.LayerIndicator`. Unregistered firmware
+    indices fall back to neutral grey rather than raising, since a
+    stray ``layer_switch`` index shouldn't crash rendering.
     """
-    position = qmk_index_to_position(target_layer)
-    if position is not None and 0 <= position < len(palette.layers):
-        lc = palette.layers[position]
-        return lc.base_color, lc[4]
-    return _INDICATOR_FALLBACK_FILL, _INDICATOR_FALLBACK_STROKE
+    lc = palette.layers.get(target_layer)
+    if lc is None:
+        return _INDICATOR_FALLBACK_FILL, _INDICATOR_FALLBACK_STROKE
+    return lc.base_color, lc[4]
 
 
 # ---------------------------------------------------------------------------
@@ -488,13 +482,11 @@ def FingerCluster(
     cluster: FingerClusterData[SvalboardTargetKey],
     side: KeyboardSide,
     width: float,
-    layer_colors: LayerColor,
-    palette: Palette,
+    layer_qmk_index: int,
     has_double_south: bool = False,
     use_layer_colors_on_keys: bool = True,
     show_layer_indicators: bool = True,
     hold_symbol_position: SplitSidePosition = SplitSidePosition.OUTWARD,
-    qmk_index_to_position: Callable[[int], int | None] = lambda idx: idx,
 ):
     """A finger cluster — five (or six) keys laid out in cross shape.
 
@@ -504,6 +496,15 @@ def FingerCluster(
     ``show_layer_indicators`` is on) layer-indicator badges painted
     next to layer-switch keys. Each per-key composable receives
     resolved inputs and stays pure.
+
+    ``layer_qmk_index`` identifies the layer this cluster paints —
+    the QMK firmware index, the same int that ends up on
+    layer-switch keys' ``layer_switch`` field. The cluster reads
+    :class:`RenderPalette` off ``ctx.theme.palette`` and looks up
+    the layer's colours directly via ``palette.layers[layer_qmk_index]``;
+    layer-switch destinations look up the same way. Symbolic layer
+    ids (``"_NAV"``) are a config-time concept — by the time the
+    keymap data reaches us they're already firmware ints.
 
     Reports :class:`MetricsComponent[FingerClusterMetrics]` exposing
     each key's :class:`SvalboardKeyMetrics` plus per-slot
@@ -517,7 +518,13 @@ def FingerCluster(
     south trapezoid below the south key) renders. ``Size.height``
     grows accordingly.
     """
-    del ctx  # Per-key composables read ``ctx`` themselves.
+    palette = ctx.theme.palette
+    layer_colors = palette.layers.get(layer_qmk_index)
+    if layer_colors is None:
+        # Unknown firmware index — fall back to a synthetic LayerColor
+        # that uses the palette's neutral chrome colour everywhere.
+        # The cluster still renders; nothing crashes on a stray label.
+        layer_colors = LayerColor(base_color=palette.neutral_color)
 
     # Apply hold-symbol nudging before colour resolution — the
     # ``label`` field is what the per-key composable paints.
@@ -539,7 +546,6 @@ def FingerCluster(
             palette=palette,
             layer_base_color=layer_colors.base_color,
             use_layer_colors_on_keys=use_layer_colors_on_keys,
-            qmk_index_to_position=qmk_index_to_position,
         )
 
     center_colors = _colors(nudged_cluster.center_key, slot_defaults.center_key)
@@ -627,7 +633,6 @@ def FingerCluster(
         fill, stroke = _resolve_indicator_colors(
             target_layer=slot_key.layer_switch,
             palette=palette,
-            qmk_index_to_position=qmk_index_to_position,
         )
         return LayerIndicator(
             target_layer=slot_key.layer_switch,
@@ -798,10 +803,9 @@ def _resolve_thumb_key_colors(
     *,
     key: SvalboardTargetKey,
     default_fill: str,
-    palette: Palette,
+    palette: RenderPalette,
     layer_base_color: str,
     use_layer_colors_on_keys: bool,
-    qmk_index_to_position: Callable[[int], int | None],
 ) -> _ThumbKeyColors:
     """Resolve fill + label + stroke for one thumb slot.
 
@@ -819,7 +823,6 @@ def _resolve_thumb_key_colors(
         use_accent=False,
         palette=palette,
         use_layer_colors_on_keys=use_layer_colors_on_keys,
-        qmk_index_to_position=qmk_index_to_position,
     )
     label = _resolve_label_color(
         key=key,
@@ -982,12 +985,10 @@ def ThumbCluster(
     cluster: ThumbClusterData[SvalboardTargetKey],
     side: KeyboardSide,
     width: float,
-    layer_colors: LayerColor,
-    palette: Palette,
+    layer_qmk_index: int,
     use_layer_colors_on_keys: bool = True,
     show_layer_indicators: bool = True,
     hold_symbol_position: SplitSidePosition = SplitSidePosition.OUTWARD,
-    qmk_index_to_position: Callable[[int], int | None] = lambda idx: idx,
 ):
     """A thumb cluster — six keys laid out in the thumb's reach pattern.
 
@@ -997,6 +998,11 @@ def ThumbCluster(
     coloured from the layer + palette, hold-symbol-nudged on the
     appropriate slots, and (optionally) decorated with layer
     indicators on slots whose key has a ``layer_switch`` set.
+
+    ``layer_qmk_index`` is the QMK firmware index of the layer this
+    cluster paints. The cluster reads :class:`RenderPalette` off
+    ``ctx.theme.palette`` and looks up the layer's colours directly
+    via ``palette.layers[layer_qmk_index]``.
 
     Reports :class:`MetricsComponent[ThumbClusterMetrics]` so the
     parent layer composable can read per-slot indicator anchors /
@@ -1012,7 +1018,10 @@ def ThumbCluster(
     drawn output, or read the per-slot metrics to compute the actual
     extent.
     """
-    del ctx  # Per-key composables read ``ctx`` themselves.
+    palette = ctx.theme.palette
+    layer_colors = palette.layers.get(layer_qmk_index)
+    if layer_colors is None:
+        layer_colors = LayerColor(base_color=palette.neutral_color)
 
     nudged_cluster = _adjust_thumb_cluster_hold_symbols(
         cluster=cluster, side=side, position=hold_symbol_position
@@ -1032,7 +1041,6 @@ def ThumbCluster(
             palette=palette,
             layer_base_color=layer_base,
             use_layer_colors_on_keys=use_layer_colors_on_keys,
-            qmk_index_to_position=qmk_index_to_position,
         )
 
     down_colors = _colors(nudged_cluster.down_key, layer_base)
@@ -1117,7 +1125,6 @@ def ThumbCluster(
         fill, stroke = _resolve_indicator_colors(
             target_layer=slot_key.layer_switch,
             palette=palette,
-            qmk_index_to_position=qmk_index_to_position,
         )
         return LayerIndicator(
             target_layer=slot_key.layer_switch,

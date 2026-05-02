@@ -45,7 +45,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 
-from skim.data import Palette, SkimConfig, SvalboardKeymap
+from skim.data import LayerColor, SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTargetKey
 
 from .text import Font
@@ -102,10 +102,78 @@ class Typography:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class RenderPalette:
+    """Render-time palette — chrome colours + per-layer colours keyed
+    by QMK firmware index.
+
+    The data-layer :class:`Palette` stores per-layer colours as a
+    position-keyed tuple (``palette.layers[0]`` etc.). The render
+    stack doesn't care about array positions; it always identifies
+    a layer by its **QMK firmware index** (the int that ends up on
+    a key's ``layer_switch`` field after the keymap is parsed).
+    Symbolic layer ids (``"_NAV"``, ``"_SYS"``) are a *config-time*
+    concept — the user spells them in their YAML, the parser
+    translates them to firmware ints, and by the time anything
+    reaches the render stack we only ever see ints.
+
+    Re-keying by QMK firmware index makes every render-stack lookup
+    a single dict access: ``palette.layers[key.layer_switch]`` for
+    indicator badges or tinted layer-switch keys; same for the
+    cluster's own layer (``palette.layers[layer_qmk_index]``).
+
+    Document-chrome colours (background, text, neutral, etc.) live
+    on this class verbatim from the data :class:`Palette` — saves
+    the render stack from having to thread two palette references
+    through every call site.
+    """
+
+    background_color: str
+    text_color: str
+    key_label_color: str
+    neutral_color: str
+    border_color: str
+    macro_color: str
+    tap_dance_color: str
+    layers: dict[int, LayerColor]
+    """Per-layer colours keyed by QMK firmware index. Direct lookup
+    for any int the render stack handles — both the cluster's own
+    ``layer_qmk_index`` argument and the ``key.layer_switch`` int on
+    layer-switch keys."""
+
+    @classmethod
+    def from_config(cls, config: SkimConfig) -> "RenderPalette":
+        """Build the render palette by zipping the data palette's
+        position-indexed layers with the keyboard config's layer list.
+
+        ``config.output.style.palette.layers[i]`` and
+        ``config.keyboard.layers[i]`` are aligned by position — the
+        i-th palette colour belongs to the i-th configured layer. We
+        re-key by ``KeyboardLayer.index`` (the QMK firmware index)
+        so the render stack never touches array positions again.
+        """
+        data_palette = config.output.style.palette
+        keyboard_layers = config.keyboard.layers
+        layers: dict[int, LayerColor] = {
+            kb_layer.index: layer_color
+            for kb_layer, layer_color in zip(keyboard_layers, data_palette.layers, strict=False)
+        }
+        return cls(
+            background_color=data_palette.background_color,
+            text_color=data_palette.text_color,
+            key_label_color=data_palette.key_label_color,
+            neutral_color=data_palette.neutral_color,
+            border_color=data_palette.border_color,
+            macro_color=data_palette.macro_color,
+            tap_dance_color=data_palette.tap_dance_color,
+            layers=layers,
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Theme:
     """Resolved colour palette + typography registry for a single render."""
 
-    palette: Palette
+    palette: RenderPalette
     typography: Typography
 
     @classmethod
@@ -124,7 +192,7 @@ class Theme:
         visually consistent across per-layer, overview, macros,
         tap-dances and special-keys renders.
         """
-        palette = config.output.style.palette
+        palette = RenderPalette.from_config(config)
         return cls(
             palette=palette,
             typography=Typography(
@@ -371,6 +439,7 @@ def current_render_context() -> RenderContext:
 __all__ = [
     "DocumentMetrics",
     "RenderContext",
+    "RenderPalette",
     "TextStyle",
     "Theme",
     "Typography",

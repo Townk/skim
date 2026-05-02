@@ -46,6 +46,11 @@ class RenderContext:
     qmk_index_to_position: Callable[[int], int | None] = field(
         default=lambda idx: idx, repr=False, compare=False, hash=False
     )
+    layer_qmk_index: int = 0
+    """The current layer's QMK firmware index. Set by the call site
+    that builds this legacy :class:`RenderContext`; threaded through
+    to the new composables via the legacy ``*ClusterComponent.build()``
+    bridge."""
     layer_colors: LayerColor = field(init=False, repr=False, compare=False, hash=False)
 
     def __post_init__(self) -> None:
@@ -137,6 +142,7 @@ class ClusterRenderContext(RenderContext):
             use_system_fonts=render_context.use_system_fonts,
             show_layer_indicators=render_context.show_layer_indicators,
             qmk_index_to_position=render_context.qmk_index_to_position,
+            layer_qmk_index=render_context.layer_qmk_index,
             side=side,
         )
 

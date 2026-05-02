@@ -574,6 +574,7 @@ def _build_finger_clusters_for_layer(
     ctx = RenderContext(
         palette=palette,
         layer_index=config_position,
+        layer_qmk_index=config.keyboard.layers[config_position].index,
         has_double_south=config.keyboard.features.double_south,
         use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
         hold_symbol_position=config.output.style.hold_symbol_position,
@@ -627,6 +628,7 @@ def _build_thumb_clusters(
     thumb_ctx = RenderContext(
         palette=palette,
         layer_index=0,
+        layer_qmk_index=first_qmk_idx,
         has_double_south=config.keyboard.features.double_south,
         use_layer_colors_on_keys=config.output.style.use_layer_colors_on_keys,
         hold_symbol_position=config.output.style.hold_symbol_position,
