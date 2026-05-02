@@ -712,9 +712,7 @@ def _measure_label_width(label: str, font_size: float, min_width: float) -> floa
     ``min_width`` is the floor returned for blank/whitespace labels so the
     glyph cell never collapses below a usable extent.
     """
-    width = Label(label, Font.FINGER_KEY, text_color="#000").measure_rendered_width(
-        int(round(font_size))
-    )
+    width = Label(label, Font.FINGER_KEY, text_color="#000").measure_rendered_width(font_size)
     return max(width, min_width)
 
 

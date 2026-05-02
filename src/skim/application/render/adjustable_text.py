@@ -45,6 +45,7 @@ composable to build on.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import drawsvg as draw
@@ -123,6 +124,24 @@ class AdjustableTextMetrics:
 # ---------------------------------------------------------------------------
 
 
+def _pil_size_factor(font_size: float) -> tuple[int, float]:
+    """The integer size :class:`Font` loads PIL at, plus the linear-scale
+    factor that converts a measurement at that int size back to
+    ``font_size``.
+
+    PIL operates on integer point sizes; :meth:`Font.load` ``ceil``s
+    the requested ``font_size`` so the loaded font is at-or-above
+    the requested size (otherwise widths underestimate when
+    ``font_size`` falls between two ints, leaving long labels to
+    overflow the slot the layout reserved for them). Scaling the
+    raw measurement by ``font_size / int_size`` brings it back to
+    the requested size — closer to what an SVG renderer paints at
+    the float ``font_size`` than just using the int-size width.
+    """
+    int_size = max(int(math.ceil(font_size)), 1)
+    return int_size, font_size / int_size
+
+
 def measure_text_width(text: str, font: Font, font_size: float) -> float:
     """Rendered width of ``text`` at ``font_size`` in SVG units.
 
@@ -136,9 +155,10 @@ def measure_text_width(text: str, font: Font, font_size: float) -> float:
     input (e.g. plain text alongside Nerd Font icon tokens) is a
     higher-layer concern. Use a multi-span composable for that.
     """
-    if not text:
+    if not text or font_size <= 0:
         return 0.0
-    return float(font.load(font_size).getlength(text))
+    _, factor = _pil_size_factor(font_size)
+    return float(font.load(font_size).getlength(text)) * factor
 
 
 def measure_text_height(text: str, font: Font, font_size: float) -> float:
@@ -149,11 +169,12 @@ def measure_text_height(text: str, font: Font, font_size: float) -> float:
     what the SVG renderer ends up painting (regardless of the
     font's full ascent / descent extent).
     """
-    if not text:
+    if not text or font_size <= 0:
         return 0.0
+    _, factor = _pil_size_factor(font_size)
     pil_font = font.load(font_size)
     _, top, _, bottom = pil_font.getbbox(text)
-    return float(bottom - top)
+    return float(bottom - top) * factor
 
 
 def _reference_lines(text: str, font: Font, font_size: float) -> tuple[float, float, float]:
@@ -175,13 +196,14 @@ def _reference_lines(text: str, font: Font, font_size: float) -> tuple[float, fl
     """
     if not text:
         return 0.0, 0.0, 0.0
+    _, factor = _pil_size_factor(font_size)
     pil_font = font.load(font_size)
     _, x_top, _, x_bottom = pil_font.getbbox("x")
     _, h_top, _, _ = pil_font.getbbox("H")
     _, text_top, _, _ = pil_font.getbbox(text)
-    baseline = float(x_bottom - text_top)
-    meanline = float(x_top - text_top)
-    ascender_line = float(h_top - text_top)
+    baseline = float(x_bottom - text_top) * factor
+    meanline = float(x_top - text_top) * factor
+    ascender_line = float(h_top - text_top) * factor
     return baseline, meanline, ascender_line
 
 

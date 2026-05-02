@@ -13,6 +13,7 @@ separators, and multi-part labels.
 from __future__ import annotations
 
 import base64
+import math
 from enum import Enum
 from functools import cached_property, lru_cache
 from pathlib import Path
@@ -102,15 +103,19 @@ class Font(Enum):
 
         Args:
             font_size: Font size in points. Floats are accepted and
-                rounded to the nearest int (PIL operates on integer
-                point sizes; rounding here keeps the cache keyed by
-                int and avoids fragmenting it across near-equal
-                floats).
+                rounded UP to the nearest int (PIL operates on
+                integer point sizes; the cache stays keyed by int and
+                rounding upward ensures measurement at-or-above the
+                requested size — banker's rounding to the nearest int
+                used to underestimate widths whenever ``font_size``
+                landed on a ``.5`` boundary, since e.g.
+                ``round(6.5)`` returns 6, leaving long labels to
+                overflow the slot the layout reserved for them).
 
         Returns:
             A PIL ImageFont.FreeTypeFont instance.
         """
-        return _load_font(self.path, int(round(max(font_size, 1.0))))
+        return _load_font(self.path, max(int(math.ceil(font_size)), 1))
 
     def get_system_font_family(self) -> str:
         """Get the system font family name for CSS when not embedding fonts.

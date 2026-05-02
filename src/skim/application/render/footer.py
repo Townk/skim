@@ -67,7 +67,7 @@ def _measure_text_size(text: str, font_size: float) -> Size:
     """
     if not text:
         return Size(0.0, 0.0)
-    pil_font = Font.FINGER_KEY.load(int(round(max(font_size, 1.0))))
+    pil_font = Font.FINGER_KEY.load(font_size)
     left, top, right, bottom = pil_font.getbbox(text)
     return Size(width=float(right - left), height=float(bottom - top))
 
