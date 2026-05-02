@@ -1354,7 +1354,7 @@ symbol_descriptions:
     # ---- RGB / LED underglow ----
     QK_UNDERGLOW_TOGGLE: "Toggle LED underglow"
     QK_UNDERGLOW_MODE_NEXT: "Next LED mode"
-    QK_UNDERGLOW_MODE_PREVIOUS: "Previous RGB mode"
+    QK_UNDERGLOW_MODE_PREVIOUS: "Previous LED mode"
     QK_UNDERGLOW_HUE_UP: "HSV hue up"
     QK_UNDERGLOW_HUE_DOWN: "HSV hue down"
     QK_UNDERGLOW_SATURATION_UP: "HSV saturation up"
