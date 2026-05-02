@@ -244,7 +244,6 @@ def MacroChip(
         style=label_style,
         text_anchor="start",
         dominant_baseline="central",
-        separator="",
     )
     size = Size(metrics.chip_width, metrics.chip_height)
 
@@ -306,7 +305,6 @@ def MacroPill(
         style=label_style,
         text_anchor="start",
         dominant_baseline="central",
-        separator="",
     )
     size = Size(pill_w, metrics.pill_row_height)
 

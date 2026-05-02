@@ -183,7 +183,6 @@ def LayerIndicator(
         min_font_size=1.0,
         text_anchor="middle",
         dominant_baseline="central",
-        separator="",
     )
 
     # The indicator is annotation: it doesn't claim layout space.

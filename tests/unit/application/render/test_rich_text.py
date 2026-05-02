@@ -95,13 +95,16 @@ class TestParseIntoSpans:
     def test_mixed_input_splits_into_separate_spans(self):
         default = _style(12.0)
         spans = parse_into_spans("Foo %%md-keyboard; bar", default)
-        # ``Foo `` → text span; token → symbols span; `` bar`` → text span.
+        # ``Foo `` and `` bar`` get their leading/trailing whitespace
+        # stripped at flush time — RichText's default separator puts
+        # the visual gap between adjacent spans, so any whitespace the
+        # input encoded between tokens would double up otherwise.
         assert len(spans) == 3
-        assert spans[0].text == "Foo "
+        assert spans[0].text == "Foo"
         assert spans[0].style == default
         assert spans[1].style is not None
         assert spans[1].style.font == Font.SYMBOLS
-        assert spans[2].text == " bar"
+        assert spans[2].text == "bar"
         assert spans[2].style == default
 
     def test_unknown_token_kept_literal_in_text_span(self):
@@ -111,6 +114,89 @@ class TestParseIntoSpans:
         assert len(spans) == 1
         assert spans[0].text == "foo %%not-a-token; bar"
         assert spans[0].style == default
+
+    def test_separator_char_yields_dedicated_span_when_background_passed(self):
+        """The separator character ``│`` splits into its own span when
+        ``separator_background`` is supplied. The span carries a
+        ghost-style colour derived from the background (darkened via
+        ``adjust_luminance(bg, 0.7)``) and a paint-time offset that
+        shifts the visible bar half its advance to the left so the
+        trailing space breathes around the bar's quirky font metrics.
+        Weight stays inherited from the surrounding style — the bar's
+        bold appearance comes from the font choice, not from forcing
+        ``weight=700`` on top (which would trigger synthetic-bold
+        rendering on Roboto Black and smear the glyph).
+        """
+        default = _style(12.0, color="#FFFFFF")
+        spans = parse_into_spans("ab│cd", default, separator_background="#888888")
+        # 3 spans: "ab", "│", "cd".
+        assert len(spans) == 3
+        assert spans[0].text == "ab"
+        assert spans[0].style == default
+        assert spans[1].text == "│"
+        assert spans[1].style is not None
+        assert spans[1].style.weight == default.weight
+        assert spans[1].style.color != "#888888"
+        # The separator span carries a negative-x paint offset so the
+        # bar visually centres within its advance instead of riding
+        # the right edge.
+        assert spans[1].offset.x < 0.0
+        assert spans[2].text == "cd"
+        assert spans[2].style == default
+
+    def test_separator_char_kept_literal_when_no_background_passed(self):
+        """Without ``separator_background`` the parser keeps the
+        backward-compatible behaviour: ``│`` stays as plain text in
+        whichever surrounding span it lands in. Allows callers that
+        don't want separator styling (legacy wrappers, free-form text)
+        to use :func:`parse_into_spans` without picking up the new
+        separator splitting."""
+        default = _style(12.0)
+        spans = parse_into_spans("ab│cd", default)
+        assert len(spans) == 1
+        assert spans[0].text == "ab│cd"
+
+    def test_separator_with_surrounding_nerd_font_tokens(self):
+        """Separator splitting interleaves correctly with Nerd Font
+        token splitting: ``%%kb;│%%kb;`` produces three spans (glyph,
+        separator, glyph) — the typical layer-tap label shape."""
+        default = _style(12.0)
+        spans = parse_into_spans(
+            "%%md-keyboard;│%%md-keyboard;", default, separator_background="#888"
+        )
+        assert len(spans) == 3
+        assert spans[0].style is not None and spans[0].style.font == Font.SYMBOLS
+        assert spans[1].text == "│"
+        assert spans[1].style is not None
+        assert spans[2].style is not None and spans[2].style.font == Font.SYMBOLS
+
+    def test_plain_text_segments_strip_whitespace(self):
+        """Plain-text fragments are stripped of leading/trailing
+        whitespace at flush time — :func:`RichText` uses its default
+        ``separator=" "`` to put the gap between adjacent spans, so
+        any whitespace the input string encoded between tokens would
+        double up if we kept it. Stripping at the parser keeps the
+        span list clean and the inter-span gap uniformly one space."""
+        default = _style(12.0)
+        # Input has explicit whitespace around the token; the parser
+        # drops the spaces from the text fragments so the rendered
+        # output relies solely on RichText's separator.
+        spans = parse_into_spans("Foo %%md-keyboard; bar", default)
+        assert len(spans) == 3
+        assert spans[0].text == "Foo"  # was "Foo " before stripping
+        assert spans[1].style is not None and spans[1].style.font == Font.SYMBOLS
+        assert spans[2].text == "bar"  # was " bar"
+
+    def test_pure_whitespace_segment_is_dropped_entirely(self):
+        """A text fragment that is ONLY whitespace (e.g. between two
+        adjacent Nerd Font tokens) gets dropped — the spans on either
+        side are adjacent and :func:`RichText`'s default separator
+        provides the visual gap."""
+        default = _style(12.0)
+        spans = parse_into_spans("%%md-keyboard; %%md-keyboard;", default)
+        # Only the two glyph spans — the lone " " between them is dropped.
+        assert len(spans) == 2
+        assert all(s.style is not None and s.style.font == Font.SYMBOLS for s in spans)
 
 
 # ---------------------------------------------------------------------------

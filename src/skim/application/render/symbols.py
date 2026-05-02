@@ -193,7 +193,6 @@ def SymbolEntry(
         style=glyph_style,
         text_anchor="start",
         dominant_baseline="central",
-        separator="",
     )
     desc_el = AdjustableText(
         text=entry.description,

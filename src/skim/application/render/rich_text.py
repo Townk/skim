@@ -69,6 +69,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from skim.application.loaders import load_nerdfont_glyphs
+from skim.domain import SEPARATOR_CHAR
 
 from .adjustable_text import (
     AdjustableText,
@@ -78,7 +79,15 @@ from .adjustable_text import (
 from .composable import Composable
 from .primitives import MetricsComponent, Point, Size
 from .render_context import TextStyle
+from .styling import adjust_luminance
 from .text import Font
+
+# Luminance multiplier applied to the key's background colour to
+# derive the separator's stroke colour — mirrors legacy
+# ``SeparatorPart.SEPARATOR_DARKEN_FACTOR``. The result is a darker
+# version of the background, like the ghost label colour, so the
+# bar reads as a faint divider rather than a glyph in its own right.
+_SEPARATOR_LUMINANCE_FACTOR = 0.7
 
 # Default inter-span separator. Appended to every span's text except
 # the last so the gap between spans is rendered with the preceding
@@ -109,10 +118,22 @@ class TextSpan:
     parent style remain the document's "voice" while individual
     spans diverge as needed (e.g. an icon span using
     ``Font.SYMBOLS``).
+
+    ``offset`` is a paint-time shift applied to where the span
+    actually renders, in absolute SVG units. Layout — cursor
+    advance, bbox, relaxation, truncation — proceeds as if the
+    offset weren't there; only the call to ``draw_at`` adds the
+    offset to the span's origin. Use it to compensate for glyphs
+    whose font advance doesn't match the visible ink position
+    (e.g. the box-drawing separator ``│`` U+2502 sits at the right
+    edge of its advance box in Roboto, swallowing the trailing
+    space — a negative ``offset.x`` shifts the visible bar back
+    into the centre of its advance and lets the space breathe).
     """
 
     text: str
     style: TextStyle | None = None
+    offset: Point = Point(0.0, 0.0)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -181,7 +202,12 @@ def resolve_nerd_font_glyphs(text: str) -> str:
     return "".join(out)
 
 
-def parse_into_spans(text: str, default_style: TextStyle) -> list[TextSpan]:
+def parse_into_spans(
+    text: str,
+    default_style: TextStyle,
+    *,
+    separator_background: str | None = None,
+) -> list[TextSpan]:
     """Split ``text`` into a list of :class:`TextSpan` objects.
 
     Plain-text fragments become a span carrying ``default_style``;
@@ -196,12 +222,32 @@ def parse_into_spans(text: str, default_style: TextStyle) -> list[TextSpan]:
     applies. Adjacent text fragments don't merge across token
     boundaries; the returned list mirrors the structural break.
 
+    Plain-text fragments are **stripped of leading and trailing
+    whitespace** at flush time and a fragment that contains only
+    whitespace is dropped entirely. This keeps the span list clean
+    so the caller can rely on :func:`RichText`'s default
+    ``separator=" "`` mechanism to put exactly one space between
+    every pair of adjacent spans — without doubling up on whitespace
+    that the input string happened to encode between tokens.
+
+    When ``separator_background`` is supplied (typically the key's
+    fill colour) the parser splits on the separator character (``│``,
+    :data:`skim.domain.SEPARATOR_CHAR`) and emits a dedicated span
+    for each separator with bold weight and a ghost colour derived
+    from the background (via :func:`adjust_luminance` matching the
+    legacy ``SeparatorPart.SEPARATOR_DARKEN_FACTOR``). The visual
+    breathing room around the bar comes from :func:`RichText`'s
+    inter-span separator just like every other adjacent span pair —
+    that's the whole point of stripping whitespace here. Without a
+    background colour the separator stays in the same span as the
+    surrounding text and renders with the default style.
+
     Intended for callers that have a single string with mixed
     plain-text and icon content (e.g. a key label like
-    ``"Foo %%nf-md-arrow-up;"``) and want :func:`RichText` to render
-    each part with the right font. Pair with ``RichText(separator="")``
-    so the inter-span auto-separator doesn't insert extra whitespace
-    on top of the spacing already encoded in the input string.
+    ``"Foo %%nf-md-arrow-up;"``). Pair with the default
+    ``RichText(separator=" ")`` so adjacent spans get a clean
+    one-space gap without the caller having to reason about which
+    fragments brought their own whitespace and which didn't.
     """
     glyphs = load_nerdfont_glyphs()
     symbols_style = TextStyle(
@@ -210,13 +256,32 @@ def parse_into_spans(text: str, default_style: TextStyle) -> list[TextSpan]:
         weight=default_style.weight,
         color=default_style.color,
     )
+    separator_style: TextStyle | None = None
+    if separator_background is not None:
+        # The separator inherits the default style's weight rather
+        # than forcing ``700`` — thumb-key labels already use Roboto
+        # Black (heavier than typical bold), so an explicit
+        # ``weight=700`` on top of an already-Black face triggered
+        # synthetic-bold rendering that smeared the glyph horizontally
+        # and shifted the visible bar off the offset-math centre. The
+        # legacy ``SeparatorPart`` didn't set a weight either; the
+        # bar's bold appearance came from the font choice alone.
+        separator_style = TextStyle(
+            font=default_style.font,
+            size=default_style.size,
+            weight=default_style.weight,
+            color=adjust_luminance(separator_background, _SEPARATOR_LUMINANCE_FACTOR),
+        )
     spans: list[TextSpan] = []
     text_buffer: list[str] = []
 
     def _flush_text() -> None:
-        if text_buffer:
-            spans.append(TextSpan(text="".join(text_buffer), style=default_style))
-            text_buffer.clear()
+        if not text_buffer:
+            return
+        text_segment = "".join(text_buffer).strip()
+        text_buffer.clear()
+        if text_segment:
+            spans.append(TextSpan(text=text_segment, style=default_style))
 
     i = 0
     n = len(text)
@@ -236,6 +301,30 @@ def parse_into_spans(text: str, default_style: TextStyle) -> list[TextSpan]:
                     spans.append(TextSpan(text=glyph, style=symbols_style))
                     i = j + 1
                     continue
+        if separator_style is not None and text[i] == SEPARATOR_CHAR:
+            _flush_text()
+            # The separator glyph (``│`` U+2502 in Roboto) sits at
+            # the right edge of its advance box — that built-in
+            # left padding swallows the trailing space :func:`RichText`
+            # appends, leaving the next span flush against the bar.
+            # A negative ``offset.x`` of half the bar's natural
+            # advance pulls the visible glyph back into the centre
+            # of its advance, so the auto-trailing-space lands as a
+            # visible gap on the bar's RIGHT side. The cursor still
+            # advances by the bar's natural width — this only moves
+            # where the glyph paints, not where the next span starts.
+            sep_advance = measure_text_width(
+                SEPARATOR_CHAR, separator_style.font, separator_style.size
+            )
+            spans.append(
+                TextSpan(
+                    text=SEPARATOR_CHAR,
+                    style=separator_style,
+                    offset=Point(-sep_advance / 2.0, 0.0),
+                )
+            )
+            i += 1
+            continue
         text_buffer.append(text[i])
         i += 1
     _flush_text()
@@ -394,13 +483,14 @@ def _truncate_with_ellipses(
     styles: list[TextStyle],
     mins: list[float],
     rendered: list[str],
+    offsets: list[Point],
     max_width: float,
     max_height: float | None,
     text_anchor: str,
     ellipsis_style: TextStyle,
     ellipsis_min: float,
     separator: str,
-) -> tuple[list[TextStyle], list[float], list[str], list[float]]:
+) -> tuple[list[TextStyle], list[float], list[str], list[float], list[Point]]:
     """Drop spans + insert ellipsis span(s) until the trial set fits.
 
     For ``text_anchor`` of ``"start"`` (default), the ellipsis is
@@ -425,22 +515,27 @@ def _truncate_with_ellipses(
     # stays roughly symmetric across iterations.
     drop_from_end = True
 
+    zero_offset = Point(0.0, 0.0)
     while True:
         trial_styles: list[TextStyle] = []
         trial_mins: list[float] = []
         trial_rendered: list[str] = []
+        trial_offsets: list[Point] = []
         for _ in range(prefix_count):
             trial_styles.append(ellipsis_style)
             trial_mins.append(ellipsis_min)
             trial_rendered.append(_ELLIPSIS)
+            trial_offsets.append(zero_offset)
         for k in kept:
             trial_styles.append(styles[k])
             trial_mins.append(mins[k])
             trial_rendered.append(rendered[k])
+            trial_offsets.append(offsets[k])
         for _ in range(suffix_count):
             trial_styles.append(ellipsis_style)
             trial_mins.append(ellipsis_min)
             trial_rendered.append(_ELLIPSIS)
+            trial_offsets.append(zero_offset)
 
         sizes = _relax_sizes(
             styles=trial_styles,
@@ -451,12 +546,12 @@ def _truncate_with_ellipses(
             separator=separator,
         )
         if _fits_at_sizes(trial_styles, trial_rendered, sizes, max_width, separator):
-            return trial_styles, trial_mins, trial_rendered, sizes
+            return trial_styles, trial_mins, trial_rendered, sizes, trial_offsets
 
         if not kept:
             # Only the ellipsis span(s) remain — return them even if
             # they overflow; nothing more can be dropped.
-            return trial_styles, trial_mins, trial_rendered, sizes
+            return trial_styles, trial_mins, trial_rendered, sizes, trial_offsets
 
         if text_anchor == "middle":
             if drop_from_end:
@@ -542,6 +637,7 @@ def RichText(
     #    inherit the parent's. Resolve glyphs in the same pass.
     effective_styles = [span.style if span.style is not None else style for span in spans]
     rendered = [resolve_nerd_font_glyphs(span.text) for span in spans]
+    span_offsets = [span.offset for span in spans]
 
     # 2. Resolve per-span min_font_size proportionally from the
     #    parent ratio. ``min_font_size`` is clamped to ``style.size``
@@ -567,10 +663,11 @@ def RichText(
     if max_width is not None and not _fits_at_sizes(
         effective_styles, rendered, sizes, max_width, separator
     ):
-        effective_styles, span_mins, rendered, sizes = _truncate_with_ellipses(
+        effective_styles, span_mins, rendered, sizes, span_offsets = _truncate_with_ellipses(
             styles=effective_styles,
             mins=span_mins,
             rendered=rendered,
+            offsets=span_offsets,
             max_width=max_width,
             max_height=max_height,
             text_anchor=text_anchor,
@@ -624,9 +721,17 @@ def RichText(
         x_offset = 0.0
 
     def draw_at(d, origin: Point) -> None:
+        # ``cursor_x`` advances by the span's natural width — the
+        # per-span ``offset`` is applied ONLY to the paint position,
+        # so a span shifted left by its offset doesn't drag the
+        # following spans with it. That keeps layout / centering
+        # math independent of any paint-time tweaks (used by the
+        # separator span to pull the ``│`` glyph back into the
+        # centre of its advance box without disturbing the rest of
+        # the row).
         cursor_x = origin.x + x_offset
-        for el, w, top in zip(span_elements, span_widths, span_top_offsets):
-            el.draw_at(d, Point(cursor_x, origin.y + top))
+        for el, w, top, off in zip(span_elements, span_widths, span_top_offsets, span_offsets):
+            el.draw_at(d, Point(cursor_x + off.x, origin.y + top + off.y))
             cursor_x += w
 
     return MetricsComponent(

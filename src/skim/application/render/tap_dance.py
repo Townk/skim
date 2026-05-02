@@ -286,9 +286,10 @@ def TapDanceCell(
     # so :func:`parse_into_spans` splits the input into properly-
     # styled spans — plain-text fragments use ``Font.FINGER_KEY``,
     # tokens become single-character spans on ``Font.SYMBOLS``.
-    # ``separator=""`` because the parser preserves any whitespace
-    # already in the input string; we don't want an extra space
-    # between adjacent fragments.
+    # The parser strips whitespace from text fragments so
+    # :func:`RichText`'s default ``separator=" "`` puts exactly one
+    # space between every adjacent pair without doubling up on input-
+    # encoded whitespace.
     label_style = TextStyle(
         font=Font.FINGER_KEY,
         size=metrics.cell_label_font_size,
@@ -301,7 +302,6 @@ def TapDanceCell(
             max_width=cell_w,
             text_anchor="middle",
             dominant_baseline="central",
-            separator="",
         )
         if content is not None
         else None
@@ -426,10 +426,9 @@ def TapDanceRow(
     # carries a Nerd Font icon token (the ``keyboard_close`` glyph)
     # followed by the tap-dance id text; :func:`parse_into_spans`
     # splits it into a symbols-font icon span and a plain-text id
-    # span. ``separator=""`` because the ``" "`` between the token
-    # and the id is already encoded in the input string and comes
-    # out as part of the trailing text span — no need to insert
-    # another gap.
+    # span. The ``" "`` between the token and the id is stripped at
+    # the parser; :func:`RichText`'s default ``separator=" "`` adds
+    # the inter-span gap back uniformly.
     chip_label_style = TextStyle(
         font=Font.FINGER_KEY,
         size=metrics.chip_inner_font_size,
@@ -440,7 +439,6 @@ def TapDanceRow(
         style=chip_label_style,
         text_anchor="middle",
         dominant_baseline="central",
-        separator="",
     )
 
     def draw_at(d, origin):
