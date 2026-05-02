@@ -117,6 +117,10 @@ def _draw_layer(
     copyright_text = config.output.copyright or ""
 
     composable_ctx = ComposableRenderContext.build(config, keymap)
+    # ``using_render_context`` stays active across both build and paint
+    # because some composables (notably the tap-dance table) defer
+    # construction of their cells until ``draw_at`` runs and read the
+    # ContextVar at that point.
     with using_render_context(composable_ctx):
         layer_doc = KeymapLayerDocument(
             layer=layer,
@@ -130,25 +134,25 @@ def _draw_layer(
             keycode_mappings=keycode_mappings,
         )
 
-    canvas_width = layer_doc.size.width
-    canvas_height = layer_doc.size.height
-    display_w = config.output.layout.width
-    display_h = canvas_height * (display_w / canvas_width) if canvas_width else canvas_height
-    d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_width} {canvas_height}")
+        canvas_width = layer_doc.size.width
+        canvas_height = layer_doc.size.height
+        display_w = config.output.layout.width
+        display_h = canvas_height * (display_w / canvas_width) if canvas_width else canvas_height
+        d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_width} {canvas_height}")
 
-    if not config.output.style.use_system_fonts:
-        font_analyzer = FontUsageAnalyzer()
-        font_analyzer.analyze_keymap(_layer_labels(layer), layer_title, config.output.copyright)
-        font_analyzer.analyze_legend(macros, tap_dances)
-        font_subsetter = FontSubsetter(font_analyzer)
-        subsetted_css = font_subsetter.generate_subsetted_css()
-        if subsetted_css:
-            d.append_css(subsetted_css)
-        else:
-            d.append_css(font_subsetter.generate_full_fonts_css())
+        if not config.output.style.use_system_fonts:
+            font_analyzer = FontUsageAnalyzer()
+            font_analyzer.analyze_keymap(_layer_labels(layer), layer_title, config.output.copyright)
+            font_analyzer.analyze_legend(macros, tap_dances)
+            font_subsetter = FontSubsetter(font_analyzer)
+            subsetted_css = font_subsetter.generate_subsetted_css()
+            if subsetted_css:
+                d.append_css(subsetted_css)
+            else:
+                d.append_css(font_subsetter.generate_full_fonts_css())
 
-    layer_doc.draw_at(d, ComposablePoint(0.0, 0.0))
-    return d
+        layer_doc.draw_at(d, ComposablePoint(0.0, 0.0))
+        return d
 
 
 def _selected_layers(

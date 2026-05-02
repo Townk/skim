@@ -15,17 +15,12 @@ Mirrors the special-keys document pattern from
   amount of space.
 * :func:`KeymapLayerDocument` — the full per-layer image. Stacks
   :func:`Header`, :func:`KeymapLayer`, the optional macro / TD
-  legend, the optional symbol legend, and an optional
-  :func:`Footer` in a :class:`Column`, then wraps the whole
-  thing in :func:`KeymapDocument` for the rounded border.
-
-The macro / TD legend and the symbol legend currently delegate
-to the legacy painters (``build_legend`` /
-``build_symbol_legend``) via small adapter composables — the
-combined macro+TD legend layout the per-layer image uses isn't
-yet expressed as composables. Replacing those adapters with
-proper composables can come later without touching the document
-shape.
+  legend (re-using the same :func:`MacroSection` /
+  :func:`TapDanceSection` composables the standalone special-keys
+  image uses), the optional symbol legend (:func:`SymbolSection`),
+  and an optional :func:`Footer` in a :class:`Column`, then wraps
+  the whole thing in :func:`KeymapDocument` for the rounded
+  border.
 """
 
 from __future__ import annotations
@@ -47,22 +42,16 @@ from .footer import Footer
 from .header import Header
 from .keymap_document import KeymapDocument
 from .legend import (
-    LegendLayout,
-    build_legend,
     collect_used_ids,
-    legend_height,
-    plan_layout,
     resolve_macros,
     resolve_tap_dances,
 )
-from .primitives import Column, Point, Size, Spacer
+from .macros import MacroSection
+from .primitives import Column, Point, Row, Size
 from .svalboard_halves import KeyboardHalf
-from .symbol_legend import (
-    SymbolLegendEntry,
-    build_symbol_legend,
-    collect_used_descriptions,
-    symbol_legend_height,
-)
+from .symbol_legend import collect_used_descriptions
+from .symbols import FlowDirection, SymbolSection
+from .tap_dance import TapDanceSection
 
 # The legacy ``KeymapLayoutMetrics`` keeps the central gap between
 # the two halves at exactly ``2 * inset``; same constant lives here
@@ -176,87 +165,6 @@ def KeymapLayer(
 
 
 # ---------------------------------------------------------------------------
-# Legend adapters — wrap the legacy painters in a composable shell so they
-# slot into the document's column layout. Replaced with proper composables
-# when the legend rendering migrates.
-# ---------------------------------------------------------------------------
-
-
-@Composable(use_context=True)
-def _LayerMacroTapDanceLegend(
-    ctx,
-    *,
-    layout: LegendLayout | None,
-    content_width: float,
-):
-    """Wrap the legacy combined macro / tap-dance legend painter."""
-    if layout is None:
-        return Spacer()
-
-    palette = ctx.config.output.style.palette
-    use_system_fonts = ctx.config.output.style.use_system_fonts
-    doc_width = ctx.document_metrics.doc_width
-
-    height = legend_height(layout, content_width, doc_width=doc_width)
-    if height <= 0:
-        return Spacer()
-    size = Size(content_width, height)
-
-    def draw_at(d, origin):
-        group = build_legend(
-            layout=layout,
-            x=origin.x,
-            y=origin.y,
-            content_width=content_width,
-            palette=palette,
-            use_system_fonts=use_system_fonts,
-            doc_width=doc_width,
-        )
-        if group is not None:
-            d.append(group)
-
-    return size, draw_at
-
-
-@Composable(use_context=True)
-def _LayerSymbolLegend(
-    ctx,
-    *,
-    entries: list[SymbolLegendEntry],
-    content_width: float,
-):
-    """Wrap the legacy per-layer symbol legend painter."""
-    if not entries:
-        return Spacer()
-
-    palette = ctx.config.output.style.palette
-    use_system_fonts = ctx.config.output.style.use_system_fonts
-    doc_width = ctx.document_metrics.doc_width
-    flow = ctx.config.output.style.symbol_legend_flow.value
-
-    height = symbol_legend_height(entries, content_width, doc_width=doc_width)
-    if height <= 0:
-        return Spacer()
-    size = Size(content_width, height)
-
-    def draw_at(d, origin):
-        group = build_symbol_legend(
-            entries=entries,
-            x=origin.x,
-            y=origin.y,
-            content_width=content_width,
-            palette=palette,
-            use_system_fonts=use_system_fonts,
-            flow=flow,
-            doc_width=doc_width,
-        )
-        if group is not None:
-            d.append(group)
-
-    return size, draw_at
-
-
-# ---------------------------------------------------------------------------
 # KeymapLayerDocument — the full per-layer image
 # ---------------------------------------------------------------------------
 
@@ -278,10 +186,13 @@ def KeymapLayerDocument(
     """The full per-layer keymap image as a single composable.
 
     Stacks :func:`Header`, :func:`KeymapLayer`, the optional
-    macro / TD legend, the optional symbol legend, and an
-    optional :func:`Footer` in a :class:`Column` (gap =
-    ``inset``), then wraps in :func:`KeymapDocument` for the
-    rounded background border + content_offset chrome.
+    macro / TD legend (:func:`MacroSection` next to
+    :func:`TapDanceSection` in a :class:`Row` when both have
+    content; whichever is non-empty alone otherwise), the optional
+    symbol legend (:func:`SymbolSection`), and an optional
+    :func:`Footer` in a :class:`Column`, then wraps in
+    :func:`KeymapDocument` for the rounded background border +
+    content_offset chrome.
 
     A falsy ``copyright`` (``None`` or ``""``) suppresses the
     footer. Macro / TD legend appears only when the style flag
@@ -302,14 +213,33 @@ def KeymapLayerDocument(
         target_content_w=target_content_w,
     )
 
-    legend_plan: LegendLayout | None = None
+    macro_entries: list = []
+    td_entries: list = []
     if config.output.style.show_special_keys_legend:
         used_macro_ids, used_td_ids = collect_used_ids(layer)
         macro_entries = resolve_macros(used_macro_ids, macros)
         td_entries = resolve_tap_dances(used_td_ids, tap_dances)
-        legend_plan = plan_layout(macro_entries, td_entries)
 
-    symbol_entries: list[SymbolLegendEntry] = []
+    # Macro / TD section width split — same policy as
+    # :func:`KeymapSpecialKeysDocument`. Half the content width
+    # each when both have content; the full content width when
+    # only one section is present.
+    col_gap = metrics.column_gap
+    col_w = (
+        (target_content_w - col_gap) / 2
+        if macro_entries and td_entries
+        else target_content_w
+    )
+    macro_section = (
+        MacroSection(macros=macro_entries, content_width=col_w, width=col_w)
+        if macro_entries
+        else None
+    )
+    td_section = (
+        TapDanceSection(tap_dances=td_entries, width=col_w, max_width=col_w) if td_entries else None
+    )
+
+    symbol_section = None
     if config.output.style.show_symbol_legend and raw_layer_keycodes and keycode_mappings:
         symbol_entries = collect_used_descriptions(
             raw_layer_keycodes,
@@ -317,15 +247,15 @@ def KeymapLayerDocument(
             keycode_mappings,
             include_transparent=not config.output.style.show_transparent_fallthrough,
         )
-
-    macro_legend = _LayerMacroTapDanceLegend(
-        layout=legend_plan,
-        content_width=target_content_w,
-    )
-    sym_legend = _LayerSymbolLegend(
-        entries=symbol_entries,
-        content_width=target_content_w,
-    )
+        if symbol_entries:
+            flow_value = config.output.style.symbol_legend_flow.value
+            typed_flow: FlowDirection = "row" if flow_value == "row" else "column"
+            symbol_section = SymbolSection(
+                entries=symbol_entries,
+                max_width=target_content_w,
+                column_count=config.output.style.symbol_legend_columns,
+                flow=typed_flow,
+            )
 
     with Column(gap=metrics.inset, align="start") as content:
         Header(
@@ -334,8 +264,14 @@ def KeymapLayerDocument(
             max_width=target_content_w,
         )
         content.add(keymap_layer)
-        content.add(macro_legend)
-        content.add(sym_legend)
+        if macro_section and td_section:
+            Row([macro_section, td_section], gap=col_gap, align="top")
+        elif macro_section:
+            content.add(macro_section)
+        elif td_section:
+            content.add(td_section)
+        if symbol_section is not None:
+            content.add(symbol_section)
         if copyright:
             Footer(text=copyright, max_width=target_content_w)
 
