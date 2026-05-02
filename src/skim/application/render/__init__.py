@@ -105,22 +105,19 @@ def _draw_layer(
     header_offset = outer_padding - m.margin - m.inset + header_height + gap_below_header
 
     # Reserve extra space only when a key with a layer_switch will actually render
-    # an indicator that overflows the cluster bounds. The indicator dimensions
-    # (circle diameter + gap) are derived from each cluster's outer-key width —
-    # see ThumbCluster / FingerCluster for the source proportions. When the
-    # horizontal offset kicks in, both finger clusters and the thumb on each
-    # side shift outward together so the keyboard reads as one unit per side.
-    vertical_indicator_offset = 0.0
+    # an indicator that overflows the cluster bounds. The horizontal and top
+    # offsets are still computed here because they shift the entire keyboard
+    # half on the canvas; the vertical (thumb-top) offset is now owned by
+    # :func:`KeyboardHalf`, which reads the actual overhang off the thumb
+    # cluster's metrics — see ``thumb_top_overhang`` in
+    # :class:`KeyboardHalfMetrics`. When the horizontal offset kicks in, both
+    # finger clusters and the thumb on each side shift outward together so
+    # the keyboard reads as one unit per side.
     horizontal_indicator_offset = 0.0
     top_indicator_offset = 0.0
     if config.output.style.show_layer_indicators:
         thumb_indicator_offset = m.thumb_cluster_width * 0.25 * (0.4 + 0.18)
         finger_indicator_offset = m.finger_cluster_width * 0.328 * (0.55 + 0.18)
-        if (
-            layer.left.thumb.double_down_key.layer_switch is not None
-            or layer.right.thumb.double_down_key.layer_switch is not None
-        ):
-            vertical_indicator_offset = thumb_indicator_offset
         if any(
             getattr(side.thumb, key).layer_switch is not None
             for side in (layer.left, layer.right)
@@ -176,27 +173,14 @@ def _draw_layer(
             **common_half_kwargs,
         )
 
-    # The legacy layout helper takes the height of ONE finger cluster (no
-    # stagger). The half exposes ``thumb_origin.y == finger_half_height +
-    # inset`` and ``finger_half_height == cluster_height + finger_key_size``
-    # (the stagger drop), so subtract both to recover the single-cluster
-    # height the helper expects.
-    cluster_height = left_half.metrics.thumb_origin.y - m.inset - m.finger_key_size
-
     canvas_width = layer_layout.canvas_width(
         horizontal_indicator_offset=horizontal_indicator_offset
     )
-    # Keyboard-area height as the existing layout helper computes it. This
-    # already includes the bottom inset below the thumb cluster. We feed it
-    # the cluster + thumb heights derived from the half's metrics.
-    thumb_height = left_half.size.height - left_half.metrics.thumb_origin.y
-    keyboard_canvas_h = layer_layout.canvas_height(
-        cluster_height,
-        thumb_height,
-        vertical_indicator_offset=vertical_indicator_offset,
-        top_indicator_offset=top_indicator_offset,
-        header_offset=header_offset,
-    )
+    # Keyboard-area height — the half is positioned at ``half_origin_y``
+    # and its size already covers fingers + thumb plus any
+    # ``thumb_top_overhang`` it absorbed into the gap. Add a one-inset +
+    # margin band below the half to mirror the top spacing.
+    keyboard_canvas_h = half_origin_y + left_half.size.height + m.inset + m.margin
     bottom_inset = m.inset + m.margin
     copyright_font_size = header_dims.copyright_font_size
     copyright_text = config.output.copyright or ""

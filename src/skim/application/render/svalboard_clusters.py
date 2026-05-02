@@ -39,8 +39,7 @@ import colorsys
 from dataclasses import dataclass
 
 from skim.data import LayerColor, SplitSidePosition
-from skim.data.keyboard import FingerCluster as FingerClusterData
-from skim.data.keyboard import ThumbCluster as ThumbClusterData
+from skim.data.keyboard import FingerCluster as FingerClusterData, ThumbCluster as ThumbClusterData
 from skim.domain import KeyboardSide, KeyDirection, SvalboardTargetKey
 
 from .composable import Composable
@@ -767,6 +766,15 @@ class ThumbClusterMetrics:
     the per-key composables, plus :class:`LayerIndicatorMetrics` for
     slots whose key has a ``layer_switch`` set (or ``None`` for
     slots without one).
+
+    ``top_overhang`` reports how far any present indicator extends
+    ABOVE the cluster's top edge (y=0 in cluster-local coords),
+    measured as a positive magnitude. Zero when no indicator is
+    above-extending. The double-down key's NORTH indicator dominates
+    in practice — it sits on top of the down key whose top edge IS
+    the cluster top, so its full ``gap + diameter`` overhang shows
+    up here. The parent :func:`KeyboardHalf` reads this to inflate
+    the gap between the finger half and the thumb cluster.
     """
 
     down_key: SvalboardKeyMetrics
@@ -776,6 +784,7 @@ class ThumbClusterMetrics:
     knuckle_key: SvalboardKeyMetrics
     double_down_key: SvalboardKeyMetrics
     indicators: ThumbClusterData[LayerIndicatorMetrics | None]
+    top_overhang: float
 
 
 # ---------------------------------------------------------------------------
@@ -1199,6 +1208,29 @@ def ThumbCluster(
         ),
     )
 
+    # Top overhang — how far any present indicator extends above the
+    # cluster's top edge (y=0). Each indicator's ``circle_center`` is
+    # in key-local coords; add the key's slot origin to get its
+    # cluster-local top edge, then take the most negative across all
+    # present indicators. Zero when none extend above the cluster.
+    indicator_slots = (
+        (slots.down_origin, down_indicator),
+        (slots.pad_origin, pad_indicator),
+        (slots.up_origin, up_indicator),
+        (slots.nail_origin, nail_indicator),
+        (slots.knuckle_origin, knuckle_indicator),
+        (slots.double_down_origin, double_down_indicator),
+    )
+    top_overhang = max(
+        (
+            -(slot_origin.y + ind.metrics.circle_center.y - ind.metrics.circle_radius)
+            for slot_origin, ind in indicator_slots
+            if ind is not None
+        ),
+        default=0.0,
+    )
+    top_overhang = max(0.0, top_overhang)
+
     return MetricsComponent(
         size=size,
         draw_fn=draw_at,
@@ -1210,6 +1242,7 @@ def ThumbCluster(
             knuckle_key=knuckle.metrics,
             double_down_key=double_down.metrics,
             indicators=indicators_metrics,
+            top_overhang=top_overhang,
         ),
     )
 
