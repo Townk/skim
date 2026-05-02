@@ -5,36 +5,16 @@
 
 """Composable building blocks for individual Svalboard keys.
 
-The legacy :mod:`keys` module models keys as ``draw.Group`` subclasses
-that pull a :class:`ClusterRenderContext` straight in and resolve
-colours / labels internally. This module hosts the composable
-equivalents — pure components that take resolved inputs (width,
-label text, fill / label colours) and report a typed ``Size`` plus
-:class:`SvalboardKeyMetrics`. Cluster-level resolution lives one
-layer up; the key composable doesn't reach for context-derived
-state beyond ``ctx.config.output.style.use_system_fonts``.
+Each key composable is a pure component that takes resolved inputs
+(width, label text, fill / label colours) and reports a typed
+``Size`` plus :class:`SvalboardKeyMetrics`. Cluster-level resolution
+lives one layer up; the key composable doesn't reach for
+context-derived state beyond ``ctx.config.output.style.use_system_fonts``.
 
-Key text is rendered through :func:`RichText` (the same
-multi-span text composable the macros / tap-dances / symbols
-sections use) so the key composable doesn't pull the legacy
-:class:`Label` parser. Trade-offs vs. the legacy ``Label`` path:
-
-* :class:`Label` uppercases keymap-key labels for *measurement*
-  (a "keymap convention"), so a long lowercase label might pick a
-  smaller font than RichText's same-case measurement does. Keys
-  with lowercase labels render at a slightly larger font size
-  here than they did under legacy. The painted text stays the
-  caller's original case in both paths.
-* :class:`SeparatorPart` renders the layer-switch ``|`` glyph at a
-  custom narrower width. RichText emits the literal character
-  instead. This shows up only on keys whose label embeds the
-  separator (mostly layer-switch directional keys); on CenterKey
-  in practice it doesn't apply.
-
-The differences are intentional and surface as snapshot diffs when
-the cluster code is migrated to call these composables. The diffs
-are visible records of the migration's visual delta — not silent
-regressions.
+Key text renders through :func:`RichText` — the same multi-span
+text composable the macros / tap-dances / symbols sections use —
+so labels with Nerd Font tokens land on the right per-span fonts
+and a long label shrinks to fit via the relaxation loop.
 """
 
 from __future__ import annotations
@@ -78,11 +58,11 @@ class SvalboardKeyMetrics:
 
 
 # ---------------------------------------------------------------------------
-# Per-key sizing constants — mirror the ``CONFIG`` ``KeyConfig`` instances
-# the legacy concrete keys pin on their classes (see :class:`keys.CenterKey`,
-# etc.). Keeping these inline alongside the composable they apply to keeps
-# each key shape self-contained — the eventual goal is for ``keys.py`` to
-# retire and these values become the canonical source.
+# Per-key sizing constants — kept inline alongside the composable they
+# apply to so each key shape stays self-contained. ``WIDTH_MULTIPLIER``
+# values are fractions of the cell width; ``FONT_HEIGHT_MULTIPLIER`` is the
+# label's natural font size as a fraction of the cell height (RichText
+# shrinks below this when the label wouldn't fit at that size).
 # ---------------------------------------------------------------------------
 
 # CenterKey
@@ -137,11 +117,11 @@ def CenterKey(
     inset_y = half * _SQRT_HALF
     indicator_anchor = Point(half - inset_x, half + inset_y)
 
-    # ``min_font_size=1`` matches what :meth:`Label.size_to_fit` does
-    # by default — keys shrink as far as needed to fit the label
-    # rather than ellipsis-truncating. Without this RichText pins
-    # at the natural size and drops the label to ``…`` when wider
-    # than the budget, which is wrong for key cells.
+    # ``min_font_size=1`` lets the relaxation shrink the label as
+    # far as needed to fit the cell. Without it RichText pins at
+    # the natural size and drops the label to ``…`` when wider
+    # than the budget — wrong for key cells, where shrinking is
+    # the correct overflow response.
     label_style = TextStyle(font=Font.FINGER_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
         spans=parse_into_spans(label_text, label_style),
