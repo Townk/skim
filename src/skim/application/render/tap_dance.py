@@ -824,11 +824,4 @@ def TapDanceSection(
     )
 
 
-__all__ = [
-    "TapDanceCell",
-    "TapDanceColumnHeader",
-    "TapDanceRow",
-    "TapDanceSection",
-    "TapDanceSectionMetrics",
-    "TapDanceTable",
-]
+__all__ = ["TapDanceSection"]
