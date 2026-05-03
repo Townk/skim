@@ -768,13 +768,13 @@ def KeymapOverview(
     thumb_inward_left = _right_bleed(left_thumb)
     thumb_inward_right = _left_bleed(right_thumb)
 
-    # Outward bleeds extend the body's outer width; finger halves are
-    # wider than thumb clusters so finger outer bleeds typically
-    # dominate. Take the max across pieces for safety.
-    max_left_outer_bleed = max(
-        max(_left_bleed(lfh) for lfh, _ in finger_halves),
-        _left_bleed(left_thumb),
-    )
+    # Right outward bleed extends the body's outer right edge so
+    # right-side indicators don't paint past the canvas. Left-side
+    # outward bleed is intentionally NOT used — the badge-to-cluster
+    # gap is pinned at ``2 * column_gap`` and any leftmost-row
+    # chrome paints into that gap visually (paint-only, no layout
+    # claim), matching how the central gap accommodates inward
+    # indicators.
     max_right_outer_bleed = max(
         max(_right_bleed(rfh) for _, rfh in finger_halves),
         _right_bleed(right_thumb),
@@ -834,13 +834,23 @@ def KeymapOverview(
 
     # --- Phase 5: X positions. ---
     badge_x = 0.0
+    # Pin the left half's keys-only edge ``badge_to_clusters_gap``
+    # past the badge column so the visible gap between the badge
+    # and the keys is exactly ``2 * column_gap`` on every row, not
+    # just the row with the worst left-side indicator bleed.
+    # Indicators that bleed left of the keys-only edge are paint-only
+    # and may visually intrude into the gap on those rows — same
+    # accommodation the central gap makes for inward indicators.
+    left_half_x = col1_width + badge_to_clusters_gap
     # Finger halves: position so the visible gap between inward
     # indicators (left half's right-edge indicators ↔ right half's
     # left-edge indicators) equals exactly ``center_gap``. Width
     # contributed by inward bleeds on each side is added to the
     # central reservation.
-    left_half_x = col1_width + badge_to_clusters_gap + max_left_outer_bleed
     right_half_x = left_half_x + side_width + finger_inward_left + center_gap + finger_inward_right
+    # Body width still accounts for outer bleeds so the right edge
+    # encloses any right-side indicators that paint past the right
+    # half's keys-only edge.
     body_width = right_half_x + side_width + max_right_outer_bleed
 
     # Body horizontal centre axis — midpoint between the finger
