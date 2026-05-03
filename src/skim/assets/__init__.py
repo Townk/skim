@@ -108,24 +108,25 @@ class BundleAssets:
         return self._get_cached("font_symbols_nerd", "fonts", "SymbolsNerdFont-Regular.ttf")
 
     @property
-    def font_symbola(self) -> Path:
-        """Path to the Symbola.ttf font file.
+    def font_dejavu_sans_bold(self) -> Path:
+        """Path to the DejaVuSans-Bold.ttf font file.
 
         Used as a Unicode-symbol fallback for characters the Roboto
         family doesn't carry — the keyboard-symbol block (⎇, ⌘, ⌥,
-        ⌃, ⇧, ↹, ⏎, ␣, ⌫, ⌦, ⎈), the box-drawing separator (│),
-        and other miscellaneous-technical glyphs that show up in
-        keymap labels. Symbola was designed for broad Unicode
-        coverage; it carries ⎇ (U+2387) which standard programming
-        / UI fonts (DejaVu, Cascadia, Roboto) all lack.
+        ⌃, ⇧, ↹, ⏎, ␣, ⌫, ⌦), the box-drawing separator (│), and
+        other miscellaneous-technical glyphs that show up in keymap
+        labels. DejaVu Sans Bold is part of the well-tested DejaVu
+        family (Bitstream Vera-derived, free for any use); the bold
+        weight specifically covers ⎇ (U+2387) which the regular and
+        mono variants lack along with most UI / programming fonts.
 
         Returns:
-            Path to the bundled Symbola font.
+            Path to the bundled DejaVu Sans Bold font.
 
         Raises:
             FileNotFoundError: If the file is missing from the installation.
         """
-        return self._get_cached("font_symbola", "fonts", "Symbola.ttf")
+        return self._get_cached("font_dejavu_sans_bold", "fonts", "DejaVuSans-Bold.ttf")
 
     @property
     def logo_svalboard(self) -> Path:
