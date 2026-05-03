@@ -237,7 +237,7 @@ def _make_factory(
 # ---------------------------------------------------------------------------
 
 
-def render(component: Component) -> draw.Drawing:
+def render(component: Component, *, css: list[str] | None = None) -> draw.Drawing:
     """Paint ``component`` into a fresh :class:`draw.Drawing`.
 
     Knows nothing about specific image variants — the active
@@ -252,11 +252,17 @@ def render(component: Component) -> draw.Drawing:
     ``layout.width`` — proportions are preserved when the natural
     canvas differs from the displayed one.
 
+    ``css`` overrides the default per-:class:`Font` full-CSS dump
+    when ``use_system_fonts`` is off — pass a list of CSS strings to
+    inject custom ``<style>`` content (the per-layer image uses this
+    to embed only the font-subset glyphs the rendered keymap
+    actually paints, which keeps the per-layer SVG small). ``None``
+    (the default) emits one ``css_style`` block per :class:`Font`.
+
     Composable tree:: ``draw_macros_image`` /
-    ``draw_tap_dances_image`` / ``draw_special_keys_image`` build a
-    :func:`KeymapMacroDocument` / :func:`KeymapTapDanceDocument` /
-    :func:`KeymapSpecialKeysDocument` (which wraps the section in
-    the standard chrome) and hand it to :func:`render`. That's the
+    ``draw_tap_dances_image`` / ``draw_special_keys_image`` /
+    ``draw_overview`` / ``_draw_layer`` all build their respective
+    document composable and hand it to :func:`render`. That's the
     whole entry point.
     """
     ctx = current_render_context()
@@ -268,8 +274,9 @@ def render(component: Component) -> draw.Drawing:
     d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
 
     if not ctx.config.output.style.use_system_fonts:
-        for font in Font:
-            d.append_css(font.css_style)
+        chunks = css if css is not None else [font.css_style for font in Font]
+        for chunk in chunks:
+            d.append_css(chunk)
 
     component.draw_at(d, Point(0, 0))
     return d

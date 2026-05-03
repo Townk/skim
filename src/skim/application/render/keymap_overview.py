@@ -64,7 +64,7 @@ from skim.data.keyboard import (
 )
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
-from .composable import Composable
+from .composable import Composable, render
 from .footer import Footer
 from .header import Header
 from .keymap_document import KeymapDocument
@@ -1312,36 +1312,21 @@ def draw_overview(
 ) -> draw.Drawing:
     """Generate the overview SVG image for a multi-layer keymap.
 
-    Mirrors the per-layer image's ``_draw_layer`` shape: build a
-    :class:`RenderContext`, construct :func:`KeymapOverviewDocument`
-    inside it, then paint into a drawsvg :class:`Drawing` at the
-    user-requested display width.
+    Builds a :class:`RenderContext`, constructs the
+    :func:`KeymapOverviewDocument` inside it, and hands the result
+    to :func:`render` for the canvas / viewBox / font CSS plumbing —
+    same shape every other image entry point uses.
     """
-    title = _resolve_overview_title(config)
-    copyright_text = config.output.copyright or ""
-
-    ctx = RenderContext.build(config, keymap)
-    with using_render_context(ctx):
-        doc = KeymapOverviewDocument(
-            keymap=keymap,
-            title=title,
-            copyright=copyright_text,
-            raw_keymap=raw_keymap,
-            keycode_mappings=keycode_mappings,
+    with using_render_context(RenderContext.build(config, keymap)):
+        return render(
+            KeymapOverviewDocument(
+                keymap=keymap,
+                title=_resolve_overview_title(config),
+                copyright=config.output.copyright or "",
+                raw_keymap=raw_keymap,
+                keycode_mappings=keycode_mappings,
+            )
         )
-
-    canvas_width = doc.size.width
-    canvas_height = doc.size.height
-    display_w = config.output.layout.width
-    display_h = canvas_height * (display_w / canvas_width) if canvas_width else canvas_height
-    d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_width} {canvas_height}")
-
-    if not config.output.style.use_system_fonts:
-        for font in Font:
-            d.append_css(font.css_style)
-
-    doc.draw_at(d, Point(0.0, 0.0))
-    return d
 
 
 # ===========================================================================

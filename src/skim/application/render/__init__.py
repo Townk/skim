@@ -28,10 +28,10 @@ from skim.data import (
 )
 from skim.domain import SvalboardMacro, SvalboardTapDance, SvalboardTargetKey
 
+from .composable import render
 from .keymap_layer import KeymapLayerDocument
 from .keymap_overview import draw_overview
 from .macros import draw_macros_image
-from .primitives import Point as ComposablePoint
 from .render_context import RenderContext as ComposableRenderContext, using_render_context
 from .special_keys import draw_special_keys_image
 from .styling import make_gradient
@@ -114,6 +114,28 @@ def _layer_labels(
     )
 
 
+def _layer_subset_css(
+    layer: SvalboardLayout[SvalboardTargetKey],
+    layer_title: str,
+    copyright: str | None,
+    macros: tuple[SvalboardMacro[SvalboardTargetKey], ...],
+    tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...],
+) -> list[str]:
+    """Build font-subset CSS for one per-layer image.
+
+    Walks the layer's labels (plus title / copyright / macros /
+    tap-dances) and emits a tightly-subsetted CSS embedding only
+    the glyphs the layer actually paints. Falls back to the full
+    fonts CSS if the analyser produces an empty subset.
+    """
+    font_analyzer = FontUsageAnalyzer()
+    font_analyzer.analyze_keymap(_layer_labels(layer), layer_title, copyright)
+    font_analyzer.analyze_legend(macros, tap_dances)
+    font_subsetter = FontSubsetter(font_analyzer)
+    subsetted = font_subsetter.generate_subsetted_css()
+    return [subsetted] if subsetted else [font_subsetter.generate_full_fonts_css()]
+
+
 def _draw_layer(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
@@ -130,49 +152,34 @@ def _draw_layer(
 
     The composable encodes the entire layout (header, keyboard area,
     optional macro / TD legend, optional symbol legend, optional
-    footer); this function only handles the surrounding framework
-    bookkeeping — Drawing creation with the right viewBox, font
-    subsetting CSS, and painting the document at the canvas origin.
+    footer); this function only handles the entry-point bookkeeping
+    — building the :class:`RenderContext`, computing per-layer
+    font-subset CSS, and handing the document to :func:`render`.
     """
     layer_title = _layer_title(config, config_position, qmk_index)
     copyright_text = config.output.copyright or ""
 
-    composable_ctx = ComposableRenderContext.build(config, keymap)
-    with using_render_context(composable_ctx):
-        layer_doc = KeymapLayerDocument(
-            layer=layer,
-            qmk_index=qmk_index,
-            title=layer_title,
-            copyright=copyright_text,
-            macros=macros,
-            tap_dances=tap_dances,
-            raw_layer_keycodes=raw_layer_keycodes,
-            raw_keymap=raw_keymap,
-            keycode_mappings=keycode_mappings,
+    css = (
+        _layer_subset_css(layer, layer_title, config.output.copyright, macros, tap_dances)
+        if not config.output.style.use_system_fonts
+        else None
+    )
+
+    with using_render_context(ComposableRenderContext.build(config, keymap)):
+        return render(
+            KeymapLayerDocument(
+                layer=layer,
+                qmk_index=qmk_index,
+                title=layer_title,
+                copyright=copyright_text,
+                macros=macros,
+                tap_dances=tap_dances,
+                raw_layer_keycodes=raw_layer_keycodes,
+                raw_keymap=raw_keymap,
+                keycode_mappings=keycode_mappings,
+            ),
+            css=css,
         )
-
-    # All composables build at construction time — metrics are
-    # accurate before paint, so the render context is no longer
-    # needed once ``layer_doc`` is built.
-    canvas_width = layer_doc.size.width
-    canvas_height = layer_doc.size.height
-    display_w = config.output.layout.width
-    display_h = canvas_height * (display_w / canvas_width) if canvas_width else canvas_height
-    d = draw.Drawing(display_w, display_h, viewBox=f"0 0 {canvas_width} {canvas_height}")
-
-    if not config.output.style.use_system_fonts:
-        font_analyzer = FontUsageAnalyzer()
-        font_analyzer.analyze_keymap(_layer_labels(layer), layer_title, config.output.copyright)
-        font_analyzer.analyze_legend(macros, tap_dances)
-        font_subsetter = FontSubsetter(font_analyzer)
-        subsetted_css = font_subsetter.generate_subsetted_css()
-        if subsetted_css:
-            d.append_css(subsetted_css)
-        else:
-            d.append_css(font_subsetter.generate_full_fonts_css())
-
-    layer_doc.draw_at(d, ComposablePoint(0.0, 0.0))
-    return d
 
 
 def _selected_layers(
