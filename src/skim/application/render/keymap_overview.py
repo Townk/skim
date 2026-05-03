@@ -542,11 +542,19 @@ def KeymapOverview(
     badge_to_clusters_gap = 2.0 * column_gap
     center_gap = _CENTER_GAP_INSET_COUNT * column_gap
 
-    render_layers: list[tuple[int, int]] = [
-        (pos, layer_cfg.index)
-        for pos, layer_cfg in enumerate(config.keyboard.layers)
-        if layer_cfg.index in keymap.layers
-    ]
+    # Layers stack top-down with the HIGHEST QMK index on the top row.
+    # Reversing the config-order list places layer 15 at the top and
+    # layer 0 at the bottom, matching the legacy overview's row order
+    # so the most "specialised" / topmost-active layers read first.
+    render_layers: list[tuple[int, int]] = list(
+        reversed(
+            [
+                (pos, layer_cfg.index)
+                for pos, layer_cfg in enumerate(config.keyboard.layers)
+                if layer_cfg.index in keymap.layers
+            ]
+        )
+    )
 
     if not render_layers:
         # Nothing to render — return an empty body. The document
@@ -642,18 +650,23 @@ def KeymapOverview(
         )
         finger_halves.append((left_half, right_half))
 
-    first_pos, first_qmk_idx = render_layers[0]
-    thumb_layer = keymap.layers[first_qmk_idx]
+    # Thumb cluster uses the FIRST CONFIG POSITION layer (typically QMK
+    # layer 0), independent of the row-order reversal. ``render_layers``
+    # is reversed to render layer-15-on-top, so the bottom row is config
+    # position 0 — pick that explicitly.
+    base_pos, base_qmk_idx = render_layers[-1]
+    del base_pos
+    thumb_layer = keymap.layers[base_qmk_idx]
     left_thumb = ThumbCluster(
         side=KeyboardSide.LEFT,
         cluster=thumb_layer.left.thumb,
-        layer_qmk_index=first_qmk_idx,
+        layer_qmk_index=base_qmk_idx,
         **common_thumb_kwargs,
     )
     right_thumb = ThumbCluster(
         side=KeyboardSide.RIGHT,
         cluster=thumb_layer.right.thumb,
-        layer_qmk_index=first_qmk_idx,
+        layer_qmk_index=base_qmk_idx,
         **common_thumb_kwargs,
     )
     thumbs_badge = LayerBadge(
@@ -804,9 +817,9 @@ def KeymapOverview(
             )
             for _pos, qmk_idx in render_layers
         ]
-        thumb_layer_data = keymap.layers[first_qmk_idx]
+        thumb_layer_data = keymap.layers[base_qmk_idx]
         thumb_source = ThumbSource(
-            source_layer=first_qmk_idx,
+            source_layer=base_qmk_idx,
             left=thumb_layer_data.left.thumb,
             right=thumb_layer_data.right.thumb,
         )
