@@ -461,15 +461,25 @@ def _adjust_cluster_hold_symbols(
     position: SplitSidePosition,
 ) -> FingerClusterData[SvalboardTargetKey]:
     """Apply :func:`_adjust_hold_symbol_label` to the east / west
-    keys of a finger cluster, leaving the rest untouched."""
+    keys of a finger cluster, leaving the rest untouched.
+
+    On the LEFT keyboard half the east key is INWARD-of-cluster and
+    the west key is OUTWARD-of-cluster; on the RIGHT half the
+    inward / outward roles flip. ``_adjust_hold_symbol_label``
+    expects the parameter that pairs with ``position`` to reflect
+    which keyboard half the key faces, so we flip the per-key side
+    when the cluster sits on the RIGHT half.
+    """
     if position is SplitSidePosition.QMK_DEFINED:
         return cluster
 
+    east_side = KeyboardSide.LEFT if side is KeyboardSide.LEFT else KeyboardSide.RIGHT
+    west_side = KeyboardSide.RIGHT if side is KeyboardSide.LEFT else KeyboardSide.LEFT
     east_label = _adjust_hold_symbol_label(
-        position=position, side=KeyboardSide.LEFT, label=cluster.east_key.label
+        position=position, side=east_side, label=cluster.east_key.label
     )
     west_label = _adjust_hold_symbol_label(
-        position=position, side=KeyboardSide.RIGHT, label=cluster.west_key.label
+        position=position, side=west_side, label=cluster.west_key.label
     )
     return FingerClusterData(
         center_key=cluster.center_key,
