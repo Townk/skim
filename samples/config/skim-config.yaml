@@ -133,11 +133,6 @@ keycodes:
       MKC_SPFND: Spotlight search
 
 output:
-  layout:
-    width: 1600.0
-    spacing:
-      margin: 0.0
-      inset: 20.0
   style:
     use_layer_colors_on_keys: false
     hold_symbol_position: outward
