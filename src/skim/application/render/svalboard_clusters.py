@@ -223,6 +223,16 @@ class FingerClusterMetrics:
     west_key: SvalboardKeyMetrics
     double_south_key: SvalboardKeyMetrics | None
     indicators: FingerClusterData[LayerIndicatorMetrics | None]
+    key_origins: FingerClusterData[Point]
+    """Per-slot key origin in cluster-local coordinates.
+
+    Each entry is the same point the cluster passes as ``draw_at``'s
+    ``origin`` argument when painting that key — also the indicator's
+    ``draw_at`` frame for indicators on that slot. Parents combine
+    ``cluster_canvas_origin + key_origins.<slot> + indicator.routing_origin``
+    to land an indicator's outbound routing point in canvas coords
+    without re-deriving the cluster's internal layout.
+    """
     overflow_size: Size
     overflow_offset: Point
 
@@ -820,6 +830,15 @@ def FingerCluster(
         ),
     )
 
+    key_origins: FingerClusterData[Point] = FingerClusterData(
+        center_key=slots.center_origin,
+        north_key=slots.north_origin,
+        east_key=slots.east_origin,
+        south_key=slots.south_origin,
+        west_key=slots.west_origin,
+        double_south_key=slots.double_south_origin,
+    )
+
     return MetricsComponent(
         size=size,
         draw_fn=draw_at,
@@ -831,6 +850,7 @@ def FingerCluster(
             west_key=west.metrics,
             double_south_key=double_south.metrics if double_south is not None else None,
             indicators=indicators_metrics,
+            key_origins=key_origins,
             overflow_size=overflow_size,
             overflow_offset=overflow_offset,
         ),
@@ -901,6 +921,14 @@ class ThumbClusterMetrics:
     knuckle_key: SvalboardKeyMetrics
     double_down_key: SvalboardKeyMetrics
     indicators: ThumbClusterData[LayerIndicatorMetrics | None]
+    key_origins: ThumbClusterData[Point]
+    """Per-slot key origin in cluster-local coordinates.
+
+    Same contract as :attr:`FingerClusterMetrics.key_origins` —
+    parents combine ``cluster_canvas_origin + key_origins.<slot> +
+    indicator.routing_origin`` to land an indicator's outbound
+    routing point in canvas coords.
+    """
     overflow_size: Size
     overflow_offset: Point
 
@@ -1338,6 +1366,15 @@ def ThumbCluster(
         ),
     )
 
+    thumb_key_origins: ThumbClusterData[Point] = ThumbClusterData(
+        down_key=slots.down_origin,
+        pad_key=slots.pad_origin,
+        up_key=slots.up_origin,
+        nail_key=slots.nail_origin,
+        knuckle_key=slots.knuckle_origin,
+        double_down_key=slots.double_down_origin,
+    )
+
     return MetricsComponent(
         size=size,
         draw_fn=draw_at,
@@ -1349,6 +1386,7 @@ def ThumbCluster(
             knuckle_key=knuckle.metrics,
             double_down_key=double_down.metrics,
             indicators=indicators_metrics,
+            key_origins=thumb_key_origins,
             overflow_size=overflow_size,
             overflow_offset=overflow_offset,
         ),

@@ -57,6 +57,12 @@ from skim.data import KeycodeMappings, SkimConfig, SvalboardKeymap
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .composable import Composable
+from .connectors import (
+    ConnectorRouting,
+    OverviewLayerSource,
+    ThumbSource,
+    route_overview_connectors,
+)
 from .footer import Footer
 from .header import Header
 from .keymap_document import KeymapDocument
@@ -115,6 +121,24 @@ _VARIANT_LABEL_OFFSET_RATIO_OF_FONT = 0.2
 # unchanged across the migration.
 _BADGE_PADDING_LEFT_RATIO = 15 / 1600
 _BADGE_PADDING_RIGHT_RATIO = 30 / 1600
+
+# Connector routing constants — mirrored from the legacy overview so
+# the new path produces identical-rhythm dotted lines. ``keymap_spacing``
+# (the routing-lane / column spacing) is ``0.6`` of an outer-key width;
+# the indicator-rect offset is ``6 *`` the indicator circle's stroke
+# width so paths land well clear of the circle's outer edge.
+_CONNECTOR_SPACING_RATIO = 0.6
+_CIRCLE_STROKE_WIDTH_RATIO = 2.0 / 1600.0
+_INDICATOR_RECT_PADDING_MULTIPLIER = 6.0
+
+# Connector path stroke styling — the dotted cadence stays legible
+# across canvas sizes because both stroke width and dash gap track
+# ``doc_width``.
+_CONNECTOR_PATH_STROKE_WIDTH_RATIO = 4.375 / 1600
+_CONNECTOR_PATH_DASH_DOT_RATIO = 0.1 / 1600
+_CONNECTOR_PATH_DASH_GAP_RATIO = 12.25 / 1600
+_CONNECTOR_PATH_OPACITY = 0.7
+_CONNECTOR_PATH_FALLBACK_COLOR = "#808080"
 
 
 def _badge_padding_left(doc_width: float) -> float:
@@ -289,6 +313,162 @@ def LayerBadge(
             font_size=badge_font_size,
             variant_offset=variant_offset,
         ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Connector routing — adapter + indicator-rect helper
+# ---------------------------------------------------------------------------
+
+
+# Cluster slot order matching :class:`FingerClusterData` (used to walk
+# every finger slot when computing indicator rects).
+_FINGER_SLOTS: tuple[str, ...] = (
+    "center_key",
+    "north_key",
+    "east_key",
+    "south_key",
+    "west_key",
+    "double_south_key",
+)
+_THUMB_SLOTS: tuple[str, ...] = (
+    "down_key",
+    "double_down_key",
+    "pad_key",
+    "up_key",
+    "nail_key",
+    "knuckle_key",
+)
+
+
+class _OverviewRoutingLayout:
+    """``RoutingLayout`` adapter for :func:`KeymapOverview`.
+
+    Holds mutable layer-row Y positions (and the thumb row's Y) so
+    :func:`route_overview_connectors`'s pass-1 shifts can push rows
+    down to clear lane banks. After routing, :func:`KeymapOverview`
+    reads the final positions from the lists captured here. The
+    adapter satisfies the ``RoutingLayout`` Protocol from
+    :mod:`connectors`.
+    """
+
+    def __init__(
+        self,
+        *,
+        layer_to_row: dict[int, int],
+        row_y_positions: list[float],
+        thumb_y_state: list[float],
+        row_height: float,
+        thumb_height: float,
+        cluster_x: float,
+        cluster_w: float,
+        ew_offset: float,
+        outer_key_size: float,
+        row_gap_value: float,
+        has_double_south: bool,
+    ) -> None:
+        self._layer_to_row = layer_to_row
+        self._row_y_positions = row_y_positions
+        self._thumb_y_state = thumb_y_state  # single-element mutable list
+        self._row_height = row_height
+        self._thumb_height = thumb_height
+        self._cluster_x = cluster_x
+        self._cluster_w = cluster_w
+        self._ew_offset = ew_offset
+        self._outer_key_size = outer_key_size
+        self._row_gap_value = row_gap_value
+        self._has_double_south = has_double_south
+
+    @property
+    def layer_row_y_positions(self) -> list[float]:
+        """Virtual list keyed by QMK index, padded to ``max(qmk) + 1``.
+
+        :func:`route_overview_connectors`'s ``target_point_for`` uses
+        ``len(layer_row_y_positions)`` to bounds-check QMK indices —
+        so the list must be long enough that every valid QMK index
+        passes the check, not just the first ``N`` rendered rows.
+        Unpopulated slots get ``0.0``; the actual y values come from
+        :meth:`layer_row_bounding_box` / :meth:`layer_row_target_y`,
+        which read the underlying row list via ``_layer_to_row``.
+        """
+        if not self._layer_to_row:
+            return []
+        size = max(self._layer_to_row.keys()) + 1
+        out = [0.0] * size
+        for qmk_idx, row_idx in self._layer_to_row.items():
+            if 0 <= row_idx < len(self._row_y_positions):
+                out[qmk_idx] = self._row_y_positions[row_idx]
+        return out
+
+    @property
+    def row_gap(self) -> float:
+        return self._row_gap_value
+
+    @property
+    def has_double_south(self) -> bool:
+        return self._has_double_south
+
+    def layer_row_bounding_box(self, target_layer: int) -> tuple[float, float, float, float]:
+        row_idx = self._layer_to_row.get(target_layer)
+        if row_idx is None:
+            raise KeyError(f"target_layer={target_layer} is not a rendered QMK layer")
+        return (
+            self._cluster_x,
+            self._row_y_positions[row_idx],
+            self._cluster_w,
+            self._row_height,
+        )
+
+    def layer_row_target_y(self, target_layer: int) -> float:
+        row_idx = self._layer_to_row.get(target_layer)
+        if row_idx is None:
+            raise KeyError(f"target_layer={target_layer} is not a rendered QMK layer")
+        return self._row_y_positions[row_idx] + self._ew_offset + self._outer_key_size / 2.0
+
+    def thumb_cluster_y_bounds(self) -> tuple[float, float]:
+        return (self._thumb_y_state[0], self._thumb_y_state[0] + self._thumb_height)
+
+    def shift_layer_row_and_below(self, target_layer: int, amount: float) -> None:
+        if amount <= 0:
+            return
+        row_idx = self._layer_to_row.get(target_layer)
+        if row_idx is None:
+            return
+        for i in range(row_idx, len(self._row_y_positions)):
+            self._row_y_positions[i] += amount
+        self._thumb_y_state[0] += amount
+
+    def shift_below_layer_row(self, target_layer: int, amount: float) -> None:
+        if amount <= 0:
+            return
+        row_idx = self._layer_to_row.get(target_layer)
+        if row_idx is None:
+            return
+        for i in range(row_idx + 1, len(self._row_y_positions)):
+            self._row_y_positions[i] += amount
+        self._thumb_y_state[0] += amount
+
+    def shift_thumb_down(self, amount: float) -> None:
+        if amount <= 0:
+            return
+        self._thumb_y_state[0] += amount
+
+
+def _indicator_rect(
+    abs_cx: float, abs_cy: float, radius: float, offset: float
+) -> tuple[float, float, float, float]:
+    """Compute one indicator's bounding rect with a clearance offset.
+
+    The legacy router expects ``(x, y, w, h)`` rects padded outward by
+    ``offset`` on every side so connector paths land clear of the
+    circle's outer stroke. ``offset`` defaults to ``6 *
+    circle_stroke_width`` per the legacy convention.
+    """
+    return (
+        abs_cx - radius - offset,
+        abs_cy - radius - offset,
+        2.0 * radius + 2.0 * offset,
+        2.0 * radius + 2.0 * offset,
     )
 
 
@@ -551,19 +731,16 @@ def KeymapOverview(
     # the half's top by ``ew_offset``).
     body_top_padding = max(layers_heading_height, row_top_bleeds[0])
     y_cursor = body_top_padding
-    for i, (top_b, bot_b) in enumerate(zip(row_top_bleeds, row_bottom_bleeds, strict=True)):
+    for i, bot_b in enumerate(row_bottom_bleeds):
         placements.append(_RowPlacement(y=y_cursor, badge_y=y_cursor + ew_offset))
         # Move past this row.
         y_cursor += half_height
-        # Inter-row separation: this row's bottom bleed + inset + next row's top bleed.
-        next_top = (
-            row_bottom_bleeds[i + 1] if False else None  # unused; placeholder
-        )
-        del next_top
+        # Inter-row separation: this row's bottom bleed + inset + next
+        # row's top bleed (or the thumb row's top bleed for the last
+        # transition).
         if i + 1 < len(finger_halves):
             y_cursor += bot_b + inset + row_top_bleeds[i + 1]
         else:
-            # Transition to thumb row.
             y_cursor += bot_b + inset + thumb_top_bleed
 
     thumb_y = y_cursor
@@ -603,7 +780,144 @@ def KeymapOverview(
     left_thumb_x = body_center_x - center_gap / 2.0 - thumb_inward_left - left_thumb.size.width
     right_thumb_x = body_center_x + center_gap / 2.0 + thumb_inward_right
 
-    # --- Phase 6: heading position (paint-time). ---
+    # --- Phase 6: connector routing. ---
+    # Mutable layout state — :func:`route_overview_connectors` shifts
+    # rows during pass 1 to make room for inter-row lane banks. After
+    # routing the lists below reflect the post-shift positions and we
+    # rebuild ``placements`` against them for the draw_at closure.
+    mutable_row_ys: list[float] = [p.y for p in placements]
+    mutable_thumb_y: list[float] = [thumb_y]
+    routing: ConnectorRouting | None = None
+    if (
+        config.output.style.show_layer_indicators
+        and config.output.style.show_layer_connectors
+        and len(render_layers) > 1
+    ):
+        layer_to_row = {qmk_idx: ri for ri, (_pos, qmk_idx) in enumerate(render_layers)}
+        layer_sources = [
+            OverviewLayerSource(
+                source_layer=qmk_idx,
+                left=keymap.layers[qmk_idx].left,
+                right=keymap.layers[qmk_idx].right,
+            )
+            for _pos, qmk_idx in render_layers
+        ]
+        thumb_layer_data = keymap.layers[first_qmk_idx]
+        thumb_source = ThumbSource(
+            source_layer=first_qmk_idx,
+            left=thumb_layer_data.left.thumb,
+            right=thumb_layer_data.right.thumb,
+        )
+
+        outer_key_size = finger_cluster_width * _OUTER_KEY_PROPORTION
+        keymap_spacing = outer_key_size * _CONNECTOR_SPACING_RATIO
+        rect_offset = (
+            _INDICATOR_RECT_PADDING_MULTIPLIER
+            * config.output.layout.width
+            * _CIRCLE_STROKE_WIDTH_RATIO
+        )
+
+        routing_layout = _OverviewRoutingLayout(
+            layer_to_row=layer_to_row,
+            row_y_positions=mutable_row_ys,
+            thumb_y_state=mutable_thumb_y,
+            row_height=half_height,
+            thumb_height=left_thumb.size.height,
+            cluster_x=left_half_x,
+            cluster_w=right_half_x + side_width - left_half_x,
+            ew_offset=ew_offset,
+            outer_key_size=outer_key_size,
+            row_gap_value=inset,
+            has_double_south=config.keyboard.features.double_south,
+        )
+
+        def _compute_rects() -> dict[int, tuple[float, float, float, float]]:
+            """Walk every cluster's indicators, project their circles to
+            canvas-absolute coords, and return ``id(key) -> rect``.
+
+            Called twice by :func:`route_overview_connectors` (pass 1
+            and pass 2). Both invocations read from the mutable
+            ``mutable_row_ys`` / ``mutable_thumb_y`` lists so the
+            second call automatically reflects the post-shift state
+            after pass 1's row shifts.
+            """
+            rects: dict[int, tuple[float, float, float, float]] = {}
+            # Per-layer finger cluster indicators.
+            for row_idx, (_pos, qmk_idx) in enumerate(render_layers):
+                row_y = mutable_row_ys[row_idx]
+                lfh, rfh = finger_halves[row_idx]
+                layer_data = keymap.layers[qmk_idx]
+                # Match cluster names between FingerHalfMetrics
+                # (``index_origin``, ``middle_origin``, …) and
+                # FingerClusterMetrics + FingerClusterData
+                # (``index``, ``middle``, …).
+                for half_x, half, side_data in (
+                    (left_half_x, lfh, layer_data.left),
+                    (right_half_x, rfh, layer_data.right),
+                ):
+                    finger_idx_to_attr = (
+                        ("index", "index_origin"),
+                        ("middle", "middle_origin"),
+                        ("ring", "ring_origin"),
+                        ("pinky", "pinky_origin"),
+                    )
+                    for finger_idx, (cluster_attr, origin_attr) in enumerate(finger_idx_to_attr):
+                        cluster_metrics = getattr(half.metrics, cluster_attr)
+                        cluster_origin = getattr(half.metrics, origin_attr)
+                        cluster_data = side_data.fingers[finger_idx]
+                        for slot in _FINGER_SLOTS:
+                            indicator = getattr(cluster_metrics.indicators, slot)
+                            if indicator is None:
+                                continue
+                            key_origin = getattr(cluster_metrics.key_origins, slot)
+                            abs_cx = (
+                                half_x + cluster_origin.x + key_origin.x + indicator.circle_center.x
+                            )
+                            abs_cy = (
+                                row_y + cluster_origin.y + key_origin.y + indicator.circle_center.y
+                            )
+                            key = getattr(cluster_data, slot)
+                            rects[id(key)] = _indicator_rect(
+                                abs_cx, abs_cy, indicator.circle_radius, rect_offset
+                            )
+            # Thumb cluster indicators — first layer only, matching
+            # what the body actually paints.
+            current_thumb_y = mutable_thumb_y[0]
+            for thumb_x, thumb, side_data in (
+                (left_thumb_x, left_thumb, thumb_layer_data.left.thumb),
+                (right_thumb_x, right_thumb, thumb_layer_data.right.thumb),
+            ):
+                for slot in _THUMB_SLOTS:
+                    indicator = getattr(thumb.metrics.indicators, slot)
+                    if indicator is None:
+                        continue
+                    key_origin = getattr(thumb.metrics.key_origins, slot)
+                    abs_cx = thumb_x + key_origin.x + indicator.circle_center.x
+                    abs_cy = current_thumb_y + key_origin.y + indicator.circle_center.y
+                    key = getattr(side_data, slot)
+                    rects[id(key)] = _indicator_rect(
+                        abs_cx, abs_cy, indicator.circle_radius, rect_offset
+                    )
+            return rects
+
+        routing = route_overview_connectors(
+            layers=layer_sources,
+            thumb=thumb_source,
+            layout=routing_layout,
+            compute_indicator_rects=_compute_rects,
+            keymap_spacing=keymap_spacing,
+        )
+
+    # --- Phase 7: rebuild placements from post-routing layout state. ---
+    placements = [_RowPlacement(y=y, badge_y=y + ew_offset) for y in mutable_row_ys]
+    thumb_y = mutable_thumb_y[0]
+    thumbs_badge_y = thumb_y + thumb_pad_offset
+    body_height = thumb_y + left_thumb.size.height + thumb_bottom_bleed
+    if routing is not None:
+        body_width += routing.extra_right_padding
+        body_height += routing.extra_bottom_padding
+
+    # --- Phase 8: heading position + connector path styling. ---
     layers_heading_baseline_y = (
         placements[0].badge_y - badge_font_size * _VARIANT_LABEL_OFFSET_RATIO_OF_FONT
     )
@@ -612,6 +926,18 @@ def KeymapOverview(
     label_font = (
         Font.FINGER_KEY.get_system_font_family() if use_system_fonts else Font.FINGER_KEY.value
     )
+
+    # Layer-color lookup for connector path stroke (each path takes the
+    # destination layer's gradient stop).
+    palette_layers = config_palette.layers
+    qmk_to_pos: dict[int, int] = {
+        layer_cfg.index: pos for pos, layer_cfg in enumerate(config.keyboard.layers)
+    }
+
+    doc_width = config.output.layout.width
+    connector_stroke_width = doc_width * _CONNECTOR_PATH_STROKE_WIDTH_RATIO
+    dot = doc_width * _CONNECTOR_PATH_DASH_DOT_RATIO
+    dash_gap = doc_width * _CONNECTOR_PATH_DASH_GAP_RATIO
 
     size = Size(body_width, body_height)
 
@@ -641,6 +967,28 @@ def KeymapOverview(
         thumbs_badge.draw_at(d, Point(origin.x + badge_x, origin.y + thumbs_badge_y))
         left_thumb.draw_at(d, Point(origin.x + left_thumb_x, origin.y + thumb_y))
         right_thumb.draw_at(d, Point(origin.x + right_thumb_x, origin.y + thumb_y))
+
+        # Connector paths sit on top of the clusters. Each path takes
+        # its destination layer's accent colour; an unmapped layer
+        # falls back to neutral grey rather than crashing. Paths are
+        # pre-routed in body-local coords, so wrap them in a Group
+        # with a translate transform to land them in the document
+        # frame.
+        if routing is not None and routing.paths:
+            g = draw.Group(transform=f"translate({origin.x}, {origin.y})")
+            for path, target_layer in routing.paths:
+                pos = qmk_to_pos.get(target_layer)
+                if pos is not None and 0 <= pos < len(palette_layers):
+                    stroke_color = palette_layers[pos][4]
+                else:
+                    stroke_color = _CONNECTOR_PATH_FALLBACK_COLOR
+                path.args["stroke"] = stroke_color
+                path.args["stroke-width"] = connector_stroke_width
+                path.args["stroke-dasharray"] = f"{dot} {dash_gap}"
+                path.args["stroke-linecap"] = "round"
+                path.args["opacity"] = _CONNECTOR_PATH_OPACITY
+                g.append(path)
+            d.append(g)
 
     return size, draw_at
 
