@@ -3,25 +3,21 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Per-layer macro / tap-dance legend rendering.
+"""Macro / tap-dance data utilities + the macro action-glyph builder.
 
-Walks a layer's keys to collect the macro and tap-dance ids actually in
-use, looks the definitions up in the parsed keymap, and lays out a
-two-column legend below the keyboard. Both sections render side-by-side
-when both are non-empty; a single section spans both columns and balances
-its rows when only one type is in use.
+A small kit of helpers consumed by the macro and tap-dance composables:
 
-Geometry mirrors ``docs/design/layer.jsx::Legend``.
-
-The file is split in two by a clear ``LEGACY OVERVIEW PATH`` marker. The
-top half holds data utilities, the action-glyph builder and the shared
-geometry that the composable framework still consumes; the bottom half
-holds the imperative renderers the overview / per-layer image path
-still needs. The bottom half retires once the overview migrates to
-composables.
+* :func:`collect_used_ids` — walks a layer to collect the macro and
+  tap-dance ids referenced anywhere on it.
+* :func:`resolve_macros` / :func:`resolve_tap_dances` — filter the
+  parsed entries down to the used ids and sort named-first, then by id.
+* :func:`all_macros` / :func:`all_tap_dances` — same sort applied to
+  every parsed entry (used by the overview, which shows everything).
+* :func:`build_action_glyph` — the tiny SVG primitive (dot / triangle /
+  clock dial / italic ``T``) painted inside each macro pill.
+* :func:`_legend_key_label` / :func:`_flatten_macro_pills` — internal
+  label-formatting helpers reused by the cell / pill composables.
 """
-
-from dataclasses import dataclass, field
 
 import drawsvg as draw
 
@@ -113,38 +109,6 @@ def all_tap_dances(
 ) -> list[SvalboardTapDance[SvalboardTargetKey]]:
     """Return all parsed tap-dances sorted named-first, then by id (no filter)."""
     return sorted(tap_dances, key=_named_first_sort_key)
-
-
-@dataclass(frozen=True, slots=True)
-class LegendLayout:
-    """Per-column row assignments for the legend block.
-
-    When both sections are present, ``macro_left`` carries all macros and
-    ``tap_dance_left`` carries all tap-dances. When only one type is
-    present, the other type's left list is empty.
-    """
-
-    macro_left: list[SvalboardMacro[SvalboardTargetKey]] = field(default_factory=list)
-    tap_dance_left: list[SvalboardTapDance[SvalboardTargetKey]] = field(default_factory=list)
-
-
-def plan_layout(
-    macros: list[SvalboardMacro[SvalboardTargetKey]],
-    tap_dances: list[SvalboardTapDance[SvalboardTargetKey]],
-) -> LegendLayout | None:
-    """Decide how rows fill the legend.
-
-    Returns ``None`` when both lists are empty (no legend block).
-    Otherwise both types share the layout: each gets one column, with
-    macros on the left and tap-dances on the right (right is empty if
-    only macros, left is empty for the macro slot if only tap-dances).
-    """
-    if not macros and not tap_dances:
-        return None
-    return LegendLayout(
-        macro_left=list(macros),
-        tap_dance_left=list(tap_dances),
-    )
 
 
 def build_action_glyph(
@@ -247,9 +211,9 @@ def build_action_glyph(
     )
 
 
-# Action-glyph primitives — coordinates inside ``build_action_glyph``.
-# Lives here (above the LEGACY marker) because :func:`build_action_glyph`
-# itself is still consumed by the active :func:`MacroPill` composable.
+# Action-glyph primitive sizing — read inside :func:`build_action_glyph`.
+# Expressed as fractions of the document width so the glyphs stay
+# visually proportional across canvas sizes.
 _GLYPH_DOT_RADIUS_RATIO = 3 / 1600
 _GLYPH_TRIANGLE_HALF_RATIO = 3 / 1600
 _GLYPH_DELAY_DIAL_RADIUS_RATIO = 3.5 / 1600
