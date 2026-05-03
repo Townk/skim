@@ -704,9 +704,13 @@ def _thumb_cluster_data() -> ThumbClusterData[SvalboardTargetKey]:
 class TestThumbLayout:
     """Cluster layout — bbox shape and per-key positions."""
 
-    def test_size_uses_legacy_aspect_ratio(self, ctx: RenderContext, palette: Palette):
-        """``Size = (width, width / 1.5)`` — same bbox the legacy
-        ``ThumbClusterComponent`` reserves on the keyboard layout."""
+    def test_size_hugs_deepest_key(self, ctx: RenderContext, palette: Palette):
+        """Reported ``Size.height`` matches the deepest painted key's
+        bottom edge — the down key, which extends to ``0.25 * width *
+        2.6 = 0.65 * width`` from ``y=0``. Internal layout still uses
+        the legacy 1.5:1 cluster bbox to anchor up / knuckle slots on
+        ``center_y``; only the reported bbox shrinks so callers don't
+        reserve empty space below the down key."""
         with using_render_context(ctx):
             cluster = ThumbCluster(
                 cluster=_thumb_cluster_data(),
@@ -715,7 +719,8 @@ class TestThumbLayout:
                 layer_qmk_index=_LAYER_0,
             )
         assert cluster.size.width == 600.0
-        assert cluster.size.height == pytest.approx(600.0 / 1.5)
+        # 0.25 (down_w fraction) * 2.6 (down height ratio) = 0.65.
+        assert cluster.size.height == pytest.approx(600.0 * 0.65)
 
 
 # ---------------------------------------------------------------------------

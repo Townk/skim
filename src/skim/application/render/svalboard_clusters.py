@@ -1302,7 +1302,25 @@ def ThumbCluster(
         gap=indicator_gap + dd_extra_gap,
     )
 
-    size = Size(width, slots.cluster_height)
+    # Reported size hugs the deepest visible key's bottom edge —
+    # ``down_key`` extends from ``y=0`` to roughly ``0.65 * width``,
+    # which sits a hair above the legacy 1.5:1 cluster bbox bottom
+    # (``width / 1.5 ≈ 0.667 * width``). The slot-positioning math
+    # above still uses ``slots.cluster_height`` (= the 1.5:1 bbox)
+    # to anchor up / knuckle keys on the cluster's center_y, so
+    # internal layout doesn't shift. Only the reported bbox shrinks
+    # to the actual painted extent so callers (e.g.
+    # :func:`KeymapOverview`) don't reserve empty space below the
+    # down key.
+    content_height = max(
+        slots.down_origin.y + down.size.height,
+        slots.pad_origin.y + pad.size.height,
+        slots.up_origin.y + up.size.height,
+        slots.nail_origin.y + nail.size.height,
+        slots.knuckle_origin.y + knuckle.size.height,
+        slots.double_down_origin.y + double_down.size.height,
+    )
+    size = Size(width, content_height)
 
     def draw_at(d, origin):
         # Compute each key's absolute paint origin once — both the

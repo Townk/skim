@@ -741,10 +741,15 @@ def KeymapOverview(
     # (= one outer key down from the half's top edge). Same as the
     # cluster's ``north_key`` width since outer keys are square.
     ew_offset = finger_cluster_width * _OUTER_KEY_PROPORTION
-    # Reserve top-of-body space: heading above the first badge, which
-    # itself sits at row_y + ew_offset (so the badge's top is below
-    # the half's top by ``ew_offset``).
-    body_top_padding = max(layers_heading_height, row_top_bleeds[0])
+    # Top-of-body reservation: enough room for the half's own top
+    # overflow (north-key indicators bleeding above the cluster) AND
+    # the LAYERS heading, which sits above the first badge by
+    # ``layers_heading_height`` and so reaches up to
+    # ``placements[0].y + ew_offset - layers_heading_height``. The
+    # heading is shorter than ``ew_offset`` in practice, so it fits
+    # inside the badge's own row without extra reservation; we still
+    # take the max in case future scaling changes that.
+    body_top_padding = max(row_top_bleeds[0], layers_heading_height - ew_offset)
     y_cursor = body_top_padding
     for i, bot_b in enumerate(row_bottom_bleeds):
         placements.append(_RowPlacement(y=y_cursor, badge_y=y_cursor + ew_offset))
@@ -927,10 +932,55 @@ def KeymapOverview(
     placements = [_RowPlacement(y=y, badge_y=y + ew_offset) for y in mutable_row_ys]
     thumb_y = mutable_thumb_y[0]
     thumbs_badge_y = thumb_y + thumb_pad_offset
-    body_height = thumb_y + left_thumb.size.height + thumb_bottom_bleed
-    if routing is not None:
-        body_width += routing.extra_right_padding
-        body_height += routing.extra_bottom_padding
+    cluster_bottom = thumb_y + left_thumb.size.height
+    doc_width = config.output.layout.width
+    connector_stroke_width = doc_width * _CONNECTOR_PATH_STROKE_WIDTH_RATIO
+    indicator_stroke_half = doc_width * _CIRCLE_STROKE_WIDTH_RATIO / 2.0
+    connector_stroke_half = connector_stroke_width / 2.0
+
+    # Indicator circles paint past the cluster's keys-only edge by
+    # ``bleed`` (centerline) plus ``indicator_stroke_half`` (stroke
+    # extent past the centerline). Reserve both so the body fully
+    # contains the painted strokes.
+    body_width = right_half_x + side_width + max_right_outer_bleed + indicator_stroke_half
+    body_height = cluster_bottom + thumb_bottom_bleed + indicator_stroke_half
+    if routing is not None and routing.paths:
+        # Right-side: routing columns sit past the cluster overflow
+        # (the first column is ``cluster_right_edge + 2 * keymap_spacing``)
+        # and fully subsume ``max_right_outer_bleed`` once present.
+        # The outermost column's vertical segment paints with stroke
+        # extending ``connector_stroke_half`` past the centerline.
+        body_width = (
+            right_half_x
+            + side_width
+            + max(
+                max_right_outer_bleed + indicator_stroke_half,
+                routing.extra_right_padding + connector_stroke_half,
+            )
+        )
+
+        # Bottom-side: actual painted content below ``cluster_bottom``
+        # is either (a) indicator circle strokes (``thumb_bottom_bleed
+        # + indicator_stroke_half``) or (b) the bottommost DOWN lane
+        # (when DOWN lanes exist). The legacy ``extra_bottom_padding``
+        # value includes a rect-padding offset (``6 * stroke_width``,
+        # for routing geometry only — no paint there) and a ``0.5 *
+        # keymap_spacing`` buffer for canvas-edge clearance. Strip
+        # both: ``KeymapDocument``'s content_offset provides
+        # canvas-edge breathing room and the rect padding is metadata.
+        if routing.extra_bottom_padding >= keymap_spacing:
+            # DOWN lanes present. The bottommost lane sits at
+            # ``cluster_bottom + thumb_overhang_b + n_d * ks``, where
+            # ``extra_bottom_padding = (n_d + 0.5) * ks + thumb_overhang_b``.
+            # Strip the ``0.5 * ks`` buffer; reserve the connector
+            # stroke half below the lane.
+            bottom_lane_below_cluster = (
+                routing.extra_bottom_padding - 0.5 * keymap_spacing + connector_stroke_half
+            )
+            body_height = cluster_bottom + max(
+                thumb_bottom_bleed + indicator_stroke_half,
+                bottom_lane_below_cluster,
+            )
 
     # --- Phase 8: heading position + connector path styling. ---
     layers_heading_baseline_y = (
@@ -949,8 +999,6 @@ def KeymapOverview(
         layer_cfg.index: pos for pos, layer_cfg in enumerate(config.keyboard.layers)
     }
 
-    doc_width = config.output.layout.width
-    connector_stroke_width = doc_width * _CONNECTOR_PATH_STROKE_WIDTH_RATIO
     dot = doc_width * _CONNECTOR_PATH_DASH_DOT_RATIO
     dash_gap = doc_width * _CONNECTOR_PATH_DASH_GAP_RATIO
 
