@@ -257,11 +257,11 @@ def parse_into_spans(
         color=default_style.color,
     )
     # Unicode-symbols fallback: routes characters missing from the
-    # default font through DejaVu Sans Bold, which carries the
+    # default font through DejaVu Sans Condensed, which carries the
     # keyboard-symbol block (⎇, ⌘, ⌥, ⌃, ⇧, ↹, ⏎, ␣, ⌫, ⌦) plus
-    # the box-drawing separator (│). The bold weight specifically
-    # covers ⎇ (U+2387) which the regular / mono variants — and
-    # most UI / programming fonts (Roboto, Cascadia) — all lack.
+    # the box-drawing separator (│). The condensed variant covers
+    # ⎇ (U+2387) at a regular stroke weight, which most UI /
+    # programming fonts (Roboto, Cascadia, DejaVu Sans Mono) lack.
     # The visible glyph then renders with the SAME font we measure
     # against, so the cursor-based layout positions it correctly
     # without a paint-time offset.
@@ -311,7 +311,7 @@ def parse_into_spans(
         glyph but the browser silently falls back to a different
         font with a wider visible glyph. Shifting the paint origin
         left by half the measured advance re-centres the rendered
-        glyph in its measured advance box. With DejaVu Sans Bold in
+        glyph in its measured advance box. With DejaVu Sans Condensed in
         the Unicode-symbols slot this branch fires only for the
         rare ``⎈`` (U+2388 HELM SYMBOL) and any other esoteric
         glyphs that DejaVu doesn't carry.
@@ -340,7 +340,7 @@ def parse_into_spans(
         if separator_style is not None and text[i] == SEPARATOR_CHAR:
             _flush_text()
             # The separator (``│`` U+2502) is missing from Roboto
-            # but present in DejaVu Sans Bold — emit it as a
+            # but present in DejaVu Sans Condensed — emit it as a
             # :attr:`Font.UNICODE_SYMBOLS` span with the ghost colour
             # so the rendered bar lands exactly where PIL measures
             # it. No paint-time offset needed.
@@ -350,7 +350,7 @@ def parse_into_spans(
         if ord(text[i]) not in default_cmap and not text[i].isspace():
             _flush_text()
             if ord(text[i]) in unicode_symbols_cmap:
-                # Route through DejaVu Sans Bold — the rendered glyph
+                # Route through DejaVu Sans Condensed — the rendered glyph
                 # uses the SAME font we measure against, so the
                 # cursor-based layout positions it correctly.
                 spans.append(TextSpan(text=text[i], style=unicode_symbols_style))

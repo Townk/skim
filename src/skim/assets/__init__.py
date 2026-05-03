@@ -108,25 +108,28 @@ class BundleAssets:
         return self._get_cached("font_symbols_nerd", "fonts", "SymbolsNerdFont-Regular.ttf")
 
     @property
-    def font_dejavu_sans_bold(self) -> Path:
-        """Path to the DejaVuSans-Bold.ttf font file.
+    def font_dejavu_sans_condensed(self) -> Path:
+        """Path to the DejaVuSansCondensed.ttf font file.
 
         Used as a Unicode-symbol fallback for characters the Roboto
         family doesn't carry — the keyboard-symbol block (⎇, ⌘, ⌥,
         ⌃, ⇧, ↹, ⏎, ␣, ⌫, ⌦), the box-drawing separator (│), and
         other miscellaneous-technical glyphs that show up in keymap
-        labels. DejaVu Sans Bold is part of the well-tested DejaVu
-        family (Bitstream Vera-derived, free for any use); the bold
-        weight specifically covers ⎇ (U+2387) which the regular and
-        mono variants lack along with most UI / programming fonts.
+        labels. DejaVu Sans Condensed is part of the well-tested
+        DejaVu family (Bitstream Vera-derived, free for any use);
+        the condensed weight covers ⎇ (U+2387) at a regular
+        (non-bold) stroke width that pairs better with Roboto labels
+        than the bold variant does.
 
         Returns:
-            Path to the bundled DejaVu Sans Bold font.
+            Path to the bundled DejaVu Sans Condensed font.
 
         Raises:
             FileNotFoundError: If the file is missing from the installation.
         """
-        return self._get_cached("font_dejavu_sans_bold", "fonts", "DejaVuSans-Bold.ttf")
+        return self._get_cached(
+            "font_dejavu_sans_condensed", "fonts", "DejaVuSansCondensed.ttf"
+        )
 
     @property
     def logo_svalboard(self) -> Path:
