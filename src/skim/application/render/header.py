@@ -23,7 +23,7 @@ from skim.assets import ASSETS
 from .composable import Composable
 from .primitives import Row, Size, Spacer
 from .render_context import TextStyle
-from .text import Font
+from .text import Font, register_font_usage
 
 # The Svalboard logo SVG asset's intrinsic aspect ratio
 # (width / height), rounded to 2 dp so derived widths stay stable
@@ -107,7 +107,15 @@ def TitleText(
 
     The element's size matches the rendered glyph bbox so the logo can
     be sized to match it.
+
+    Registers the painted characters with the active
+    :class:`FontUsageCollector` so the auto-subsetter embeds
+    Roboto Thin's glyphs in the SVG's ``@font-face`` rules. Skipping
+    this would silently fall back to ``'Helvetica Neue', Arial,
+    sans-serif`` because the embedded font wouldn't be in the CSS.
     """
+    if text:
+        register_font_usage(Font.TITLE, text)
     size = _title_rendered_size(text, font_size)
     family = Font.TITLE.get_system_font_family() if use_system_fonts else Font.TITLE.value
 
