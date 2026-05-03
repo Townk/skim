@@ -59,8 +59,10 @@ from .header import Header
 from .primitives import Column, Component, Row, Size, Spacer
 
 if TYPE_CHECKING:
-    from skim.data import KeycodeMappings, SvalboardKeymap, SvalboardLayout
+    from skim.data import SvalboardKeymap, SvalboardLayout
     from skim.domain import SvalboardMacro, SvalboardTapDance, SvalboardTargetKey
+
+    from .symbols import SymbolLegendEntry
 
 # The body of a standalone special-keys image (the macro / tap-dance
 # section content) renders at this multiple of the configured document
@@ -138,9 +140,7 @@ def KeymapLayerDocument(
     copyright: str | None = None,
     macros: list[SvalboardMacro[SvalboardTargetKey]] | None = None,
     tap_dances: list[SvalboardTapDance[SvalboardTargetKey]] | None = None,
-    raw_layer_keycodes: list[str] | None = None,
-    raw_keymap: SvalboardKeymap[str] | None = None,
-    keycode_mappings: KeycodeMappings | None = None,
+    symbol_entries: list[SymbolLegendEntry] | None = None,
 ):
     """The full per-layer keymap image as a single composable.
 
@@ -153,21 +153,17 @@ def KeymapLayerDocument(
     :func:`KeymapDocument` for the rounded background border +
     content_offset chrome.
 
-    ``macros`` and ``tap_dances`` are pre-resolved by the caller —
-    already filtered to what the layer references and sorted in the
-    order they should paint. The document doesn't reach into the
-    keymap or run id-resolution itself; that's the entry point's
-    concern. Pass ``None`` (the default) or an empty list to
-    suppress the legend section.
+    ``macros``, ``tap_dances``, and ``symbol_entries`` are
+    pre-resolved by the caller — macros / tap-dances filtered to
+    what the layer references and sorted, symbol entries collected
+    via :func:`collect_layer_symbol_entries`. Pass ``None`` (or an
+    empty list) for any section that shouldn't render.
 
     A falsy ``copyright`` (``None`` or ``""``) suppresses the
-    footer. Symbol legend appears only when ``show_symbol_legend``
-    is on AND ``raw_layer_keycodes`` + ``keycode_mappings`` are
-    provided AND the layer has resolvable symbols.
+    footer.
     """
     from .keymap_layer import KeymapLayer
     from .macros import MacroSection
-    from .symbol_legend import collect_used_descriptions
     from .symbols import FlowDirection, SymbolSection
     from .tap_dance import TapDanceSection
 
@@ -202,22 +198,15 @@ def KeymapLayerDocument(
     td_section = TapDanceSection(tap_dances=td_entries, max_width=col_w) if td_entries else None
 
     symbol_section = None
-    if config.output.style.show_symbol_legend and raw_layer_keycodes and keycode_mappings:
-        symbol_entries = collect_used_descriptions(
-            raw_layer_keycodes,
-            raw_keymap,
-            keycode_mappings,
-            include_transparent=not config.output.style.show_transparent_fallthrough,
+    if symbol_entries:
+        flow_value = config.output.style.symbol_legend_flow.value
+        typed_flow: FlowDirection = "row" if flow_value == "row" else "column"
+        symbol_section = SymbolSection(
+            entries=symbol_entries,
+            max_width=content_w,
+            column_count=config.output.style.symbol_legend_columns,
+            flow=typed_flow,
         )
-        if symbol_entries:
-            flow_value = config.output.style.symbol_legend_flow.value
-            typed_flow: FlowDirection = "row" if flow_value == "row" else "column"
-            symbol_section = SymbolSection(
-                entries=symbol_entries,
-                max_width=content_w,
-                column_count=config.output.style.symbol_legend_columns,
-                flow=typed_flow,
-            )
 
     with Column(gap=metrics.inset, align="start") as content:
         Header(
@@ -249,8 +238,7 @@ def KeymapOverviewDocument(
     copyright: str | None = None,
     macros: list[SvalboardMacro[SvalboardTargetKey]] | None = None,
     tap_dances: list[SvalboardTapDance[SvalboardTargetKey]] | None = None,
-    raw_keymap: SvalboardKeymap[str] | None = None,
-    keycode_mappings: KeycodeMappings | None = None,
+    symbol_entries: list[SymbolLegendEntry] | None = None,
 ):
     """The full overview image as a single composable.
 
@@ -260,19 +248,19 @@ def KeymapOverviewDocument(
     :func:`KeymapDocument` for the rounded background border +
     content_offset chrome.
 
-    ``macros`` and ``tap_dances`` are pre-resolved by the caller —
-    the overview shows ALL parsed entries, sorted in the order the
-    pills should paint. The document doesn't reach into the keymap
-    or run the sort itself; that's the entry point's concern. Pass
-    ``None`` (the default) or an empty list to suppress the legend
-    section.
+    ``macros``, ``tap_dances``, and ``symbol_entries`` are
+    pre-resolved by the caller — the overview shows ALL parsed
+    entries (sorted) plus every symbol used across the rendered
+    layers. The document doesn't reach into the keymap or run the
+    resolution itself; that's the entry point's concern. Pass
+    ``None`` (or an empty list) for any section that shouldn't
+    render.
 
     When ``keymap`` has no layers there's nothing to render — return
     a zero-sized :func:`Spacer` so the caller skips painting.
     """
     from .keymap_overview import KeymapOverview
     from .macros import MacroSection
-    from .symbol_legend import collect_used_descriptions
     from .symbols import FlowDirection, SymbolSection
     from .tap_dance import TapDanceSection
 
@@ -295,33 +283,16 @@ def KeymapOverviewDocument(
     macro_section = MacroSection(macros=macro_entries, max_width=col_w) if macro_entries else None
     td_section = TapDanceSection(tap_dances=td_entries, max_width=col_w) if td_entries else None
 
-    # Symbol legend — union across all rendered layers.
     symbol_section = None
-    if (
-        config.output.style.show_symbol_legend
-        and raw_keymap is not None
-        and keycode_mappings is not None
-    ):
-        all_raw_keycodes: list[str] = []
-        for layer_cfg in config.keyboard.layers:
-            qmk_idx = layer_cfg.index
-            if qmk_idx in raw_keymap.layers and qmk_idx in keymap.layers:
-                all_raw_keycodes.extend(k for k in raw_keymap.layers[qmk_idx] if k is not None)
-        symbol_entries = collect_used_descriptions(
-            all_raw_keycodes,
-            raw_keymap,
-            keycode_mappings,
-            include_transparent=not config.output.style.show_transparent_fallthrough,
+    if symbol_entries:
+        flow_value = config.output.style.symbol_legend_flow.value
+        typed_flow: FlowDirection = "row" if flow_value == "row" else "column"
+        symbol_section = SymbolSection(
+            entries=symbol_entries,
+            max_width=content_w,
+            column_count=config.output.style.symbol_legend_columns,
+            flow=typed_flow,
         )
-        if symbol_entries:
-            flow_value = config.output.style.symbol_legend_flow.value
-            typed_flow: FlowDirection = "row" if flow_value == "row" else "column"
-            symbol_section = SymbolSection(
-                entries=symbol_entries,
-                max_width=content_w,
-                column_count=config.output.style.symbol_legend_columns,
-                flow=typed_flow,
-            )
 
     with Column(gap=metrics.inset, align="start") as content:
         Header(

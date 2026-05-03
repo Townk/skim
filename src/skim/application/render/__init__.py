@@ -58,7 +58,12 @@ from .section_data import (
     resolve_tap_dances,
 )
 from .styling import make_gradient
-from .symbols import FlowDirection, SymbolLegendEntry, collect_symbol_entries
+from .symbols import (
+    FlowDirection,
+    SymbolLegendEntry,
+    collect_layer_symbol_entries,
+    collect_symbol_entries,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -142,12 +147,13 @@ def _draw_layer(
 ) -> draw.Drawing:
     """Render one layer's keymap image.
 
-    Resolves the macro / TD legend's contents up-front (the layer's
-    used ids → filtered + sorted lists) so the document composable
-    receives ready-to-paint data rather than reaching into the
-    keymap itself. Then builds a :class:`RenderContext` and hands
-    the document to :func:`render`. Embedded-font subsetting is
-    automatic — :class:`FontUsageCollector` activates inside
+    Resolves every section's contents up-front (macro / TD ids
+    filtered + sorted, symbol entries collected from the layer's
+    raw keycodes) so the document composable receives ready-to-paint
+    data rather than reaching into the keymap or running
+    id-resolution itself. Then builds a :class:`RenderContext` and
+    hands the document to :func:`render`. Embedded-font subsetting
+    is automatic — :class:`FontUsageCollector` activates inside
     :func:`using_render_context` and every :func:`AdjustableText`
     registers its painted characters there during construction.
     """
@@ -158,6 +164,12 @@ def _draw_layer(
     else:
         layer_macros = []
         layer_tap_dances = []
+    if config.output.style.show_symbol_legend:
+        symbol_entries = collect_layer_symbol_entries(
+            config, raw_layer_keycodes, raw_keymap, keycode_mappings
+        )
+    else:
+        symbol_entries = []
     with using_render_context(RenderContext.build(config, keymap)):
         return render(
             KeymapLayerDocument(
@@ -167,9 +179,7 @@ def _draw_layer(
                 copyright=config.output.copyright or "",
                 macros=layer_macros,
                 tap_dances=layer_tap_dances,
-                raw_layer_keycodes=raw_layer_keycodes,
-                raw_keymap=raw_keymap,
-                keycode_mappings=keycode_mappings,
+                symbol_entries=symbol_entries,
             )
         )
 
@@ -182,10 +192,10 @@ def draw_overview(
 ) -> draw.Drawing:
     """Render the multi-layer overview image.
 
-    Resolves the macro / TD legend's contents up-front (the parsed
-    keymap's full lists, sorted) so the document composable
-    receives ready-to-paint data rather than reaching into the
-    keymap itself.
+    Resolves every section's contents up-front so the document
+    composable receives ready-to-paint data: all macros / tap-dances
+    sorted, plus the union of symbol entries across the rendered
+    layers.
     """
     if config.output.style.show_special_keys_legend:
         overview_macros = all_macros(keymap.macros)
@@ -193,6 +203,12 @@ def draw_overview(
     else:
         overview_macros = []
         overview_tap_dances = []
+    if config.output.style.show_symbol_legend:
+        symbol_entries = _collect_overview_symbol_entries(
+            config, keymap, raw_keymap, keycode_mappings
+        )
+    else:
+        symbol_entries = []
     with using_render_context(RenderContext.build(config, keymap)):
         return render(
             KeymapOverviewDocument(
@@ -201,10 +217,33 @@ def draw_overview(
                 copyright=config.output.copyright or "",
                 macros=overview_macros,
                 tap_dances=overview_tap_dances,
-                raw_keymap=raw_keymap,
-                keycode_mappings=keycode_mappings,
+                symbol_entries=symbol_entries,
             )
         )
+
+
+def _collect_overview_symbol_entries(
+    config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+    raw_keymap: SvalboardKeymap[str] | None,
+    keycode_mappings: KeycodeMappings | None,
+) -> list[SymbolLegendEntry]:
+    """Union of every symbol entry referenced by the layers being rendered.
+
+    The overview only paints layers that appear in BOTH ``raw_keymap``
+    and the configured layer list, so the symbol-entry collection
+    iterates that intersection rather than every key in
+    ``raw_keymap``. Returns an empty list when prerequisites are
+    missing.
+    """
+    if raw_keymap is None or keycode_mappings is None:
+        return []
+    all_raw_keycodes: list[str] = []
+    for layer_cfg in config.keyboard.layers:
+        qmk_idx = layer_cfg.index
+        if qmk_idx in raw_keymap.layers and qmk_idx in keymap.layers:
+            all_raw_keycodes.extend(k for k in raw_keymap.layers[qmk_idx] if k is not None)
+    return collect_layer_symbol_entries(config, all_raw_keycodes, raw_keymap, keycode_mappings)
 
 
 def draw_macros_image(
