@@ -26,11 +26,11 @@ import drawsvg as draw
 from skim.domain import Alignment, KeyboardSide, KeyDirection
 
 from .composable import Composable
-from .geometry import Trapezoid
 from .primitives import CompassDirection, MetricsComponent, Point, Size
 from .render_context import TextStyle
 from .rich_text import RichText, parse_into_spans
 from .text import Font
+from .trapezoid import Trapezoid
 
 
 def _mirror_metrics(

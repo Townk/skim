@@ -26,15 +26,22 @@ import drawsvg as draw
 from skim.assets import ASSETS
 
 from .composable import Composable
-from .geometry import AspectRatio
 from .primitives import Point, Row, Size, Spacer
 from .render_context import TextStyle
 from .text import Font
 
-# The Svalboard logo SVG asset's intrinsic aspect ratio. Logo width is
-# derived from height via this ratio so the logo stays in proportion
-# regardless of which size the title drives it to.
-_LOGO_ASPECT_RATIO = AspectRatio.from_dimensions(width=2333.333, height=458.333, precision=2)
+# The Svalboard logo SVG asset's intrinsic aspect ratio
+# (width / height), rounded to 2 dp so derived widths stay stable
+# under float rounding. Logo width is derived from height via this
+# ratio so the logo stays in proportion regardless of which size the
+# title drives it to.
+_LOGO_WIDTH_PER_UNIT_HEIGHT = round(2333.333 / 458.333, 2)
+
+
+def _logo_width_for_height(height: float) -> float:
+    """Return the Svalboard logo's width at the given rendered height."""
+    return height * _LOGO_WIDTH_PER_UNIT_HEIGHT
+
 
 # Floor on the title font size when shrinking so a tight canvas still
 # renders something legible (and never produces a degenerate ``0``).
@@ -108,7 +115,7 @@ def _resolve_title_font_size(
     if not title or max_width is None:
         return font_max_size
     natural = _title_rendered_size(title, font_max_size)
-    natural_logo_w = _LOGO_ASPECT_RATIO.width_from_height(natural.height)
+    natural_logo_w = _logo_width_for_height(natural.height)
     if natural.width + natural_logo_w + min_gap <= max_width:
         return font_max_size
     denom = natural.width + natural_logo_w
@@ -160,7 +167,7 @@ def TitleText(
 @Composable
 def Logo(height: float):
     """The Svalboard logo at ``height`` (width follows the asset's aspect)."""
-    width = _LOGO_ASPECT_RATIO.width_from_height(height)
+    width = _logo_width_for_height(height)
     size = Size(width, height)
 
     def draw_at(d, origin):
@@ -302,7 +309,7 @@ def append_header(
     final_font_size = _resolve_title_font_size(title_text, title_font_max_size, min_gap, max_width)
     final_title_size = _title_rendered_size(title_text, final_font_size)
     final_logo_h = final_title_size.height
-    final_logo_w = _LOGO_ASPECT_RATIO.width_from_height(final_logo_h)
+    final_logo_w = _logo_width_for_height(final_logo_h)
     return HeaderRenderResult(
         height=header.size.height,
         title_font_size=final_font_size,
