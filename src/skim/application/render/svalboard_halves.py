@@ -123,6 +123,7 @@ def FingerHalf(
     use_layer_colors_on_keys: bool = True,
     show_layer_indicators: bool = True,
     hold_symbol_position: SplitSidePosition = SplitSidePosition.OUTWARD,
+    column_gap: float | None = None,
 ):
     """Four finger clusters arranged into one keyboard half.
 
@@ -147,9 +148,9 @@ def FingerHalf(
     ``min_width`` is the half's horizontal floor — the four clusters
     + three inter-cluster gaps fit within exactly that extent. The
     composable splits the budget using
-    :attr:`document_metrics.inset` from the active render context as
-    the gap size, so callers don't have to pre-compute per-cluster
-    sizing. ``cluster_width = (min_width - 3 * inset) / 4``;
+    :attr:`document_metrics.column_gap` from the active render context
+    as the gap size, so callers don't have to pre-compute per-cluster
+    sizing. ``cluster_width = (min_width - 3 * column_gap) / 4``;
     ``stagger_amount = cluster_width / 3``. The reported
     :attr:`Size.width` equals ``min_width`` today, but the contract
     leaves room to grow past it once indicator overhang on the outer
@@ -158,9 +159,17 @@ def FingerHalf(
 
     Reports :class:`MetricsComponent[FingerHalfMetrics]` exposing
     each cluster's origin and metrics.
+
+    ``column_gap`` is the horizontal gap between adjacent finger
+    clusters and also the drop-amount used when staggering. Defaults
+    to ``ctx.document_metrics.column_gap`` — the canonical horizontal
+    spacing for any visual column arrangement, mirroring the new
+    spacing convention (``inset`` for vertical Column spacing,
+    ``column_gap`` for horizontal arrangements). Callers can override
+    when they need a custom horizontal rhythm.
     """
-    inset = ctx.document_metrics.inset
-    cluster_width = (min_width - inset * (_FINGER_CLUSTER_COUNT - 1)) / _FINGER_CLUSTER_COUNT
+    column_gap = column_gap if column_gap is not None else ctx.document_metrics.column_gap
+    cluster_width = (min_width - column_gap * (_FINGER_CLUSTER_COUNT - 1)) / _FINGER_CLUSTER_COUNT
     stagger_amount = cluster_width / _HORIZONTAL_CELLS_PER_CLUSTER
 
     index_data, middle_data, ring_data, pinky_data = fingers
@@ -192,7 +201,7 @@ def FingerHalf(
     #    Right hand: clusters in (index, middle, ring, pinky) order
     #    left-to-right. Left hand: pinky goes leftmost (outer), so
     #    we walk the same sequence in reverse.
-    step = cluster_width + inset
+    step = cluster_width + column_gap
     if side is KeyboardSide.RIGHT:
         index_x = 0.0
         middle_x = step
@@ -221,7 +230,7 @@ def FingerHalf(
     pinky_origin = Point(pinky_x, pinky_y)
 
     # 4. Half size — keys-only bbox. Width equals ``min_width`` today
-    #    (4 * cluster_width + 3 * inset reverses the cluster_width
+    #    (4 * cluster_width + 3 * column_gap reverses the cluster_width
     #    derivation above). The contract is "at least min_width", so
     #    when indicator overhang inflation lands the reported width
     #    will grow past the floor.

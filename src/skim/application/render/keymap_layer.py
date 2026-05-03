@@ -56,10 +56,9 @@ from .symbols import FlowDirection, SymbolSection
 from .tap_dance import TapDanceSection
 
 # Central gap between the two keyboard sides, in units of
-# ``DocumentMetrics.inset``. Mirrors the legacy
-# ``_CENTER_GAP_INSET_COUNT`` constant from ``layout.py`` so the
-# central gap behaves identically without importing the legacy
-# layout helper.
+# ``DocumentMetrics.column_gap``. ``column_gap`` is the canonical
+# horizontal spacing for any visual column arrangement; ``inset`` is
+# reserved for vertical Column spacing.
 _CENTER_GAP_INSET_COUNT = 2.0
 
 # Thumb cluster width as a proportion of one keyboard side's width.
@@ -126,7 +125,11 @@ def KeymapLayer(
     config = ctx.config
     metrics = ctx.document_metrics
 
-    min_horizontal_gap = _CENTER_GAP_INSET_COUNT * metrics.inset
+    # Horizontal gaps follow the new spacing convention: ``column_gap``
+    # for any horizontal column arrangement (clusters across a half,
+    # halves across the keyboard); ``inset`` reserved for vertical
+    # spacing inside Columns.
+    min_horizontal_gap = _CENTER_GAP_INSET_COUNT * metrics.column_gap
     min_vertical_gap = metrics.inset
 
     side_width = (target_content_w - min_horizontal_gap) / 2.0
