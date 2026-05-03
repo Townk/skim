@@ -242,10 +242,10 @@ class DocumentMetrics:
     """Cross-cutting sizes shared by every composable in one image.
 
     The canonical source for the document's outer-chrome metrics —
-    margin, border stroke thickness and inset. Composables (and
-    ``KeymapLayoutMetrics``) read these from a built
-    :class:`DocumentMetrics` instead of resolving them from config
-    independently, so a single resolution rule applies everywhere.
+    margin, border stroke thickness and inset. Composables read
+    these from a built :class:`DocumentMetrics` instead of resolving
+    them from config independently, so a single resolution rule
+    applies everywhere.
 
     Component-specific metrics (cell width, chip width, font sizes
     used by particular composables) do NOT live here — those belong on
@@ -309,8 +309,7 @@ class DocumentMetrics:
         """Compute document-wide metrics from a config.
 
         Resolves margin / border_width / inset directly — this is the
-        canonical source for those values. ``KeymapLayoutMetrics``
-        reads them off the resulting :class:`DocumentMetrics``.
+        canonical source for those values.
         """
         doc_width = config.output.layout.width
         spacing = config.output.layout.spacing
