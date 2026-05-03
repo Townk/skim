@@ -490,14 +490,20 @@ class TestFontUsageAnalyzerUnicode:
         assert "β" in finger_chars
         assert "γ" in finger_chars
 
-    def test_emoji_collected(self):
+    def test_emoji_routed_to_unicode_symbols_subset(self):
+        """Emoji are missing from Roboto so the analyser routes
+        them through the :attr:`Font.UNICODE_SYMBOLS` subset (Symbola
+        carries the emoji block). The requesting finger-key subset
+        stays untouched."""
         analyzer = FontUsageAnalyzer()
         layout = make_layout(finger_label="😀")
 
         analyzer.analyze_keymap(layout)
 
         finger_chars = analyzer.get_used_chars(Font.FINGER_KEY)
-        assert "😀" in finger_chars
+        assert "😀" not in finger_chars
+        unicode_chars = analyzer.get_used_chars(Font.UNICODE_SYMBOLS)
+        assert "😀" in unicode_chars
 
 
 class TestFontUsageAnalyzerAllFonts:

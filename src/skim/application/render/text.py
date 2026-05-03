@@ -70,11 +70,11 @@ class Font(Enum):
         THUMB_KEY: Bold font for thumb cluster key labels.
         TITLE: Thin font for keymap titles.
         SYMBOLS: Nerd Font for Nerd-Font-token glyphs (``%%nf-…;``).
-        UNICODE_SYMBOLS: DejaVu Sans Mono — Unicode fallback for
-            keyboard symbols (⌘ ⌥ ⌃ ⇧ ↹ ⏎ ␣ ⌫ ⌦ ⎈) and the
-            box-drawing separator (│) that the Roboto family
-            doesn't carry. Used by ``parse_into_spans`` for any
-            character missing from the requesting span's font.
+        UNICODE_SYMBOLS: Symbola — Unicode fallback for keyboard
+            symbols (⎇ ⌘ ⌥ ⌃ ⇧ ↹ ⏎ ␣ ⌫ ⌦ ⎈) and the box-drawing
+            separator (│) that the Roboto family doesn't carry.
+            Used by ``parse_into_spans`` for any character missing
+            from the requesting span's font.
     """
 
     FINGER_KEY = (
@@ -95,7 +95,7 @@ class Font(Enum):
     )
     UNICODE_SYMBOLS = (
         "Unicode-Symbols",
-        ASSETS.font_dejavu_sans_mono,
+        ASSETS.font_symbola,
     )
 
     def __init__(self, font_family: str, font_path: Path):
@@ -157,7 +157,7 @@ class Font(Enum):
             case Font.SYMBOLS:
                 return "'Symbols Nerd Font', 'Nerd Fonts', monospace"
             case Font.UNICODE_SYMBOLS:
-                return "'DejaVu Sans Mono', 'DejaVu Sans', monospace"
+                return "'Symbola', 'Apple Symbols', 'DejaVu Sans Mono', monospace"
             case _:
                 return "sans-serif"
 

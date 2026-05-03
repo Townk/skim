@@ -257,11 +257,13 @@ def parse_into_spans(
         color=default_style.color,
     )
     # Unicode-symbols fallback: routes characters missing from the
-    # default font through DejaVu Sans Mono, which carries the
-    # keyboard-symbol block (⌘, ⌥, ⌃, ⇧, ↹, ⏎, ␣, ⌫, ⌦, ⎈) plus
-    # the box-drawing separator (│). The visible glyph then renders
-    # with the SAME font we measure against, so the cursor-based
-    # layout positions it correctly without a paint-time offset.
+    # default font through Symbola, which carries the keyboard-symbol
+    # block (⎇, ⌘, ⌥, ⌃, ⇧, ↹, ⏎, ␣, ⌫, ⌦, ⎈) plus the box-drawing
+    # separator (│) — including ⎇ (U+2387) which the standard UI /
+    # programming fonts (Roboto, DejaVu, Cascadia) all lack. The
+    # visible glyph then renders with the SAME font we measure
+    # against, so the cursor-based layout positions it correctly
+    # without a paint-time offset.
     unicode_symbols_style = TextStyle(
         font=Font.UNICODE_SYMBOLS,
         size=default_style.size,
@@ -270,12 +272,12 @@ def parse_into_spans(
     )
     separator_style: TextStyle | None = None
     if separator_background is not None:
-        # The separator paints in the Unicode-symbols font (DejaVu
+        # The separator paints in the Unicode-symbols font (Symbola
         # has the box-drawing block) so the rendered bar lands
         # exactly where PIL measures it. Earlier Roboto-only
         # versions of this code carried a paint-time offset to
         # compensate for the browser's silent fallback to a wider
-        # glyph; with DejaVu in the loop the offset is no longer
+        # glyph; with Symbola in the loop the offset is no longer
         # needed. The separator inherits the default style's weight
         # rather than forcing ``700`` so a Black-face thumb label
         # doesn't trigger synthetic-bold smearing on top of the
@@ -308,8 +310,10 @@ def parse_into_spans(
         glyph but the browser silently falls back to a different
         font with a wider visible glyph. Shifting the paint origin
         left by half the measured advance re-centres the rendered
-        glyph in its measured advance box. Currently triggered for
-        ``⎇`` (U+2387), which is in neither Roboto nor DejaVu.
+        glyph in its measured advance box. With Symbola in the
+        Unicode-symbols slot this branch should rarely fire — only
+        for genuinely esoteric code points that neither the
+        requesting font nor Symbola covers.
         """
         adv = measure_text_width(ch, style.font, style.size)
         spans.append(TextSpan(text=ch, style=style, offset=Point(-adv / 2.0, 0.0)))
@@ -335,7 +339,7 @@ def parse_into_spans(
         if separator_style is not None and text[i] == SEPARATOR_CHAR:
             _flush_text()
             # The separator (``│`` U+2502) is missing from Roboto
-            # but present in DejaVu Sans Mono — emit it as a
+            # but present in Symbola — emit it as a
             # :attr:`Font.UNICODE_SYMBOLS` span with the ghost colour
             # so the rendered bar lands exactly where PIL measures
             # it. No paint-time offset needed.
@@ -345,16 +349,16 @@ def parse_into_spans(
         if ord(text[i]) not in default_cmap and not text[i].isspace():
             _flush_text()
             if ord(text[i]) in unicode_symbols_cmap:
-                # Route through DejaVu Sans Mono — the rendered
-                # glyph uses the SAME font we measure against, so
-                # the cursor-based layout positions it correctly.
+                # Route through Symbola — the rendered glyph uses
+                # the SAME font we measure against, so the
+                # cursor-based layout positions it correctly.
                 spans.append(TextSpan(text=text[i], style=unicode_symbols_style))
             else:
                 # Last-ditch: PIL measures via ``.notdef`` while the
                 # browser falls back silently. Centre the visible
-                # glyph in its measured advance box. Currently
-                # triggers for ``⎇`` (U+2387) which is in neither
-                # Roboto nor DejaVu.
+                # glyph in its measured advance box. Should rarely
+                # fire — Symbola has very broad coverage; this only
+                # triggers for genuinely esoteric code points.
                 _emit_centred_fallback(text[i], default_style)
             i += 1
             continue

@@ -108,22 +108,24 @@ class BundleAssets:
         return self._get_cached("font_symbols_nerd", "fonts", "SymbolsNerdFont-Regular.ttf")
 
     @property
-    def font_dejavu_sans_mono(self) -> Path:
-        """Path to the DejaVuSansMono.ttf font file.
+    def font_symbola(self) -> Path:
+        """Path to the Symbola.ttf font file.
 
         Used as a Unicode-symbol fallback for characters the Roboto
-        family doesn't carry — keyboard symbols (⌘, ⌥, ⌃, ⇧, ↹, ⏎,
-        ␣, ⌫, ⌦, ⎈), the box-drawing separator (│), and other
-        miscellaneous-technical glyphs that show up in keymap
-        labels. Bitstream Vera-derived; free for any use.
+        family doesn't carry — the keyboard-symbol block (⎇, ⌘, ⌥,
+        ⌃, ⇧, ↹, ⏎, ␣, ⌫, ⌦, ⎈), the box-drawing separator (│),
+        and other miscellaneous-technical glyphs that show up in
+        keymap labels. Symbola was designed for broad Unicode
+        coverage; it carries ⎇ (U+2387) which standard programming
+        / UI fonts (DejaVu, Cascadia, Roboto) all lack.
 
         Returns:
-            Path to the bundled DejaVu Sans Mono font.
+            Path to the bundled Symbola font.
 
         Raises:
             FileNotFoundError: If the file is missing from the installation.
         """
-        return self._get_cached("font_dejavu_sans_mono", "fonts", "DejaVuSansMono.ttf")
+        return self._get_cached("font_symbola", "fonts", "Symbola.ttf")
 
     @property
     def logo_svalboard(self) -> Path:
