@@ -430,25 +430,35 @@ def _resolve_indicator_colors(
 def _adjust_hold_symbol_label(
     *, position: SplitSidePosition, side: KeyboardSide, label: str
 ) -> str:
-    """Rewrite a label so any hold/tap modifier symbol sits on the
-    requested side.
+    """Rewrite a label so its hold modifier sits on the requested side.
 
-    Keymap labels for east / west keys with hold-modifier behaviour
-    embed a separator-prefixed or -suffixed glyph; the user's
-    ``hold_symbol_position`` config setting decides whether the
-    glyph reads on the inward or outward side. This nudge happens
-    at the cluster level because only the cluster knows the keyboard
-    half, which the side mapping depends on.
+    Hold/tap labels arrive in ``HOLD│TAP`` order — the macro_function
+    templates put the hold glyph (modifier or layer) before the
+    separator and the tap key after. Default rendering paints
+    prefix on the visual LEFT and suffix on the visual RIGHT, so
+    the default lands HOLD on the visual left.
+
+    ``position`` says which side the user wants the HOLD on, in
+    keyboard-relative terms:
+
+    * ``OUTWARD`` — HOLD on the side facing AWAY from the keyboard
+      centre. For the LEFT half that's visual left; for the RIGHT
+      half it's visual right.
+    * ``INWARD`` — HOLD on the side facing TOWARD the centre.
+
+    A swap (suffix-first) is needed when the keyboard-half-relative
+    desired side disagrees with the default visual-left placement:
+    LEFT half + INWARD, or RIGHT half + OUTWARD.
     """
     if position is SplitSidePosition.QMK_DEFINED or not label:
         return label
     if SEPARATOR_CHAR not in label:
         return label
     prefix, suffix = label.split(SEPARATOR_CHAR, 1)
-    is_outward = (position is SplitSidePosition.OUTWARD and side is KeyboardSide.LEFT) or (
-        position is SplitSidePosition.INWARD and side is KeyboardSide.RIGHT
+    needs_swap = (position is SplitSidePosition.OUTWARD and side is KeyboardSide.RIGHT) or (
+        position is SplitSidePosition.INWARD and side is KeyboardSide.LEFT
     )
-    if is_outward:
+    if needs_swap:
         return f"{suffix}{SEPARATOR_CHAR}{prefix}"
     return f"{prefix}{SEPARATOR_CHAR}{suffix}"
 
@@ -462,23 +472,19 @@ def _adjust_cluster_hold_symbols(
     """Apply :func:`_adjust_hold_symbol_label` to the east / west
     keys of a finger cluster, leaving the rest untouched.
 
-    On the LEFT keyboard half the east key is INWARD-of-cluster and
-    the west key is OUTWARD-of-cluster; on the RIGHT half the
-    inward / outward roles flip. ``_adjust_hold_symbol_label``
-    expects the parameter that pairs with ``position`` to reflect
-    which keyboard half the key faces, so we flip the per-key side
-    when the cluster sits on the RIGHT half.
+    Finger keys are square — there's no slant or visual flip, so
+    both east and west keys use the cluster's keyboard half
+    directly. ``_adjust_hold_symbol_label`` decides whether to
+    swap based on the (position, side) pair.
     """
     if position is SplitSidePosition.QMK_DEFINED:
         return cluster
 
-    east_side = KeyboardSide.LEFT if side is KeyboardSide.LEFT else KeyboardSide.RIGHT
-    west_side = KeyboardSide.RIGHT if side is KeyboardSide.LEFT else KeyboardSide.LEFT
     east_label = _adjust_hold_symbol_label(
-        position=position, side=east_side, label=cluster.east_key.label
+        position=position, side=side, label=cluster.east_key.label
     )
     west_label = _adjust_hold_symbol_label(
-        position=position, side=west_side, label=cluster.west_key.label
+        position=position, side=side, label=cluster.west_key.label
     )
     return FingerClusterData(
         center_key=cluster.center_key,
@@ -1012,24 +1018,17 @@ def _adjust_thumb_cluster_hold_symbols(
     knuckle keys of a thumb cluster.
 
     Down + double-down don't carry hold/tap separators in practice
-    (they're typed alone, not as modifier-tap chords) and the legacy
-    code preserves them untouched, so the new composable does the
-    same. Pad and up nudge by the cluster's own side; nail and
-    knuckle nudge by the OPPOSITE side because their visual
-    orientation flips relative to pad / up — the slant on a
-    right-hand nail key sits on the LEFT, which reads as the
-    "outward" side from the keyboard's user-facing perspective even
-    though that's the inward side of the cluster bbox.
+    (they're typed alone, not as modifier-tap chords) so they pass
+    through untouched. Every other thumb key uses the cluster's
+    keyboard half — ``hold_symbol_position`` is keyboard-relative
+    (outward from the keyboard centre) and applies uniformly.
     """
     if position is SplitSidePosition.QMK_DEFINED:
         return cluster
 
-    same_side = side
-    flipped_side = KeyboardSide.RIGHT if side is KeyboardSide.LEFT else KeyboardSide.LEFT
-
-    def _swap(key: SvalboardTargetKey, key_side: KeyboardSide) -> SvalboardTargetKey:
+    def _swap(key: SvalboardTargetKey) -> SvalboardTargetKey:
         return SvalboardTargetKey(
-            label=_adjust_hold_symbol_label(position=position, side=key_side, label=key.label),
+            label=_adjust_hold_symbol_label(position=position, side=side, label=key.label),
             layer_switch=key.layer_switch,
             is_transparent=key.is_transparent,
             macro_id=key.macro_id,
@@ -1038,10 +1037,10 @@ def _adjust_thumb_cluster_hold_symbols(
 
     return ThumbClusterData(
         down_key=cluster.down_key,
-        pad_key=_swap(cluster.pad_key, same_side),
-        up_key=_swap(cluster.up_key, same_side),
-        nail_key=_swap(cluster.nail_key, flipped_side),
-        knuckle_key=_swap(cluster.knuckle_key, flipped_side),
+        pad_key=_swap(cluster.pad_key),
+        up_key=_swap(cluster.up_key),
+        nail_key=_swap(cluster.nail_key),
+        knuckle_key=_swap(cluster.knuckle_key),
         double_down_key=cluster.double_down_key,
     )
 
