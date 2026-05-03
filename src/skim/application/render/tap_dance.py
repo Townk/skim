@@ -37,13 +37,13 @@ import drawsvg as draw
 
 from .adjustable_text import AdjustableText, measure_text_width
 from .composable import Composable
+from .font import Font
 from .primitives import Column, MetricsComponent, Point, Size
 from .render_context import RenderContext, TextStyle
 from .rich_text import RichText
 from .section_data import format_key_label
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
-from .text import Font
 
 if TYPE_CHECKING:
     from skim.domain import SvalboardTapDance, SvalboardTargetKey

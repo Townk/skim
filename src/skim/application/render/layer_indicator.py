@@ -40,10 +40,10 @@ from dataclasses import dataclass
 import drawsvg as draw
 
 from .composable import Composable
+from .font import Font
 from .primitives import CompassDirection, MetricsComponent, Point, Size
 from .render_context import TextStyle
 from .rich_text import RichText
-from .text import Font
 
 # ---------------------------------------------------------------------------
 # Per-doc-width chrome ratios — connector / endpoint / circle stroke.

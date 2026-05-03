@@ -64,56 +64,56 @@ class TestCairoImageExporter:
 
     def test_get_font_from_family_none_returns_default(self, exporter):
         """_get_font_from_family with None returns FINGER_KEY."""
-        from skim.application.render.text import Font
+        from skim.application.render.font import Font
 
         font = exporter._get_font_from_family(None)
         assert font == Font.FINGER_KEY
 
     def test_get_font_from_family_thumb_returns_thumb_key(self, exporter):
         """_get_font_from_family with 'thumb' returns THUMB_KEY."""
-        from skim.application.render.text import Font
+        from skim.application.render.font import Font
 
         font = exporter._get_font_from_family("MyThumbFont")
         assert font == Font.THUMB_KEY
 
     def test_get_font_from_family_black_returns_thumb_key(self, exporter):
         """_get_font_from_family with 'black' returns THUMB_KEY."""
-        from skim.application.render.text import Font
+        from skim.application.render.font import Font
 
         font = exporter._get_font_from_family("BlackFont")
         assert font == Font.THUMB_KEY
 
     def test_get_font_from_family_title_returns_title(self, exporter):
         """_get_font_from_family with 'title' returns TITLE."""
-        from skim.application.render.text import Font
+        from skim.application.render.font import Font
 
         font = exporter._get_font_from_family("TitleFont")
         assert font == Font.TITLE
 
     def test_get_font_from_family_thin_returns_title(self, exporter):
         """_get_font_from_family with 'thin' returns TITLE."""
-        from skim.application.render.text import Font
+        from skim.application.render.font import Font
 
         font = exporter._get_font_from_family("ThinFont")
         assert font == Font.TITLE
 
     def test_get_font_from_family_symbol_returns_symbols(self, exporter):
         """_get_font_from_family with 'symbol' returns SYMBOLS."""
-        from skim.application.render.text import Font
+        from skim.application.render.font import Font
 
         font = exporter._get_font_from_family("SymbolFont")
         assert font == Font.SYMBOLS
 
     def test_get_font_from_family_nerd_returns_symbols(self, exporter):
         """_get_font_from_family with 'nerd' returns SYMBOLS."""
-        from skim.application.render.text import Font
+        from skim.application.render.font import Font
 
         font = exporter._get_font_from_family("NerdFont")
         assert font == Font.SYMBOLS
 
     def test_get_font_from_family_other_returns_finger_key(self, exporter):
         """_get_font_from_family with unknown returns FINGER_KEY."""
-        from skim.application.render.text import Font
+        from skim.application.render.font import Font
 
         font = exporter._get_font_from_family("UnknownFont")
         assert font == Font.FINGER_KEY
@@ -283,7 +283,7 @@ class TestCairoImageExporterConvertTextElement:
     def test_convert_text_element_middle_anchor(
         self, mock_converter_class, exporter, mock_font_path
     ):
-        from skim.application.render.text import Font
+        from skim.application.render.font import Font
 
         text_elem = draw.Text("Hello", 12, 100, 10, text_anchor="middle")
         mock_converter = MagicMock()
@@ -299,7 +299,7 @@ class TestCairoImageExporterConvertTextElement:
 
     @patch("skim.application.exporter.cairo_exporter.TextToPathConverter")
     def test_convert_text_element_end_anchor(self, mock_converter_class, exporter, mock_font_path):
-        from skim.application.render.text import Font
+        from skim.application.render.font import Font
 
         text_elem = draw.Text("Hello", 12, 100, 10, text_anchor="end")
         mock_converter = MagicMock()
@@ -315,7 +315,7 @@ class TestCairoImageExporterConvertTextElement:
 
     @patch("skim.application.exporter.cairo_exporter.TextToPathConverter")
     def test_convert_text_element_with_tspan(self, mock_converter_class, exporter, mock_font_path):
-        from skim.application.render.text import Font
+        from skim.application.render.font import Font
 
         text_elem = draw.Text("Hello", 12, 10, 10)
         text_elem.append(draw.TSpan("World"))

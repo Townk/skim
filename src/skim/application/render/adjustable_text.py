@@ -51,9 +51,9 @@ from dataclasses import dataclass
 import drawsvg as draw
 
 from .composable import Composable
+from .font import Font, register_font_usage
 from .primitives import MetricsComponent, Point, Size
 from .render_context import TextStyle
-from .text import Font, register_font_usage
 
 # Single-character ellipsis used when truncating. PIL's ``getlength``
 # is character-sensitive, so the measurement helper and the trim

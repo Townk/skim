@@ -8,13 +8,13 @@
 from contextlib import contextmanager
 
 from skim.application.render.adjustable_text import measure_text_width
+from skim.application.render.font import Font
 from skim.application.render.render_context import RenderContext, using_render_context
 from skim.application.render.tap_dance import (
     TapDanceMetrics,
     TapDanceTable,
     _resolve_name_column_width,
 )
-from skim.application.render.text import Font
 from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTapDance, SvalboardTargetKey
 

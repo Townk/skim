@@ -48,7 +48,7 @@ from dataclasses import dataclass
 from skim.data import LayerColor, SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardTargetKey
 
-from .text import Font
+from .font import Font
 
 # ---------------------------------------------------------------------------
 # Theme & typography
@@ -420,7 +420,7 @@ def using_render_context(ctx: RenderContext) -> Iterator[RenderContext]:
     # importing it eagerly at top-of-file would create a cycle through
     # :mod:`render_context` ↔ :mod:`text` ↔ ... if the import order
     # ever shifts. Pull it lazily here.
-    from .text import using_font_usage_collector
+    from .font import using_font_usage_collector
 
     token = _render_ctx.set(ctx)
     try:

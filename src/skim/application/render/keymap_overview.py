@@ -61,6 +61,7 @@ from skim.data.keyboard import (
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .composable import Composable
+from .font import Font
 from .primitives import (
     Component,
     MetricsComponent,
@@ -69,7 +70,6 @@ from .primitives import (
 )
 from .svalboard_clusters import ThumbCluster
 from .svalboard_halves import FingerHalf, FingerHalfMetrics
-from .text import Font
 
 # ---------------------------------------------------------------------------
 # Sizing constants

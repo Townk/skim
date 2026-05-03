@@ -26,10 +26,10 @@ import drawsvg as draw
 from skim.domain import Alignment, KeyboardSide, KeyDirection
 
 from .composable import Composable
+from .font import Font
 from .primitives import CompassDirection, MetricsComponent, Point, Size
 from .render_context import TextStyle
 from .rich_text import RichText
-from .text import Font
 from .trapezoid import Trapezoid
 
 

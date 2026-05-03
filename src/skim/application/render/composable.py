@@ -78,6 +78,7 @@ from typing import Any, Concatenate, Literal, ParamSpec, Protocol, TypeVar, over
 
 import drawsvg as draw
 
+from .font import Font
 from .primitives import (
     BaseComponent,
     Component,
@@ -89,7 +90,6 @@ from .primitives import (
     _maybe_register,
 )
 from .render_context import RenderContext, current_render_context
-from .text import Font
 
 # ---------------------------------------------------------------------------
 # @Composable decorator
@@ -272,7 +272,7 @@ def render(component: Component) -> draw.Drawing:
     # Local import — :mod:`text` is heavy (PIL, fontTools) and pulling
     # it in at module-import time slows other imports of
     # :mod:`composable` that don't need the subsetter.
-    from .text import FontSubsetter, current_font_usage_collector
+    from .font import FontSubsetter, current_font_usage_collector
 
     ctx = current_render_context()
     canvas_w = component.size.width

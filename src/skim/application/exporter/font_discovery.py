@@ -21,7 +21,7 @@ import os
 import sys
 from pathlib import Path
 
-from skim.application.render.text import Font
+from skim.application.render.font import Font
 
 
 def find_system_fonts() -> list[Path]:

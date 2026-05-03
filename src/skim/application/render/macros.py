@@ -39,13 +39,13 @@ from skim.domain import (
 
 from .adjustable_text import AdjustableText
 from .composable import Composable
+from .font import Font
 from .primitives import Column, Component, MetricsComponent, Point, Size
 from .render_context import RenderContext, TextStyle
 from .rich_text import RichText
 from .section_data import format_key_label
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
-from .text import Font
 
 # ---------------------------------------------------------------------------
 # Per-doc-width ratios — chip / pill / row pixel metrics expressed as

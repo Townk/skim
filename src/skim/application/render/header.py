@@ -21,9 +21,9 @@ import drawsvg as draw
 from skim.assets import ASSETS
 
 from .composable import Composable
+from .font import Font, register_font_usage
 from .primitives import Row, Size, Spacer
 from .render_context import TextStyle
-from .text import Font, register_font_usage
 
 # The Svalboard logo SVG asset's intrinsic aspect ratio
 # (width / height), rounded to 2 dp so derived widths stay stable

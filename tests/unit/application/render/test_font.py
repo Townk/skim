@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Unit tests for skim.application.render.text module.
+"""Unit tests for skim.application.render.font module.
 
 Covers the :class:`Font` enum (resource resolution, CSS embedding,
 PIL font loading) and the :class:`FontUsageCollector` /
@@ -11,7 +11,7 @@ PIL font loading) and the :class:`FontUsageCollector` /
 for an active render pass.
 """
 
-from skim.application.render.text import (
+from skim.application.render.font import (
     Font,
     FontSubsetter,
     FontUsageCollector,

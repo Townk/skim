@@ -271,13 +271,13 @@ class TestMetricsComponent:
 
 def _build_ctx() -> RenderContext:
     """Construct a RenderContext for tests without going through a real config."""
+    from skim.application.render.font import Font
     from skim.application.render.render_context import (
         DocumentMetrics,
         TextStyle,
         Theme,
         Typography,
     )
-    from skim.application.render.text import Font
     from skim.data import SkimConfig, SvalboardKeymap
 
     config = SkimConfig()

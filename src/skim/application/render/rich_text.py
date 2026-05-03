@@ -77,10 +77,10 @@ from .adjustable_text import (
     measure_text_width,
 )
 from .composable import Composable
+from .font import Font, font_cmap
 from .primitives import MetricsComponent, Point, Size
 from .render_context import TextStyle
 from .styling import adjust_luminance
-from .text import Font, _font_cmap
 
 # Luminance multiplier applied to the key's background colour to
 # derive the separator's stroke colour — mirrors legacy
@@ -290,8 +290,8 @@ def _parse_into_spans(
             weight=default_style.weight,
             color=adjust_luminance(separator_background, _SEPARATOR_LUMINANCE_FACTOR),
         )
-    default_cmap = _font_cmap(default_style.font)
-    unicode_symbols_cmap = _font_cmap(Font.UNICODE_SYMBOLS)
+    default_cmap = font_cmap(default_style.font)
+    unicode_symbols_cmap = font_cmap(Font.UNICODE_SYMBOLS)
     spans: list[_TextSpan] = []
     text_buffer: list[str] = []
 

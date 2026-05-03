@@ -8,6 +8,7 @@
 from contextlib import contextmanager
 
 from skim.application.render.adjustable_text import measure_text_width
+from skim.application.render.font import Font
 from skim.application.render.primitives import Point
 from skim.application.render.render_context import (
     RenderContext,
@@ -21,7 +22,6 @@ from skim.application.render.rich_text import (
     _truncate_with_ellipses,
     resolve_nerd_font_glyphs,
 )
-from skim.application.render.text import Font
 from skim.data import SkimConfig, SvalboardKeymap
 
 _ELLIPSIS = "…"

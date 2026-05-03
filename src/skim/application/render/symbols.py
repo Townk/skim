@@ -30,12 +30,12 @@ from typing import Literal
 
 from .adjustable_text import AdjustableText, measure_text_width
 from .composable import Composable
+from .font import Font
 from .primitives import Column, Component, MetricsComponent, Point, Size
 from .render_context import RenderContext, TextStyle
 from .rich_text import RichText
 from .section_data import SymbolLegendEntry
 from .section_stripe import SectionStripe, SectionStripeMetrics
-from .text import Font
 
 # ---------------------------------------------------------------------------
 # Per-doc-width ratios — entry-row / glyph / description typography.

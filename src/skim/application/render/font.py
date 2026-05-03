@@ -43,10 +43,10 @@ def _load_font(font_path: Path, font_size: int) -> ImageFont.FreeTypeFont:
 
 
 @cache
-def _font_cmap(font: Font) -> frozenset[int]:
+def font_cmap(font: Font) -> frozenset[int]:
     """Return the set of code points actually present in the embedded font.
 
-    Used by the parser / analyser to decide whether a character can
+    Used by the rich-text parser to decide whether a character can
     render in a given font or needs to be routed through the
     Unicode-symbols fallback. Cached because the cmap walk has a
     fixed cost and the same font is queried many times across a

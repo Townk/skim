@@ -8,12 +8,12 @@
 from contextlib import contextmanager
 
 from skim.application.render.adjustable_text import AdjustableText, measure_text_width
+from skim.application.render.font import Font
 from skim.application.render.render_context import (
     RenderContext,
     TextStyle,
     using_render_context,
 )
-from skim.application.render.text import Font
 from skim.data import SkimConfig, SvalboardKeymap
 
 _ELLIPSIS = "…"
