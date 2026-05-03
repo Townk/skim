@@ -411,6 +411,13 @@ def SymbolSection(
                 count=len(entries),
                 width=stripe_width,
                 accent_line=_ACCENT_LINE,
+                # The standalone symbols image (``wrap_content=True``)
+                # carries the ``N ENTRIES`` count for parity with the
+                # macros / tap-dances images; the per-layer symbols
+                # section (``wrap_content=False``) hides it so the
+                # count doesn't compete with the keyboard for
+                # attention.
+                show_count=wrap_content,
             ),
             table,
         ],

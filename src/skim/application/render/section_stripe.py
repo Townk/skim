@@ -83,6 +83,7 @@ def SectionStripe(
     count: int,
     width: float,
     accent_line: str,
+    show_count: bool = True,
 ):
     """Title text on the left, ``N ENTRIES`` on the right, rule line below.
 
@@ -92,6 +93,12 @@ def SectionStripe(
     ``rule_offset`` from the top to the rule line — so the composable
     can drop into a Column without changing the surrounding image's
     body offset.
+
+    ``show_count`` toggles the right-aligned ``N ENTRIES`` text.
+    Macro and tap-dance sections always show it; the symbols section
+    suppresses it when rendered inside a per-layer image (where the
+    count adds chrome that competes with the keyboard for attention)
+    and shows it in the standalone symbols image.
 
     Reads its sizing constants from a freshly-built
     :class:`SectionStripeMetrics` derived from ``ctx`` (per the
@@ -118,19 +125,20 @@ def SectionStripe(
                 fill=accent_line,
             )
         )
-        d.append(
-            draw.Text(
-                f"{count} ENTRIES",
-                x=x + width,
-                y=y + metrics.title_baseline_offset,
-                font_size=metrics.count_font_size,
-                text_anchor="end",
-                fill="#888",
-                font_weight="400",
-                letter_spacing=metrics.count_letter_spacing,
-                font_family="'Roboto', sans-serif",
+        if show_count:
+            d.append(
+                draw.Text(
+                    f"{count} ENTRIES",
+                    x=x + width,
+                    y=y + metrics.title_baseline_offset,
+                    font_size=metrics.count_font_size,
+                    text_anchor="end",
+                    fill="#888",
+                    font_weight="400",
+                    letter_spacing=metrics.count_letter_spacing,
+                    font_family="'Roboto', sans-serif",
+                )
             )
-        )
         d.append(
             draw.Line(
                 sx=x,
