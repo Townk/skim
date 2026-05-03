@@ -321,6 +321,7 @@ def KeymapSymbolDocument(
     section = SymbolSection(
         entries=entries,
         max_width=initial_content_w,
+        wrap_content=True,
         column_count=column_count,
         flow=typed_flow,
         scale=scale,

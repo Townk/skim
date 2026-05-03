@@ -235,30 +235,39 @@ def SymbolTable(
     entries: list[SymbolLegendEntry],
     text_color: str,
     max_width: float,
+    wrap_content: bool = False,
     column_count: int | None = None,
     flow: FlowDirection = "column",
     scale: float = 1.0,
 ):
     """Multi-column grid of :func:`SymbolEntry` instances.
 
-    The table never exceeds ``max_width`` — column count is chosen
-    so the natural-width grid fits in the budget. Once row_count
-    is fixed, the column count snugs to the smallest count that
-    still hosts every entry (so a 13-entry / 2-row table reports
-    7 columns even when 10 fit naturally — without the snug, the
-    grid would allocate 3 trailing empty columns and the inflated
-    per-column slot would spread the visible content too thinly
-    across the wasted right side). Each column then inflates to
-    fill the budget exactly: gaps stay at ``table_col_spacing``;
-    only the entry slot widens.
+    The table never exceeds ``max_width``. ``wrap_content`` chooses
+    between the two layout policies the canvas needs:
 
-    When a positive ``column_count`` is supplied, that exact count
-    is forced and the same balancing applies.
+    * ``False`` (default) — fill the budget. Pick the most columns
+      that fit at natural width; if column-major flow would leave
+      trailing slots empty, snug ``col_count`` to the row count
+      actually needed (e.g. 13 entries naturally fitting 10 cols
+      → 2 rows → only 7 cols actually populated, so report 7 cols);
+      then inflate each column slot so the painted grid spans
+      ``max_width`` exactly. Use for sections sharing a parent
+      column with a peer that drives the canvas width — the per-
+      layer image's symbols section drops here.
+    * ``True`` — snug to natural. Pick the most columns that fit
+      and report the natural ``col_count * natural_entry_w + gaps``
+      width with no inflation. Use for the standalone symbols image,
+      where the canvas wraps the table's actual width.
+
+    A positive ``column_count`` overrides the column-count search
+    and forces that exact count. With ``wrap_content=True`` the
+    table reports the natural width of those N columns; with
+    ``wrap_content=False`` the columns inflate to fill ``max_width``.
 
     Per-entry width is uniform across the grid: widest glyph +
-    ``table_header_spacing`` + widest description, plus the slack
-    needed to reach ``max_width``. Empty ``entries`` returns a
-    zero-sized noop component.
+    ``table_header_spacing`` + widest description, plus any slack
+    introduced by ``wrap_content=False``. Empty ``entries`` returns
+    a zero-sized noop component.
 
     ``flow`` controls the index → cell mapping:
 
@@ -291,12 +300,12 @@ def SymbolTable(
     max_desc_w = max(desc_widths)
     natural_entry_w = max_glyph_w + metrics.table_header_spacing + max_desc_w
 
-    # Initial column count: the most columns that pack within
-    # ``max_width`` at the natural per-entry width.
     n = len(entries)
     if column_count is not None:
         col_count = max(1, column_count)
     else:
+        # The most columns that pack within ``max_width`` at the
+        # natural per-entry width.
         col_count = max(
             1,
             int(
@@ -304,22 +313,22 @@ def SymbolTable(
                 / (natural_entry_w + metrics.table_col_spacing)
             ),
         )
-    # Snug the column count to the row count actually needed. With
-    # ``n`` entries and the initial ``col_count``, only
-    # ``ceil(n / col_count)`` rows are populated — and that row count
-    # could be hosted by a smaller column count without losing rows
-    # (e.g. 13 entries in 10 initial columns → 2 rows → 7 columns
-    # actually used). Without this, the inflate-to-fill below
-    # spreads the visible content too thinly and the trailing
-    # columns paint empty.
-    row_count = (n + col_count - 1) // col_count
-    col_count = (n + row_count - 1) // row_count
+        if not wrap_content:
+            # Snug to the row count actually needed so the
+            # inflate-to-fill below doesn't spread visible content
+            # thinly across trailing empty columns.
+            # ``wrap_content=True`` keeps the natural ``col_count``
+            # so the table snugs to that width verbatim.
+            row_count_initial = (n + col_count - 1) // col_count
+            col_count = (n + row_count_initial - 1) // row_count_initial
 
-    # Inflate the per-column slot so the painted grid fills exactly
-    # ``max_width``. The inter-column gaps stay at
-    # ``table_col_spacing``; only the entry slot itself widens.
     total_gaps = max(0, col_count - 1) * metrics.table_col_spacing
-    entry_w = max(natural_entry_w, (max_width - total_gaps) / col_count)
+    entry_w = (
+        natural_entry_w
+        if wrap_content
+        else max(natural_entry_w, (max_width - total_gaps) / col_count)
+    )
+    row_count = (n + col_count - 1) // col_count
 
     entry_els: list[Component] = [
         SymbolEntry(
@@ -358,6 +367,7 @@ def SymbolSection(
     *,
     entries: list[SymbolLegendEntry],
     max_width: float,
+    wrap_content: bool = False,
     column_count: int | None = None,
     flow: FlowDirection = "column",
     scale: float = 1.0,
@@ -366,10 +376,16 @@ def SymbolSection(
 
     Encapsulates the title strip, the section's neutral accent colour
     and the standard inter-strip / body gap. ``max_width`` is the
-    column-allocated budget — the section paints exactly that wide,
-    with the underlying :func:`SymbolTable` balancing column slots
-    to fill it. ``column_count``, when set, pins the table to that
-    exact count and the balancing applies to it.
+    column-allocated budget. ``wrap_content`` chooses the layout
+    policy and is forwarded to :func:`SymbolTable`:
+
+    * ``False`` (default) — the section paints exactly ``max_width``
+      wide, with the table balancing columns to fill the budget.
+    * ``True`` — the table snugs to its natural width and the
+      section reports that snug width so the parent canvas can wrap
+      the section.
+
+    ``column_count`` pins the table to that exact count.
 
     ``scale`` is forwarded to the underlying :func:`SymbolTable` so
     the entries enlarge while the section title strip stays at the
@@ -382,11 +398,12 @@ def SymbolSection(
         entries=entries,
         text_color=palette.text_color,
         max_width=max_width,
+        wrap_content=wrap_content,
         column_count=column_count,
         flow=flow,
         scale=scale,
     )
-    stripe_width = max_width
+    stripe_width = table.size.width if wrap_content else max_width
     inner = Column(
         [
             SectionStripe(
