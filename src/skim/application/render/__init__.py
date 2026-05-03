@@ -23,8 +23,7 @@ Public surface:
 * :func:`draw_macros_image` — standalone macros image.
 * :func:`draw_tap_dances_image` — standalone tap-dances image.
 * :func:`draw_special_keys_image` — combined macros + tap-dances.
-* :func:`draw_symbols_image` — standalone symbols image (caller
-  pre-collects entries via :func:`collect_symbol_entries`).
+* :func:`draw_symbols_image` — standalone symbols image.
 """
 
 import logging
@@ -58,12 +57,7 @@ from .section_data import (
     resolve_tap_dances,
 )
 from .styling import make_gradient
-from .symbols import (
-    FlowDirection,
-    SymbolLegendEntry,
-    collect_layer_symbol_entries,
-    collect_symbol_entries,
-)
+from .symbols import FlowDirection, SymbolLegendEntry, collect_used_descriptions
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +159,7 @@ def _draw_layer(
         layer_macros = []
         layer_tap_dances = []
     if config.output.style.show_symbol_legend:
-        symbol_entries = collect_layer_symbol_entries(
+        symbol_entries = _layer_symbol_entries(
             config, raw_layer_keycodes, raw_keymap, keycode_mappings
         )
     else:
@@ -204,9 +198,7 @@ def draw_overview(
         overview_macros = []
         overview_tap_dances = []
     if config.output.style.show_symbol_legend:
-        symbol_entries = _collect_overview_symbol_entries(
-            config, keymap, raw_keymap, keycode_mappings
-        )
+        symbol_entries = _overview_symbol_entries(config, keymap, raw_keymap, keycode_mappings)
     else:
         symbol_entries = []
     with using_render_context(RenderContext.build(config, keymap)):
@@ -222,7 +214,31 @@ def draw_overview(
         )
 
 
-def _collect_overview_symbol_entries(
+def _layer_symbol_entries(
+    config: SkimConfig,
+    raw_layer_keycodes: list[str] | None,
+    raw_keymap: SvalboardKeymap[str] | None,
+    keycode_mappings: KeycodeMappings | None,
+) -> list[SymbolLegendEntry]:
+    """Resolve the symbol entries for one layer's keycodes.
+
+    Returns ``[]`` when any prerequisite is missing or the layer
+    has no resolvable symbols. Honours
+    ``output.style.show_transparent_fallthrough`` — when fall-through
+    is on, the ⛛ entry is suppressed because the glyph never appears
+    on the keymap.
+    """
+    if not raw_layer_keycodes or raw_keymap is None or keycode_mappings is None:
+        return []
+    return collect_used_descriptions(
+        raw_layer_keycodes,
+        raw_keymap,
+        keycode_mappings,
+        include_transparent=not config.output.style.show_transparent_fallthrough,
+    )
+
+
+def _overview_symbol_entries(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
     raw_keymap: SvalboardKeymap[str] | None,
@@ -233,8 +249,7 @@ def _collect_overview_symbol_entries(
     The overview only paints layers that appear in BOTH ``raw_keymap``
     and the configured layer list, so the symbol-entry collection
     iterates that intersection rather than every key in
-    ``raw_keymap``. Returns an empty list when prerequisites are
-    missing.
+    ``raw_keymap``.
     """
     if raw_keymap is None or keycode_mappings is None:
         return []
@@ -243,7 +258,25 @@ def _collect_overview_symbol_entries(
         qmk_idx = layer_cfg.index
         if qmk_idx in raw_keymap.layers and qmk_idx in keymap.layers:
             all_raw_keycodes.extend(k for k in raw_keymap.layers[qmk_idx] if k is not None)
-    return collect_layer_symbol_entries(config, all_raw_keycodes, raw_keymap, keycode_mappings)
+    return _layer_symbol_entries(config, all_raw_keycodes, raw_keymap, keycode_mappings)
+
+
+def _image_symbol_entries(
+    config: SkimConfig,
+    raw_keymap: SvalboardKeymap[str] | None,
+    keycode_mappings: KeycodeMappings | None,
+) -> list[SymbolLegendEntry]:
+    """Union of every symbol entry across every layer in ``raw_keymap``.
+
+    Used by the standalone symbols image — it shows everything the
+    keymap touches regardless of the configured layer list.
+    """
+    if raw_keymap is None or keycode_mappings is None:
+        return []
+    all_raw_keycodes: list[str] = []
+    for qmk_idx in raw_keymap.layers:
+        all_raw_keycodes.extend(k for k in raw_keymap.layers[qmk_idx] if k is not None)
+    return _layer_symbol_entries(config, all_raw_keycodes, raw_keymap, keycode_mappings)
 
 
 def draw_macros_image(
@@ -313,9 +346,9 @@ def draw_symbols_image(
 
     Caller is expected to gate on ``entries`` being non-empty (and on
     ``raw_keymap`` / ``keycode_mappings`` availability) — this entry
-    point doesn't surface "skipping" warnings of its own. Use
-    :func:`collect_symbol_entries` to build the entry set in the
-    caller's preferred order.
+    point doesn't surface "skipping" warnings of its own. The
+    sibling :func:`draw_keymap` orchestrator does that gating for
+    the bundled-image case.
 
     Body-scale is read from ``config.output.style.symbols_scale``
     (the CLI ``--symbols-scale`` flag updates that field upstream).
@@ -428,7 +461,7 @@ def draw_keymap(
         if raw_keymap is None or keycode_mappings is None:
             logger.warning("Skipping symbols image: keycode mappings are not available.")
         else:
-            symbol_entries = collect_symbol_entries(config, raw_keymap, keycode_mappings)
+            symbol_entries = _image_symbol_entries(config, raw_keymap, keycode_mappings)
             if symbol_entries:
                 keymap_images["keymap-symbols"] = draw_symbols_image(config, keymap, symbol_entries)
             else:

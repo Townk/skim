@@ -18,9 +18,13 @@ This module owns both halves of the symbols pipeline:
 
 * **Composables** — :func:`SymbolEntry` (one row), :func:`SymbolTable`
   (multi-column grid), :func:`SymbolSection` (section title +
-  table). Plus :func:`collect_symbol_entries` and
-  :func:`collect_layer_symbol_entries`, the entry-resolution helpers
-  the entry points call.
+  table).
+
+The orchestration helpers that gate ``collect_used_descriptions``
+on ``output.style.show_transparent_fallthrough`` and iterate the
+right set of layers live in :mod:`skim.application.render`'s entry
+points, not here — symbols module exposes only the algorithmic
+primitive plus the section composables.
 
 The symbol legend's accent line is a fixed neutral gray rather than a
 palette colour — symbols don't belong to either macros or tap-dances,
@@ -35,7 +39,7 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
-from skim.data import KeycodeMappings, SkimConfig, SvalboardKeymap
+from skim.data import KeycodeMappings, SvalboardKeymap
 from skim.domain import SEPARATOR_CHAR, SvalboardTargetKey
 
 from .adjustable_text import AdjustableText, measure_text_width
@@ -912,66 +916,9 @@ def SymbolSection(
     )
 
 
-# ---------------------------------------------------------------------------
-# Standalone image entry point
-# ---------------------------------------------------------------------------
-
-
-def collect_symbol_entries(
-    config: SkimConfig,
-    raw_keymap: SvalboardKeymap[str] | None,
-    keycode_mappings: KeycodeMappings | None,
-) -> list[SymbolLegendEntry]:
-    """Collect every symbol entry the keymap touches across all layers.
-
-    Returns an empty list when ``raw_keymap`` or ``keycode_mappings``
-    is unavailable. Honours
-    ``output.style.show_transparent_fallthrough`` — when fall-through
-    is on, the ⛛ entry is suppressed because the glyph never appears
-    on any layer.
-    """
-    if raw_keymap is None or keycode_mappings is None:
-        return []
-    all_raw_keycodes: list[str] = []
-    for qmk_idx in raw_keymap.layers:
-        all_raw_keycodes.extend(k for k in raw_keymap.layers[qmk_idx] if k is not None)
-    return collect_used_descriptions(
-        all_raw_keycodes,
-        raw_keymap,
-        keycode_mappings,
-        include_transparent=not config.output.style.show_transparent_fallthrough,
-    )
-
-
-def collect_layer_symbol_entries(
-    config: SkimConfig,
-    raw_layer_keycodes: list[str] | None,
-    raw_keymap: SvalboardKeymap[str] | None,
-    keycode_mappings: KeycodeMappings | None,
-) -> list[SymbolLegendEntry]:
-    """Collect the symbol entries used by a single layer's keycodes.
-
-    Returns an empty list when any required input is missing or the
-    layer has no resolvable symbols. Honours
-    ``output.style.show_transparent_fallthrough`` — same suppression
-    rule as :func:`collect_symbol_entries`.
-    """
-    if not raw_layer_keycodes or raw_keymap is None or keycode_mappings is None:
-        return []
-    return collect_used_descriptions(
-        raw_layer_keycodes,
-        raw_keymap,
-        keycode_mappings,
-        include_transparent=not config.output.style.show_transparent_fallthrough,
-    )
-
-
 __all__ = [
     "FlowDirection",
-    "SymbolEntry",
     "SymbolLegendEntry",
     "SymbolSection",
-    "SymbolTable",
-    "collect_layer_symbol_entries",
-    "collect_symbol_entries",
+    "collect_used_descriptions",
 ]
