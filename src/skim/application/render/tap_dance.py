@@ -37,10 +37,10 @@ import drawsvg as draw
 
 from .adjustable_text import AdjustableText, measure_text_width
 from .composable import Composable
-from .legend import _legend_key_label
 from .primitives import Column, MetricsComponent, Point, Size
 from .render_context import RenderContext, TextStyle
 from .rich_text import RichText, parse_into_spans
+from .section_data import format_key_label
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
 from .text import Font
@@ -294,7 +294,7 @@ def TapDanceCell(
     )
     label_el = (
         RichText(
-            spans=parse_into_spans(_legend_key_label(content), label_style),
+            spans=parse_into_spans(format_key_label(content), label_style),
             style=label_style,
             max_width=cell_w,
             text_anchor="middle",

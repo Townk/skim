@@ -32,11 +32,15 @@ from dataclasses import dataclass
 
 import drawsvg as draw
 
-from skim.domain import SvalboardMacro, SvalboardMacroActionKind, SvalboardTargetKey
+from skim.domain import (
+    SvalboardMacro,
+    SvalboardMacroAction,
+    SvalboardMacroActionKind,
+    SvalboardTargetKey,
+)
 
 from .adjustable_text import AdjustableText, measure_text_width
 from .composable import Composable
-from .legend import _flatten_macro_pills, build_action_glyph
 from .primitives import Column, Component, MetricsComponent, Point, Size
 from .render_context import (
     RenderContext,
@@ -44,6 +48,7 @@ from .render_context import (
     current_render_context,
 )
 from .rich_text import RichText, parse_into_spans
+from .section_data import format_key_label
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
 from .text import Font
@@ -72,6 +77,17 @@ _PILL_ICON_WIDTH_RATIO = 6.0 / 1600.0
 _PILL_ICON_TEXT_GAP_RATIO = 10.0 / 1600.0
 _PILL_MIN_TEXT_WIDTH_RATIO = 8.0 / 1600.0
 _PILL_MIN_TOTAL_WIDTH_RATIO = 28.0 / 1600.0
+
+# Action-glyph primitive sizing — read inside :func:`build_action_glyph`.
+# Expressed as fractions of the document width so the glyphs stay
+# visually proportional across canvas sizes.
+_GLYPH_DOT_RADIUS_RATIO = 3 / 1600
+_GLYPH_TRIANGLE_HALF_RATIO = 3 / 1600
+_GLYPH_DELAY_DIAL_RADIUS_RATIO = 3.5 / 1600
+_GLYPH_DELAY_HOUR_HAND_RATIO = 2.2 / 1600
+_GLYPH_DELAY_MINUTE_HAND_RATIO = 1.6 / 1600
+_GLYPH_DELAY_STROKE_RATIO = 1.1 / 1600
+_GLYPH_TEXT_FONT_SIZE_RATIO = 9 / 1600
 
 
 # ---------------------------------------------------------------------------
@@ -204,6 +220,138 @@ def _pill_width(label: str, *, metrics: MacroMetrics) -> float:
     )
     text_width = max(text_width, metrics.pill_min_text_width)
     return max(metrics.pill_min_total_width, text_width + metrics.pill_chrome_width)
+
+
+def build_action_glyph(
+    kind: SvalboardMacroActionKind,
+    cx: float,
+    cy: float,
+    color: str,
+    doc_width: float = 1600.0,
+) -> draw.DrawingElement:
+    """Return a tiny SVG primitive for the given macro action kind.
+
+    - TAP   → filled circle (●).
+    - DOWN  → filled down-triangle (▼) — "press".
+    - UP    → filled up-triangle   (▲) — "release".
+    - TEXT  → italic capital ``T``.
+    - DELAY → small clock dial (circle + two hands).
+
+    Glyph dimensions scale with ``doc_width`` so the icons stay
+    visually consistent across output sizes. Reads its sizing
+    constants directly from the ``_GLYPH_*_RATIO`` constants at the
+    top of the module.
+    """
+    r = doc_width * _GLYPH_DOT_RADIUS_RATIO
+    half = doc_width * _GLYPH_TRIANGLE_HALF_RATIO
+    if kind == SvalboardMacroActionKind.TAP:
+        return draw.Circle(cx=cx, cy=cy, r=r, fill=color)
+    if kind == SvalboardMacroActionKind.DOWN:
+        return draw.Lines(
+            cx - half,
+            cy - half,
+            cx + half,
+            cy - half,
+            cx,
+            cy + half,
+            close=True,
+            fill=color,
+        )
+    if kind == SvalboardMacroActionKind.UP:
+        return draw.Lines(
+            cx - half,
+            cy + half,
+            cx + half,
+            cy + half,
+            cx,
+            cy - half,
+            close=True,
+            fill=color,
+        )
+    if kind == SvalboardMacroActionKind.DELAY:
+        dial_r = doc_width * _GLYPH_DELAY_DIAL_RADIUS_RATIO
+        stroke_w = doc_width * _GLYPH_DELAY_STROKE_RATIO
+        hour_hand = doc_width * _GLYPH_DELAY_HOUR_HAND_RATIO
+        minute_hand = doc_width * _GLYPH_DELAY_MINUTE_HAND_RATIO
+        g = draw.Group()
+        g.append(
+            draw.Circle(
+                cx=cx,
+                cy=cy,
+                r=dial_r,
+                fill="none",
+                stroke=color,
+                stroke_width=stroke_w,
+            )
+        )
+        # Clock hands at 12 o'clock + 3 o'clock.
+        g.append(
+            draw.Line(
+                sx=cx,
+                sy=cy,
+                ex=cx,
+                ey=cy - hour_hand,
+                stroke=color,
+                stroke_width=stroke_w,
+                stroke_linecap="round",
+            )
+        )
+        g.append(
+            draw.Line(
+                sx=cx,
+                sy=cy,
+                ex=cx + minute_hand,
+                ey=cy,
+                stroke=color,
+                stroke_width=stroke_w,
+                stroke_linecap="round",
+            )
+        )
+        return g
+    # TEXT
+    return draw.Text(
+        "T",
+        x=cx,
+        y=cy,
+        font_size=doc_width * _GLYPH_TEXT_FONT_SIZE_RATIO,
+        fill=color,
+        font_weight="700",
+        font_style="italic",
+        text_anchor="middle",
+        dominant_baseline="central",
+        font_family="'Roboto', sans-serif",
+    )
+
+
+def _macro_action_pill_labels(action: SvalboardMacroAction) -> list[str]:
+    """Visible label per pill emitted by an action.
+
+    TAP/DOWN/UP emit one pill per key in ``action.keys``. TEXT emits
+    one pill with the literal text. DELAY emits one pill with
+    ``"<duration>ms"``.
+    """
+    if action.kind in (
+        SvalboardMacroActionKind.TAP,
+        SvalboardMacroActionKind.DOWN,
+        SvalboardMacroActionKind.UP,
+    ):
+        return [format_key_label(k) for k in action.keys]
+    if action.kind == SvalboardMacroActionKind.TEXT:
+        return [action.text.replace("\n", " ")]
+    if action.kind == SvalboardMacroActionKind.DELAY:
+        return [f"{action.duration_ms}ms"]
+    return []
+
+
+def _flatten_macro_pills(
+    macro: SvalboardMacro[SvalboardTargetKey],
+) -> list[tuple[SvalboardMacroActionKind, str]]:
+    """Pre-flatten ``macro.actions`` into a (kind, label) sequence."""
+    out: list[tuple[SvalboardMacroActionKind, str]] = []
+    for action in macro.actions:
+        for label in _macro_action_pill_labels(action):
+            out.append((action.kind, label))
+    return out
 
 
 # ---------------------------------------------------------------------------

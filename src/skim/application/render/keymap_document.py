@@ -162,8 +162,8 @@ def KeymapLayerDocument(
     AND the layer has resolvable symbols.
     """
     from .keymap_layer import KeymapLayer
-    from .legend import collect_used_ids, resolve_macros, resolve_tap_dances
     from .macros import MacroSection
+    from .section_data import collect_used_ids, resolve_macros, resolve_tap_dances
     from .symbol_legend import collect_used_descriptions
     from .symbols import FlowDirection, SymbolSection
     from .tap_dance import TapDanceSection
@@ -265,8 +265,8 @@ def KeymapOverviewDocument(
     a zero-sized :func:`Spacer` so the caller skips painting.
     """
     from .keymap_overview import KeymapOverview
-    from .legend import all_macros, all_tap_dances
     from .macros import MacroSection
+    from .section_data import all_macros, all_tap_dances
     from .symbol_legend import collect_used_descriptions
     from .symbols import FlowDirection, SymbolSection
     from .tap_dance import TapDanceSection
@@ -576,7 +576,6 @@ def KeymapSymbolDocument(
 
 
 __all__ = [
-    "BODY_SCALE",
     "KeymapDocument",
     "KeymapLayerDocument",
     "KeymapMacroDocument",

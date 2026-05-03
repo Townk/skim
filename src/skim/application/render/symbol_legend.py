@@ -27,7 +27,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from skim.application.render.legend import _legend_key_label
+from skim.application.render.section_data import format_key_label
 from skim.data import KeycodeMappings, SvalboardKeymap
 from skim.domain import SEPARATOR_CHAR, SvalboardTargetKey
 
@@ -472,7 +472,7 @@ def _collect_raw(
                     inst_args = _parse_function_args(args_str)
                     desc = _resolve_description_per_instance(raw_desc, inst_args, adapter)
                     target_key = adapter.transform(keycode)
-                    display_label = _legend_key_label(target_key)
+                    display_label = format_key_label(target_key)
                     sort_k = keycode  # e.g. "MO(5)" — one entry per unique call
                     if sort_k not in out:
                         out[sort_k] = SymbolLegendEntry(

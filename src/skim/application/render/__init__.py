@@ -49,8 +49,8 @@ from .keymap_document import (
     KeymapSymbolDocument,
     KeymapTapDanceDocument,
 )
-from .legend import all_macros, all_tap_dances
 from .render_context import RenderContext, using_render_context
+from .section_data import all_macros, all_tap_dances
 from .styling import make_gradient
 from .symbols import FlowDirection, SymbolLegendEntry, collect_symbol_entries
 
