@@ -54,6 +54,14 @@ from .text import Font
 # Theme & typography
 # ---------------------------------------------------------------------------
 
+# Document-chrome typography — title and copyright font sizes,
+# expressed as fractions of ``doc_width`` like every other typography
+# ratio in the codebase. Values picked to match the rendered sizes the
+# old badge-derived path produced at the canonical 1600-unit width
+# (~31pt title, ~17pt copyright).
+_TITLE_FONT_SIZE_RATIO = 31.0 / 1600.0
+_COPYRIGHT_FONT_SIZE_RATIO = 17.0 / 1600.0
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class TextStyle:
@@ -177,33 +185,31 @@ class Theme:
     typography: Typography
 
     @classmethod
-    def resolve(
-        cls,
-        config: SkimConfig,
-        *,
-        title_font_size: float,
-        copyright_font_size: float,
-    ) -> "Theme":
-        """Resolve the theme from a config + per-image font sizes.
+    def resolve(cls, config: SkimConfig) -> "Theme":
+        """Resolve the theme from the user's config.
 
-        ``title_font_size`` and ``copyright_font_size`` both come from
-        the overview's badge math (``HeaderDims``) so the same sizes
-        flow through every image variant — title and footer stay
-        visually consistent across per-layer, overview, macros,
-        tap-dances and special-keys renders.
+        Title and copyright sizes are derived from the configured
+        ``doc_width`` via :data:`_TITLE_FONT_SIZE_RATIO` /
+        :data:`_COPYRIGHT_FONT_SIZE_RATIO` — matching the
+        proportional-typography convention every other component in
+        the render layer follows. Same sizes flow through every image
+        variant, so title and footer stay visually consistent across
+        per-layer, overview, macros, tap-dances and special-keys
+        renders.
         """
         palette = RenderPalette.from_config(config)
+        doc_width = config.output.layout.width
         return cls(
             palette=palette,
             typography=Typography(
                 title=TextStyle(
                     font=Font.TITLE,
-                    size=title_font_size,
+                    size=doc_width * _TITLE_FONT_SIZE_RATIO,
                     color=palette.text_color,
                 ),
                 copyright=TextStyle(
                     font=Font.FINGER_KEY,
-                    size=copyright_font_size,
+                    size=doc_width * _COPYRIGHT_FONT_SIZE_RATIO,
                     color=palette.text_color,
                 ),
             ),
@@ -377,20 +383,10 @@ class RenderContext:
         ``config.output.layout.width`` so the title and footer don't
         get pulled along by the body's zoom.
         """
-        # Local import — :mod:`keymap_overview` imports from this
-        # module transitively at startup; importing it eagerly would
-        # create a circular import cycle.
-        from .keymap_overview import compute_header_dims
-
-        header_dims = compute_header_dims(config, keymap)
         return cls(
             config=config,
             keymap=keymap,
-            theme=Theme.resolve(
-                config,
-                title_font_size=header_dims.title_font_size,
-                copyright_font_size=header_dims.copyright_font_size,
-            ),
+            theme=Theme.resolve(config),
             document_metrics=DocumentMetrics.from_config(config),
         )
 

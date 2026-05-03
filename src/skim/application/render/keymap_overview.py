@@ -197,12 +197,12 @@ def _compute_badge_dims(
 class _OverviewLayoutDims:
     """Resolved badge + cluster sizing for the overview body.
 
-    Both :func:`KeymapOverview` and :func:`compute_header_dims`
-    consume this. ``compute_header_dims`` runs before any
-    :class:`RenderContext` is built (its outputs feed
-    :meth:`Theme.resolve`), so the resolution here goes through
-    :class:`DocumentMetrics` directly rather than reading off
-    ``ctx.document_metrics``.
+    Consumed by :func:`KeymapOverview` at build time. Resolution goes
+    through :class:`DocumentMetrics` directly rather than reading off
+    ``ctx.document_metrics`` so the helper can run before a context
+    has been pushed (kept that way to leave room for any future
+    callers that need overview geometry without paying the full
+    context-construction cost).
     """
 
     badge: _BadgeDims
@@ -281,58 +281,6 @@ def _resolve_overview_layout(
         col1_width=col1,
         thumb_cluster_width=side_w * _THUMB_CLUSTER_WIDTH_PROPORTION,
     )
-
-
-# ---------------------------------------------------------------------------
-# HeaderDims — the title / copyright font sizes derived from the
-# overview's badge math, fed into :class:`Theme.resolve` so per-layer,
-# overview, and special-keys images all paint header typography at
-# the same size.
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True, slots=True)
-class HeaderDims:
-    """Title + copyright font sizes shared across every image.
-
-    The overview composable scales its title and the badge fonts to
-    match the rendered cluster width; the per-layer + standalone
-    images read these values via :class:`Theme` so their headers
-    match the overview's typography.
-    """
-
-    title_font_size: float
-    copyright_font_size: float
-
-
-def compute_header_dims(
-    config: SkimConfig,
-    keymap: SvalboardKeymap[SvalboardTargetKey],
-) -> HeaderDims:
-    """Compute the title + copyright font sizes for the given keymap.
-
-    Solves the overview's badge column ↔ cluster column split (the
-    same iteration :func:`KeymapOverview` runs at build time) and
-    derives ``badge_height = finger_cluster_width *
-    _OUTER_KEY_PROPORTION`` and ``badge_font_size = badge_height *
-    _BADGE_FONT_SIZE_RATIO``. Title font is ``badge_font_size *
-    _TITLE_FONT_SIZE_RATIO_OF_BADGE``; copyright font is the badge
-    font itself.
-    """
-    dims = _resolve_overview_layout(config, keymap)
-    badge_font_size = dims.badge.height * _BADGE_FONT_SIZE_RATIO
-    return HeaderDims(
-        title_font_size=badge_font_size * _TITLE_FONT_SIZE_RATIO_OF_BADGE,
-        copyright_font_size=badge_font_size,
-    )
-
-
-# ---------------------------------------------------------------------------
-# Title font size relative to the badge font size — pinned here next
-# to ``compute_header_dims`` so callers don't need a separate constant
-# import to reason about the relationship.
-# ---------------------------------------------------------------------------
-_TITLE_FONT_SIZE_RATIO_OF_BADGE = 1.8
 
 
 # ---------------------------------------------------------------------------
@@ -2148,28 +2096,4 @@ def _attach_rects_and_set_initial_moveto(
         set_initial_moveto(step)
 
 
-__all__ = [
-    "ConnectorRouting",
-    "ConnectorStep",
-    "Direction",
-    "HeaderDims",
-    "KeymapOverview",
-    "LayerBadge",
-    "LayerBadgeMetrics",
-    "OverviewLayerSource",
-    "RoutingLayout",
-    "ThumbSource",
-    "allocate_columns",
-    "build_finger_path_list_for_cluster",
-    "build_finger_path_list_for_layer",
-    "build_thumb_path_list",
-    "compute_header_dims",
-    "phase1_down_to_right",
-    "phase1_redirect_left_to_down",
-    "phase1_redirect_right_to_down",
-    "phase1_up_to_right",
-    "phase2_route_to_targets",
-    "route_overview_connectors",
-    "set_initial_moveto",
-    "target_point_for",
-]
+__all__ = ["KeymapOverview"]
