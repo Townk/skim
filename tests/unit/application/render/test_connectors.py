@@ -7,7 +7,7 @@
 
 from unittest.mock import MagicMock, call
 
-from skim.application.render.connectors import (
+from skim.application.render.keymap_overview import (
     ConnectorStep,
     Direction,
     OverviewLayerSource,
