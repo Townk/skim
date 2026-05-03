@@ -704,7 +704,13 @@ class FontSubsetter:
             options.name_IDs = [0, 1, 2, 3, 4, 5, 6, 7]
             options.name_legacy = True
             options.name_languages = [0x0409]
-            options.drop_tables = ["PfEd"]
+            # Drop FontForge build-time metadata tables fontTools
+            # doesn't know how to subset — ``PfEd`` (private editor
+            # data) and ``FFTM`` (FontForge Time-stamp Marker).
+            # Both are harmless to drop; without listing ``FFTM``
+            # the subsetter logs ``FFTM NOT subset; don't know how
+            # to subset; dropped`` once per font per render.
+            options.drop_tables = ["PfEd", "FFTM"]
 
             try:
                 tt_font = load_font(str(font.path), options)
