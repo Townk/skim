@@ -29,7 +29,6 @@ from skim.data import (
 from skim.domain import SvalboardMacro, SvalboardTapDance, SvalboardTargetKey
 
 from .keymap_layer import KeymapLayerDocument
-from .keymap_overview import draw_overview_v2
 from .macros import draw_macros_image
 from .overview import draw_overview
 from .primitives import Point as ComposablePoint
@@ -222,16 +221,6 @@ def draw_keymap(
 
     if targets.overview:
         keymap_images["keymap-overview"] = draw_overview(
-            config,
-            keymap,
-            raw_keymap=raw_keymap,
-            keycode_mappings=keycode_mappings,
-        )
-        # Parallel v2 render via the composable framework. Temporary
-        # dual emission until visual parity is confirmed and connectors
-        # are wired up; then this file's :func:`draw_overview` import
-        # switches to point at :func:`draw_overview_v2`.
-        keymap_images["keymap-overview-v2"] = draw_overview_v2(
             config,
             keymap,
             raw_keymap=raw_keymap,

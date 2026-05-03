@@ -660,7 +660,37 @@ def draw_overview(
     raw_keymap: SvalboardKeymap[str] | None = None,
     keycode_mappings: KeycodeMappings | None = None,
 ) -> draw.Drawing:
-    """Generate the full overview SVG image for a multi-layer keymap."""
+    """Generate the full overview SVG image for a multi-layer keymap.
+
+    Thin wrapper over :func:`keymap_overview.draw_overview_v2` — the
+    overview render is fully on the composable framework. The legacy
+    helpers below this function (``OverviewLayout`` consumption,
+    indicator-rect collection, layered drawing) are no longer reached
+    from this entry point and retire in the cleanup commit.
+    """
+    from .keymap_overview import draw_overview_v2
+
+    return draw_overview_v2(
+        config,
+        keymap,
+        raw_keymap=raw_keymap,
+        keycode_mappings=keycode_mappings,
+    )
+
+
+def _draw_overview_legacy(
+    config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+    raw_keymap: SvalboardKeymap[str] | None = None,
+    keycode_mappings: KeycodeMappings | None = None,
+) -> draw.Drawing:
+    """Legacy imperative overview path — retained until the cleanup commit.
+
+    Kept callable but unreachable from production code (the public
+    :func:`draw_overview` now delegates to the composable path) so
+    tests / debugging that need to compare against the legacy output
+    can still invoke it explicitly.
+    """
     num_layers = len(config.keyboard.layers)
     render_layers: list[tuple[int, int]] = []  # (config_position, qmk_index)
     for pos, layer_cfg in enumerate(config.keyboard.layers):
