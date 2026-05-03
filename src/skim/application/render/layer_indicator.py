@@ -42,7 +42,7 @@ import drawsvg as draw
 from .composable import Composable
 from .primitives import CompassDirection, MetricsComponent, Point, Size
 from .render_context import TextStyle
-from .rich_text import RichText, parse_into_spans
+from .rich_text import RichText
 from .text import Font
 
 # ---------------------------------------------------------------------------
@@ -177,7 +177,7 @@ def LayerIndicator(
     label_font_size = radius * _LABEL_FONT_SIZE_RADIUS_MULTIPLIER
     label_style = TextStyle(font=Font.FINGER_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style),
+        text=label_text,
         style=label_style,
         max_width=circle_diameter * 0.8,
         min_font_size=1.0,

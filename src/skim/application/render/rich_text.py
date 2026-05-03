@@ -92,9 +92,10 @@ _SEPARATOR_LUMINANCE_FACTOR = 0.7
 # Default inter-span separator. Appended to every span's text except
 # the last so the gap between spans is rendered with the preceding
 # span's font / size / colour and naturally contributes to that
-# span's measured width. Callers that build their own span list
-# (with explicit spacing already in the texts, e.g. ``parse_into_spans``)
-# pass ``separator=""`` to disable.
+# span's measured width. Internal note: the parser strips trailing /
+# leading whitespace from text fragments at flush time, so the
+# default separator is what reintroduces the inter-span gap with
+# correct typography.
 _DEFAULT_SEPARATOR = " "
 
 # Single-character ellipsis used when truncation appends an extra
@@ -202,7 +203,7 @@ def resolve_nerd_font_glyphs(text: str) -> str:
     return "".join(out)
 
 
-def parse_into_spans(
+def _parse_into_spans(
     text: str,
     default_style: TextStyle,
     *,
@@ -370,6 +371,33 @@ def parse_into_spans(
     return spans
 
 
+def measure_rich_text_width(text: str, style: TextStyle) -> float:
+    """Natural rendered width of a Nerd-Font-tokenised label.
+
+    Splits ``text`` on Nerd Font tokens (matching what
+    :func:`RichText` would render) and sums the per-span PIL-measured
+    widths at each span's effective font and size. Plain-text
+    fragments use ``style.font`` / ``style.size``; token spans
+    switch to :attr:`Font.SYMBOLS` at the same size — the same
+    routing :func:`RichText` applies.
+
+    Use this when a caller needs the natural width of a marked-up
+    label *before* deciding the layout slot to give to a
+    :func:`RichText` (e.g. pill-rectangle sizing, glyph-cell width
+    pre-pass). Saves the caller from instantiating a composable
+    just to read off a measurement.
+    """
+    spans = _parse_into_spans(text, style)
+    return sum(
+        measure_text_width(
+            span.text,
+            (span.style or style).font,
+            (span.style or style).size,
+        )
+        for span in spans
+    )
+
+
 # ---------------------------------------------------------------------------
 # Internal: relaxation + truncation
 # ---------------------------------------------------------------------------
@@ -382,8 +410,7 @@ def _texts_with_separators(raw: list[str], separator: str) -> list[str]:
     is dropped during truncation) so the right span always gets the
     trailing separator regardless of how the list was assembled.
     Pass ``separator=""`` to disable (callers that have explicit
-    spacing baked into their input strings — typically the output
-    of :func:`parse_into_spans`).
+    spacing baked into their input strings).
     """
     if not separator:
         return list(raw)
@@ -613,7 +640,8 @@ def _truncate_with_ellipses(
 def RichText(
     ctx,
     *,
-    spans: list[TextSpan],
+    text: str | None = None,
+    spans: list[TextSpan] | None = None,
     style: TextStyle,
     max_width: float | None = None,
     max_height: float | None = None,
@@ -622,25 +650,40 @@ def RichText(
     dominant_baseline: str = "text-before-edge",
     opacity: float = 1.0,
     separator: str = _DEFAULT_SEPARATOR,
+    separator_background: str | None = None,
 ):
     """Multi-span text with synchronised shrink-to-fit and ellipsis truncation.
 
-    Each span renders as an :func:`AdjustableText` with its own
-    style; they're laid out left-to-right and baseline-aligned.
+    Accepts ``text`` containing Nerd Font tokens
+    (``%%[nf-]<class>;``) and the optional inline separator
+    character. Internally splits the input into per-span runs:
+    plain-text fragments adopt the document's ``style``, Nerd Font
+    tokens become single-character spans on :attr:`Font.SYMBOLS` so
+    the glyph renders correctly while inheriting size and colour.
+    Each run is then painted as an :func:`AdjustableText`, laid out
+    left-to-right and baseline-aligned.
 
-    ``style`` is the document's default — spans without an explicit
-    :attr:`TextSpan.style` inherit it. ``min_font_size`` is the
-    floor for the parent ``style``; per-span floors derive
+    ``style`` is the document's default — applied to every plain-text
+    span and as the inheritance base for token spans. ``min_font_size``
+    is the floor for the parent ``style``; per-span floors derive
     proportionally from the ratio ``min_font_size / style.size``,
     so a span at size 14 under a parent of (size=12, min=8) gets a
     floor of ``14 * 8/12 ≈ 9.33``.
 
     ``separator`` is auto-appended to every span's text except the
     last (rendered with that span's font, so it picks up the right
-    metrics). Default is a single space; pass ``""`` when the input
-    spans already encode their own spacing — typically the case when
-    spans came from :func:`parse_into_spans` since the parser
-    preserves the original characters between tokens.
+    metrics). Default is a single space — the parser strips
+    leading / trailing whitespace from text fragments at flush time
+    and the separator reintroduces the inter-span gap with correct
+    typography.
+
+    ``separator_background`` opts into the box-drawing-bar
+    rendering for the ``│`` separator character: the parser
+    additionally splits on ``│``, picks a darker shade derived from
+    the supplied background colour, and paints a vertical bar in
+    that colour. Used by the Svalboard key composables when a
+    label embeds the ``│`` separator (e.g. ``LT(N, KC_A)`` →
+    ``"A│N"``).
 
     When the natural extent overflows the budget, the relaxation
     loop shrinks all spans by a single factor (preserving
@@ -648,14 +691,22 @@ def RichText(
     budget redistributes to the rest. If the set still doesn't fit
     after pinning, ``RichText`` enters truncation: it drops spans
     from the trailing end (or symmetrically for
-    ``text_anchor="middle"``) and inserts ``…`` :class:`TextSpan`
-    objects painted with the parent ``style``. The truncated set is
-    re-relaxed each iteration.
+    ``text_anchor="middle"``) and inserts ``…`` spans painted with
+    the parent ``style``. The truncated set is re-relaxed each
+    iteration.
 
-    Empty ``spans`` yields a zero-sized noop.
+    Empty ``text`` (or empty ``spans``) yields a zero-sized noop.
+
+    Test / advanced callers may pass ``spans`` directly to bypass the
+    parser — exactly one of ``text`` or ``spans`` must be supplied.
+    Production code should always use ``text``.
     """
     del ctx  # AdjustableText reads its own context; nothing here.
 
+    if (text is None) == (spans is None):
+        raise TypeError("RichText: provide exactly one of `text` or `spans`")
+    if spans is None:
+        spans = _parse_into_spans(text or "", style, separator_background=separator_background)
     if not spans:
         size = Size(0.0, 0.0)
 
@@ -786,10 +837,4 @@ def RichText(
     )
 
 
-__all__ = [
-    "RichText",
-    "RichTextMetrics",
-    "TextSpan",
-    "parse_into_spans",
-    "resolve_nerd_font_glyphs",
-]
+__all__ = ["RichText", "measure_rich_text_width"]

@@ -28,7 +28,7 @@ from skim.domain import Alignment, KeyboardSide, KeyDirection
 from .composable import Composable
 from .primitives import CompassDirection, MetricsComponent, Point, Size
 from .render_context import TextStyle
-from .rich_text import RichText, parse_into_spans
+from .rich_text import RichText
 from .text import Font
 from .trapezoid import Trapezoid
 
@@ -236,7 +236,8 @@ def CenterKey(
     # the correct overflow response.
     label_style = TextStyle(font=Font.FINGER_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
+        text=label_text,
+        separator_background=fill_color,
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
@@ -345,7 +346,8 @@ def DirectionalKey(
 
     label_style = TextStyle(font=Font.FINGER_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
+        text=label_text,
+        separator_background=fill_color,
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
@@ -450,7 +452,8 @@ def DoubleSouthKey(
 
     label_style = TextStyle(font=Font.FINGER_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
+        text=label_text,
+        separator_background=fill_color,
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
@@ -553,7 +556,8 @@ def DownKey(
 
     label_style = TextStyle(font=Font.THUMB_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
+        text=label_text,
+        separator_background=fill_color,
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
@@ -633,7 +637,8 @@ def DoubleDownKey(
 
     label_style = TextStyle(font=Font.THUMB_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
+        text=label_text,
+        separator_background=fill_color,
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
@@ -756,7 +761,8 @@ def UpKey(
 
     label_style = TextStyle(font=Font.THUMB_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
+        text=label_text,
+        separator_background=fill_color,
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,
@@ -904,7 +910,8 @@ def _vertical_trapezoid_thumb_key(
 
     label_style = TextStyle(font=Font.THUMB_KEY, size=label_font_size, color=label_color)
     label_el = RichText(
-        spans=parse_into_spans(label_text, label_style, separator_background=fill_color),
+        text=label_text,
+        separator_background=fill_color,
         style=label_style,
         max_width=label_width_budget,
         min_font_size=1.0,

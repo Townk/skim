@@ -16,7 +16,7 @@ from skim.application.render.render_context import (
 from skim.application.render.rich_text import (
     RichText,
     TextSpan,
-    parse_into_spans,
+    _parse_into_spans,
     resolve_nerd_font_glyphs,
 )
 from skim.application.render.text import Font
@@ -68,21 +68,21 @@ class TestResolveNerdFontGlyphs:
 
 
 # ---------------------------------------------------------------------------
-# parse_into_spans — splits a string into per-font TextSpans
+# _parse_into_spans — splits a string into per-font TextSpans
 # ---------------------------------------------------------------------------
 
 
 class TestParseIntoSpans:
     def test_plain_text_yields_single_span_with_default_style(self):
         default = _style(12.0)
-        spans = parse_into_spans("hello world", default)
+        spans = _parse_into_spans("hello world", default)
         assert len(spans) == 1
         assert spans[0].text == "hello world"
         assert spans[0].style == default
 
     def test_token_yields_symbols_span_with_default_size_and_color(self):
         default = _style(20.0, color="#FF0000")
-        spans = parse_into_spans("%%md-keyboard;", default)
+        spans = _parse_into_spans("%%md-keyboard;", default)
         assert len(spans) == 1
         # Symbols span keeps the default size + colour but switches font.
         assert spans[0].style is not None
@@ -94,7 +94,7 @@ class TestParseIntoSpans:
 
     def test_mixed_input_splits_into_separate_spans(self):
         default = _style(12.0)
-        spans = parse_into_spans("Foo %%md-keyboard; bar", default)
+        spans = _parse_into_spans("Foo %%md-keyboard; bar", default)
         # ``Foo `` and `` bar`` get their leading/trailing whitespace
         # stripped at flush time — RichText's default separator puts
         # the visual gap between adjacent spans, so any whitespace the
@@ -109,7 +109,7 @@ class TestParseIntoSpans:
 
     def test_unknown_token_kept_literal_in_text_span(self):
         default = _style(12.0)
-        spans = parse_into_spans("foo %%not-a-token; bar", default)
+        spans = _parse_into_spans("foo %%not-a-token; bar", default)
         # No split because the token doesn't resolve — single text span.
         assert len(spans) == 1
         assert spans[0].text == "foo %%not-a-token; bar"
@@ -128,7 +128,7 @@ class TestParseIntoSpans:
         of the separator face.
         """
         default = _style(12.0, color="#FFFFFF")
-        spans = parse_into_spans("ab│cd", default, separator_background="#888888")
+        spans = _parse_into_spans("ab│cd", default, separator_background="#888888")
         # 3 spans: "ab", "│", "cd".
         assert len(spans) == 3
         assert spans[0].text == "ab"
@@ -153,7 +153,7 @@ class TestParseIntoSpans:
         style's colour (no ghost fill) since no background was
         supplied."""
         default = _style(12.0)
-        spans = parse_into_spans("ab│cd", default)
+        spans = _parse_into_spans("ab│cd", default)
         assert len(spans) == 3
         assert spans[0].text == "ab"
         assert spans[1].text == "│"
@@ -168,7 +168,7 @@ class TestParseIntoSpans:
         token splitting: ``%%kb;│%%kb;`` produces three spans (glyph,
         separator, glyph) — the typical layer-tap label shape."""
         default = _style(12.0)
-        spans = parse_into_spans(
+        spans = _parse_into_spans(
             "%%md-keyboard;│%%md-keyboard;", default, separator_background="#888"
         )
         assert len(spans) == 3
@@ -188,7 +188,7 @@ class TestParseIntoSpans:
         # Input has explicit whitespace around the token; the parser
         # drops the spaces from the text fragments so the rendered
         # output relies solely on RichText's separator.
-        spans = parse_into_spans("Foo %%md-keyboard; bar", default)
+        spans = _parse_into_spans("Foo %%md-keyboard; bar", default)
         assert len(spans) == 3
         assert spans[0].text == "Foo"  # was "Foo " before stripping
         assert spans[1].style is not None and spans[1].style.font == Font.SYMBOLS
@@ -200,7 +200,7 @@ class TestParseIntoSpans:
         side are adjacent and :func:`RichText`'s default separator
         provides the visual gap."""
         default = _style(12.0)
-        spans = parse_into_spans("%%md-keyboard; %%md-keyboard;", default)
+        spans = _parse_into_spans("%%md-keyboard; %%md-keyboard;", default)
         # Only the two glyph spans — the lone " " between them is dropped.
         assert len(spans) == 2
         assert all(s.style is not None and s.style.font == Font.SYMBOLS for s in spans)

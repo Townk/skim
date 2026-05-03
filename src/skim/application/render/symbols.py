@@ -32,7 +32,7 @@ from .adjustable_text import AdjustableText, measure_text_width
 from .composable import Composable
 from .primitives import Column, Component, MetricsComponent, Point, Size
 from .render_context import RenderContext, TextStyle
-from .rich_text import RichText, parse_into_spans
+from .rich_text import RichText, measure_rich_text_width
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .symbol_legend import SymbolLegendEntry
 from .text import Font
@@ -139,23 +139,14 @@ class SymbolMetrics:
 def _measure_glyph_width(label: str, *, metrics: SymbolMetrics, color: str) -> float:
     """Width the glyph cell needs to render ``label`` exactly.
 
-    Walks the spans :func:`parse_into_spans` would emit so labels that
-    carry Nerd Font tokens measure correctly (the parser swaps in
+    Defers to :func:`measure_rich_text_width` so labels carrying
+    Nerd Font tokens measure correctly (the parser swaps in
     :attr:`Font.SYMBOLS` for icon glyphs while plain-text fragments
     keep ``Font.FINGER_KEY``). Floors at ``min_glyph_cell`` so blank
     or whitespace-only labels never collapse the column.
     """
     style = TextStyle(font=Font.FINGER_KEY, size=metrics.symbol_font_size, color=color)
-    spans = parse_into_spans(label, style)
-    natural = sum(
-        measure_text_width(
-            span.text,
-            (span.style or style).font,
-            (span.style or style).size,
-        )
-        for span in spans
-    )
-    return max(natural, metrics.min_glyph_cell)
+    return max(measure_rich_text_width(label, style), metrics.min_glyph_cell)
 
 
 @Composable(use_context=True)
@@ -185,7 +176,7 @@ def SymbolEntry(
         color=text_color,
     )
     glyph_el = RichText(
-        spans=parse_into_spans(entry.display_label, glyph_style),
+        text=entry.display_label,
         style=glyph_style,
         text_anchor="start",
         dominant_baseline="central",

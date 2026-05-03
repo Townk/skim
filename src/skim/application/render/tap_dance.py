@@ -39,7 +39,7 @@ from .adjustable_text import AdjustableText, measure_text_width
 from .composable import Composable
 from .primitives import Column, MetricsComponent, Point, Size
 from .render_context import RenderContext, TextStyle
-from .rich_text import RichText, parse_into_spans
+from .rich_text import RichText
 from .section_data import format_key_label
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
@@ -279,14 +279,10 @@ def TapDanceCell(
     size = Size(cell_w, row_h)
 
     # Pre-build the optional key label as a :func:`RichText`. Cell
-    # labels can carry Nerd Font tokens (icon glyphs alongside text),
-    # so :func:`parse_into_spans` splits the input into properly-
-    # styled spans — plain-text fragments use ``Font.FINGER_KEY``,
-    # tokens become single-character spans on ``Font.SYMBOLS``.
-    # The parser strips whitespace from text fragments so
-    # :func:`RichText`'s default ``separator=" "`` puts exactly one
-    # space between every adjacent pair without doubling up on input-
-    # encoded whitespace.
+    # labels can carry Nerd Font tokens (icon glyphs alongside text)
+    # — :func:`RichText` parses them internally into properly-styled
+    # spans (plain text on ``Font.FINGER_KEY``, tokens on
+    # ``Font.SYMBOLS``).
     label_style = TextStyle(
         font=Font.FINGER_KEY,
         size=metrics.cell_label_font_size,
@@ -294,7 +290,7 @@ def TapDanceCell(
     )
     label_el = (
         RichText(
-            spans=parse_into_spans(format_key_label(content), label_style),
+            text=format_key_label(content),
             style=label_style,
             max_width=cell_w,
             text_anchor="middle",
@@ -421,18 +417,17 @@ def TapDanceRow(
 
     # Pre-build the chip glyph as a :func:`RichText`. The label
     # carries a Nerd Font icon token (the ``keyboard_close`` glyph)
-    # followed by the tap-dance id text; :func:`parse_into_spans`
-    # splits it into a symbols-font icon span and a plain-text id
-    # span. The ``" "`` between the token and the id is stripped at
-    # the parser; :func:`RichText`'s default ``separator=" "`` adds
-    # the inter-span gap back uniformly.
+    # followed by the tap-dance id text. The single space between
+    # the token and the id is stripped at parse time;
+    # :func:`RichText`'s default ``separator=" "`` adds the inter-
+    # span gap back uniformly with the right typography.
     chip_label_style = TextStyle(
         font=Font.FINGER_KEY,
         size=metrics.chip_inner_font_size,
         color="#FFF",
     )
     chip_glyph_el = RichText(
-        spans=parse_into_spans(f"%%nf-md-keyboard_close; {td.id}", chip_label_style),
+        text=f"%%nf-md-keyboard_close; {td.id}",
         style=chip_label_style,
         text_anchor="middle",
         dominant_baseline="central",

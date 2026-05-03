@@ -37,11 +37,11 @@ from skim.domain import (
     SvalboardTargetKey,
 )
 
-from .adjustable_text import AdjustableText, measure_text_width
+from .adjustable_text import AdjustableText
 from .composable import Composable
 from .primitives import Column, Component, MetricsComponent, Point, Size
 from .render_context import RenderContext, TextStyle
-from .rich_text import RichText, parse_into_spans
+from .rich_text import RichText, measure_rich_text_width
 from .section_data import format_key_label
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
@@ -197,22 +197,13 @@ def _pill_width(label: str, *, metrics: MacroMetrics) -> float:
 
     Mirrors what :func:`MacroPill` produces so wrap-detection
     (:func:`_macro_natural_widths`) and the painted pills agree on
-    width without instantiating composables. Walks the spans
-    :func:`parse_into_spans` would emit for the label and sums each
-    span's PIL-measured width at the pill's font size; ``Font.SYMBOLS``
-    spans use the same path so glyph widths come out right too.
+    width without instantiating composables. Defers to
+    :func:`measure_rich_text_width` so labels carrying Nerd Font
+    tokens measure correctly (icons on ``Font.SYMBOLS``, plain text
+    on ``Font.FINGER_KEY``).
     """
     label_style = TextStyle(font=Font.FINGER_KEY, size=metrics.pill_font_size)
-    spans = parse_into_spans(label, label_style)
-    text_width = sum(
-        measure_text_width(
-            span.text,
-            (span.style or label_style).font,
-            (span.style or label_style).size,
-        )
-        for span in spans
-    )
-    text_width = max(text_width, metrics.pill_min_text_width)
+    text_width = max(measure_rich_text_width(label, label_style), metrics.pill_min_text_width)
     return max(metrics.pill_min_total_width, text_width + metrics.pill_chrome_width)
 
 
@@ -375,7 +366,7 @@ def MacroChip(
         color="#FFF",
     )
     label_el = RichText(
-        spans=parse_into_spans(f"%%nf-md-script_text_play_outline; {macro_id}", label_style),
+        text=f"%%nf-md-script_text_play_outline; {macro_id}",
         style=label_style,
         text_anchor="start",
         dominant_baseline="central",
@@ -436,7 +427,7 @@ def MacroPill(
         color=text_color,
     )
     label_el = RichText(
-        spans=parse_into_spans(label, label_style),
+        text=label,
         style=label_style,
         text_anchor="start",
         dominant_baseline="central",
