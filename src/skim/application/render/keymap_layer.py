@@ -3,57 +3,28 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Per-layer keymap composables.
+"""Per-layer keymap body composable.
 
-Mirrors the special-keys document pattern from
-:mod:`keymap_document`:
+:func:`KeymapLayer` — the keyboard area, built from four composables
+placed directly: left :func:`FingerHalf`, right :func:`FingerHalf`,
+left :func:`ThumbCluster`, right :func:`ThumbCluster`. Each component
+is positioned so its overflow rectangle lands fully inside the
+layer's bbox, so :func:`KeymapLayer` exposes no overflow itself.
 
-* :func:`KeymapLayer` — the keyboard area, built from four
-  composables placed directly: left :func:`FingerHalf`, right
-  :func:`FingerHalf`, left :func:`ThumbCluster`, right
-  :func:`ThumbCluster`. Each component is positioned so its
-  overflow rectangle lands fully inside the layer's bbox, so
-  :func:`KeymapLayer` exposes no overflow itself.
-* :func:`KeymapLayerDocument` — the full per-layer image. Stacks
-  :func:`Header`, :func:`KeymapLayer`, the optional macro / TD
-  legend (re-using the same :func:`MacroSection` /
-  :func:`TapDanceSection` composables the standalone special-keys
-  image uses), the optional symbol legend (:func:`SymbolSection`),
-  and an optional :func:`Footer` in a :class:`Column`, then wraps
-  the whole thing in :func:`KeymapDocument` for the rounded
-  border.
+The document composable that stacks this body inside a header /
+footer / legend column lives in :mod:`keymap_document` alongside the
+other top-level documents.
 """
 
 from __future__ import annotations
 
-from skim.data import (
-    KeycodeMappings,
-    SvalboardKeymap,
-    SvalboardLayout,
-)
-from skim.domain import (
-    KeyboardSide,
-    SvalboardMacro,
-    SvalboardTapDance,
-    SvalboardTargetKey,
-)
+from skim.data import SvalboardLayout
+from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .composable import Composable
-from .footer import Footer
-from .header import Header
-from .keymap_document import KeymapDocument
-from .legend import (
-    collect_used_ids,
-    resolve_macros,
-    resolve_tap_dances,
-)
-from .macros import MacroSection
-from .primitives import Column, Point, Row, Size
+from .primitives import Point, Size
 from .svalboard_clusters import ThumbCluster
 from .svalboard_halves import FingerHalf
-from .symbol_legend import collect_used_descriptions
-from .symbols import FlowDirection, SymbolSection
-from .tap_dance import TapDanceSection
 
 # Central gap between the two keyboard sides, in units of
 # ``DocumentMetrics.column_gap``. ``column_gap`` is the canonical
@@ -263,120 +234,4 @@ def KeymapLayer(
     return size, draw_at
 
 
-# ---------------------------------------------------------------------------
-# KeymapLayerDocument — the full per-layer image
-# ---------------------------------------------------------------------------
-
-
-@Composable(use_context=True)
-def KeymapLayerDocument(
-    ctx,
-    *,
-    layer: SvalboardLayout[SvalboardTargetKey],
-    qmk_index: int,
-    title: str,
-    copyright: str | None = None,
-    macros: tuple[SvalboardMacro[SvalboardTargetKey], ...] = (),
-    tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...] = (),
-    raw_layer_keycodes: list[str] | None = None,
-    raw_keymap: SvalboardKeymap[str] | None = None,
-    keycode_mappings: KeycodeMappings | None = None,
-):
-    """The full per-layer keymap image as a single composable.
-
-    Stacks :func:`Header`, :func:`KeymapLayer`, the optional
-    macro / TD legend (:func:`MacroSection` next to
-    :func:`TapDanceSection` in a :class:`Row` when both have
-    content; whichever is non-empty alone otherwise), the optional
-    symbol legend (:func:`SymbolSection`), and an optional
-    :func:`Footer` in a :class:`Column`, then wraps in
-    :func:`KeymapDocument` for the rounded background border +
-    content_offset chrome.
-
-    A falsy ``copyright`` (``None`` or ``""``) suppresses the
-    footer. Macro / TD legend appears only when the style flag
-    ``show_special_keys_legend`` is on AND the layer references
-    at least one macro or tap-dance. Symbol legend appears only
-    when ``show_symbol_legend`` is on AND
-    ``raw_layer_keycodes`` + ``keycode_mappings`` are provided
-    AND the layer has resolvable symbols.
-    """
-    config = ctx.config
-    metrics = ctx.document_metrics
-    content_offset = metrics.margin + metrics.border_width + metrics.inset
-    doc_content_w = metrics.doc_width - 2 * content_offset
-
-    # Build the keyboard area first — its actual width may exceed the
-    # configured ``doc_content_w`` when inward indicators bleed past
-    # the keys-only edges and the column has to grow. Every other
-    # child of the column (header / sections / footer) sizes against
-    # the keyboard area's width so they fill the column edge-to-edge
-    # rather than being left-aligned with a gap on the right.
-    keymap_layer = KeymapLayer(
-        layer=layer,
-        qmk_index=qmk_index,
-        target_content_w=doc_content_w,
-    )
-    content_w = keymap_layer.size.width
-
-    macro_entries: list = []
-    td_entries: list = []
-    if config.output.style.show_special_keys_legend:
-        used_macro_ids, used_td_ids = collect_used_ids(layer)
-        macro_entries = resolve_macros(used_macro_ids, macros)
-        td_entries = resolve_tap_dances(used_td_ids, tap_dances)
-
-    # Macro / TD section width split — same policy as
-    # :func:`KeymapSpecialKeysDocument`. Half the content width
-    # each when both have content; the full content width when
-    # only one section is present.
-    col_gap = metrics.column_gap
-    col_w = (content_w - col_gap) / 2 if macro_entries and td_entries else content_w
-    macro_section = (
-        MacroSection(macros=macro_entries, content_width=col_w) if macro_entries else None
-    )
-    td_section = TapDanceSection(tap_dances=td_entries, max_width=col_w) if td_entries else None
-
-    symbol_section = None
-    if config.output.style.show_symbol_legend and raw_layer_keycodes and keycode_mappings:
-        symbol_entries = collect_used_descriptions(
-            raw_layer_keycodes,
-            raw_keymap,
-            keycode_mappings,
-            include_transparent=not config.output.style.show_transparent_fallthrough,
-        )
-        if symbol_entries:
-            flow_value = config.output.style.symbol_legend_flow.value
-            typed_flow: FlowDirection = "row" if flow_value == "row" else "column"
-            symbol_section = SymbolSection(
-                entries=symbol_entries,
-                max_width=content_w,
-                column_count=config.output.style.symbol_legend_columns,
-                flow=typed_flow,
-            )
-
-    with Column(gap=metrics.inset, align="start") as content:
-        Header(
-            title=title,
-            min_gap=2 * metrics.inset,
-            max_width=content_w,
-        )
-        content.add(keymap_layer)
-        if macro_section and td_section:
-            Row([macro_section, td_section], gap=col_gap, align="top")
-        elif macro_section:
-            content.add(macro_section)
-        elif td_section:
-            content.add(td_section)
-        if symbol_section is not None:
-            content.add(symbol_section)
-        if copyright:
-            Footer(text=copyright, max_width=content_w)
-
-    return KeymapDocument(content=content)
-
-
-__all__ = [
-    "KeymapLayer",
-    "KeymapLayerDocument",
-]
+__all__ = ["KeymapLayer"]

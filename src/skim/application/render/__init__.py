@@ -42,13 +42,13 @@ from skim.domain import SvalboardMacro, SvalboardTapDance, SvalboardTargetKey
 
 from .composable import render
 from .keymap_document import (
+    KeymapLayerDocument,
     KeymapMacroDocument,
+    KeymapOverviewDocument,
     KeymapSpecialKeysDocument,
     KeymapSymbolDocument,
     KeymapTapDanceDocument,
 )
-from .keymap_layer import KeymapLayerDocument
-from .keymap_overview import KeymapOverviewDocument
 from .legend import all_macros, all_tap_dances
 from .render_context import RenderContext, using_render_context
 from .styling import make_gradient

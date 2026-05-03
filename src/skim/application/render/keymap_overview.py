@@ -35,16 +35,12 @@ Pieces:
   positioned by an explicit overflow-aware placement algorithm so
   the body's bbox absorbs all chrome — :func:`KeymapOverview`
   exposes ``size`` only.
-* :func:`KeymapOverviewDocument` — the full overview image. Stacks
-  :func:`Header`, :func:`KeymapOverview`, the optional macro / TD
-  legend, the optional symbol legend, and an optional :func:`Footer`
-  in a :class:`Column`, then wraps the whole thing in
-  :func:`KeymapDocument` for the rounded background border + content
-  offset chrome.
 
 Connectors are handled in a separate pass once the body has been
 positioned — the cluster-level :class:`LayerIndicatorMetrics`
 exposes the routing origin / direction the connector router needs.
+The document composable that stacks this body inside a header /
+footer / legend column lives in :mod:`keymap_document`.
 """
 
 from __future__ import annotations
@@ -56,7 +52,7 @@ from typing import Protocol
 
 import drawsvg as draw
 
-from skim.data import KeycodeMappings, SkimConfig, SvalboardKeymap
+from skim.data import SkimConfig, SvalboardKeymap
 from skim.data.keyboard import (
     FingerCluster as FingerClusterData,
     SplitSide,
@@ -65,25 +61,14 @@ from skim.data.keyboard import (
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .composable import Composable
-from .footer import Footer
-from .header import Header
-from .keymap_document import KeymapDocument
-from .legend import all_macros, all_tap_dances
-from .macros import MacroSection
 from .primitives import (
-    Column,
     Component,
     MetricsComponent,
     Point,
-    Row,
     Size,
-    Spacer,
 )
 from .svalboard_clusters import ThumbCluster
 from .svalboard_halves import FingerHalf, FingerHalfMetrics
-from .symbol_legend import collect_used_descriptions
-from .symbols import FlowDirection, SymbolSection
-from .tap_dance import TapDanceSection
 from .text import Font
 
 # ---------------------------------------------------------------------------
@@ -1180,108 +1165,6 @@ def KeymapOverview(
     return size, draw_at
 
 
-# ---------------------------------------------------------------------------
-# KeymapOverviewDocument — the full overview image.
-# ---------------------------------------------------------------------------
-
-
-@Composable(use_context=True)
-def KeymapOverviewDocument(
-    ctx,
-    *,
-    keymap: SvalboardKeymap[SvalboardTargetKey],
-    title: str,
-    copyright: str | None = None,
-    raw_keymap: SvalboardKeymap[str] | None = None,
-    keycode_mappings: KeycodeMappings | None = None,
-):
-    """The full overview image as a single composable.
-
-    Stacks :func:`Header`, :func:`KeymapOverview`, the optional macro
-    / TD legend, the optional symbol legend, and an optional
-    :func:`Footer` in a :class:`Column`, then wraps in
-    :func:`KeymapDocument` for the rounded background border +
-    content_offset chrome.
-    """
-    config = ctx.config
-    metrics = ctx.document_metrics
-    content_offset = metrics.margin + metrics.border_width + metrics.inset
-    doc_content_w = metrics.doc_width - 2 * content_offset
-
-    if not keymap.layers:
-        return Spacer()
-
-    body = KeymapOverview(keymap=keymap)
-    content_w = max(body.size.width, doc_content_w)
-
-    # Macro / TD legend — the overview shows ALL macros and tap-dances,
-    # not just those used on a specific layer.
-    macro_entries: list = []
-    td_entries: list = []
-    if config.output.style.show_special_keys_legend:
-        macro_entries = all_macros(keymap.macros)
-        td_entries = all_tap_dances(keymap.tap_dances)
-
-    col_gap = metrics.column_gap
-    col_w = (content_w - col_gap) / 2 if macro_entries and td_entries else content_w
-    macro_section = (
-        MacroSection(macros=macro_entries, content_width=col_w) if macro_entries else None
-    )
-    td_section = TapDanceSection(tap_dances=td_entries, max_width=col_w) if td_entries else None
-
-    # Symbol legend — union across all rendered layers.
-    symbol_section = None
-    if (
-        config.output.style.show_symbol_legend
-        and raw_keymap is not None
-        and keycode_mappings is not None
-    ):
-        all_raw_keycodes: list[str] = []
-        for layer_cfg in config.keyboard.layers:
-            qmk_idx = layer_cfg.index
-            if qmk_idx in raw_keymap.layers and qmk_idx in keymap.layers:
-                all_raw_keycodes.extend(k for k in raw_keymap.layers[qmk_idx] if k is not None)
-        symbol_entries = collect_used_descriptions(
-            all_raw_keycodes,
-            raw_keymap,
-            keycode_mappings,
-            include_transparent=not config.output.style.show_transparent_fallthrough,
-        )
-        if symbol_entries:
-            flow_value = config.output.style.symbol_legend_flow.value
-            typed_flow: FlowDirection = "row" if flow_value == "row" else "column"
-            symbol_section = SymbolSection(
-                entries=symbol_entries,
-                max_width=content_w,
-                column_count=config.output.style.symbol_legend_columns,
-                flow=typed_flow,
-            )
-
-    with Column(gap=metrics.inset, align="start") as content:
-        Header(
-            title=title,
-            min_gap=2 * metrics.inset,
-            max_width=content_w,
-        )
-        content.add(body)
-        # Macro and tap-dance sections share a Row when both are
-        # present, mirroring :func:`KeymapLayerDocument` /
-        # :func:`KeymapSpecialKeysDocument`. ``col_gap`` is
-        # ``metrics.column_gap`` — the canonical horizontal spacing.
-        if macro_section is not None and td_section is not None:
-            Row([macro_section, td_section], gap=col_gap, align="top")
-        elif macro_section is not None:
-            content.add(macro_section)
-        elif td_section is not None:
-            content.add(td_section)
-        if symbol_section is not None:
-            content.add(symbol_section)
-        if copyright:
-            Footer(text=copyright, max_width=content_w)
-
-    return KeymapDocument(content=content)
-
-
 # ===========================================================================
 # Connector routing — two-pass router that turns layer-switch indicators into
 # the dotted lines threading from each indicator to its destination layer's
@@ -2271,7 +2154,6 @@ __all__ = [
     "Direction",
     "HeaderDims",
     "KeymapOverview",
-    "KeymapOverviewDocument",
     "LayerBadge",
     "LayerBadgeMetrics",
     "OverviewLayerSource",
