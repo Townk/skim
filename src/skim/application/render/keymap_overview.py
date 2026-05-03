@@ -209,6 +209,148 @@ def _compute_badge_dims(
     )
 
 
+@dataclass(frozen=True, slots=True)
+class _OverviewLayoutDims:
+    """Resolved badge + cluster sizing for the overview body.
+
+    Both :func:`KeymapOverview` and :func:`compute_header_dims`
+    consume this. ``compute_header_dims`` runs before any
+    :class:`RenderContext` is built (its outputs feed
+    :meth:`Theme.resolve`), so the resolution here goes through
+    :class:`DocumentMetrics` directly rather than reading off
+    ``ctx.document_metrics``.
+    """
+
+    badge: _BadgeDims
+    finger_cluster_width: float
+    side_width: float
+    col1_width: float
+    thumb_cluster_width: float
+
+
+def _resolve_overview_layout(
+    config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+) -> _OverviewLayoutDims:
+    """Solve the overview body's badge column ↔ cluster column split.
+
+    Two-pass fixed-point: seed the cluster width from a generous
+    placeholder, derive a badge width by PIL-measuring the badge
+    texts at the seeded font size, then re-solve the cluster width
+    against the real badge width. Converges in two passes because
+    badge height only affects badge width indirectly via its own
+    font size.
+    """
+    # Local import to avoid pulling :mod:`render_context` into modules
+    # that only depend on :mod:`layout` value types.
+    from .render_context import DocumentMetrics
+
+    metrics = DocumentMetrics.from_config(config)
+    column_gap = metrics.column_gap
+    badge_to_clusters_gap = 2.0 * column_gap
+    center_gap = _CENTER_GAP_INSET_COUNT * column_gap
+
+    content_offset = metrics.margin + metrics.border_width + metrics.inset
+    target_content_w = metrics.doc_width - 2 * content_offset
+
+    render_layers: list[tuple[int, int]] = list(
+        reversed(
+            [
+                (pos, layer_cfg.index)
+                for pos, layer_cfg in enumerate(config.keyboard.layers)
+                if layer_cfg.index in keymap.layers
+            ]
+        )
+    )
+    badge_texts: list[str] = [
+        _badge_text(qmk_idx, config.keyboard.layers[pos].name) for pos, qmk_idx in render_layers
+    ]
+    badge_texts.append("THUMBS")
+
+    def _solve(badge_w: float) -> tuple[float, float, float]:
+        col1 = badge_w
+        clusters_budget = target_content_w - col1 - badge_to_clusters_gap
+        side_w = (clusters_budget - center_gap) / 2.0
+        fcw = (side_w - 3 * column_gap) / 4.0
+        return col1, side_w, fcw
+
+    seed_fcw = (
+        target_content_w - center_gap - 6 * column_gap - badge_to_clusters_gap - 200.0
+    ) / 8.0
+    seed_fcw = max(seed_fcw, 50.0)
+    seed_badge = _compute_badge_dims(
+        doc_width=metrics.doc_width,
+        finger_cluster_width=seed_fcw,
+        badge_texts=badge_texts,
+    )
+    _, _, fcw = _solve(seed_badge.width)
+    badge = _compute_badge_dims(
+        doc_width=metrics.doc_width,
+        finger_cluster_width=fcw,
+        badge_texts=badge_texts,
+    )
+    col1, side_w, fcw = _solve(badge.width)
+    return _OverviewLayoutDims(
+        badge=badge,
+        finger_cluster_width=fcw,
+        side_width=side_w,
+        col1_width=col1,
+        thumb_cluster_width=side_w * _THUMB_CLUSTER_WIDTH_PROPORTION,
+    )
+
+
+# ---------------------------------------------------------------------------
+# HeaderDims — the title / copyright font sizes derived from the
+# overview's badge math, fed into :class:`Theme.resolve` so per-layer,
+# overview, and special-keys images all paint header typography at
+# the same size.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class HeaderDims:
+    """Title + copyright font sizes shared across every image.
+
+    The overview composable scales its title and the badge fonts to
+    match the rendered cluster width; the per-layer + standalone
+    images read these values via :class:`Theme` so their headers
+    match the overview's typography.
+    """
+
+    title_font_size: float
+    copyright_font_size: float
+
+
+def compute_header_dims(
+    config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+) -> HeaderDims:
+    """Compute the title + copyright font sizes for the given keymap.
+
+    Solves the overview's badge column ↔ cluster column split (the
+    same iteration :func:`KeymapOverview` runs at build time) and
+    derives ``badge_height = finger_cluster_width *
+    _OUTER_KEY_PROPORTION`` and ``badge_font_size = badge_height *
+    _BADGE_FONT_SIZE_RATIO``. Title font is ``badge_font_size *
+    _TITLE_FONT_SIZE_RATIO_OF_BADGE``; copyright font is the badge
+    font itself.
+    """
+    dims = _resolve_overview_layout(config, keymap)
+    badge_font_size = dims.badge.height * _BADGE_FONT_SIZE_RATIO
+    return HeaderDims(
+        title_font_size=badge_font_size * _TITLE_FONT_SIZE_RATIO_OF_BADGE,
+        copyright_font_size=badge_font_size,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Title font size relative to the badge font size — pinned here next
+# to ``compute_header_dims`` so callers don't need a separate constant
+# import to reason about the relationship.
+# ---------------------------------------------------------------------------
+_TITLE_FONT_SIZE_RATIO_OF_BADGE = 1.8
+
+
 # ---------------------------------------------------------------------------
 # LayerBadge — the colored rectangle + text on the left of each row.
 # ---------------------------------------------------------------------------
@@ -504,7 +646,6 @@ def KeymapOverview(
     ctx,
     *,
     keymap: SvalboardKeymap[SvalboardTargetKey],
-    target_content_w: float,
 ):
     """Multi-layer compact view + thumb cluster row.
 
@@ -569,39 +710,12 @@ def KeymapOverview(
         return Size.zero(), lambda _d, _o: None
 
     # --- Phase 1: derive cluster sizing from the budget. ---
-    # Initial pass with badge_dims set from a placeholder cluster width;
-    # we refine once we know the real cluster width. The fixed-point
-    # iteration converges in two passes because ``badge_height`` only
-    # affects ``badge_dims.width`` indirectly via its own font size.
-    def _solve_layout(badge_w: float):
-        col1 = badge_w
-        clusters_budget = target_content_w - col1 - badge_to_clusters_gap
-        side_w = (clusters_budget - center_gap) / 2.0
-        fcw = (side_w - 3 * column_gap) / 4.0
-        return col1, side_w, fcw
-
-    # Seed: badge width approximated from a guess at cluster width.
-    seed_finger_cluster_width = (
-        target_content_w - center_gap - 6 * column_gap - badge_to_clusters_gap - 200.0
-    ) / 8.0
-    seed_finger_cluster_width = max(seed_finger_cluster_width, 50.0)
-    badge_texts: list[str] = [
-        _badge_text(qmk_idx, config.keyboard.layers[pos].name) for pos, qmk_idx in render_layers
-    ]
-    badge_texts.append("THUMBS")
-    seed_badge = _compute_badge_dims(
-        doc_width=config.output.layout.width,
-        finger_cluster_width=seed_finger_cluster_width,
-        badge_texts=badge_texts,
-    )
-    _, _, finger_cluster_width = _solve_layout(seed_badge.width)
-    badge_dims = _compute_badge_dims(
-        doc_width=config.output.layout.width,
-        finger_cluster_width=finger_cluster_width,
-        badge_texts=badge_texts,
-    )
-    col1_width, side_width, finger_cluster_width = _solve_layout(badge_dims.width)
-    thumb_cluster_width = side_width * _THUMB_CLUSTER_WIDTH_PROPORTION
+    dims = _resolve_overview_layout(config, keymap)
+    badge_dims = dims.badge
+    finger_cluster_width = dims.finger_cluster_width
+    side_width = dims.side_width
+    col1_width = dims.col1_width
+    thumb_cluster_width = dims.thumb_cluster_width
 
     # --- Phase 2: build composables. ---
     common_finger_kwargs = {
@@ -1098,7 +1212,7 @@ def KeymapOverviewDocument(
     if not keymap.layers:
         return Spacer()
 
-    body = KeymapOverview(keymap=keymap, target_content_w=doc_content_w)
+    body = KeymapOverview(keymap=keymap)
     content_w = max(body.size.width, doc_content_w)
 
     # Macro / TD legend — the overview shows ALL macros and tap-dances,
@@ -2218,6 +2332,7 @@ __all__ = [
     "ConnectorRouting",
     "ConnectorStep",
     "Direction",
+    "HeaderDims",
     "KeymapOverview",
     "KeymapOverviewDocument",
     "LayerBadge",
@@ -2229,6 +2344,7 @@ __all__ = [
     "build_finger_path_list_for_cluster",
     "build_finger_path_list_for_layer",
     "build_thumb_path_list",
+    "compute_header_dims",
     "draw_overview_v2",
     "phase1_down_to_right",
     "phase1_redirect_left_to_down",
