@@ -729,7 +729,7 @@ def RichText(
             dominant_baseline=dominant_baseline,
             opacity=opacity,
         )
-        for es, size_, text in zip(effective_styles, sizes, sep_rendered)
+        for es, size_, text in zip(effective_styles, sizes, sep_rendered, strict=True)
     ]
 
     # 6. Baseline-aligned layout. Pick the largest baseline as the
@@ -742,7 +742,7 @@ def RichText(
     span_top_offsets = [common_baseline - b for b in span_baselines]
     rich_natural_w = sum(span_widths)
     rich_h = max(
-        (top + h for top, h in zip(span_top_offsets, span_heights)),
+        (top + h for top, h in zip(span_top_offsets, span_heights, strict=True)),
         default=0.0,
     )
 
@@ -769,7 +769,9 @@ def RichText(
         # centre of its advance box without disturbing the rest of
         # the row).
         cursor_x = origin.x + x_offset
-        for el, w, top, off in zip(span_elements, span_widths, span_top_offsets, span_offsets):
+        for el, w, top, off in zip(
+            span_elements, span_widths, span_top_offsets, span_offsets, strict=True
+        ):
             el.draw_at(d, Point(cursor_x + off.x, origin.y + top + off.y))
             cursor_x += w
 

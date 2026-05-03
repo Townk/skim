@@ -106,7 +106,7 @@ _INDICATOR_FALLBACK_STROKE = "#606060"
 def _overflow_from_indicators(
     *,
     component_size: Size,
-    indicator_slots: tuple[tuple[Point, LayerIndicator | None], ...],
+    indicator_slots: tuple[tuple[Point, MetricsComponent[LayerIndicatorMetrics] | None], ...],
 ) -> tuple[Size, Point]:
     """Bbox-union a component's keys-only size with its indicators.
 

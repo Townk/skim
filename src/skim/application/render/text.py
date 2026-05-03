@@ -59,7 +59,8 @@ def _font_cmap(font: Font) -> frozenset[int]:
     keymap render.
     """
     tt = TTFont(font.path)
-    return frozenset(tt.getBestCmap().keys())
+    cmap = tt.getBestCmap()
+    return frozenset(cmap.keys()) if cmap is not None else frozenset()
 
 
 class Font(Enum):

@@ -28,12 +28,6 @@ from skim.application.render.legend import (
     resolve_tap_dances,
     tap_dance_section_height,
 )
-
-# Universal table spacings sourced from the same legend ratios that
-# DocumentMetrics.from_config feeds composables.
-_GEOM = _LegendGeometry.for_doc_width(1600.0)
-_TABLE_COL_SPACING = _GEOM.pill_gap
-_TABLE_HEADER_SPACING = _GEOM.row_content_indent_gap
 from skim.data import SvalboardLayout
 from skim.domain import (
     SvalboardMacro,
@@ -42,6 +36,12 @@ from skim.domain import (
     SvalboardTapDance,
 )
 from skim.domain.domain_types import SvalboardTargetKey
+
+# Universal table spacings sourced from the same legend ratios that
+# DocumentMetrics.from_config feeds composables.
+_GEOM = _LegendGeometry.for_doc_width(1600.0)
+_TABLE_COL_SPACING = _GEOM.pill_gap
+_TABLE_HEADER_SPACING = _GEOM.row_content_indent_gap
 
 
 def _layout_from_keys(keys: list[SvalboardTargetKey]) -> SvalboardLayout[SvalboardTargetKey]:

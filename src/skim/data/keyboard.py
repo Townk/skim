@@ -779,7 +779,9 @@ class SplitSide(Generic[T]):
         raise IndexError(f"Index {idx} out of range for SplitSide (0-29)")
 
     @property
-    def fingers(self) -> tuple[FingerCluster[T], ...]:
+    def fingers(
+        self,
+    ) -> tuple[FingerCluster[T], FingerCluster[T], FingerCluster[T], FingerCluster[T]]:
         """Return all finger clusters as a tuple.
 
         Returns:

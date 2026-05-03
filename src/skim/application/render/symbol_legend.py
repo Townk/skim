@@ -467,10 +467,7 @@ def _collect_raw(
                 from skim.domain.adapters.keycode_label_adapter import KeycodeLabelAdapter
 
                 fd_entry = func_desc[func_name]
-                if isinstance(fd_entry, str):
-                    raw_desc = fd_entry
-                else:
-                    raw_desc = fd_entry["description"]
+                raw_desc = fd_entry if isinstance(fd_entry, str) else fd_entry["description"]
                 adapter = KeycodeLabelAdapter(Keyboard(), keycode_mappings)
 
                 if _is_per_instance_description(raw_desc):

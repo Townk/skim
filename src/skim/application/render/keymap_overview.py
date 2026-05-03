@@ -81,7 +81,7 @@ from .primitives import (
 )
 from .render_context import RenderContext, using_render_context
 from .svalboard_clusters import ThumbCluster
-from .svalboard_halves import FingerHalf
+from .svalboard_halves import FingerHalf, FingerHalfMetrics
 from .symbol_legend import collect_used_descriptions
 from .symbols import FlowDirection, SymbolSection
 from .tap_dance import TapDanceSection
@@ -430,23 +430,29 @@ class _OverviewRoutingLayout:
     def thumb_cluster_y_bounds(self) -> tuple[float, float]:
         return (self._thumb_y_state[0], self._thumb_y_state[0] + self._thumb_height)
 
-    def shift_layer_row_and_below(self, target_layer: int, amount: float) -> None:
+    def shift_layer_row_and_below(self, row_idx: int, amount: float) -> None:
+        # ``row_idx`` here is a QMK layer index per the
+        # :class:`RoutingLayout` Protocol contract. Translate via
+        # :attr:`_layer_to_row` before delegating to the underlying
+        # row list.
         if amount <= 0:
             return
-        row_idx = self._layer_to_row.get(target_layer)
-        if row_idx is None:
+        translated = self._layer_to_row.get(row_idx)
+        if translated is None:
             return
-        for i in range(row_idx, len(self._row_y_positions)):
+        for i in range(translated, len(self._row_y_positions)):
             self._row_y_positions[i] += amount
         self._thumb_y_state[0] += amount
 
-    def shift_below_layer_row(self, target_layer: int, amount: float) -> None:
+    def shift_below_layer_row(self, row_idx: int, amount: float) -> None:
+        # ``row_idx`` is a QMK layer index — see
+        # :meth:`shift_layer_row_and_below`.
         if amount <= 0:
             return
-        row_idx = self._layer_to_row.get(target_layer)
-        if row_idx is None:
+        translated = self._layer_to_row.get(row_idx)
+        if translated is None:
             return
-        for i in range(row_idx + 1, len(self._row_y_positions)):
+        for i in range(translated + 1, len(self._row_y_positions)):
             self._row_y_positions[i] += amount
         self._thumb_y_state[0] += amount
 
@@ -557,9 +563,10 @@ def KeymapOverview(
     )
 
     if not render_layers:
-        # Nothing to render — return an empty body. The document
+        # Nothing to render — return a zero-sized noop so the
+        # composable's tuple-return contract holds. The document
         # composable also short-circuits, so this is defensive.
-        return Spacer()
+        return Size.zero(), lambda _d, _o: None
 
     # --- Phase 1: derive cluster sizing from the budget. ---
     # Initial pass with badge_dims set from a placeholder cluster width;
@@ -616,7 +623,9 @@ def KeymapOverview(
     }
 
     layer_badges: list[Component] = []
-    finger_halves: list[tuple[Component, Component]] = []
+    finger_halves: list[
+        tuple[MetricsComponent[FingerHalfMetrics], MetricsComponent[FingerHalfMetrics]]
+    ] = []
     for pos, qmk_idx in render_layers:
         layer_cfg = config.keyboard.layers[pos]
         layer_color = (
@@ -807,6 +816,10 @@ def KeymapOverview(
     # rebuild ``placements`` against them for the draw_at closure.
     mutable_row_ys: list[float] = [p.y for p in placements]
     mutable_thumb_y: list[float] = [thumb_y]
+    # Routing-derived constants are needed in Phase 7 (body sizing)
+    # whether or not routing actually runs, so compute them up front.
+    outer_key_size = finger_cluster_width * _OUTER_KEY_PROPORTION
+    keymap_spacing = outer_key_size * _CONNECTOR_SPACING_RATIO
     routing: ConnectorRouting | None = None
     if (
         config.output.style.show_layer_indicators
@@ -829,8 +842,6 @@ def KeymapOverview(
             right=thumb_layer_data.right.thumb,
         )
 
-        outer_key_size = finger_cluster_width * _OUTER_KEY_PROPORTION
-        keymap_spacing = outer_key_size * _CONNECTOR_SPACING_RATIO
         rect_offset = (
             _INDICATOR_RECT_PADDING_MULTIPLIER
             * config.output.layout.width

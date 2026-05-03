@@ -21,8 +21,7 @@ from skim.application.render.svalboard_clusters import (
 )
 from skim.data import LayerColor, Palette, SkimConfig, SvalboardKeymap
 from skim.data.config import Keyboard, KeyboardLayer, Output, Style
-from skim.data.keyboard import FingerCluster as FingerClusterData
-from skim.data.keyboard import ThumbCluster as ThumbClusterData
+from skim.data.keyboard import FingerCluster as FingerClusterData, ThumbCluster as ThumbClusterData
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 # QMK firmware index used by every test that doesn't care about the
@@ -614,7 +613,6 @@ class TestLayerIndicators:
         clear of the E / W / S edges. Compared to a directional key
         with the same diameter at the same outward direction, the
         centre-key circle's distance from its anchor is larger."""
-        palette = _two_layer_palette()
         cluster_data = FingerClusterData(
             center_key=_td_key("C", layer_switch=1),
             north_key=_td_key("N", layer_switch=1),
@@ -657,7 +655,6 @@ class TestLayerIndicators:
         maps outside the palette range paints in neutral fallback
         colours rather than crashing — keeps the indicator visible
         even with a stray layer reference."""
-        palette = _two_layer_palette()  # 2 layers
         cluster_data = FingerClusterData(
             center_key=_td_key("C"),
             north_key=_td_key("N", layer_switch=99),  # well past the palette
