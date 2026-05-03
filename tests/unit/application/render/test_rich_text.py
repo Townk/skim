@@ -144,17 +144,22 @@ class TestParseIntoSpans:
         assert spans[2].text == "cd"
         assert spans[2].style == default
 
-    def test_separator_char_kept_literal_when_no_background_passed(self):
-        """Without ``separator_background`` the parser keeps the
-        backward-compatible behaviour: ``│`` stays as plain text in
-        whichever surrounding span it lands in. Allows callers that
-        don't want separator styling (legacy wrappers, free-form text)
-        to use :func:`parse_into_spans` without picking up the new
-        separator splitting."""
+    def test_separator_char_centred_via_fallback_when_no_background_passed(self):
+        """Without ``separator_background`` the separator carries
+        the default style (no ghost colour) but still gets emitted
+        as its own span with the centring paint-time offset — ``│``
+        is missing from Roboto, so PIL measures it as ``.notdef``
+        while the browser falls back to a wider visible glyph;
+        without the centring the visible bar drifts past the right
+        edge of its measured advance."""
         default = _style(12.0)
         spans = parse_into_spans("ab│cd", default)
-        assert len(spans) == 1
-        assert spans[0].text == "ab│cd"
+        assert len(spans) == 3
+        assert spans[0].text == "ab"
+        assert spans[1].text == "│"
+        assert spans[1].style == default
+        assert spans[1].offset.x < 0.0
+        assert spans[2].text == "cd"
 
     def test_separator_with_surrounding_nerd_font_tokens(self):
         """Separator splitting interleaves correctly with Nerd Font

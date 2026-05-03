@@ -67,6 +67,9 @@ drives a per-span vertical offset within the row.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cache
+
+from fontTools.ttLib import TTFont
 
 from skim.application.loaders import load_nerdfont_glyphs
 from skim.domain import SEPARATOR_CHAR
@@ -81,6 +84,23 @@ from .primitives import MetricsComponent, Point, Size
 from .render_context import TextStyle
 from .styling import adjust_luminance
 from .text import Font
+
+
+@cache
+def _font_cmap(font: Font) -> frozenset[int]:
+    """Return the set of code points the embedded font actually contains.
+
+    Used by :func:`parse_into_spans` to detect characters that fall
+    back at render time — PIL measures those as ``.notdef`` (a
+    placeholder advance) but the browser substitutes a different
+    font, often with a wider glyph that lands past the position
+    PIL's measurement implied. The detector lets us flag those
+    characters so ``parse_into_spans`` can emit them with a
+    centring paint-time offset that pulls the visible glyph back to
+    the centre of its measured advance.
+    """
+    tt = TTFont(font.path)
+    return frozenset(tt.getBestCmap().keys())
 
 # Luminance multiplier applied to the key's background colour to
 # derive the separator's stroke colour — mirrors legacy
@@ -272,6 +292,7 @@ def parse_into_spans(
             weight=default_style.weight,
             color=adjust_luminance(separator_background, _SEPARATOR_LUMINANCE_FACTOR),
         )
+    default_cmap = _font_cmap(default_style.font)
     spans: list[TextSpan] = []
     text_buffer: list[str] = []
 
@@ -282,6 +303,21 @@ def parse_into_spans(
         text_buffer.clear()
         if text_segment:
             spans.append(TextSpan(text=text_segment, style=default_style))
+
+    def _emit_centred_fallback(ch: str, style: TextStyle) -> None:
+        """Emit ``ch`` as its own span with a centring paint-time offset.
+
+        Used for characters not present in ``style.font`` — PIL
+        measures their advance via the font's ``.notdef`` glyph
+        (often half the visible width the browser ends up rendering
+        with the fallback font), so a span painted at the cursor
+        with ``text-anchor="start"`` lands too far to the right.
+        Shifting the paint origin left by half the measured advance
+        re-centres the visible glyph in its measured advance box,
+        the same trick the separator glyph uses.
+        """
+        adv = measure_text_width(ch, style.font, style.size)
+        spans.append(TextSpan(text=ch, style=style, offset=Point(-adv / 2.0, 0.0)))
 
     i = 0
     n = len(text)
@@ -303,26 +339,25 @@ def parse_into_spans(
                     continue
         if separator_style is not None and text[i] == SEPARATOR_CHAR:
             _flush_text()
-            # The separator glyph (``│`` U+2502 in Roboto) sits at
-            # the right edge of its advance box — that built-in
-            # left padding swallows the trailing space :func:`RichText`
-            # appends, leaving the next span flush against the bar.
-            # A negative ``offset.x`` of half the bar's natural
-            # advance pulls the visible glyph back into the centre
-            # of its advance, so the auto-trailing-space lands as a
-            # visible gap on the bar's RIGHT side. The cursor still
-            # advances by the bar's natural width — this only moves
-            # where the glyph paints, not where the next span starts.
-            sep_advance = measure_text_width(
-                SEPARATOR_CHAR, separator_style.font, separator_style.size
-            )
-            spans.append(
-                TextSpan(
-                    text=SEPARATOR_CHAR,
-                    style=separator_style,
-                    offset=Point(-sep_advance / 2.0, 0.0),
-                )
-            )
+            # The separator glyph (``│`` U+2502) is missing from
+            # Roboto / Roboto Black so PIL falls back to ``.notdef``
+            # for measurement while the browser substitutes a
+            # different font with a wider visible glyph; emitting it
+            # via the centring path pulls the rendered bar back into
+            # the middle of its measured advance and lets the
+            # auto-trailing space breathe. The separator carries a
+            # ghost colour derived from the key fill, so it gets a
+            # different style than other fallbacks.
+            _emit_centred_fallback(SEPARATOR_CHAR, separator_style)
+            i += 1
+            continue
+        if ord(text[i]) not in default_cmap and not text[i].isspace():
+            # Any non-whitespace character missing from the embedded
+            # font (e.g. ``⎇`` U+2387 for KC_LALT) gets the same
+            # centring treatment so the browser's fallback glyph
+            # stays anchored where the layout planned for it.
+            _flush_text()
+            _emit_centred_fallback(text[i], default_style)
             i += 1
             continue
         text_buffer.append(text[i])

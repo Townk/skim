@@ -45,18 +45,39 @@ logger = logging.getLogger(__name__)
 def _layer_title(config: SkimConfig, config_position: int, qmk_index: int) -> str:
     """Resolve the layer's display title.
 
-    Falls back to ``"Layer N"`` when ``config_position`` is past the
-    end of the configured layer list, then appends the suffix
-    ``"Layer"`` if the chosen name doesn't already include it.
+    Combines the configured layer ``name`` and ``variant`` into the
+    header string the per-layer image paints. Four cases:
+
+    * Both name and variant: ``"{name} ({variant}) Layer"``.
+    * Name only: ``"{name} Layer"`` (with the trailing ``"Layer"``
+      omitted when the name already contains the word).
+    * Variant only: ``"Layer {qmk_index} ({variant})"``.
+    * Neither: ``"Layer {qmk_index}"``.
+
+    Falls through to the variant-only / neither cases when
+    ``config_position`` is past the end of the configured layer
+    list.
     """
-    layer_title = (
-        f"Layer {qmk_index}"
-        if config_position >= len(config.keyboard.layers)
-        else config.keyboard.layers[config_position].name
+    layer_cfg = (
+        config.keyboard.layers[config_position]
+        if config_position < len(config.keyboard.layers)
+        else None
     )
-    if "layer" not in layer_title.lower():
-        layer_title += " Layer"
-    return layer_title
+    name = layer_cfg.name if layer_cfg is not None else None
+    variant = layer_cfg.variant if layer_cfg is not None else None
+
+    if name and variant:
+        title = f"{name} ({variant})"
+    elif name:
+        title = name
+    elif variant:
+        return f"Layer {qmk_index} ({variant})"
+    else:
+        return f"Layer {qmk_index}"
+
+    if "layer" not in title.lower():
+        title += " Layer"
+    return title
 
 
 def _layer_labels(
