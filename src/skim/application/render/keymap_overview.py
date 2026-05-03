@@ -756,17 +756,15 @@ def KeymapOverview(
     thumb_top_bleed = max(_top_bleed(left_thumb), _top_bleed(right_thumb))
     thumb_bottom_bleed = max(_bottom_bleed(left_thumb), _bottom_bleed(right_thumb))
 
-    # Inward bleeds — kept per-piece so the visible gap between the
-    # left/right pair's inward indicators always equals ``center_gap``,
-    # regardless of which row's indicators dominate. Finger halves and
-    # thumbs have different geometries (thumb's knuckle/nail bleeds are
-    # smaller than a finger's centre-key indicator's diagonal bleed),
-    # so they get independent x-positioning anchored on a shared
-    # horizontal centre axis.
+    # Inward bleeds on the finger halves — the central gap reserves
+    # ``center_gap`` of empty space between the two halves' inward
+    # indicators (i.e., the row with the worst inward bleed has the
+    # documented gap; lower-bleed rows show paint-only intrusion
+    # into the otherwise-empty space). Thumb clusters align with
+    # the finger halves' keys-only edges and don't contribute to
+    # the central reservation.
     finger_inward_left = max(_right_bleed(lfh) for lfh, _ in finger_halves)
     finger_inward_right = max(_left_bleed(rfh) for _, rfh in finger_halves)
-    thumb_inward_left = _right_bleed(left_thumb)
-    thumb_inward_right = _left_bleed(right_thumb)
 
     # Right outward bleed extends the body's outer right edge so
     # right-side indicators don't paint past the canvas. Left-side
@@ -853,17 +851,15 @@ def KeymapOverview(
     # half's keys-only edge.
     body_width = right_half_x + side_width + max_right_outer_bleed
 
-    # Body horizontal centre axis — midpoint between the finger
-    # halves' inward indicator outer edges. Both pairs (finger halves
-    # and thumbs) sit symmetrically around it so each pair's visible
-    # gap equals ``center_gap``.
-    body_center_x = left_half_x + side_width + finger_inward_left + center_gap / 2.0
-
-    # Thumbs: anchored on the same centre axis using their own
-    # inward bleeds so the visible gap between the knuckle indicators
-    # is also exactly ``center_gap``.
-    left_thumb_x = body_center_x - center_gap / 2.0 - thumb_inward_left - left_thumb.size.width
-    right_thumb_x = body_center_x + center_gap / 2.0 + thumb_inward_right
+    # Thumbs: align each thumb's keys-only edge with the matching
+    # finger half's keys-only edge — left thumb's right edge with
+    # the left half's right edge, right thumb's left edge with the
+    # right half's left edge. Inward thumb chrome (knuckle / nail
+    # indicators) may paint into the central gap visually; same
+    # paint-only accommodation the central gap and badge-to-cluster
+    # gap already make.
+    left_thumb_x = left_half_x + side_width - left_thumb.size.width
+    right_thumb_x = right_half_x
 
     # --- Phase 6: connector routing. ---
     # Mutable layout state — :func:`route_overview_connectors` shifts
