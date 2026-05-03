@@ -15,11 +15,12 @@ from __future__ import annotations
 import base64
 import math
 from enum import Enum
-from functools import cached_property, lru_cache
+from functools import cache, cached_property, lru_cache
 from pathlib import Path
 from typing import TypeVar
 
 import drawsvg as draw
+from fontTools.ttLib import TTFont
 from PIL import ImageFont
 
 from skim.application.loaders import load_nerdfont_glyphs
@@ -47,6 +48,20 @@ def _load_font(font_path: Path, font_size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(font_path, font_size)
 
 
+@cache
+def _font_cmap(font: Font) -> frozenset[int]:
+    """Return the set of code points actually present in the embedded font.
+
+    Used by the parser / analyser to decide whether a character can
+    render in a given font or needs to be routed through the
+    Unicode-symbols fallback. Cached because the cmap walk has a
+    fixed cost and the same font is queried many times across a
+    keymap render.
+    """
+    tt = TTFont(font.path)
+    return frozenset(tt.getBestCmap().keys())
+
+
 class Font(Enum):
     """Enumeration of available fonts for keyboard rendering.
 
@@ -54,7 +69,12 @@ class Font(Enum):
         FINGER_KEY: Regular font for finger cluster key labels.
         THUMB_KEY: Bold font for thumb cluster key labels.
         TITLE: Thin font for keymap titles.
-        SYMBOLS: Nerd Font for symbol glyphs.
+        SYMBOLS: Nerd Font for Nerd-Font-token glyphs (``%%nf-…;``).
+        UNICODE_SYMBOLS: DejaVu Sans Mono — Unicode fallback for
+            keyboard symbols (⌘ ⌥ ⌃ ⇧ ↹ ⏎ ␣ ⌫ ⌦ ⎈) and the
+            box-drawing separator (│) that the Roboto family
+            doesn't carry. Used by ``parse_into_spans`` for any
+            character missing from the requesting span's font.
     """
 
     FINGER_KEY = (
@@ -72,6 +92,10 @@ class Font(Enum):
     SYMBOLS = (
         "Key-Symbols",
         ASSETS.font_symbols_nerd,
+    )
+    UNICODE_SYMBOLS = (
+        "Unicode-Symbols",
+        ASSETS.font_dejavu_sans_mono,
     )
 
     def __init__(self, font_family: str, font_path: Path):
@@ -132,6 +156,8 @@ class Font(Enum):
                 return "'Roboto Thin', 'Helvetica Neue', Arial, sans-serif"
             case Font.SYMBOLS:
                 return "'Symbols Nerd Font', 'Nerd Fonts', monospace"
+            case Font.UNICODE_SYMBOLS:
+                return "'DejaVu Sans Mono', 'DejaVu Sans', monospace"
             case _:
                 return "sans-serif"
 
@@ -610,8 +636,24 @@ class FontUsageAnalyzer:
     def _collect_from_label(self, label: Label | None) -> None:
         if not label:
             return
+        unicode_symbols_cmap = _font_cmap(Font.UNICODE_SYMBOLS)
         for part in label.parts:
-            self._char_sets[part.font].update(set(part.text))
+            part_cmap = _font_cmap(part.font)
+            for ch in part.text:
+                if ord(ch) in part_cmap:
+                    self._char_sets[part.font].add(ch)
+                elif ord(ch) in unicode_symbols_cmap:
+                    # Routed through ``Font.UNICODE_SYMBOLS`` at
+                    # render time (see ``parse_into_spans``); track
+                    # it in that subset so the embedded font
+                    # actually carries the glyph.
+                    self._char_sets[Font.UNICODE_SYMBOLS].add(ch)
+                else:
+                    # In neither font — keep it in the requesting
+                    # font's subset (it'll fall through to the
+                    # browser's default at render time, but the
+                    # placeholder ``.notdef`` glyph stays embedded).
+                    self._char_sets[part.font].add(ch)
 
 
 class FontSubsetter:

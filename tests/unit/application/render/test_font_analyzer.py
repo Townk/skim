@@ -455,7 +455,12 @@ class TestFontUsageAnalyzerNerdFontSymbols:
 
 
 class TestFontUsageAnalyzerSeparators:
-    def test_separator_in_label_collected_for_font(self):
+    def test_separator_routed_to_unicode_symbols_subset(self):
+        """The box-drawing separator (``│`` U+2502) is missing from
+        Roboto, so the analyser routes it into the
+        :attr:`Font.UNICODE_SYMBOLS` (DejaVu Sans Mono) subset
+        instead of the requesting finger-key font. The plain-text
+        characters around it stay in the finger-key subset."""
         from skim.domain.domain_types import SEPARATOR_CHAR
 
         analyzer = FontUsageAnalyzer()
@@ -467,7 +472,10 @@ class TestFontUsageAnalyzerSeparators:
         finger_chars = analyzer.get_used_chars(Font.FINGER_KEY)
         assert "A" in finger_chars
         assert "B" in finger_chars
-        assert sep in finger_chars
+        assert sep not in finger_chars
+
+        unicode_chars = analyzer.get_used_chars(Font.UNICODE_SYMBOLS)
+        assert sep in unicode_chars
 
 
 class TestFontUsageAnalyzerUnicode:

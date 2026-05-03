@@ -117,15 +117,15 @@ class TestParseIntoSpans:
 
     def test_separator_char_yields_dedicated_span_when_background_passed(self):
         """The separator character ``│`` splits into its own span when
-        ``separator_background`` is supplied. The span carries a
-        ghost-style colour derived from the background (darkened via
-        ``adjust_luminance(bg, 0.7)``) and a paint-time offset that
-        shifts the visible bar half its advance to the left so the
-        trailing space breathes around the bar's quirky font metrics.
-        Weight stays inherited from the surrounding style — the bar's
-        bold appearance comes from the font choice, not from forcing
-        ``weight=700`` on top (which would trigger synthetic-bold
-        rendering on Roboto Black and smear the glyph).
+        ``separator_background`` is supplied. The span paints in
+        :attr:`Font.UNICODE_SYMBOLS` (DejaVu Sans Mono — has the
+        box-drawing block) with a ghost-style colour derived from
+        the background (darkened via ``adjust_luminance(bg, 0.7)``).
+        Because the render font matches the measurement font no
+        paint-time offset is needed — the bar lands exactly where
+        PIL placed it. Weight stays inherited so a Black-face
+        thumb label doesn't trigger synthetic-bold smearing on top
+        of the separator face.
         """
         default = _style(12.0, color="#FFFFFF")
         spans = parse_into_spans("ab│cd", default, separator_background="#888888")
@@ -135,30 +135,32 @@ class TestParseIntoSpans:
         assert spans[0].style == default
         assert spans[1].text == "│"
         assert spans[1].style is not None
+        assert spans[1].style.font == Font.UNICODE_SYMBOLS
         assert spans[1].style.weight == default.weight
         assert spans[1].style.color != "#888888"
-        # The separator span carries a negative-x paint offset so the
-        # bar visually centres within its advance instead of riding
-        # the right edge.
-        assert spans[1].offset.x < 0.0
+        # No paint-time offset — DejaVu's ``│`` advance matches the
+        # rendered glyph so the cursor lands the bar correctly.
+        assert spans[1].offset.x == 0.0
         assert spans[2].text == "cd"
         assert spans[2].style == default
 
-    def test_separator_char_centred_via_fallback_when_no_background_passed(self):
-        """Without ``separator_background`` the separator carries
-        the default style (no ghost colour) but still gets emitted
-        as its own span with the centring paint-time offset — ``│``
-        is missing from Roboto, so PIL measures it as ``.notdef``
-        while the browser falls back to a wider visible glyph;
-        without the centring the visible bar drifts past the right
-        edge of its measured advance."""
+    def test_separator_char_routed_via_unicode_symbols_when_no_background(self):
+        """Without ``separator_background`` the separator still gets
+        its own span — the parser routes characters missing from the
+        default font through :attr:`Font.UNICODE_SYMBOLS`, which has
+        the box-drawing block, so the rendered bar lands at its
+        measured cursor position. The span carries the default
+        style's colour (no ghost fill) since no background was
+        supplied."""
         default = _style(12.0)
         spans = parse_into_spans("ab│cd", default)
         assert len(spans) == 3
         assert spans[0].text == "ab"
         assert spans[1].text == "│"
-        assert spans[1].style == default
-        assert spans[1].offset.x < 0.0
+        assert spans[1].style is not None
+        assert spans[1].style.font == Font.UNICODE_SYMBOLS
+        assert spans[1].style.color == default.color
+        assert spans[1].offset.x == 0.0
         assert spans[2].text == "cd"
 
     def test_separator_with_surrounding_nerd_font_tokens(self):

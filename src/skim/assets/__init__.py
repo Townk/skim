@@ -108,6 +108,24 @@ class BundleAssets:
         return self._get_cached("font_symbols_nerd", "fonts", "SymbolsNerdFont-Regular.ttf")
 
     @property
+    def font_dejavu_sans_mono(self) -> Path:
+        """Path to the DejaVuSansMono.ttf font file.
+
+        Used as a Unicode-symbol fallback for characters the Roboto
+        family doesn't carry — keyboard symbols (⌘, ⌥, ⌃, ⇧, ↹, ⏎,
+        ␣, ⌫, ⌦, ⎈), the box-drawing separator (│), and other
+        miscellaneous-technical glyphs that show up in keymap
+        labels. Bitstream Vera-derived; free for any use.
+
+        Returns:
+            Path to the bundled DejaVu Sans Mono font.
+
+        Raises:
+            FileNotFoundError: If the file is missing from the installation.
+        """
+        return self._get_cached("font_dejavu_sans_mono", "fonts", "DejaVuSansMono.ttf")
+
+    @property
     def logo_svalboard(self) -> Path:
         """Path to the svalboard-logo.svg image file.
 

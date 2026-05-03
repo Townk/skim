@@ -67,9 +67,6 @@ drives a per-span vertical offset within the row.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import cache
-
-from fontTools.ttLib import TTFont
 
 from skim.application.loaders import load_nerdfont_glyphs
 from skim.domain import SEPARATOR_CHAR
@@ -83,24 +80,7 @@ from .composable import Composable
 from .primitives import MetricsComponent, Point, Size
 from .render_context import TextStyle
 from .styling import adjust_luminance
-from .text import Font
-
-
-@cache
-def _font_cmap(font: Font) -> frozenset[int]:
-    """Return the set of code points the embedded font actually contains.
-
-    Used by :func:`parse_into_spans` to detect characters that fall
-    back at render time — PIL measures those as ``.notdef`` (a
-    placeholder advance) but the browser substitutes a different
-    font, often with a wider glyph that lands past the position
-    PIL's measurement implied. The detector lets us flag those
-    characters so ``parse_into_spans`` can emit them with a
-    centring paint-time offset that pulls the visible glyph back to
-    the centre of its measured advance.
-    """
-    tt = TTFont(font.path)
-    return frozenset(tt.getBestCmap().keys())
+from .text import Font, _font_cmap
 
 # Luminance multiplier applied to the key's background colour to
 # derive the separator's stroke colour — mirrors legacy
@@ -276,23 +256,38 @@ def parse_into_spans(
         weight=default_style.weight,
         color=default_style.color,
     )
+    # Unicode-symbols fallback: routes characters missing from the
+    # default font through DejaVu Sans Mono, which carries the
+    # keyboard-symbol block (⌘, ⌥, ⌃, ⇧, ↹, ⏎, ␣, ⌫, ⌦, ⎈) plus
+    # the box-drawing separator (│). The visible glyph then renders
+    # with the SAME font we measure against, so the cursor-based
+    # layout positions it correctly without a paint-time offset.
+    unicode_symbols_style = TextStyle(
+        font=Font.UNICODE_SYMBOLS,
+        size=default_style.size,
+        weight=default_style.weight,
+        color=default_style.color,
+    )
     separator_style: TextStyle | None = None
     if separator_background is not None:
-        # The separator inherits the default style's weight rather
-        # than forcing ``700`` — thumb-key labels already use Roboto
-        # Black (heavier than typical bold), so an explicit
-        # ``weight=700`` on top of an already-Black face triggered
-        # synthetic-bold rendering that smeared the glyph horizontally
-        # and shifted the visible bar off the offset-math centre. The
-        # legacy ``SeparatorPart`` didn't set a weight either; the
-        # bar's bold appearance came from the font choice alone.
+        # The separator paints in the Unicode-symbols font (DejaVu
+        # has the box-drawing block) so the rendered bar lands
+        # exactly where PIL measures it. Earlier Roboto-only
+        # versions of this code carried a paint-time offset to
+        # compensate for the browser's silent fallback to a wider
+        # glyph; with DejaVu in the loop the offset is no longer
+        # needed. The separator inherits the default style's weight
+        # rather than forcing ``700`` so a Black-face thumb label
+        # doesn't trigger synthetic-bold smearing on top of the
+        # already-bold separator face.
         separator_style = TextStyle(
-            font=default_style.font,
+            font=Font.UNICODE_SYMBOLS,
             size=default_style.size,
             weight=default_style.weight,
             color=adjust_luminance(separator_background, _SEPARATOR_LUMINANCE_FACTOR),
         )
     default_cmap = _font_cmap(default_style.font)
+    unicode_symbols_cmap = _font_cmap(Font.UNICODE_SYMBOLS)
     spans: list[TextSpan] = []
     text_buffer: list[str] = []
 
@@ -307,14 +302,14 @@ def parse_into_spans(
     def _emit_centred_fallback(ch: str, style: TextStyle) -> None:
         """Emit ``ch`` as its own span with a centring paint-time offset.
 
-        Used for characters not present in ``style.font`` — PIL
-        measures their advance via the font's ``.notdef`` glyph
-        (often half the visible width the browser ends up rendering
-        with the fallback font), so a span painted at the cursor
-        with ``text-anchor="start"`` lands too far to the right.
-        Shifting the paint origin left by half the measured advance
-        re-centres the visible glyph in its measured advance box,
-        the same trick the separator glyph uses.
+        Last-resort path for characters present in NEITHER the
+        requesting span's font nor :attr:`Font.UNICODE_SYMBOLS` —
+        PIL measures their advance via the font's ``.notdef``
+        glyph but the browser silently falls back to a different
+        font with a wider visible glyph. Shifting the paint origin
+        left by half the measured advance re-centres the rendered
+        glyph in its measured advance box. Currently triggered for
+        ``⎇`` (U+2387), which is in neither Roboto nor DejaVu.
         """
         adv = measure_text_width(ch, style.font, style.size)
         spans.append(TextSpan(text=ch, style=style, offset=Point(-adv / 2.0, 0.0)))
@@ -339,25 +334,28 @@ def parse_into_spans(
                     continue
         if separator_style is not None and text[i] == SEPARATOR_CHAR:
             _flush_text()
-            # The separator glyph (``│`` U+2502) is missing from
-            # Roboto / Roboto Black so PIL falls back to ``.notdef``
-            # for measurement while the browser substitutes a
-            # different font with a wider visible glyph; emitting it
-            # via the centring path pulls the rendered bar back into
-            # the middle of its measured advance and lets the
-            # auto-trailing space breathe. The separator carries a
-            # ghost colour derived from the key fill, so it gets a
-            # different style than other fallbacks.
-            _emit_centred_fallback(SEPARATOR_CHAR, separator_style)
+            # The separator (``│`` U+2502) is missing from Roboto
+            # but present in DejaVu Sans Mono — emit it as a
+            # :attr:`Font.UNICODE_SYMBOLS` span with the ghost colour
+            # so the rendered bar lands exactly where PIL measures
+            # it. No paint-time offset needed.
+            spans.append(TextSpan(text=SEPARATOR_CHAR, style=separator_style))
             i += 1
             continue
         if ord(text[i]) not in default_cmap and not text[i].isspace():
-            # Any non-whitespace character missing from the embedded
-            # font (e.g. ``⎇`` U+2387 for KC_LALT) gets the same
-            # centring treatment so the browser's fallback glyph
-            # stays anchored where the layout planned for it.
             _flush_text()
-            _emit_centred_fallback(text[i], default_style)
+            if ord(text[i]) in unicode_symbols_cmap:
+                # Route through DejaVu Sans Mono — the rendered
+                # glyph uses the SAME font we measure against, so
+                # the cursor-based layout positions it correctly.
+                spans.append(TextSpan(text=text[i], style=unicode_symbols_style))
+            else:
+                # Last-ditch: PIL measures via ``.notdef`` while the
+                # browser falls back silently. Centre the visible
+                # glyph in its measured advance box. Currently
+                # triggers for ``⎇`` (U+2387) which is in neither
+                # Roboto nor DejaVu.
+                _emit_centred_fallback(text[i], default_style)
             i += 1
             continue
         text_buffer.append(text[i])
