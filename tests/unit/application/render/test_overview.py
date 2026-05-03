@@ -6,7 +6,7 @@
 import drawsvg as draw
 import pytest
 
-from skim.application.render.keymap_overview import draw_overview
+from skim.application.render import draw_overview
 from skim.data.config import (
     Keyboard,
     KeyboardLayer,

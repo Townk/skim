@@ -26,15 +26,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-import drawsvg as draw
-
 from skim.data import KeycodeMappings, SkimConfig, SvalboardKeymap
-from skim.domain import SvalboardTargetKey
 
 from .adjustable_text import AdjustableText, measure_text_width
 from .composable import Composable
 from .primitives import Column, Component, MetricsComponent, Point, Size
-from .render_context import RenderContext, TextStyle, using_render_context
+from .render_context import RenderContext, TextStyle
 from .rich_text import RichText, parse_into_spans
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .symbol_legend import SymbolLegendEntry
@@ -464,43 +461,6 @@ def collect_symbol_entries(
     )
 
 
-def draw_symbols_image(
-    config: SkimConfig,
-    keymap: SvalboardKeymap[SvalboardTargetKey],
-    entries: list[SymbolLegendEntry],
-) -> draw.Drawing:
-    """Render the standalone symbols image from a pre-collected entry set.
-
-    Caller is expected to gate on ``entries`` being non-empty (and on
-    ``raw_keymap`` / ``keycode_mappings`` availability) — this entry
-    point doesn't surface "skipping" warnings of its own. Use
-    :func:`collect_symbol_entries` to build the entry set in the
-    caller's preferred order.
-
-    Body-scale is read from ``config.output.style.symbols_scale``
-    (the CLI ``--symbols-scale`` flag updates that field upstream).
-    """
-    # Local imports — :mod:`keymap_document` lazy-imports from this
-    # module, so importing it eagerly would create a cycle.
-    from .composable import render
-    from .keymap_document import KeymapSymbolDocument
-    from .macros import _resolve_title
-
-    flow_str = config.output.style.symbol_legend_flow
-    flow: FlowDirection = "row" if flow_str == "row" else "column"
-
-    with using_render_context(RenderContext.build(config, keymap)):
-        return render(
-            KeymapSymbolDocument(
-                entries=entries,
-                title=_resolve_title(config),
-                copyright=config.output.copyright,
-                flow=flow,
-                scale=config.output.style.symbols_scale,
-            )
-        )
-
-
 __all__ = [
     "FlowDirection",
     "SymbolEntry",
@@ -509,5 +469,4 @@ __all__ = [
     "SymbolSectionMetrics",
     "SymbolTable",
     "collect_symbol_entries",
-    "draw_symbols_image",
 ]

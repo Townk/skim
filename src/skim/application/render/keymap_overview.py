@@ -64,7 +64,7 @@ from skim.data.keyboard import (
 )
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
-from .composable import Composable, render
+from .composable import Composable
 from .footer import Footer
 from .header import Header
 from .keymap_document import KeymapDocument
@@ -79,7 +79,6 @@ from .primitives import (
     Size,
     Spacer,
 )
-from .render_context import RenderContext, using_render_context
 from .svalboard_clusters import ThumbCluster
 from .svalboard_halves import FingerHalf, FingerHalfMetrics
 from .symbol_legend import collect_used_descriptions
@@ -1283,52 +1282,6 @@ def KeymapOverviewDocument(
     return KeymapDocument(content=content)
 
 
-# ---------------------------------------------------------------------------
-# Public entry point — composes :func:`KeymapOverviewDocument` inside
-# a :class:`RenderContext` and paints it into a drawsvg :class:`Drawing`.
-# ---------------------------------------------------------------------------
-
-
-def _resolve_overview_title(config: SkimConfig) -> str:
-    """Resolve the overview's title.
-
-    Falls back to ``"{first layer's variant or name} Layers Layout"``
-    when ``output.keymap_title`` isn't configured, and to the literal
-    ``"Keymap Layout"`` when there are no configured layers.
-    """
-    if config.output.keymap_title:
-        return config.output.keymap_title
-    if config.keyboard.layers:
-        first_layer = config.keyboard.layers[0]
-        return f"{(first_layer.variant or first_layer.name)} Layers Layout"
-    return "Keymap Layout"
-
-
-def draw_overview(
-    config: SkimConfig,
-    keymap: SvalboardKeymap[SvalboardTargetKey],
-    raw_keymap: SvalboardKeymap[str] | None = None,
-    keycode_mappings: KeycodeMappings | None = None,
-) -> draw.Drawing:
-    """Generate the overview SVG image for a multi-layer keymap.
-
-    Builds a :class:`RenderContext`, constructs the
-    :func:`KeymapOverviewDocument` inside it, and hands the result
-    to :func:`render` for the canvas / viewBox / font CSS plumbing —
-    same shape every other image entry point uses.
-    """
-    with using_render_context(RenderContext.build(config, keymap)):
-        return render(
-            KeymapOverviewDocument(
-                keymap=keymap,
-                title=_resolve_overview_title(config),
-                copyright=config.output.copyright or "",
-                raw_keymap=raw_keymap,
-                keycode_mappings=keycode_mappings,
-            )
-        )
-
-
 # ===========================================================================
 # Connector routing — two-pass router that turns layer-switch indicators into
 # the dotted lines threading from each indicator to its destination layer's
@@ -2329,7 +2282,6 @@ __all__ = [
     "build_finger_path_list_for_layer",
     "build_thumb_path_list",
     "compute_header_dims",
-    "draw_overview",
     "phase1_down_to_right",
     "phase1_redirect_left_to_down",
     "phase1_redirect_right_to_down",

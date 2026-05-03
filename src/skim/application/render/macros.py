@@ -33,18 +33,16 @@ from dataclasses import dataclass
 
 import drawsvg as draw
 
-from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import SvalboardMacro, SvalboardMacroActionKind, SvalboardTargetKey
 
 from .adjustable_text import AdjustableText, measure_text_width
-from .composable import Composable, render
-from .legend import _flatten_macro_pills, all_macros, build_action_glyph
+from .composable import Composable
+from .legend import _flatten_macro_pills, build_action_glyph
 from .primitives import Column, Component, MetricsComponent, Point, Size
 from .render_context import (
     RenderContext,
     TextStyle,
     current_render_context,
-    using_render_context,
 )
 from .rich_text import RichText, parse_into_spans
 from .section_stripe import SectionStripe, SectionStripeMetrics
@@ -671,57 +669,6 @@ def MacroSection(
     )
 
 
-# ---------------------------------------------------------------------------
-# Image entry point
-# ---------------------------------------------------------------------------
-
-
-def _resolve_title(config: SkimConfig) -> str:
-    """Pick the keymap title to render in the top-left of the image.
-
-    Lives at the entry-point layer (next to :func:`draw_macros_image`)
-    rather than inside the document composable so the binding from
-    config to the rendered title string sits at the boundary where
-    config is consumed; the document composable just receives the
-    final string. The other two image entry points
-    (:func:`tap_dance.draw_tap_dances_image`,
-    :func:`special_keys.draw_special_keys_image`) import from here so
-    every standalone-image render goes through the same resolver.
-    """
-    if config.output.keymap_title:
-        return config.output.keymap_title
-    if config.keyboard.layers:
-        first = config.keyboard.layers[0]
-        return f"{first.variant or first.name} Layers Layout"
-    return "Keymap Layout"
-
-
-def draw_macros_image(
-    config: SkimConfig,
-    keymap: SvalboardKeymap[SvalboardTargetKey],
-) -> draw.Drawing:
-    """Render the standalone macros image.
-
-    Body-scale is read from ``config.output.style.macros_scale`` (the
-    CLI ``--macros-scale`` flag updates that field upstream). Body
-    chips and pills scale by this factor; the chrome (title, footer,
-    outer padding) stays at the unscaled per-image size.
-    """
-    # Local import — :mod:`keymap_document` lazy-imports from this
-    # module, so importing it eagerly would create a cycle.
-    from .keymap_document import KeymapMacroDocument
-
-    with using_render_context(RenderContext.build(config, keymap)):
-        return render(
-            KeymapMacroDocument(
-                macros=all_macros(keymap.macros),
-                title=_resolve_title(config),
-                copyright=config.output.copyright,
-                scale=config.output.style.macros_scale,
-            )
-        )
-
-
 __all__ = [
     "MacroChip",
     "MacroMetrics",
@@ -731,6 +678,5 @@ __all__ = [
     "MacroSection",
     "MacroSectionMetrics",
     "MacroTable",
-    "draw_macros_image",
     "macro_natural_widths",
 ]

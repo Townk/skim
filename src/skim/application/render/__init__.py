@@ -5,13 +5,26 @@
 
 """Rendering module for generating keymap visualizations.
 
-This package contains the core rendering logic for transforming
-keymap data into SVG drawings. It handles:
-- Layout calculation (Finger/Thumb clusters)
-- Component rendering (Keys, Clusters)
-- Styling and coloring
-- Text and font management
-- Geometry and shape generation
+This package owns every image entry point — the ``draw_*`` functions
+that take a config + keymap and return a ``drawsvg.Drawing``. Each
+one builds a :class:`RenderContext`, constructs the corresponding
+document composable inside it, and hands the result to
+:func:`render`. Composable modules (``keymap_layer.py``,
+``keymap_overview.py``, ``macros.py``, ``tap_dance.py``,
+``symbols.py``, etc.) own only the composables themselves; the
+entry-point shims live here.
+
+Public surface:
+
+* :func:`draw_keymap` — top-level orchestrator. Picks which images
+  to render based on :class:`KeymapGeneratorTargets` and dispatches
+  to the per-image entry points below.
+* :func:`draw_overview` — multi-layer overview image.
+* :func:`draw_macros_image` — standalone macros image.
+* :func:`draw_tap_dances_image` — standalone tap-dances image.
+* :func:`draw_special_keys_image` — combined macros + tap-dances.
+* :func:`draw_symbols_image` — standalone symbols image (caller
+  pre-collects entries via :func:`collect_symbol_entries`).
 """
 
 import logging
@@ -28,20 +41,46 @@ from skim.data import (
 from skim.domain import SvalboardMacro, SvalboardTapDance, SvalboardTargetKey
 
 from .composable import render
+from .keymap_document import (
+    KeymapMacroDocument,
+    KeymapSpecialKeysDocument,
+    KeymapSymbolDocument,
+    KeymapTapDanceDocument,
+)
 from .keymap_layer import KeymapLayerDocument
-from .keymap_overview import draw_overview
-from .macros import draw_macros_image
-from .render_context import RenderContext as ComposableRenderContext, using_render_context
-from .special_keys import draw_special_keys_image
+from .keymap_overview import KeymapOverviewDocument
+from .legend import all_macros, all_tap_dances
+from .render_context import RenderContext, using_render_context
 from .styling import make_gradient
-from .symbols import collect_symbol_entries, draw_symbols_image
-from .tap_dance import draw_tap_dances_image
+from .symbols import FlowDirection, SymbolLegendEntry, collect_symbol_entries
 
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Title resolvers
+# ---------------------------------------------------------------------------
+
+
+def _resolve_image_title(config: SkimConfig) -> str:
+    """Pick the keymap title for the standalone images.
+
+    Falls back to ``"{first layer's variant or name} Layers Layout"``
+    when ``output.keymap_title`` isn't configured, and to the literal
+    ``"Keymap Layout"`` when there are no configured layers. Shared
+    by macros / tap-dances / special-keys / symbols entry points so
+    every standalone image carries the same title text.
+    """
+    if config.output.keymap_title:
+        return config.output.keymap_title
+    if config.keyboard.layers:
+        first = config.keyboard.layers[0]
+        return f"{first.variant or first.name} Layers Layout"
+    return "Keymap Layout"
+
+
 def _layer_title(config: SkimConfig, config_position: int, qmk_index: int) -> str:
-    """Resolve the layer's display title.
+    """Resolve the per-layer image's display title.
 
     Combines the configured layer ``name`` and ``variant`` into the
     header string the per-layer image paints. Four cases:
@@ -78,6 +117,11 @@ def _layer_title(config: SkimConfig, config_position: int, qmk_index: int) -> st
     return title
 
 
+# ---------------------------------------------------------------------------
+# Per-image entry points
+# ---------------------------------------------------------------------------
+
+
 def _draw_layer(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
@@ -90,7 +134,7 @@ def _draw_layer(
     raw_keymap: SvalboardKeymap[str] | None = None,
     keycode_mappings: KeycodeMappings | None = None,
 ) -> draw.Drawing:
-    """Build a per-layer image as a :class:`KeymapLayerDocument`.
+    """Render one layer's keymap image.
 
     The composable encodes the entire layout (header, keyboard area,
     optional macro / TD legend, optional symbol legend, optional
@@ -100,16 +144,13 @@ def _draw_layer(
     :func:`using_render_context` and every :func:`AdjustableText`
     registers its painted characters there during construction.
     """
-    layer_title = _layer_title(config, config_position, qmk_index)
-    copyright_text = config.output.copyright or ""
-
-    with using_render_context(ComposableRenderContext.build(config, keymap)):
+    with using_render_context(RenderContext.build(config, keymap)):
         return render(
             KeymapLayerDocument(
                 layer=layer,
                 qmk_index=qmk_index,
-                title=layer_title,
-                copyright=copyright_text,
+                title=_layer_title(config, config_position, qmk_index),
+                copyright=config.output.copyright or "",
                 macros=macros,
                 tap_dances=tap_dances,
                 raw_layer_keycodes=raw_layer_keycodes,
@@ -117,6 +158,119 @@ def _draw_layer(
                 keycode_mappings=keycode_mappings,
             )
         )
+
+
+def draw_overview(
+    config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+    raw_keymap: SvalboardKeymap[str] | None = None,
+    keycode_mappings: KeycodeMappings | None = None,
+) -> draw.Drawing:
+    """Render the multi-layer overview image."""
+    with using_render_context(RenderContext.build(config, keymap)):
+        return render(
+            KeymapOverviewDocument(
+                keymap=keymap,
+                title=_resolve_image_title(config),
+                copyright=config.output.copyright or "",
+                raw_keymap=raw_keymap,
+                keycode_mappings=keycode_mappings,
+            )
+        )
+
+
+def draw_macros_image(
+    config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+) -> draw.Drawing:
+    """Render the standalone macros image.
+
+    Body-scale is read from ``config.output.style.macros_scale`` (the
+    CLI ``--macros-scale`` flag updates that field upstream). Body
+    chips and pills scale by this factor; the chrome (title, footer,
+    outer padding) stays at the unscaled per-image size.
+    """
+    with using_render_context(RenderContext.build(config, keymap)):
+        return render(
+            KeymapMacroDocument(
+                macros=all_macros(keymap.macros),
+                title=_resolve_image_title(config),
+                copyright=config.output.copyright,
+                scale=config.output.style.macros_scale,
+            )
+        )
+
+
+def draw_tap_dances_image(
+    config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+) -> draw.Drawing:
+    """Render the standalone tap-dances image.
+
+    Body-scale is read from ``config.output.style.tap_dances_scale``
+    (the CLI ``--tap-dances-scale`` flag updates that field upstream).
+    """
+    with using_render_context(RenderContext.build(config, keymap)):
+        return render(
+            KeymapTapDanceDocument(
+                tap_dances=all_tap_dances(keymap.tap_dances),
+                title=_resolve_image_title(config),
+                copyright=config.output.copyright,
+                scale=config.output.style.tap_dances_scale,
+            )
+        )
+
+
+def draw_special_keys_image(
+    config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+) -> draw.Drawing:
+    """Render the combined special-keys image (macros left, tap-dances right)."""
+    with using_render_context(RenderContext.build(config, keymap)):
+        return render(
+            KeymapSpecialKeysDocument(
+                macros=all_macros(keymap.macros),
+                tap_dances=all_tap_dances(keymap.tap_dances),
+                title=_resolve_image_title(config),
+                copyright=config.output.copyright,
+            )
+        )
+
+
+def draw_symbols_image(
+    config: SkimConfig,
+    keymap: SvalboardKeymap[SvalboardTargetKey],
+    entries: list[SymbolLegendEntry],
+) -> draw.Drawing:
+    """Render the standalone symbols image from a pre-collected entry set.
+
+    Caller is expected to gate on ``entries`` being non-empty (and on
+    ``raw_keymap`` / ``keycode_mappings`` availability) — this entry
+    point doesn't surface "skipping" warnings of its own. Use
+    :func:`collect_symbol_entries` to build the entry set in the
+    caller's preferred order.
+
+    Body-scale is read from ``config.output.style.symbols_scale``
+    (the CLI ``--symbols-scale`` flag updates that field upstream).
+    """
+    flow_str = config.output.style.symbol_legend_flow
+    flow: FlowDirection = "row" if flow_str == "row" else "column"
+
+    with using_render_context(RenderContext.build(config, keymap)):
+        return render(
+            KeymapSymbolDocument(
+                entries=entries,
+                title=_resolve_image_title(config),
+                copyright=config.output.copyright,
+                flow=flow,
+                scale=config.output.style.symbols_scale,
+            )
+        )
+
+
+# ---------------------------------------------------------------------------
+# Top-level orchestrator
+# ---------------------------------------------------------------------------
 
 
 def _selected_layers(
@@ -143,9 +297,18 @@ def draw_keymap(
     raw_keymap: SvalboardKeymap[str] | None = None,
     keycode_mappings: KeycodeMappings | None = None,
 ) -> dict[str, draw.Drawing]:
+    """Top-level dispatch: render every image the targets request.
+
+    Returns a ``{filename_stem: Drawing}`` dict the caller writes to
+    disk. Per-image gating logic (skip when there are no macros to
+    render, etc.) lives here so the per-image entry points stay
+    config → Drawing without ``None``-returning paths.
+    """
     keymap_images: dict[str, draw.Drawing] = {}
     for qmk_idx, pos, layer in _selected_layers(keymap, targets, config):
-        # Flatten the raw keycodes for this layer (if available)
+        # Flatten the raw keycodes for this layer (if available) so the
+        # per-layer document can collect symbol-legend entries from the
+        # actual painted layer.
         raw_layer_keycodes: list[str] | None = None
         if raw_keymap is not None and qmk_idx in raw_keymap.layers:
             raw_layer = raw_keymap.layers[qmk_idx]
@@ -224,5 +387,10 @@ def draw_keymap(
 
 __all__ = [
     "draw_keymap",
+    "draw_macros_image",
+    "draw_overview",
+    "draw_special_keys_image",
+    "draw_symbols_image",
+    "draw_tap_dances_image",
     "make_gradient",
 ]
