@@ -13,7 +13,6 @@ import pytest
 from skim.application.render.geometry import (
     AspectRatio,
     Trapezoid,
-    dimensions_from_ratio,
 )
 from skim.domain.domain_types import Alignment
 
@@ -343,51 +342,3 @@ class TestAspectRatioEquality:
         s = {ar1, ar2, ar3}
         # ar1 and ar2 should deduplicate
         assert len(s) == 2
-
-
-class TestDimensionsFromRatio:
-    """Tests for dimensions_from_ratio function."""
-
-    def test_calculate_height_from_width(self):
-        """Calculate height when width is provided."""
-        ar = AspectRatio("16:9")
-        w, h = dimensions_from_ratio(ar, width=160, height=None)
-        assert w == 160
-        assert h == 90
-
-    def test_calculate_width_from_height(self):
-        """Calculate width when height is provided."""
-        ar = AspectRatio("16:9")
-        w, h = dimensions_from_ratio(ar, width=None, height=90)
-        assert w == 160
-        assert h == 90
-
-    def test_both_dimensions_returns_fit(self):
-        """When both provided, returns dimensions that fit."""
-        ar = AspectRatio("16:9")
-        w, h = dimensions_from_ratio(ar, width=160, height=100)
-        # Should fit within 160x100 maintaining 16:9
-        assert w <= 160
-        assert h <= 100
-        # Check ratio is maintained
-        assert abs(w / h - 16 / 9) < 0.01
-
-    def test_both_dimensions_width_constrains(self):
-        """When width is the constraint, use it."""
-        ar = AspectRatio("16:9")
-        w, h = dimensions_from_ratio(ar, width=160, height=200)
-        assert w == 160
-        assert h == 90
-
-    def test_both_dimensions_height_constrains(self):
-        """When height is the constraint, use it."""
-        ar = AspectRatio("16:9")
-        w, h = dimensions_from_ratio(ar, width=400, height=90)
-        assert w == 160
-        assert h == 90
-
-    def test_neither_dimension_raises(self):
-        """Both None raises ValueError."""
-        ar = AspectRatio("16:9")
-        with pytest.raises(ValueError, match="At least one"):
-            dimensions_from_ratio(ar, width=None, height=None)
