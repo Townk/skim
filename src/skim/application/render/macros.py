@@ -3,11 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""The macros section composables and standalone-image entry point.
+"""The macros section composables.
 
 * :class:`MacroMetrics` — sizing constants for the macro rows. Owns
-  every chip/pill/row pixel metric so the composables don't reach into
-  the legacy ``_LegendGeometry``.
+  every chip / pill / row pixel metric the composables consume.
 * :func:`MacroChip` — the colored ID tag with the script-glyph + id.
 * :func:`MacroPill` — one action pill: rounded rect with action icon
   on the left and a label centred in the post-icon region.
@@ -50,11 +49,9 @@ from .styling import derive_accent_line
 from .text import Font
 
 # ---------------------------------------------------------------------------
-# Per-doc-width ratios — owned by this module so the macros composables
-# don't need to consult the legacy ``_LegendGeometry``. Values mirror
-# the same ratios in ``legend.py`` (which still uses them for the
-# overview's imperative path); when the overview migrates the legend
-# copies retire and these stay.
+# Per-doc-width ratios — chip / pill / row pixel metrics expressed as
+# fractions of the document width so the macros section stays visually
+# proportional across canvas sizes.
 # ---------------------------------------------------------------------------
 
 _CHIP_WIDTH_RATIO = 56.0 / 1600.0
@@ -105,9 +102,7 @@ class MacroMetrics:
     The three universal table spacings (``table_col_spacing``,
     ``table_header_spacing``, ``table_row_spacing``) come from
     :class:`DocumentMetrics` so every table-shaped composable in the
-    image agrees on rhythm. The chip and pill ratios live on this
-    class so the macros composables don't reach into the legacy
-    ``_LegendGeometry``.
+    image agrees on rhythm.
     """
 
     # Universal table spacings — sourced from ``DocumentMetrics``.

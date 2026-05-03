@@ -12,21 +12,16 @@ extent. When the natural title-plus-gap-plus-logo extent overflows the
 available width, both elements shrink together by the same factor so
 the header fits.
 
-This module exposes the rendering pipeline both as composables —
-:func:`TitleText`, :func:`Logo`, :func:`Header` — and as legacy
-imperative helpers (:func:`append_header` and
-:func:`header_layout_height`) for call sites that haven't yet been
-ported to the composable API.
+Three composables: :func:`TitleText`, :func:`Logo`, :func:`Header`
+(the assembled title + spacer + logo Row).
 """
-
-from dataclasses import dataclass
 
 import drawsvg as draw
 
 from skim.assets import ASSETS
 
 from .composable import Composable
-from .primitives import Point, Row, Size, Spacer
+from .primitives import Row, Size, Spacer
 from .render_context import TextStyle
 from .text import Font
 
@@ -46,35 +41,6 @@ def _logo_width_for_height(height: float) -> float:
 # Floor on the title font size when shrinking so a tight canvas still
 # renders something legible (and never produces a degenerate ``0``).
 _MIN_TITLE_FONT_SIZE = 6.0
-
-# Default minimum gap between the title's right edge and the logo's
-# left edge, expressed as a multiple of the surrounding image padding.
-# Used by :func:`append_header` only — composable callers pass ``gap``
-# explicitly and choose their own multiplier.
-_MIN_GAP_PADDING_MULTIPLIER = 2.0
-
-
-# ---------------------------------------------------------------------------
-# Backward-compatible result type — kept so existing callers and tests
-# that import ``HeaderRenderResult`` continue to work.
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True, slots=True)
-class HeaderRenderResult:
-    """Outcome of an :func:`append_header` render."""
-
-    height: float
-    """Vertical extent of the header (= the matched logo / title height)."""
-
-    title_font_size: float
-    """Final title font size after any fit-to-canvas shrinking."""
-
-    logo_width: float
-    """Logo width actually used."""
-
-    logo_height: float
-    """Logo height actually used (matches the title's rendered bbox)."""
 
 
 # ---------------------------------------------------------------------------
@@ -185,34 +151,6 @@ def Logo(height: float):
     return size, draw_at
 
 
-def _build_header(
-    *,
-    title: str,
-    title_font_max_size: float,
-    min_gap: float,
-    max_width: float | None,
-    color: str,
-    use_system_fonts: bool,
-):
-    """Pure helper used by both the ctx-aware composable and ``append_header``.
-
-    Resolves the title font size against ``max_width``, builds the
-    title + spacer + logo Row, and returns the resulting Component.
-    Shared so the ctx-aware :func:`Header` and the legacy imperative
-    :func:`append_header` produce pixel-identical output.
-    """
-    font_size = _resolve_title_font_size(title, title_font_max_size, min_gap, max_width)
-    title_el = TitleText(title, font_size=font_size, color=color, use_system_fonts=use_system_fonts)
-    logo_el = Logo(height=title_el.size.height)
-
-    if max_width is None:
-        return Row([title_el, logo_el], gap=min_gap, align="center")
-
-    children_w = title_el.size.width + logo_el.size.width
-    spacer_w = max(min_gap, max_width - children_w)
-    return Row([title_el, Spacer(width=spacer_w), logo_el], gap=0.0, align="center")
-
-
 @Composable(use_context=True)
 def Header(
     ctx,
@@ -244,85 +182,20 @@ def Header(
     title, ``min_gap`` between, logo (no flex spacer to grow into).
     """
     typo: TextStyle = ctx.theme.typography.title
-    inner = _build_header(
-        title=title,
-        title_font_max_size=typo.size,
-        min_gap=min_gap,
-        max_width=max_width,
-        color=typo.color,
-        use_system_fonts=ctx.config.output.style.use_system_fonts,
+    use_system_fonts = ctx.config.output.style.use_system_fonts
+
+    font_size = _resolve_title_font_size(title, typo.size, min_gap, max_width)
+    title_el = TitleText(
+        title, font_size=font_size, color=typo.color, use_system_fonts=use_system_fonts
     )
-    return inner.size, inner.draw_at
+    logo_el = Logo(height=title_el.size.height)
+
+    if max_width is None:
+        return Row([title_el, logo_el], gap=min_gap, align="center")
+
+    children_w = title_el.size.width + logo_el.size.width
+    spacer_w = max(min_gap, max_width - children_w)
+    return Row([title_el, Spacer(width=spacer_w), logo_el], gap=0.0, align="center")
 
 
-# ---------------------------------------------------------------------------
-# Backward-compatible imperative helpers
-# ---------------------------------------------------------------------------
-
-
-def header_layout_height(title_text: str, title_font_max_size: float) -> float:
-    """Upper-bound header height for body layout.
-
-    Hosts call this before rendering to reserve space below the header.
-    Since the logo's height matches the title's rendered height and
-    both only ever shrink (never grow) past their natural sizes, the
-    natural rendered title height at ``title_font_max_size`` is the
-    safe upper bound.
-    """
-    return _title_rendered_size(title_text, title_font_max_size).height
-
-
-def append_header(
-    d: draw.Drawing,
-    *,
-    canvas_w: float,
-    padding: float,
-    title_text: str,
-    title_color: str,
-    title_font_max_size: float,
-    use_system_fonts: bool,
-    top_y: float | None = None,
-) -> HeaderRenderResult:
-    """Imperative wrapper that builds and paints a header without a context.
-
-    Used by call sites (per-layer / overview images) that haven't yet
-    been migrated to a :class:`RenderContext`-aware pipeline. Goes
-    through the same :func:`_build_header` helper as the ctx-aware
-    :func:`Header` composable so output stays pixel-identical.
-    """
-    if top_y is None:
-        top_y = padding
-    min_gap = _MIN_GAP_PADDING_MULTIPLIER * padding
-    max_width = canvas_w - 2 * padding
-
-    header = _build_header(
-        title=title_text,
-        title_font_max_size=title_font_max_size,
-        min_gap=min_gap,
-        max_width=max_width,
-        color=title_color,
-        use_system_fonts=use_system_fonts,
-    )
-    header.draw_at(d, Point(padding, top_y))
-
-    # Recover the per-element values for the legacy result type.
-    final_font_size = _resolve_title_font_size(title_text, title_font_max_size, min_gap, max_width)
-    final_title_size = _title_rendered_size(title_text, final_font_size)
-    final_logo_h = final_title_size.height
-    final_logo_w = _logo_width_for_height(final_logo_h)
-    return HeaderRenderResult(
-        height=header.size.height,
-        title_font_size=final_font_size,
-        logo_width=final_logo_w,
-        logo_height=final_logo_h,
-    )
-
-
-__all__ = [
-    "Header",
-    "HeaderRenderResult",
-    "Logo",
-    "TitleText",
-    "append_header",
-    "header_layout_height",
-]
+__all__ = ["Header", "Logo", "TitleText"]

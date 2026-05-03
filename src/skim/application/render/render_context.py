@@ -222,11 +222,8 @@ class Theme:
 _INSET_DEFAULT_RATIO = 40.0 / 1600.0
 
 # Per-doc-width ratios for the four cross-cutting spacings populated
-# on :class:`DocumentMetrics`. Owned here so :meth:`from_config` no
-# longer reaches into the legacy ``_LegendGeometry``. The values mirror
-# the same ratios in ``legend.py`` (which still uses them for the
-# overview's imperative path); when the overview migrates the legend
-# copies retire and these stay.
+# on :class:`DocumentMetrics`. Expressed as fractions of the document
+# width so the document's internal rhythm scales together with chrome.
 _COLUMN_GAP_RATIO = 40.0 / 1600.0
 _SECTION_SPACING_RATIO = 24.0 / 1600.0
 _TABLE_HEADER_SPACING_RATIO = 12.0 / 1600.0

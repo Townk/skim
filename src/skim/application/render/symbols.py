@@ -38,10 +38,9 @@ from .symbol_legend import SymbolLegendEntry
 from .text import Font
 
 # ---------------------------------------------------------------------------
-# Per-doc-width ratios — owned by this module so :class:`SymbolMetrics`
-# stays self-contained. The ratios mirror the legacy ones in
-# ``symbol_legend.py`` (still used by the per-layer / overview imperative
-# path); when that legacy code retires the duplicates retire too.
+# Per-doc-width ratios — entry-row / glyph / description typography.
+# Expressed as fractions of the document width so the symbols section
+# stays visually proportional across canvas sizes.
 # ---------------------------------------------------------------------------
 
 _ENTRY_ROW_HEIGHT_RATIO = 20.0 / 1600.0

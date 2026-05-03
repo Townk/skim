@@ -47,7 +47,7 @@ from .text import Font
 
 # ---------------------------------------------------------------------------
 # Per-doc-width chrome ratios — connector / endpoint / circle stroke.
-# Mirror the legacy :mod:`indicators` module's ratios so the rendered
+# Expressed as fractions of the document width so the rendered
 # indicator chrome stays visually proportional across canvas sizes.
 # ---------------------------------------------------------------------------
 

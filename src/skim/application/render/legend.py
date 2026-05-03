@@ -164,9 +164,7 @@ def build_action_glyph(
 
     Glyph dimensions scale with ``doc_width`` so the legend stays visually
     consistent across output sizes. Reads its sizing constants directly
-    from the ``_GLYPH_*_RATIO`` constants below — no consult of the
-    legacy ``_LegendGeometry`` god-object — so the call site stays
-    self-contained.
+    from the ``_GLYPH_*_RATIO`` constants below.
     """
     r = doc_width * _GLYPH_DOT_RADIUS_RATIO
     half = doc_width * _GLYPH_TRIANGLE_HALF_RATIO

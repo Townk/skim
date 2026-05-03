@@ -50,10 +50,9 @@ if TYPE_CHECKING:
 
 
 # ---------------------------------------------------------------------------
-# Per-doc-width ratios — owned by this module so :class:`TapDanceMetrics`
-# doesn't reach into the legacy ``_LegendGeometry``. Mirror the same
-# ratios in ``legend.py`` (which still uses them for the overview's
-# imperative path); when the overview migrates the legend copies retire.
+# Per-doc-width ratios — chip / cell / name-column / column-header
+# typography. Sized as fractions of the document width so chip and
+# cell rendering stays visually proportional across canvas sizes.
 # ---------------------------------------------------------------------------
 
 _CHIP_WIDTH_RATIO = 56.0 / 1600.0
@@ -107,9 +106,7 @@ class TapDanceMetrics:
     cell / row / column-header dimensions plus the title-strip
     column-label typography. The three universal table spacings come
     from :class:`DocumentMetrics` so every table-shaped composable in
-    the image agrees on rhythm; the chip / cell / row ratios live on
-    this class so the tap-dance composables don't reach into the
-    legacy ``_LegendGeometry``.
+    the image agrees on rhythm.
     """
 
     # Chip (the colored tag with the keyboard-close icon + id)

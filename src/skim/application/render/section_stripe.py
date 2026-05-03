@@ -22,10 +22,10 @@ from .composable import Composable
 from .primitives import Size
 
 # ---------------------------------------------------------------------------
-# Per-doc-width ratios — owned by this module so :class:`SectionStripeMetrics`
-# doesn't reach into the legacy ``_LegendGeometry``. Mirror the same ratios
-# in ``legend.py`` (which still uses them for the overview's imperative
-# title-strip drawer); when the overview migrates the legend copies retire.
+# Per-doc-width ratios — title font size, letter spacing, rule
+# offset, and the count-suffix typography. Sized as fractions of
+# the document width so the title strip stays visually proportional
+# across canvas sizes.
 # ---------------------------------------------------------------------------
 
 _TITLE_FONT_SIZE_RATIO = 11.0 / 1600.0
