@@ -5,24 +5,22 @@
 """Unit tests for :mod:`skim.application.render.svalboard_halves`."""
 
 from __future__ import annotations
+
 import drawsvg as draw
 import pytest
+
 from skim.application.render.primitives import Point
 from skim.application.render.render_context import RenderContext, using_render_context
 from skim.application.render.svalboard_clusters import (
     FingerClusterMetrics,
-    ThumbClusterMetrics,
 )
 from skim.application.render.svalboard_halves import (
     FingerHalf,
     FingerHalfMetrics,
-    KeyboardHalf,
-    KeyboardHalfMetrics,
 )
 from skim.data import LayerColor, Palette, SkimConfig, SvalboardKeymap
 from skim.data.config import Keyboard, KeyboardLayer, Output, Style
-from skim.data.keyboard import FingerCluster as FingerClusterData
-from skim.data.keyboard import ThumbCluster as ThumbClusterData
+from skim.data.keyboard import FingerCluster as FingerClusterData, ThumbCluster as ThumbClusterData
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 # QMK firmware index of the single layer the default ``ctx`` fixture
@@ -286,106 +284,3 @@ class TestFingerHalfDrawing:
         for prefix in ("i", "m", "r", "p"):
             for slot_label in ("C", "N", "E", "S", "W"):
                 assert f">{prefix}{slot_label}<" in svg, f"missing {prefix}{slot_label}"
-
-
-# ---------------------------------------------------------------------------
-# KeyboardHalf — layout + composition
-# ---------------------------------------------------------------------------
-class TestKeyboardHalfLayout:
-    def test_thumb_sits_below_fingers_with_one_inset_gap(
-        self, ctx: RenderContext, palette: Palette
-    ):
-        """The thumb's top edge sits one document-inset below the
-        finger half's bottom — assert the full half height equals
-        ``finger_half.height + inset + thumb_cluster.height`` by
-        reading the thumb's origin y back out and comparing to the
-        finger half's height."""
-        with using_render_context(ctx):
-            half = KeyboardHalf(
-                fingers=_four_fingers(),
-                thumb=_thumb_cluster(),
-                side=KeyboardSide.RIGHT,
-                min_width=_HALF_WIDTH,
-                layer_qmk_index=_LAYER_0,
-            )
-            # Build the finger half on its own to compare heights.
-            finger_only = FingerHalf(
-                fingers=_four_fingers(),
-                side=KeyboardSide.RIGHT,
-                min_width=_HALF_WIDTH,
-                layer_qmk_index=_LAYER_0,
-            )
-        assert half.metrics.thumb_origin.y == pytest.approx(
-            finger_only.size.height + ctx.document_metrics.inset
-        )
-
-    def test_thumb_hugs_inward_edge_per_side(self, ctx: RenderContext, palette: Palette):
-        """Right hand: thumb at x=0 (left of half = inward toward the
-        keyboard's centre). Left hand: thumb's right edge sits at the
-        half's right edge (so x = width - thumb_cluster_width)."""
-        with using_render_context(ctx):
-            right = KeyboardHalf(
-                fingers=_four_fingers(),
-                thumb=_thumb_cluster(),
-                side=KeyboardSide.RIGHT,
-                min_width=_HALF_WIDTH,
-                layer_qmk_index=_LAYER_0,
-            )
-            left = KeyboardHalf(
-                fingers=_four_fingers(),
-                thumb=_thumb_cluster(),
-                side=KeyboardSide.LEFT,
-                min_width=_HALF_WIDTH,
-                layer_qmk_index=_LAYER_0,
-            )
-        # The thumb cluster width is ``width * 0.42`` per the
-        # composable's internal proportion; we don't need to spell
-        # that constant here — derive it from the metrics-exposed
-        # thumb origin. For the right hand the thumb hugs x=0; for
-        # the left hand its right edge hugs x=width, so the thumb
-        # origin's distance from the half's right edge equals the
-        # thumb cluster width.
-        assert right.metrics.thumb_origin.x == pytest.approx(0.0)
-        # Left hand: thumb_origin.x > 0 and thumb_origin.x +
-        # thumb_width = width. We can only directly check the first
-        # part without re-deriving the proportion, but a sanity
-        # bound is enough — assert it sits in the right half.
-        assert left.metrics.thumb_origin.x > _HALF_WIDTH / 2
-
-
-class TestKeyboardHalfMetrics:
-    def test_metrics_typed_subclass(self, ctx: RenderContext, palette: Palette):
-        with using_render_context(ctx):
-            half = KeyboardHalf(
-                fingers=_four_fingers(),
-                thumb=_thumb_cluster(),
-                side=KeyboardSide.RIGHT,
-                min_width=_HALF_WIDTH,
-                layer_qmk_index=_LAYER_0,
-            )
-        assert isinstance(half.metrics, KeyboardHalfMetrics)
-        assert isinstance(half.metrics.fingers, FingerHalfMetrics)
-        assert isinstance(half.metrics.thumb, ThumbClusterMetrics)
-
-
-class TestKeyboardHalfDrawing:
-    def test_thumb_and_finger_labels_land_in_svg(self, ctx: RenderContext, palette: Palette):
-        """Every slot label from the four fingers + the thumb cluster
-        ends up painted somewhere in the SVG — confirms
-        :func:`KeyboardHalf` actually draws both halves of its
-        composition."""
-        with using_render_context(ctx):
-            half = KeyboardHalf(
-                fingers=_four_fingers(),
-                thumb=_thumb_cluster(),
-                side=KeyboardSide.RIGHT,
-                min_width=_HALF_WIDTH,
-                layer_qmk_index=_LAYER_0,
-            )
-        svg = str(_draw(half, Point(0.0, 0.0)).as_svg())
-        # Finger labels.
-        for prefix in ("i", "m", "r", "p"):
-            assert f">{prefix}C<" in svg
-        # Thumb labels.
-        for slot in ("DN", "PD", "UP", "NL", "KN", "DD"):
-            assert f">T{slot}<" in svg

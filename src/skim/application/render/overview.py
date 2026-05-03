@@ -21,7 +21,6 @@ from skim.data import KeycodeMappings, SkimConfig, SvalboardKeymap, SvalboardLay
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .components import FingerClusterComponent, ThumbClusterComponent
-from .render_context import RenderContext as ComposableRenderContext, using_render_context
 from .connectors import (
     ConnectorRouting,
     OverviewLayerSource,
@@ -57,6 +56,7 @@ from .overview_layout import (
     _badge_padding_right,
     _outer_padding,
 )
+from .render_context import RenderContext as ComposableRenderContext, using_render_context
 from .symbol_legend import (
     build_symbol_legend,
     collect_used_descriptions,
