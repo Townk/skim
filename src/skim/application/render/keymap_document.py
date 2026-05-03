@@ -198,9 +198,7 @@ def KeymapLayerDocument(
     # only one section is present.
     col_gap = metrics.column_gap
     col_w = (content_w - col_gap) / 2 if macro_entries and td_entries else content_w
-    macro_section = (
-        MacroSection(macros=macro_entries, content_width=col_w) if macro_entries else None
-    )
+    macro_section = MacroSection(macros=macro_entries, max_width=col_w) if macro_entries else None
     td_section = TapDanceSection(tap_dances=td_entries, max_width=col_w) if td_entries else None
 
     symbol_section = None
@@ -294,9 +292,7 @@ def KeymapOverviewDocument(
 
     col_gap = metrics.column_gap
     col_w = (content_w - col_gap) / 2 if macro_entries and td_entries else content_w
-    macro_section = (
-        MacroSection(macros=macro_entries, content_width=col_w) if macro_entries else None
-    )
+    macro_section = MacroSection(macros=macro_entries, max_width=col_w) if macro_entries else None
     td_section = TapDanceSection(tap_dances=td_entries, max_width=col_w) if td_entries else None
 
     # Symbol legend — union across all rendered layers.
@@ -380,18 +376,16 @@ def KeymapMacroDocument(
         return Spacer()
 
     # Local import — :mod:`macros` imports from this module.
-    from .macros import MacroSection, macro_natural_widths
+    from .macros import MacroSection
 
     metrics = ctx.document_metrics
     content_offset = metrics.margin + metrics.border_width + metrics.inset
     initial_content_w = metrics.doc_width - 2 * content_offset
 
-    natural_widths = macro_natural_widths(macros, scale=scale)
-    longest_natural = max(natural_widths) if natural_widths else 0.0
-    no_wrapping = longest_natural <= initial_content_w
-    content_w = longest_natural if (no_wrapping and longest_natural > 0) else initial_content_w
-
-    section = MacroSection(macros=macros, content_width=content_w, wrap_content=True, scale=scale)
+    section = MacroSection(
+        macros=macros, max_width=initial_content_w, wrap_content=True, scale=scale
+    )
+    content_w = section.size.width
 
     with Column(gap=metrics.inset, align="start") as content:
         Header(title=title, min_gap=2 * metrics.inset, max_width=content_w)
@@ -501,7 +495,7 @@ def KeymapSpecialKeysDocument(
     # Without it the table falls back to the legacy fixed name-column
     # width and either over-truncates short names or fails to fit
     # long ones.
-    macro_section = MacroSection(macros=macros, content_width=col_w) if macros else None
+    macro_section = MacroSection(macros=macros, max_width=col_w) if macros else None
     td_section = TapDanceSection(tap_dances=tap_dances, max_width=col_w) if tap_dances else None
 
     with Column(gap=metrics.inset, align="start") as content:

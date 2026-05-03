@@ -19,11 +19,9 @@
   sub-blocks.
 * :func:`MacroSection` — a ``MACROS`` :func:`SectionStripe` followed
   by a :func:`MacroTable`, laid out in a Column with the section's
-  standard inter-strip / body gap.
-* :func:`macro_natural_widths` — pre-pass helper that reports each
-  macro's natural single-line width; used by image entry points to
-  decide whether to shrink the canvas to wrap content.
-* :func:`draw_macros_image` — the standalone macros image entry point.
+  standard inter-strip / body gap. Owns the natural-width pre-pass
+  internally so the document layer just passes a ``max_width``
+  budget.
 """
 
 from __future__ import annotations
@@ -42,11 +40,7 @@ from skim.domain import (
 from .adjustable_text import AdjustableText, measure_text_width
 from .composable import Composable
 from .primitives import Column, Component, MetricsComponent, Point, Size
-from .render_context import (
-    RenderContext,
-    TextStyle,
-    current_render_context,
-)
+from .render_context import RenderContext, TextStyle
 from .rich_text import RichText, parse_into_spans
 from .section_data import format_key_label
 from .section_stripe import SectionStripe, SectionStripeMetrics
@@ -202,7 +196,7 @@ def _pill_width(label: str, *, metrics: MacroMetrics) -> float:
     """Compute the pill width that wraps ``label`` exactly.
 
     Mirrors what :func:`MacroPill` produces so wrap-detection
-    (:func:`macro_natural_widths`) and the painted pills agree on
+    (:func:`_macro_natural_widths`) and the painted pills agree on
     width without instantiating composables. Walks the spans
     :func:`parse_into_spans` would emit for the label and sums each
     span's PIL-measured width at the pill's font size; ``Font.SYMBOLS``
@@ -657,23 +651,19 @@ def MacroRow(
 
 
 # ---------------------------------------------------------------------------
-# Pre-pass helper
+# Internal pre-pass helper used by :func:`MacroSection` to decide
+# whether the canvas can snug to the macros' natural single-line
+# width (no pill wrapping) or has to spend the full max_width budget.
 # ---------------------------------------------------------------------------
 
 
-def macro_natural_widths(macros: list, *, scale: float = 1.0) -> list[float]:
+def _macro_natural_widths(macros: list, *, metrics: MacroMetrics) -> list[float]:
     """Width each macro would render at if every pill sat on a single line.
 
-    Used by image entry points to decide whether the canvas can shrink
-    to wrap content. Mirrors what :func:`MacroPillRow` would lay out
-    against an unbounded width: per-pill widths summed plus
-    inter-pill ``table_col_spacing``, then offset by the chip indent.
-
-    Reads the active :class:`RenderContext` so the values match what
-    :func:`MacroTable` will lay out — caller doesn't pass ``doc_width``.
+    Mirrors what :func:`MacroPillRow` would lay out against an
+    unbounded width: per-pill widths summed plus inter-pill
+    ``table_col_spacing``, then offset by the chip indent.
     """
-    ctx = current_render_context()
-    metrics = MacroMetrics.from_ctx(ctx, scale=scale)
     indent = metrics.chip_width + metrics.table_header_spacing
     widths: list[float] = []
     for macro in macros:
@@ -753,7 +743,7 @@ def MacroSection(
     ctx,
     *,
     macros: list,
-    content_width: float,
+    max_width: float,
     wrap_content: bool = False,
     scale: float = 1.0,
 ):
@@ -764,15 +754,14 @@ def MacroSection(
     inter-strip / body gap. Both the standalone macros image and the
     combined special-keys image render this composable directly.
 
-    ``content_width`` is the layout budget passed to :func:`MacroTable`
-    for pill-wrap detection — pills wrap to extra lines when they
-    don't fit. ``wrap_content`` controls whether the
-    :func:`SectionStripe` snugs to the table's natural width
-    (``True`` — standalone-image case, the section reports a tight
-    width and the canvas wraps it) or spans the full
-    ``content_width`` slot (``False`` — combined / per-layer case,
-    the section reports ``content_width`` so the parent column gets
-    the slot width it asked for).
+    ``max_width`` is the layout budget the section may spend. The
+    section runs a natural-width pre-pass internally so the standalone
+    case (``wrap_content=True``) snugs to the longest macro's
+    single-line width when it fits, falling back to the full budget
+    when it doesn't (pills then wrap inside the table).
+    ``wrap_content=False`` keeps the table at the full ``max_width``
+    so the parent column gets the slot width it asked for; pills wrap
+    inside as needed.
 
     ``scale`` is forwarded to the underlying :func:`MacroTable` so the
     chips / pills enlarge while the section title strip stays at the
@@ -782,6 +771,15 @@ def MacroSection(
     accent_fill = palette.macro_color
     accent_line = derive_accent_line(accent_fill)
     stripe_metrics = SectionStripeMetrics.for_doc_width(ctx.config.output.layout.width)
+
+    if wrap_content:
+        table_metrics = MacroMetrics.from_ctx(ctx, scale=scale)
+        natural_widths = _macro_natural_widths(macros, metrics=table_metrics)
+        longest_natural = max(natural_widths) if natural_widths else 0.0
+        snug = 0.0 < longest_natural <= max_width
+        content_width = longest_natural if snug else max_width
+    else:
+        content_width = max_width
 
     table = MacroTable(
         macros=macros,
@@ -812,14 +810,4 @@ def MacroSection(
     )
 
 
-__all__ = [
-    "MacroChip",
-    "MacroMetrics",
-    "MacroPill",
-    "MacroPillRow",
-    "MacroRow",
-    "MacroSection",
-    "MacroSectionMetrics",
-    "MacroTable",
-    "macro_natural_widths",
-]
+__all__ = ["MacroSection"]
