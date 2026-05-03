@@ -40,7 +40,7 @@ from dataclasses import dataclass
 
 from skim.data import LayerColor, SplitSidePosition
 from skim.data.keyboard import FingerCluster as FingerClusterData, ThumbCluster as ThumbClusterData
-from skim.domain import KeyboardSide, KeyDirection, SvalboardTargetKey
+from skim.domain import SEPARATOR_CHAR, KeyboardSide, KeyDirection, SvalboardTargetKey
 
 from .composable import Composable
 from .layer_indicator import LayerIndicator, LayerIndicatorMetrics
@@ -442,16 +442,15 @@ def _adjust_hold_symbol_label(
     """
     if position is SplitSidePosition.QMK_DEFINED or not label:
         return label
-    sep = "|"
-    if sep not in label:
+    if SEPARATOR_CHAR not in label:
         return label
-    prefix, suffix = label.split(sep, 1)
+    prefix, suffix = label.split(SEPARATOR_CHAR, 1)
     is_outward = (position is SplitSidePosition.OUTWARD and side is KeyboardSide.LEFT) or (
         position is SplitSidePosition.INWARD and side is KeyboardSide.RIGHT
     )
     if is_outward:
-        return f"{suffix}{sep}{prefix}"
-    return f"{prefix}{sep}{suffix}"
+        return f"{suffix}{SEPARATOR_CHAR}{prefix}"
+    return f"{prefix}{SEPARATOR_CHAR}{suffix}"
 
 
 def _adjust_cluster_hold_symbols(
