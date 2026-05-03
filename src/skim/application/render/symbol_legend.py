@@ -23,7 +23,7 @@ Public entry point: :func:`collect_used_descriptions`.
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -75,44 +75,43 @@ class SymbolLegendEntry:
 
 # ---------------------------------------------------------------------------
 # Category ordering
+#
+# The YAML's ``symbol_descriptions`` and ``function_descriptions`` are
+# nested ``{category_name: {keycode: description}}`` mappings; the loader
+# captures the YAML insertion order as ``symbol_category_order`` /
+# ``function_category_order`` tuples. Sorting honours that order so the
+# legend reflects the YAML author's grouping without a duplicate
+# constant in this file. Uncategorized / unknown categories sort to the
+# end with the YAML order acting as the tie-breaker.
 # ---------------------------------------------------------------------------
 
-_CATEGORY_ORDER = (
-    "Layers",
-    "Modifiers",
-    "Lock Keys",
-    "International",
-    "Editing",
-    "Navigation",
-    "Commands",
-    "Browser",
-    "Desktop",
-    "Quantum",
-    "Media Keys",
-    "RGB",
-    "Mouse",
-    "Number Pad",
-    "Special Keys",
-    "Svalboard",
-)
 
+def _build_entry_sort_key(
+    keycode_mappings: KeycodeMappings,
+) -> Callable[[SymbolLegendEntry], tuple]:
+    """Return a sort-key callable bound to the YAML's category order.
 
-def _category_index(name: str) -> int:
-    """Position in the category order.  Uncategorized entries sort last."""
-    try:
-        return _CATEGORY_ORDER.index(name)
-    except ValueError:
-        return len(_CATEGORY_ORDER)
+    Symbol categories are listed first, then any function-only categories
+    appear after them. Numeric ``sort_key`` values sort ahead of
+    lexicographic ones within a category (so layer indices ``0..9`` group
+    cleanly even when other categories use textual sort keys).
+    """
+    sym_order: tuple[str, ...] = tuple(keycode_mappings.get("symbol_category_order", ()))
+    func_order: tuple[str, ...] = tuple(keycode_mappings.get("function_category_order", ()))
+    seen: set[str] = set(sym_order)
+    merged = sym_order + tuple(c for c in func_order if c not in seen)
+    index_by_name = {name: i for i, name in enumerate(merged)}
+    fallback = len(merged)
 
+    def sort_key(entry: SymbolLegendEntry) -> tuple:
+        cat_idx = index_by_name.get(entry.category, fallback)
+        try:
+            sort_pair: tuple = (0, int(entry.sort_key))
+        except (ValueError, TypeError):
+            sort_pair = (1, entry.sort_key)
+        return (cat_idx,) + sort_pair
 
-def _entry_sort_key(entry: SymbolLegendEntry) -> tuple:
-    """Return a composite sort key: (category_index, numeric_flag, sort_key)."""
-    cat_idx = _category_index(entry.category)
-    try:
-        sort_pair: tuple = (0, int(entry.sort_key))
-    except (ValueError, TypeError):
-        sort_pair = (1, entry.sort_key)
-    return (cat_idx,) + sort_pair
+    return sort_key
 
 
 # ---------------------------------------------------------------------------
@@ -626,4 +625,4 @@ def collect_used_descriptions(
     _collect_raw(
         keycodes, keymap, keycode_mappings, out, set(), include_transparent=include_transparent
     )
-    return sorted(out.values(), key=_entry_sort_key)
+    return sorted(out.values(), key=_build_entry_sort_key(keycode_mappings))

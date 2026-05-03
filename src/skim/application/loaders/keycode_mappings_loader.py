@@ -64,9 +64,9 @@ def _merge_nested_descriptions(
 
 def _flatten_descriptions(
     raw: dict,
-) -> tuple[dict[str, str], dict[str, str]]:
-    """Flatten a possibly-nested descriptions dict into a flat mapping and a
-    category map.
+) -> tuple[dict[str, str], dict[str, str], tuple[str, ...]]:
+    """Flatten a possibly-nested descriptions dict into a flat mapping, a
+    category map, and the category order in source-insertion order.
 
     Supports two formats:
 
@@ -78,18 +78,25 @@ def _flatten_descriptions(
 
     Returns
     -------
-    tuple[dict[str, str], dict[str, str]]
-        ``(flat, categories)`` where *flat* maps each keycode to its
-        description string and *categories* maps each keycode to its category
-        name.
+    tuple[dict[str, str], dict[str, str], tuple[str, ...]]
+        ``(flat, categories, order)`` where *flat* maps each keycode to its
+        description string, *categories* maps each keycode to its category
+        name, and *order* is the category names in the order they first
+        appear in ``raw`` — so the symbol legend can sort entries against
+        the ordering the YAML author chose without a separate constant.
     """
     flat: dict[str, str] = {}
     categories: dict[str, str] = {}
+    order: list[str] = []
+    seen_order: set[str] = set()
 
     for key, value in raw.items():
         if isinstance(value, dict):
             # Nested format: key is the category name, value is {kc: desc}.
             category_name = key
+            if category_name not in seen_order:
+                order.append(category_name)
+                seen_order.add(category_name)
             for keycode, desc in value.items():
                 flat[keycode] = desc
                 categories[keycode] = category_name
@@ -97,8 +104,11 @@ def _flatten_descriptions(
             # Flat format: key is the keycode, value is the description string.
             flat[key] = value
             categories[key] = _UNCATEGORIZED
+            if _UNCATEGORIZED not in seen_order:
+                order.append(_UNCATEGORIZED)
+                seen_order.add(_UNCATEGORIZED)
 
-    return flat, categories
+    return flat, categories, tuple(order)
 
 
 @lru_cache(maxsize=1)
@@ -121,8 +131,10 @@ def load_keycode_mappings(keycodes_config: Keycodes) -> KeycodeMappings:
         - ``modifier_union``: Modifier constant mappings
         - ``symbol_descriptions``: Flat keycode-to-description map
         - ``symbol_categories``: Keycode-to-category-name map
+        - ``symbol_category_order``: Category names in YAML insertion order
         - ``function_descriptions``: Flat function-name-to-description map
         - ``function_categories``: Function-name-to-category-name map
+        - ``function_category_order``: Category names in YAML insertion order
     """
     mapping_path = ASSETS.keycode_mappings
     mapping = yaml.safe_load(mapping_path.read_text())
@@ -149,13 +161,15 @@ def load_keycode_mappings(keycodes_config: Keycodes) -> KeycodeMappings:
     # Flatten nested symbol_descriptions and function_descriptions, building
     # parallel category maps for use by the symbol legend renderer.
     raw_symbol = mapping["symbol_descriptions"]
-    flat_symbol, sym_cats = _flatten_descriptions(raw_symbol)
+    flat_symbol, sym_cats, sym_order = _flatten_descriptions(raw_symbol)
     mapping["symbol_descriptions"] = flat_symbol
     mapping["symbol_categories"] = sym_cats
+    mapping["symbol_category_order"] = sym_order
 
     raw_func = mapping["function_descriptions"]
-    flat_func, func_cats = _flatten_descriptions(raw_func)
+    flat_func, func_cats, func_order = _flatten_descriptions(raw_func)
     mapping["function_descriptions"] = flat_func
     mapping["function_categories"] = func_cats
+    mapping["function_category_order"] = func_order
 
     return MappingProxyType(mapping)
