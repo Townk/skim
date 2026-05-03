@@ -121,22 +121,26 @@ def KeymapLayer(
 
     # Top chrome — the larger of the two halves' top overflows
     # (north-facing indicators above middle / ring clusters).
+    # ``overflow_offset.y`` is negative on sides with overflow, so
+    # negate to recover the magnitude.
     top_chrome = max(
-        left_half.metrics.overflow_offset.y,
-        right_half.metrics.overflow_offset.y,
+        -left_half.metrics.overflow_offset.y,
+        -right_half.metrics.overflow_offset.y,
     )
 
     # Horizontal chrome — inward bleed (right edge of left half /
     # left edge of right half) widens the centre gap and pushes
     # the right half outward, mirroring the legacy
-    # ``horizontal_indicator_offset`` policy.
+    # ``horizontal_indicator_offset`` policy. Right-edge overflow =
+    # ``(overflow_size.width - size.width) + overflow_offset.x``
+    # since ``overflow_offset.x`` is negative for left overflow.
     left_inward = max(
         0.0,
         left_half.metrics.overflow_size.width
         - left_half.size.width
-        - left_half.metrics.overflow_offset.x,
+        + left_half.metrics.overflow_offset.x,
     )
-    right_inward = right_half.metrics.overflow_offset.x
+    right_inward = -right_half.metrics.overflow_offset.x
     horizontal_chrome = max(left_inward, right_inward)
 
     half_height = max(left_half.size.height, right_half.size.height)

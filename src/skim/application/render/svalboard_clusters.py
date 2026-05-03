@@ -121,12 +121,15 @@ def _overflow_from_indicators(
 
     Returns ``(overflow_size, overflow_offset)`` — the strictly-
     enclosing bbox covering both the keys-only bbox and every
-    present indicator's circle, plus the offset from that overflow
-    bbox's top-left corner to the component's own ``(0, 0)``
-    origin. Mirror of ``Size`` / ``Point`` semantics used by
-    :class:`MetricsComponent`: callers position the overflow bbox
-    on the parent at ``parent_origin - overflow_offset`` to align
-    the keys-only origin at ``parent_origin``.
+    present indicator's circle, plus the offset vector FROM the
+    component's own ``(0, 0)`` origin TO the overflow bbox's
+    top-left corner. ``overflow_offset.x`` is ``0`` when no
+    overflow extends LEFT of the origin and NEGATIVE by the
+    overflow magnitude when it does; same for y above the origin.
+    Callers compose the offset directly: a child placed at
+    ``origin`` lays its overflow TL at ``origin + overflow_offset``,
+    and the right edge at ``origin + overflow_offset +
+    overflow_size``.
     """
     min_x = 0.0
     min_y = 0.0
@@ -144,7 +147,7 @@ def _overflow_from_indicators(
         max_y = max(max_y, cy + r)
     return (
         Size(max_x - min_x, max_y - min_y),
-        Point(-min_x, -min_y),
+        Point(min_x, min_y),
     )
 
 
@@ -156,11 +159,11 @@ def _overflow_from_children(
     """Bbox-union a parent's keys-only size with its children's overflows.
 
     Each child contributes its own overflow rectangle, expressed in
-    parent-local coords by subtracting the child's
-    ``overflow_offset`` from its placement origin to recover the
-    overflow box's top-left corner. The result encloses both the
-    parent's keys-only bbox starting at ``(0, 0)`` and every
-    child's overflow rectangle.
+    parent-local coords as ``origin + overflow_offset`` (the offset
+    is the vector FROM origin TO the overflow's top-left, so it's
+    negative when the overflow extends LEFT or ABOVE the origin).
+    The result encloses both the parent's keys-only bbox starting
+    at ``(0, 0)`` and every child's overflow rectangle.
 
     ``children`` is a sequence of ``(origin, overflow_size,
     overflow_offset)`` tuples — the child's draw origin in parent
@@ -172,15 +175,15 @@ def _overflow_from_children(
     max_x = parent_size.width
     max_y = parent_size.height
     for origin, ovr_size, ovr_offset in children:
-        tl_x = origin.x - ovr_offset.x
-        tl_y = origin.y - ovr_offset.y
+        tl_x = origin.x + ovr_offset.x
+        tl_y = origin.y + ovr_offset.y
         min_x = min(min_x, tl_x)
         min_y = min(min_y, tl_y)
         max_x = max(max_x, tl_x + ovr_size.width)
         max_y = max(max_y, tl_y + ovr_size.height)
     return (
         Size(max_x - min_x, max_y - min_y),
-        Point(-min_x, -min_y),
+        Point(min_x, min_y),
     )
 
 
@@ -205,11 +208,12 @@ class FingerClusterMetrics:
     ``overflow_size`` and ``overflow_offset`` describe the cluster's
     overflow bbox — the strictly-enclosing rectangle covering both
     the keys-only bbox (the cluster's :attr:`Size`) and every
-    present indicator. The offset is measured from the overflow
-    bbox's top-left corner to the cluster's own ``(0, 0)`` origin,
-    so the parent :func:`FingerHalf` / :func:`KeyboardHalf` can
-    bbox-union these against its placement to surface its own
-    overflow without re-walking the indicators.
+    present indicator. The offset is the vector FROM the cluster's
+    own ``(0, 0)`` origin TO the overflow bbox's top-left corner,
+    so it's ``0`` on a side without overflow and NEGATIVE by the
+    overflow magnitude on a side that has it. The parent half
+    composes ``origin + overflow_offset`` to read the overflow
+    rectangle in parent coords without re-walking the indicators.
     """
 
     center_key: SvalboardKeyMetrics
@@ -879,14 +883,15 @@ class ThumbClusterMetrics:
     slots without one).
 
     ``overflow_size`` and ``overflow_offset`` describe the
-    cluster's overflow bbox vs its keys-only :attr:`Size`. The
+    cluster's overflow bbox vs its keys-only :attr:`Size` (offset
+    is the vector FROM the cluster origin TO the overflow's TL —
+    negative on sides with overflow, zero otherwise). The
     double-down key's NORTH indicator dominates the top edge in
     practice (it sits on top of the down key whose top edge IS the
     cluster top, so its full ``gap + diameter`` overhang shows up
-    in ``overflow_offset.y``); nail / knuckle indicators contribute
-    to the inward side and pad / up to the outward side. The
-    parent :func:`KeyboardHalf` bbox-unions these against the
-    thumb's placement to surface the half's own overflow.
+    in ``overflow_offset.y`` as a negative magnitude); nail /
+    knuckle indicators contribute to the inward side and pad / up
+    to the outward side.
     """
 
     down_key: SvalboardKeyMetrics

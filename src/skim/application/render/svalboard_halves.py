@@ -425,7 +425,11 @@ def KeyboardHalf(
     #    hand → thumb's left edge at the half's left edge (x=0);
     #    left hand → thumb's right edge at the half's right edge
     #    (so x = min_width - thumb_cluster_width).
-    thumb_y = finger_half.size.height + inset + thumb_cluster.metrics.overflow_offset.y
+    # ``overflow_offset.y`` is negative when the thumb's TOP
+    # indicators (notably the double-down badge) extend above its
+    # keys-only origin — subtract to push the thumb DOWN by that
+    # magnitude.
+    thumb_y = finger_half.size.height + inset - thumb_cluster.metrics.overflow_offset.y
     thumb_x = 0.0 if side is KeyboardSide.RIGHT else min_width - thumb_cluster_width
     thumb_origin = Point(thumb_x, thumb_y)
 
