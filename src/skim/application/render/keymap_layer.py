@@ -205,13 +205,20 @@ def KeymapLayerDocument(
     config = ctx.config
     metrics = ctx.document_metrics
     content_offset = metrics.margin + metrics.border_width + metrics.inset
-    target_content_w = metrics.doc_width - 2 * content_offset
+    doc_content_w = metrics.doc_width - 2 * content_offset
 
+    # Build the keyboard area first — its actual width may exceed the
+    # configured ``doc_content_w`` when inward indicators bleed past
+    # the keys-only edges and the column has to grow. Every other
+    # child of the column (header / sections / footer) sizes against
+    # the keyboard area's width so they fill the column edge-to-edge
+    # rather than being left-aligned with a gap on the right.
     keymap_layer = KeymapLayer(
         layer=layer,
         qmk_index=qmk_index,
-        target_content_w=target_content_w,
+        target_content_w=doc_content_w,
     )
+    content_w = keymap_layer.size.width
 
     macro_entries: list = []
     td_entries: list = []
@@ -225,7 +232,7 @@ def KeymapLayerDocument(
     # each when both have content; the full content width when
     # only one section is present.
     col_gap = metrics.column_gap
-    col_w = (target_content_w - col_gap) / 2 if macro_entries and td_entries else target_content_w
+    col_w = (content_w - col_gap) / 2 if macro_entries and td_entries else content_w
     macro_section = (
         MacroSection(macros=macro_entries, content_width=col_w) if macro_entries else None
     )
@@ -244,7 +251,7 @@ def KeymapLayerDocument(
             typed_flow: FlowDirection = "row" if flow_value == "row" else "column"
             symbol_section = SymbolSection(
                 entries=symbol_entries,
-                max_width=target_content_w,
+                max_width=content_w,
                 column_count=config.output.style.symbol_legend_columns,
                 flow=typed_flow,
             )
@@ -253,7 +260,7 @@ def KeymapLayerDocument(
         Header(
             title=title,
             min_gap=2 * metrics.inset,
-            max_width=target_content_w,
+            max_width=content_w,
         )
         content.add(keymap_layer)
         if macro_section and td_section:
@@ -265,7 +272,7 @@ def KeymapLayerDocument(
         if symbol_section is not None:
             content.add(symbol_section)
         if copyright:
-            Footer(text=copyright, max_width=target_content_w)
+            Footer(text=copyright, max_width=content_w)
 
     return KeymapDocument(content=content)
 
