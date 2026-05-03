@@ -6,7 +6,7 @@
 """Multi-span text composable, built on :func:`AdjustableText`.
 
 A :func:`RichText` is a left-to-right concatenation of
-:class:`TextSpan` objects, each carrying its own (optional)
+:class:`_TextSpan` objects, each carrying its own (optional)
 :class:`TextStyle`. Spans without an explicit style inherit the
 :func:`RichText`'s default ``style`` argument. Spans are separated
 by a single space character — the separator is appended to a span's
@@ -50,7 +50,7 @@ Truncation
 If the relaxed sizes still don't fit, :func:`RichText` enters a
 truncation phase: drop spans from the trailing end (or both ends
 for ``text_anchor="middle"``) and prepend / append a synthetic
-``…`` :class:`TextSpan` painted with the parent ``style``. The
+``…`` :class:`_TextSpan` painted with the parent ``style``. The
 truncated set is re-relaxed each iteration so the ellipsis span
 participates in the floor-pinning math. Truncation stops when the
 set fits or only the ellipsis spans remain.
@@ -106,7 +106,7 @@ _ELLIPSIS = "…"
 
 
 @dataclass(frozen=True, slots=True)
-class TextSpan:
+class _TextSpan:
     """One run within a :func:`RichText`.
 
     ``text`` may include Nerd Font tokens (``%%nf-md-keyboard;``);
@@ -208,8 +208,8 @@ def _parse_into_spans(
     default_style: TextStyle,
     *,
     separator_background: str | None = None,
-) -> list[TextSpan]:
-    """Split ``text`` into a list of :class:`TextSpan` objects.
+) -> list[_TextSpan]:
+    """Split ``text`` into a list of :class:`_TextSpan` objects.
 
     Plain-text fragments become a span carrying ``default_style``;
     every Nerd Font token (``%%[nf-]<class>;``) becomes a single-
@@ -292,7 +292,7 @@ def _parse_into_spans(
         )
     default_cmap = _font_cmap(default_style.font)
     unicode_symbols_cmap = _font_cmap(Font.UNICODE_SYMBOLS)
-    spans: list[TextSpan] = []
+    spans: list[_TextSpan] = []
     text_buffer: list[str] = []
 
     def _flush_text() -> None:
@@ -301,7 +301,7 @@ def _parse_into_spans(
         text_segment = "".join(text_buffer).strip()
         text_buffer.clear()
         if text_segment:
-            spans.append(TextSpan(text=text_segment, style=default_style))
+            spans.append(_TextSpan(text=text_segment, style=default_style))
 
     def _emit_centred_fallback(ch: str, style: TextStyle) -> None:
         """Emit ``ch`` as its own span with a centring paint-time offset.
@@ -318,7 +318,7 @@ def _parse_into_spans(
         glyphs that DejaVu doesn't carry.
         """
         adv = measure_text_width(ch, style.font, style.size)
-        spans.append(TextSpan(text=ch, style=style, offset=Point(-adv / 2.0, 0.0)))
+        spans.append(_TextSpan(text=ch, style=style, offset=Point(-adv / 2.0, 0.0)))
 
     i = 0
     n = len(text)
@@ -335,7 +335,7 @@ def _parse_into_spans(
                 glyph = glyphs.get(cls)
                 if glyph is not None:
                     _flush_text()
-                    spans.append(TextSpan(text=glyph, style=symbols_style))
+                    spans.append(_TextSpan(text=glyph, style=symbols_style))
                     i = j + 1
                     continue
         if separator_style is not None and text[i] == SEPARATOR_CHAR:
@@ -345,7 +345,7 @@ def _parse_into_spans(
             # :attr:`Font.UNICODE_SYMBOLS` span with the ghost colour
             # so the rendered bar lands exactly where PIL measures
             # it. No paint-time offset needed.
-            spans.append(TextSpan(text=SEPARATOR_CHAR, style=separator_style))
+            spans.append(_TextSpan(text=SEPARATOR_CHAR, style=separator_style))
             i += 1
             continue
         if ord(text[i]) not in default_cmap and not text[i].isspace():
@@ -354,7 +354,7 @@ def _parse_into_spans(
                 # Route through DejaVu Sans Condensed — the rendered glyph
                 # uses the SAME font we measure against, so the
                 # cursor-based layout positions it correctly.
-                spans.append(TextSpan(text=text[i], style=unicode_symbols_style))
+                spans.append(_TextSpan(text=text[i], style=unicode_symbols_style))
             else:
                 # Last-ditch: PIL measures via ``.notdef`` while the
                 # browser falls back silently. Centre the visible
@@ -613,8 +613,7 @@ def _truncate_with_ellipses(
 def RichText(
     ctx,
     *,
-    text: str | None = None,
-    spans: list[TextSpan] | None = None,
+    text: str,
     style: TextStyle,
     max_width: float | None = None,
     max_height: float | None = None,
@@ -622,6 +621,7 @@ def RichText(
     text_anchor: str = "start",
     dominant_baseline: str = "text-before-edge",
     opacity: float = 1.0,
+    letter_spacing: float | None = None,
     separator: str = _DEFAULT_SEPARATOR,
     separator_background: str | None = None,
 ):
@@ -668,18 +668,16 @@ def RichText(
     the parent ``style``. The truncated set is re-relaxed each
     iteration.
 
-    Empty ``text`` (or empty ``spans``) yields a zero-sized noop.
+    ``letter_spacing`` is forwarded to each per-span
+    :func:`AdjustableText` so the rendered SVG carries the
+    ``letter-spacing`` attribute. Measurement is unaffected — same
+    paint-time-only treatment :func:`AdjustableText` gives it.
 
-    Test / advanced callers may pass ``spans`` directly to bypass the
-    parser — exactly one of ``text`` or ``spans`` must be supplied.
-    Production code should always use ``text``.
+    Empty ``text`` yields a zero-sized noop.
     """
     del ctx  # AdjustableText reads its own context; nothing here.
 
-    if (text is None) == (spans is None):
-        raise TypeError("RichText: provide exactly one of `text` or `spans`")
-    if spans is None:
-        spans = _parse_into_spans(text or "", style, separator_background=separator_background)
+    spans = _parse_into_spans(text, style, separator_background=separator_background)
     if not spans:
         size = Size(0.0, 0.0)
 
@@ -743,17 +741,20 @@ def RichText(
     # 5. Build an ``AdjustableText`` per (resolved) span. Each
     #    span's style is replaced with the resolved size; no
     #    per-span ``max_width`` since the relaxation already
-    #    sized them to fit.
+    #    sized them to fit. ``letter_spacing`` (when set) is
+    #    forwarded uniformly — paint-time only, like
+    #    :func:`AdjustableText` itself does.
     sep_rendered = _texts_with_separators(rendered, separator)
     span_elements = [
         AdjustableText(
-            text=text,
+            text=span_text,
             style=TextStyle(font=es.font, size=size_, weight=es.weight, color=es.color),
             text_anchor="start",
             dominant_baseline=dominant_baseline,
             opacity=opacity,
+            letter_spacing=letter_spacing,
         )
-        for es, size_, text in zip(effective_styles, sizes, sep_rendered, strict=True)
+        for es, size_, span_text in zip(effective_styles, sizes, sep_rendered, strict=True)
     ]
 
     # 6. Baseline-aligned layout. Pick the largest baseline as the

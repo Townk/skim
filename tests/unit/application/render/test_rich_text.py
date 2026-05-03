@@ -8,6 +8,7 @@
 from contextlib import contextmanager
 
 from skim.application.render.adjustable_text import measure_text_width
+from skim.application.render.primitives import Point
 from skim.application.render.render_context import (
     RenderContext,
     TextStyle,
@@ -15,8 +16,9 @@ from skim.application.render.render_context import (
 )
 from skim.application.render.rich_text import (
     RichText,
-    TextSpan,
     _parse_into_spans,
+    _relax_sizes,
+    _truncate_with_ellipses,
     resolve_nerd_font_glyphs,
 )
 from skim.application.render.text import Font
@@ -68,7 +70,7 @@ class TestResolveNerdFontGlyphs:
 
 
 # ---------------------------------------------------------------------------
-# _parse_into_spans — splits a string into per-font TextSpans
+# Parser — _parse_into_spans splits a string into per-font _TextSpans
 # ---------------------------------------------------------------------------
 
 
@@ -207,47 +209,49 @@ class TestParseIntoSpans:
 
 
 # ---------------------------------------------------------------------------
-# Separator parameter — passing ``""`` disables the auto-inserted gap
+# Separator parameter — passing ``""`` disables the auto-inserted gap.
+#
+# To exercise multi-span behaviour through the public ``text=`` API we
+# use a Nerd Font token: the parser produces a glyph span (Font.SYMBOLS)
+# followed by a plain-text span, so the separator's effect is observable
+# in the rendered width.
 # ---------------------------------------------------------------------------
 
 
 class TestSeparator:
     def test_default_separator_inserts_space_between_spans(self):
         with _ctx():
-            el = RichText(
-                spans=[TextSpan(text="foo"), TextSpan(text="bar")],
-                style=_style(12.0),
-            )
-        # Default separator " " — width should match ``measure("foo ") + measure("bar")``.
-        expected = measure_text_width("foo ", Font.FINGER_KEY, 12.0) + measure_text_width(
-            "bar", Font.FINGER_KEY, 12.0
+            el = RichText(text="%%md-keyboard;X", style=_style(12.0))
+        # Default separator " " — the glyph span gets a trailing
+        # " " in its render text. Width = measure(glyph + " ") at
+        # SYMBOLS + measure("X") at FINGER_KEY.
+        glyphs = resolve_nerd_font_glyphs("%%md-keyboard;")
+        expected = measure_text_width(glyphs + " ", Font.SYMBOLS, 12.0) + measure_text_width(
+            "X", Font.FINGER_KEY, 12.0
         )
         assert abs(el.size.width - expected) < 0.5
 
-    def test_empty_separator_preserves_input_spacing(self):
-        # When ``separator=""`` the spans render adjacent — the
-        # rendered width sums the per-span natural widths exactly.
+    def test_empty_separator_omits_the_gap(self):
         with _ctx():
-            el = RichText(
-                spans=[TextSpan(text="foo"), TextSpan(text="bar")],
-                style=_style(12.0),
-                separator="",
-            )
-        expected = measure_text_width("foo", Font.FINGER_KEY, 12.0) + measure_text_width(
-            "bar", Font.FINGER_KEY, 12.0
+            el = RichText(text="%%md-keyboard;X", style=_style(12.0), separator="")
+        # No separator appended — width is the sum of the per-span
+        # natural widths.
+        glyphs = resolve_nerd_font_glyphs("%%md-keyboard;")
+        expected = measure_text_width(glyphs, Font.SYMBOLS, 12.0) + measure_text_width(
+            "X", Font.FINGER_KEY, 12.0
         )
         assert abs(el.size.width - expected) < 0.5
 
 
 # ---------------------------------------------------------------------------
-# RichText core behaviour
+# Empty-input behaviour
 # ---------------------------------------------------------------------------
 
 
 class TestRichTextEmpty:
-    def test_no_spans_yields_zero_size(self):
+    def test_empty_text_yields_zero_size(self):
         with _ctx():
-            el = RichText(spans=[], style=_style())
+            el = RichText(text="", style=_style())
         assert el.size.width == 0
         assert el.size.height == 0
         assert el.metrics.span_font_sizes == ()
@@ -256,126 +260,83 @@ class TestRichTextEmpty:
 
 
 # ---------------------------------------------------------------------------
-# Style inheritance — TextSpan.style is optional and falls back to
-# the parent RichText's ``style``
+# Layout & sizing — single-span cases via the public API
 # ---------------------------------------------------------------------------
-
-
-class TestStyleInheritance:
-    def test_span_without_style_inherits_parent(self):
-        # Two spans, neither with a style — both render at the
-        # parent's style.size.
-        with _ctx():
-            el = RichText(
-                spans=[TextSpan(text="alpha"), TextSpan(text="beta")],
-                style=_style(20.0),
-            )
-        assert el.metrics.span_font_sizes == (20.0, 20.0)
-
-    def test_span_with_style_overrides_parent(self):
-        # Span 1 inherits the parent (size=12); span 2 overrides
-        # with size=24 — the resolved sizes reflect each span's
-        # effective style.
-        with _ctx():
-            el = RichText(
-                spans=[
-                    TextSpan(text="alpha"),
-                    TextSpan(text="beta", style=_style(24.0)),
-                ],
-                style=_style(12.0),
-            )
-        assert el.metrics.span_font_sizes == (12.0, 24.0)
-
-
-# ---------------------------------------------------------------------------
-# Layout & sizing
-# ---------------------------------------------------------------------------
-
-
-class TestLayout:
-    def test_total_width_sums_per_span_widths_with_separator(self):
-        # Each span (except the last) carries a trailing separator,
-        # so the natural width = ``measure(s1+" ") + measure(s2)``.
-        with _ctx():
-            el = RichText(
-                spans=[TextSpan(text="alpha"), TextSpan(text="beta")],
-                style=_style(12.0),
-            )
-        expected = measure_text_width("alpha ", Font.FINGER_KEY, 12.0) + measure_text_width(
-            "beta", Font.FINGER_KEY, 12.0
-        )
-        assert abs(el.size.width - expected) < 0.5
-
-    def test_no_shrink_when_natural_fits(self):
-        with _ctx():
-            el = RichText(
-                spans=[
-                    TextSpan(text="alpha"),
-                    TextSpan(text="beta", style=_style(16.0)),
-                ],
-                style=_style(12.0),
-                max_width=10_000,
-            )
-        assert el.metrics.span_font_sizes == (12.0, 16.0)
-        assert el.metrics.truncated is False
-
-    def test_uniform_shrink_preserves_proportions(self):
-        # Two spans at 12 and 24 — under tight budget the relaxation
-        # scales both by the same factor so their RATIO holds.
-        with _ctx():
-            el = RichText(
-                spans=[
-                    TextSpan(text="alpha"),
-                    TextSpan(text="beta", style=_style(24.0)),
-                ],
-                style=_style(12.0),
-                min_font_size=2.0,  # generous floor so neither span pins
-                max_width=20.0,
-            )
-        a, b = el.metrics.span_font_sizes
-        # Relative ratio 12:24 = 0.5 is preserved post-shrink.
-        assert abs((a / b) - 0.5) < 0.01
 
 
 class TestSlotFill:
     def test_size_matches_max_width_when_set(self):
         with _ctx():
-            el = RichText(
-                spans=[TextSpan(text="alpha")],
-                style=_style(12.0),
-                max_width=300.0,
-            )
+            el = RichText(text="alpha", style=_style(12.0), max_width=300.0)
         assert el.size.width == 300.0
 
     def test_size_matches_natural_when_max_width_omitted(self):
         with _ctx():
-            el = RichText(spans=[TextSpan(text="alpha")], style=_style(12.0))
+            el = RichText(text="alpha", style=_style(12.0))
         natural = measure_text_width("alpha", Font.FINGER_KEY, 12.0)
         assert abs(el.size.width - natural) < 0.5
 
 
-class TestBaselineAlignment:
-    def test_height_accommodates_taller_span(self):
+# ---------------------------------------------------------------------------
+# Multi-span behaviour exercised through the public API. Nerd Font
+# tokens are the natural way to produce multi-span output via ``text=``.
+# ---------------------------------------------------------------------------
+
+
+class TestMultiSpanRendering:
+    def test_token_plus_text_resolves_two_spans_at_parent_size(self):
+        """Plain-text fragments inherit the parent style; token spans
+        switch font but inherit size + colour. Both spans should
+        render at the parent's font size."""
         with _ctx():
-            el = RichText(
-                spans=[
-                    TextSpan(text="alpha"),
-                    TextSpan(text="BETA", style=_style(40.0)),
-                ],
-                style=_style(12.0),
-            )
-        # The taller span dominates the row height.
-        assert el.size.height >= 30.0
+            el = RichText(text="X %%md-keyboard;", style=_style(20.0))
+        assert el.metrics.span_font_sizes == (20.0, 20.0)
+
+    def test_height_scales_with_parent_size(self):
+        """Bigger parent size → bigger rendered row height. Rough
+        sanity check that the bbox tracks the painted text."""
+        with _ctx():
+            small = RichText(text="X %%md-keyboard;", style=_style(12.0))
+            big = RichText(text="X %%md-keyboard;", style=_style(40.0))
+        assert big.size.height > small.size.height
 
 
 # ---------------------------------------------------------------------------
-# Per-span proportional min_font_size — every span's floor scales with its
-# own style.size by the parent ``min_font_size / style.size`` ratio.
+# Relaxation algorithm — synchronised shrink with proportional floors.
+# Tested against the internal ``_relax_sizes`` function so we can
+# inject mixed per-span styles (the parser doesn't have syntax for
+# arbitrary per-span size overrides).
 # ---------------------------------------------------------------------------
 
 
-class TestProportionalFloors:
-    def test_ratio_preserved_after_shrink(self):
+class TestRelaxSizes:
+    def test_no_shrink_when_natural_fits(self):
+        sizes = _relax_sizes(
+            styles=[_style(12.0), _style(16.0)],
+            mins=[12.0, 16.0],
+            rendered=["alpha", "beta"],
+            max_width=10_000.0,
+            max_height=None,
+            separator=" ",
+        )
+        assert sizes == [12.0, 16.0]
+
+    def test_uniform_shrink_preserves_proportions(self):
+        # Two spans at 12 and 24 — under tight budget the relaxation
+        # scales both by the same factor so their RATIO holds.
+        sizes = _relax_sizes(
+            styles=[_style(12.0), _style(24.0)],
+            mins=[2.0, 4.0],  # proportional from parent ratio 2/12
+            rendered=["alpha", "beta"],
+            max_width=20.0,
+            max_height=None,
+            separator=" ",
+        )
+        a, b = sizes
+        # Relative ratio 12:24 = 0.5 is preserved post-shrink.
+        assert abs((a / b) - 0.5) < 0.01
+
+    def test_proportional_floors_preserve_ratio_under_pressure(self):
         # Parent (size=12, min=6) → ratio 0.5. Spans declared at
         # 12 and 24 inherit floors 6 and 12 respectively. With
         # proportional floors both spans share the same shrink
@@ -383,72 +344,81 @@ class TestProportionalFloors:
         # every span), so the resolved 12:24 ratio is preserved
         # whether the relaxation converges naturally or pins
         # everyone at their respective floors.
-        with _ctx():
-            el = RichText(
-                spans=[
-                    TextSpan(text="alpha"),
-                    TextSpan(text="beta", style=_style(24.0)),
-                ],
-                style=_style(12.0),
-                min_font_size=6.0,
-                max_width=50.0,  # tight enough to shrink, loose enough to fit
-            )
-        a, b = el.metrics.span_font_sizes
-        # Both shrink by the same factor — original 12:24 = 0.5
-        # ratio holds.
+        sizes = _relax_sizes(
+            styles=[_style(12.0), _style(24.0)],
+            mins=[6.0, 12.0],
+            rendered=["alpha", "beta"],
+            max_width=50.0,
+            max_height=None,
+            separator=" ",
+        )
+        a, b = sizes
+        # Both shrink by the same factor — original 12:24 = 0.5 holds.
         assert abs((a / b) - 0.5) < 0.05
 
-    def test_no_min_font_size_means_no_shrink(self):
-        # When ``min_font_size`` is None, every span's floor equals
-        # its own style.size — no shrinking allowed. With no width
-        # budget the spans render at their natural sizes; the
-        # ``font_size`` resolution short-circuits because the floor
-        # coincides with the natural size.
-        with _ctx():
-            el = RichText(
-                spans=[
-                    TextSpan(text="alpha"),
-                    TextSpan(text="beta"),
-                ],
-                style=_style(20.0),
-            )
-        assert el.metrics.span_font_sizes == (20.0, 20.0)
-        assert el.metrics.truncated is False
+    def test_floor_equal_to_size_means_no_shrink(self):
+        # When the floor coincides with the natural size, no shrinking
+        # is allowed — sizes equal the input styles' sizes regardless
+        # of the budget.
+        sizes = _relax_sizes(
+            styles=[_style(20.0), _style(20.0)],
+            mins=[20.0, 20.0],
+            rendered=["alpha", "beta"],
+            max_width=None,
+            max_height=None,
+            separator=" ",
+        )
+        assert sizes == [20.0, 20.0]
 
 
 # ---------------------------------------------------------------------------
-# Truncation — synthetic ``…`` spans inserted automatically when
-# the relaxed set still doesn't fit
+# Truncation — synthetic ``…`` spans inserted automatically when the
+# relaxed set still doesn't fit. Tested against ``_truncate_with_ellipses``
+# directly so we can construct a multi-span trial set without going
+# through markup.
 # ---------------------------------------------------------------------------
+
+
+def _five_span_setup(*, text_anchor: str, max_width: float):
+    """Build the inputs for a 5-span truncation test at parent style 20."""
+    rendered = ["alpha", "beta", "gamma", "delta", "epsilon"]
+    styles = [_style(20.0)] * 5
+    mins = [12.0] * 5
+    offsets = [Point(0.0, 0.0)] * 5
+    return _truncate_with_ellipses(
+        styles=styles,
+        mins=mins,
+        rendered=rendered,
+        offsets=offsets,
+        max_width=max_width,
+        max_height=None,
+        text_anchor=text_anchor,
+        ellipsis_style=_style(20.0),
+        ellipsis_min=12.0,
+        separator=" ",
+    )
 
 
 class TestTruncationStartAnchor:
     def test_appends_ellipsis_at_end(self):
-        # Many spans, tight budget, default ``text_anchor="start"``.
-        # Truncation drops from the end and appends ``…`` once.
-        spans = [TextSpan(text=word) for word in ("alpha", "beta", "gamma", "delta", "epsilon")]
-        with _ctx():
-            el = RichText(
-                spans=spans,
-                style=_style(20.0),
-                min_font_size=12.0,  # not enough headroom to fit at floor
-                max_width=40.0,  # very tight
-            )
-        assert el.metrics.truncated is True
-        # An ellipsis appears in the rendered output.
-        assert _ELLIPSIS in el.metrics.rendered_spans
-        # The ellipsis sits at the END of the rendered span list.
-        assert el.metrics.rendered_spans[-1] == _ELLIPSIS
+        # Default ``text_anchor="start"``. Truncation drops from the
+        # end and appends ``…`` once.
+        _styles, _mins, rendered, _sizes, _offsets = _five_span_setup(
+            text_anchor="start", max_width=40.0
+        )
+        assert _ELLIPSIS in rendered
+        assert rendered[-1] == _ELLIPSIS
 
     def test_no_truncation_when_relaxation_fits(self):
-        # Roomy budget, headroom in the floor — relaxation alone
-        # gets the rendered text in.
+        # Roomy budget, headroom in the floor — relaxation alone gets
+        # the rendered text in. Tested through the public API since
+        # the integration with the relaxation phase matters.
         with _ctx():
             el = RichText(
-                spans=[TextSpan(text="alpha"), TextSpan(text="beta")],
+                text="alpha beta",
                 style=_style(20.0),
                 min_font_size=6.0,
-                max_width=10_000,
+                max_width=10_000.0,
             )
         assert el.metrics.truncated is False
         assert _ELLIPSIS not in el.metrics.rendered_spans
@@ -456,32 +426,32 @@ class TestTruncationStartAnchor:
 
 class TestTruncationEndAnchor:
     def test_prepends_ellipsis_at_start(self):
-        spans = [TextSpan(text=word) for word in ("alpha", "beta", "gamma", "delta", "epsilon")]
-        with _ctx():
-            el = RichText(
-                spans=spans,
-                style=_style(20.0),
-                min_font_size=12.0,
-                max_width=40.0,
-                text_anchor="end",
-            )
-        assert el.metrics.truncated is True
-        # The ellipsis sits at the START of the rendered span list.
-        assert el.metrics.rendered_spans[0] == _ELLIPSIS
+        _styles, _mins, rendered, _sizes, _offsets = _five_span_setup(
+            text_anchor="end", max_width=40.0
+        )
+        assert rendered[0] == _ELLIPSIS
 
 
 class TestTruncationMiddleAnchor:
     def test_inserts_ellipsis_on_both_sides(self):
-        spans = [TextSpan(text=word) for word in ("alpha", "beta", "gamma", "delta", "epsilon")]
+        _styles, _mins, rendered, _sizes, _offsets = _five_span_setup(
+            text_anchor="middle", max_width=80.0
+        )
+        assert rendered[0] == _ELLIPSIS
+        assert rendered[-1] == _ELLIPSIS
+
+
+# ---------------------------------------------------------------------------
+# Letter spacing — paint-time attribute forwarded to per-span SVG text.
+# ---------------------------------------------------------------------------
+
+
+class TestLetterSpacing:
+    def test_letter_spacing_does_not_change_measured_width(self):
+        # ``letter_spacing`` is paint-time only — measurement uses raw
+        # PIL widths. The bbox should match the natural width whether
+        # or not letter_spacing is set.
         with _ctx():
-            el = RichText(
-                spans=spans,
-                style=_style(20.0),
-                min_font_size=12.0,
-                max_width=80.0,
-                text_anchor="middle",
-            )
-        assert el.metrics.truncated is True
-        # Both first and last entries are the ellipsis.
-        assert el.metrics.rendered_spans[0] == _ELLIPSIS
-        assert el.metrics.rendered_spans[-1] == _ELLIPSIS
+            without = RichText(text="alpha", style=_style(12.0))
+            with_spacing = RichText(text="alpha", style=_style(12.0), letter_spacing=2.0)
+        assert abs(without.size.width - with_spacing.size.width) < 0.5
