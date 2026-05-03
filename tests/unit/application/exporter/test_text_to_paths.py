@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from skim.application.render.text_to_paths import (
+from skim.application.exporter.text_to_paths import (
     FontReader,
     GlyphMetrics,
     GlyphNotFoundError,
@@ -47,7 +47,7 @@ class TestFontReader:
         font_file.touch()
         return font_file
 
-    @patch("skim.application.render.text_to_paths.TTFont")
+    @patch("skim.application.exporter.text_to_paths.TTFont")
     def test_init_loads_font(self, mock_ttfont, mock_font_path):
         """Initialize FontReader loads font file."""
         mock_font = MagicMock()
@@ -65,7 +65,7 @@ class TestFontReader:
         assert reader.descent == -200
         mock_ttfont.assert_called_once_with(str(mock_font_path))
 
-    @patch("skim.application.render.text_to_paths.TTFont")
+    @patch("skim.application.exporter.text_to_paths.TTFont")
     def test_get_glyph_path_single_char_only(self, mock_ttfont, mock_font_path):
         """get_glyph_path requires single character."""
         mock_font = MagicMock()
@@ -78,7 +78,7 @@ class TestFontReader:
         with pytest.raises(ValueError, match="Expected single character"):
             reader.get_glyph_path("ab")
 
-    @patch("skim.application.render.text_to_paths.TTFont")
+    @patch("skim.application.exporter.text_to_paths.TTFont")
     def test_get_glyph_path_no_cmap(self, mock_ttfont, mock_font_path):
         """get_glyph_path raises error when no cmap found."""
         mock_font = MagicMock()
@@ -91,7 +91,7 @@ class TestFontReader:
         with pytest.raises(GlyphNotFoundError, match="No cmap found"):
             reader.get_glyph_path("a")
 
-    @patch("skim.application.render.text_to_paths.TTFont")
+    @patch("skim.application.exporter.text_to_paths.TTFont")
     def test_get_glyph_path_glyph_not_found(self, mock_ttfont, mock_font_path):
         """get_glyph_path raises error when glyph not in cmap."""
         mock_font = MagicMock()
@@ -104,7 +104,7 @@ class TestFontReader:
         with pytest.raises(GlyphNotFoundError, match="No glyph for"):
             reader.get_glyph_path("a")
 
-    @patch("skim.application.render.text_to_paths.TTFont")
+    @patch("skim.application.exporter.text_to_paths.TTFont")
     def test_get_glyph_metrics_single_char_only(self, mock_ttfont, mock_font_path):
         """get_glyph_metrics requires single character."""
         mock_font = MagicMock()
@@ -117,7 +117,7 @@ class TestFontReader:
         with pytest.raises(ValueError, match="Expected single character"):
             reader.get_glyph_metrics("ab")
 
-    @patch("skim.application.render.text_to_paths.TTFont")
+    @patch("skim.application.exporter.text_to_paths.TTFont")
     def test_get_glyph_metrics_not_in_cmap(self, mock_ttfont, mock_font_path):
         """get_glyph_metrics returns zeros when glyph not in cmap."""
         mock_font = MagicMock()
@@ -130,7 +130,7 @@ class TestFontReader:
 
         assert metrics == GlyphMetrics(0, 0, 0, 0, 0, 0)
 
-    @patch("skim.application.render.text_to_paths.TTFont")
+    @patch("skim.application.exporter.text_to_paths.TTFont")
     def test_get_text_width_sums_metrics(self, mock_ttfont, mock_font_path):
         """get_text_width sums advance widths of all characters."""
         mock_font = MagicMock()
@@ -153,7 +153,7 @@ class TestFontReader:
 
         assert width == 110
 
-    @patch("skim.application.render.text_to_paths.TTFont")
+    @patch("skim.application.exporter.text_to_paths.TTFont")
     def test_close_closes_font(self, mock_ttfont, mock_font_path):
         """close method closes the underlying font."""
         mock_font = MagicMock()
@@ -165,7 +165,7 @@ class TestFontReader:
 
         mock_font.close.assert_called_once()
 
-    @patch("skim.application.render.text_to_paths.TTFont")
+    @patch("skim.application.exporter.text_to_paths.TTFont")
     def test_context_manager_closes_font(self, mock_ttfont, mock_font_path):
         """Context manager closes font on exit."""
         mock_font = MagicMock()

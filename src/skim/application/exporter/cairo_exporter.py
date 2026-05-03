@@ -11,9 +11,10 @@ from pathlib import Path
 import drawsvg as draw
 from PIL import Image
 
-from skim.application.exporter.font_discovery import find_system_fonts, get_system_font_path
 from skim.application.render.font import Font
-from skim.application.render.text_to_paths import FontReader, TextToPathConverter
+
+from .font_discovery import find_system_fonts, get_system_font_path
+from .text_to_paths import FontReader, TextToPathConverter
 
 
 class CairoImageExporter:

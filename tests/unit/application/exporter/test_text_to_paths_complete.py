@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from skim.application.render.text_to_paths import (
+from skim.application.exporter.text_to_paths import (
     FontReader,
     GlyphMetrics,
     TextToPathConverter,
@@ -23,8 +23,8 @@ class TestFontReaderGetGlyphPathSuccess:
         font_file.touch()
         return font_file
 
-    @patch("skim.application.render.text_to_paths.TTFont")
-    @patch("skim.application.render.text_to_paths.SVGPathPen")
+    @patch("skim.application.exporter.text_to_paths.TTFont")
+    @patch("skim.application.exporter.text_to_paths.SVGPathPen")
     def test_get_glyph_path_success(self, mock_pen_class, mock_ttfont, mock_font_path):
         mock_font = MagicMock()
         mock_font.getBestCmap.return_value = {97: "a_glyph"}
@@ -48,7 +48,7 @@ class TestTextToPathConverterComplete:
         font_file.touch()
         return font_file
 
-    @patch("skim.application.render.text_to_paths.FontReader")
+    @patch("skim.application.exporter.text_to_paths.FontReader")
     def test_convert_text_empty_string(self, mock_reader_class, mock_font_path):
         mock_reader = MagicMock()
         mock_reader_class.return_value = mock_reader
@@ -58,7 +58,7 @@ class TestTextToPathConverterComplete:
 
         assert paths == []
 
-    @patch("skim.application.render.text_to_paths.FontReader")
+    @patch("skim.application.exporter.text_to_paths.FontReader")
     def test_convert_text_to_group(self, mock_reader_class, mock_font_path):
         import drawsvg as draw
 
@@ -75,7 +75,7 @@ class TestTextToPathConverterComplete:
         assert isinstance(group, draw.Group)
         assert len(group.children) == 1
 
-    @patch("skim.application.render.text_to_paths.FontReader")
+    @patch("skim.application.exporter.text_to_paths.FontReader")
     def test_get_text_width(self, mock_reader_class, mock_font_path):
         mock_reader = MagicMock()
         mock_reader.units_per_em = 1000
@@ -87,7 +87,7 @@ class TestTextToPathConverterComplete:
 
         assert width == 6.0
 
-    @patch("skim.application.render.text_to_paths.FontReader")
+    @patch("skim.application.exporter.text_to_paths.FontReader")
     def test_close(self, mock_reader_class, mock_font_path):
         mock_reader = MagicMock()
         mock_reader_class.return_value = mock_reader
@@ -97,7 +97,7 @@ class TestTextToPathConverterComplete:
 
         mock_reader.close.assert_called_once()
 
-    @patch("skim.application.render.text_to_paths.FontReader")
+    @patch("skim.application.exporter.text_to_paths.FontReader")
     def test_context_manager(self, mock_reader_class, mock_font_path):
         mock_reader = MagicMock()
         mock_reader_class.return_value = mock_reader
