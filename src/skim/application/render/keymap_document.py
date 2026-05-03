@@ -62,7 +62,7 @@ if TYPE_CHECKING:
     from skim.data import SvalboardKeymap, SvalboardLayout
     from skim.domain import SvalboardMacro, SvalboardTapDance, SvalboardTargetKey
 
-    from .symbols import SymbolLegendEntry
+    from .section_data import SymbolLegendEntry
 
 # The body of a standalone special-keys image (the macro / tap-dance
 # section content) renders at this multiple of the configured document

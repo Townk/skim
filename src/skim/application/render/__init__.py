@@ -50,14 +50,16 @@ from .keymap_document import (
 )
 from .render_context import RenderContext, using_render_context
 from .section_data import (
+    SymbolLegendEntry,
     all_macros,
     all_tap_dances,
+    collect_used_descriptions,
     collect_used_ids,
     resolve_macros,
     resolve_tap_dances,
 )
 from .styling import make_gradient
-from .symbols import FlowDirection, SymbolLegendEntry, collect_used_descriptions
+from .symbols import FlowDirection
 
 logger = logging.getLogger(__name__)
 
