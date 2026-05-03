@@ -11,7 +11,7 @@ from pathlib import Path
 import drawsvg as draw
 from PIL import Image
 
-from skim.application.render.font_discovery import find_system_fonts, get_system_font_path
+from skim.application.exporter.font_discovery import find_system_fonts, get_system_font_path
 from skim.application.render.text import Font
 from skim.application.render.text_to_paths import FontReader, TextToPathConverter
 

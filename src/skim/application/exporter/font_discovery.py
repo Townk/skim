@@ -3,13 +3,25 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""System font discovery utilities."""
+"""System-font discovery utilities for the Cairo bitmap exporter.
+
+Cairo can't read the embedded ``@font-face`` data the SVG renderer
+emits — when it rasterises an SVG to PNG / PDF it needs an
+on-filesystem font file. These helpers locate platform-appropriate
+candidates (Apple Symbols / Helvetica on macOS, DejaVu / Liberation
+on Linux, Segoe UI / Arial on Windows) and fall back to one of the
+bundled fonts (:attr:`Font.FINGER_KEY.path`) when no system font
+matches.
+
+Render-side code uses :class:`Font` directly with the bundled font
+files; this module is exporter-only.
+"""
 
 import os
 import sys
 from pathlib import Path
 
-from .text import Font
+from skim.application.render.text import Font
 
 
 def find_system_fonts() -> list[Path]:
