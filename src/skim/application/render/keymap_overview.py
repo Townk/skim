@@ -760,11 +760,16 @@ def KeymapOverview(
     # ``center_gap`` of empty space between the two halves' inward
     # indicators (i.e., the row with the worst inward bleed has the
     # documented gap; lower-bleed rows show paint-only intrusion
-    # into the otherwise-empty space). Thumb clusters align with
-    # the finger halves' keys-only edges and don't contribute to
-    # the central reservation.
+    # into the otherwise-empty space).
     finger_inward_left = max(_right_bleed(lfh) for lfh, _ in finger_halves)
     finger_inward_right = max(_left_bleed(rfh) for _, rfh in finger_halves)
+    # Inward bleeds on the thumb clusters — only used when BOTH
+    # sides have inward indicators (typically the knuckle / nail
+    # keys). When both are present we may need to widen the
+    # central reservation so the visible chrome-to-chrome gap
+    # between the two thumbs is at least ``column_gap``.
+    thumb_inward_left = _right_bleed(left_thumb)
+    thumb_inward_right = _left_bleed(right_thumb)
 
     # Right outward bleed extends the body's outer right edge so
     # right-side indicators don't paint past the canvas. Left-side
@@ -840,12 +845,24 @@ def KeymapOverview(
     # and may visually intrude into the gap on those rows — same
     # accommodation the central gap makes for inward indicators.
     left_half_x = col1_width + badge_to_clusters_gap
-    # Finger halves: position so the visible gap between inward
-    # indicators (left half's right-edge indicators ↔ right half's
-    # left-edge indicators) equals exactly ``center_gap``. Width
-    # contributed by inward bleeds on each side is added to the
-    # central reservation.
-    right_half_x = left_half_x + side_width + finger_inward_left + center_gap + finger_inward_right
+    # Central reservation. The finger halves want the visible gap
+    # between their inward indicators to equal ``center_gap`` (i.e.,
+    # ``2 * column_gap``). When BOTH thumbs additionally have
+    # inward-bleed indicators (knuckle / nail keys with a
+    # ``layer_switch``), we further require the visible chrome-to-
+    # chrome gap between the two thumbs to be at least
+    # ``column_gap`` — that means the central column has to be at
+    # least ``thumb_inward_left + column_gap + thumb_inward_right``
+    # wide. Take the larger of the two requirements; ignore the
+    # thumb requirement entirely when only one (or neither) thumb
+    # has inward bleed, leaving lower-bleed configs unchanged.
+    finger_central_reservation = finger_inward_left + center_gap + finger_inward_right
+    if thumb_inward_left > 0 and thumb_inward_right > 0:
+        thumb_central_reservation = thumb_inward_left + column_gap + thumb_inward_right
+        central_reservation = max(finger_central_reservation, thumb_central_reservation)
+    else:
+        central_reservation = finger_central_reservation
+    right_half_x = left_half_x + side_width + central_reservation
     # Body width still accounts for outer bleeds so the right edge
     # encloses any right-side indicators that paint past the right
     # half's keys-only edge.
