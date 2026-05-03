@@ -53,7 +53,7 @@ import drawsvg as draw
 from .composable import Composable
 from .primitives import MetricsComponent, Point, Size
 from .render_context import TextStyle
-from .text import Font
+from .text import Font, register_font_usage
 
 # Single-character ellipsis used when truncating. PIL's ``getlength``
 # is character-sensitive, so the measurement helper and the trim
@@ -349,6 +349,13 @@ def AdjustableText(
         rendered_text, truncated = _truncate_to_fit(text, style.font, font_size, max_width)
     else:
         rendered_text, truncated = text, False
+
+    # Register the actually-painted characters with the active
+    # font-usage collector so :func:`render` can subset embedded
+    # fonts to just the glyphs the document paints. No-op outside
+    # a render pass (e.g. tests that build composables in
+    # isolation).
+    register_font_usage(style.font, rendered_text)
 
     rendered_w = measure_text_width(rendered_text, style.font, font_size)
     rendered_h = measure_text_height(rendered_text, style.font, font_size)

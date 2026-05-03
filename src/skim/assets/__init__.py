@@ -127,9 +127,7 @@ class BundleAssets:
         Raises:
             FileNotFoundError: If the file is missing from the installation.
         """
-        return self._get_cached(
-            "font_dejavu_sans_condensed", "fonts", "DejaVuSansCondensed.ttf"
-        )
+        return self._get_cached("font_dejavu_sans_condensed", "fonts", "DejaVuSansCondensed.ttf")
 
     @property
     def logo_svalboard(self) -> Path:

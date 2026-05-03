@@ -417,10 +417,23 @@ def using_render_context(ctx: RenderContext) -> Iterator[RenderContext]:
     Nested contexts are supported (each ``using_render_context`` pushes
     a new value and restores the previous one on exit) so a child
     render can shadow the parent's context if needed.
+
+    Also activates a fresh :class:`FontUsageCollector` for the same
+    scope so :func:`AdjustableText` can register painted characters
+    automatically and :func:`render` can subset embedded fonts to
+    just what the document actually paints — no manual keymap walk
+    required from each image entry point.
     """
+    # Local import — :mod:`text` doesn't import from this module, but
+    # importing it eagerly at top-of-file would create a cycle through
+    # :mod:`render_context` ↔ :mod:`text` ↔ ... if the import order
+    # ever shifts. Pull it lazily here.
+    from .text import using_font_usage_collector
+
     token = _render_ctx.set(ctx)
     try:
-        yield ctx
+        with using_font_usage_collector():
+            yield ctx
     finally:
         _render_ctx.reset(token)
 

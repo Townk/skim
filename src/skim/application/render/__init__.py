@@ -22,7 +22,6 @@ from skim.data import (
     KeycodeMappings,
     KeymapGeneratorTargets,
     SkimConfig,
-    SplitSide,
     SvalboardKeymap,
     SvalboardLayout,
 )
@@ -37,7 +36,6 @@ from .special_keys import draw_special_keys_image
 from .styling import make_gradient
 from .symbols import collect_symbol_entries, draw_symbols_image
 from .tap_dance import draw_tap_dances_image
-from .text import Font, FontSubsetter, FontUsageAnalyzer, Label
 
 logger = logging.getLogger(__name__)
 
@@ -80,62 +78,6 @@ def _layer_title(config: SkimConfig, config_position: int, qmk_index: int) -> st
     return title
 
 
-def _layer_labels(
-    layer: SvalboardLayout[SvalboardTargetKey],
-) -> SvalboardLayout[Label | None]:
-    """Build the ``Label`` layout used by the font-subset analyser.
-
-    Finger keys use :data:`Font.FINGER_KEY` and thumb keys use
-    :data:`Font.THUMB_KEY` so the analyser charges glyphs to the
-    right per-font character set.
-    """
-
-    def _finger_label(key: SvalboardTargetKey | None) -> Label | None:
-        return Label(key.label, Font.FINGER_KEY, text_color="#000") if key and key.label else None
-
-    def _thumb_label(key: SvalboardTargetKey | None) -> Label | None:
-        return Label(key.label, Font.THUMB_KEY, text_color="#000") if key and key.label else None
-
-    return SvalboardLayout(
-        left=SplitSide(
-            index=layer.left.fingers[0].map(_finger_label),
-            middle=layer.left.fingers[1].map(_finger_label),
-            ring=layer.left.fingers[2].map(_finger_label),
-            pinky=layer.left.fingers[3].map(_finger_label),
-            thumb=layer.left.thumb.map(_thumb_label),
-        ),
-        right=SplitSide(
-            index=layer.right.fingers[0].map(_finger_label),
-            middle=layer.right.fingers[1].map(_finger_label),
-            ring=layer.right.fingers[2].map(_finger_label),
-            pinky=layer.right.fingers[3].map(_finger_label),
-            thumb=layer.right.thumb.map(_thumb_label),
-        ),
-    )
-
-
-def _layer_subset_css(
-    layer: SvalboardLayout[SvalboardTargetKey],
-    layer_title: str,
-    copyright: str | None,
-    macros: tuple[SvalboardMacro[SvalboardTargetKey], ...],
-    tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...],
-) -> list[str]:
-    """Build font-subset CSS for one per-layer image.
-
-    Walks the layer's labels (plus title / copyright / macros /
-    tap-dances) and emits a tightly-subsetted CSS embedding only
-    the glyphs the layer actually paints. Falls back to the full
-    fonts CSS if the analyser produces an empty subset.
-    """
-    font_analyzer = FontUsageAnalyzer()
-    font_analyzer.analyze_keymap(_layer_labels(layer), layer_title, copyright)
-    font_analyzer.analyze_legend(macros, tap_dances)
-    font_subsetter = FontSubsetter(font_analyzer)
-    subsetted = font_subsetter.generate_subsetted_css()
-    return [subsetted] if subsetted else [font_subsetter.generate_full_fonts_css()]
-
-
 def _draw_layer(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
@@ -152,18 +94,14 @@ def _draw_layer(
 
     The composable encodes the entire layout (header, keyboard area,
     optional macro / TD legend, optional symbol legend, optional
-    footer); this function only handles the entry-point bookkeeping
-    — building the :class:`RenderContext`, computing per-layer
-    font-subset CSS, and handing the document to :func:`render`.
+    footer); this function builds a :class:`RenderContext` and hands
+    the document to :func:`render`. Embedded-font subsetting is
+    automatic — :class:`FontUsageCollector` activates inside
+    :func:`using_render_context` and every :func:`AdjustableText`
+    registers its painted characters there during construction.
     """
     layer_title = _layer_title(config, config_position, qmk_index)
     copyright_text = config.output.copyright or ""
-
-    css = (
-        _layer_subset_css(layer, layer_title, config.output.copyright, macros, tap_dances)
-        if not config.output.style.use_system_fonts
-        else None
-    )
 
     with using_render_context(ComposableRenderContext.build(config, keymap)):
         return render(
@@ -177,8 +115,7 @@ def _draw_layer(
                 raw_layer_keycodes=raw_layer_keycodes,
                 raw_keymap=raw_keymap,
                 keycode_mappings=keycode_mappings,
-            ),
-            css=css,
+            )
         )
 
 
