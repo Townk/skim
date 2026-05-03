@@ -380,10 +380,10 @@ class RenderContext:
         ``config.output.layout.width`` so the title and footer don't
         get pulled along by the body's zoom.
         """
-        # Local import — :mod:`overview` imports from this module
-        # transitively at startup; importing it eagerly would create a
-        # circular import cycle.
-        from .overview import compute_header_dims
+        # Local import — :mod:`keymap_overview` imports from this
+        # module transitively at startup; importing it eagerly would
+        # create a circular import cycle.
+        from .keymap_overview import compute_header_dims
 
         header_dims = compute_header_dims(config, keymap)
         return cls(

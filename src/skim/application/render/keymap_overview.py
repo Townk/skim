@@ -1284,15 +1284,18 @@ def KeymapOverviewDocument(
 
 
 # ---------------------------------------------------------------------------
-# Entry point — parallel ``draw_overview_v2`` for visual comparison
-# against the legacy imperative path. Will replace the legacy
-# ``draw_overview`` once visual parity is confirmed and connectors are
-# in place.
+# Public entry point — composes :func:`KeymapOverviewDocument` inside
+# a :class:`RenderContext` and paints it into a drawsvg :class:`Drawing`.
 # ---------------------------------------------------------------------------
 
 
 def _resolve_overview_title(config: SkimConfig) -> str:
-    """Replicate :func:`overview.draw_overview`'s title resolution."""
+    """Resolve the overview's title.
+
+    Falls back to ``"{first layer's variant or name} Layers Layout"``
+    when ``output.keymap_title`` isn't configured, and to the literal
+    ``"Keymap Layout"`` when there are no configured layers.
+    """
     if config.output.keymap_title:
         return config.output.keymap_title
     if config.keyboard.layers:
@@ -1301,22 +1304,18 @@ def _resolve_overview_title(config: SkimConfig) -> str:
     return "Keymap Layout"
 
 
-def draw_overview_v2(
+def draw_overview(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
     raw_keymap: SvalboardKeymap[str] | None = None,
     keycode_mappings: KeycodeMappings | None = None,
 ) -> draw.Drawing:
-    """Generate the overview SVG via the composable framework.
+    """Generate the overview SVG image for a multi-layer keymap.
 
-    Mirrors the per-layer image's :func:`_draw_layer` shape: build a
+    Mirrors the per-layer image's ``_draw_layer`` shape: build a
     :class:`RenderContext`, construct :func:`KeymapOverviewDocument`
-    inside it, then paint into a drawsvg :class:`Drawing` with the
+    inside it, then paint into a drawsvg :class:`Drawing` at the
     user-requested display width.
-
-    Connectors are not yet emitted — those land in a follow-up step.
-    The output is structurally identical to the legacy overview
-    minus the dotted connector lines.
     """
     title = _resolve_overview_title(config)
     copyright_text = config.output.copyright or ""
@@ -2345,7 +2344,7 @@ __all__ = [
     "build_finger_path_list_for_layer",
     "build_thumb_path_list",
     "compute_header_dims",
-    "draw_overview_v2",
+    "draw_overview",
     "phase1_down_to_right",
     "phase1_redirect_left_to_down",
     "phase1_redirect_right_to_down",

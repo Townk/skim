@@ -29,8 +29,8 @@ from skim.data import (
 from skim.domain import SvalboardMacro, SvalboardTapDance, SvalboardTargetKey
 
 from .keymap_layer import KeymapLayerDocument
+from .keymap_overview import draw_overview
 from .macros import draw_macros_image
-from .overview import draw_overview
 from .primitives import Point as ComposablePoint
 from .render_context import RenderContext as ComposableRenderContext, using_render_context
 from .special_keys import draw_special_keys_image
