@@ -50,7 +50,13 @@ from .keymap_document import (
     KeymapTapDanceDocument,
 )
 from .render_context import RenderContext, using_render_context
-from .section_data import all_macros, all_tap_dances
+from .section_data import (
+    all_macros,
+    all_tap_dances,
+    collect_used_ids,
+    resolve_macros,
+    resolve_tap_dances,
+)
 from .styling import make_gradient
 from .symbols import FlowDirection, SymbolLegendEntry, collect_symbol_entries
 
@@ -136,14 +142,22 @@ def _draw_layer(
 ) -> draw.Drawing:
     """Render one layer's keymap image.
 
-    The composable encodes the entire layout (header, keyboard area,
-    optional macro / TD legend, optional symbol legend, optional
-    footer); this function builds a :class:`RenderContext` and hands
+    Resolves the macro / TD legend's contents up-front (the layer's
+    used ids → filtered + sorted lists) so the document composable
+    receives ready-to-paint data rather than reaching into the
+    keymap itself. Then builds a :class:`RenderContext` and hands
     the document to :func:`render`. Embedded-font subsetting is
     automatic — :class:`FontUsageCollector` activates inside
     :func:`using_render_context` and every :func:`AdjustableText`
     registers its painted characters there during construction.
     """
+    if config.output.style.show_special_keys_legend:
+        used_macro_ids, used_td_ids = collect_used_ids(layer)
+        layer_macros = resolve_macros(used_macro_ids, macros)
+        layer_tap_dances = resolve_tap_dances(used_td_ids, tap_dances)
+    else:
+        layer_macros = []
+        layer_tap_dances = []
     with using_render_context(RenderContext.build(config, keymap)):
         return render(
             KeymapLayerDocument(
@@ -151,8 +165,8 @@ def _draw_layer(
                 qmk_index=qmk_index,
                 title=_layer_title(config, config_position, qmk_index),
                 copyright=config.output.copyright or "",
-                macros=macros,
-                tap_dances=tap_dances,
+                macros=layer_macros,
+                tap_dances=layer_tap_dances,
                 raw_layer_keycodes=raw_layer_keycodes,
                 raw_keymap=raw_keymap,
                 keycode_mappings=keycode_mappings,
@@ -166,13 +180,27 @@ def draw_overview(
     raw_keymap: SvalboardKeymap[str] | None = None,
     keycode_mappings: KeycodeMappings | None = None,
 ) -> draw.Drawing:
-    """Render the multi-layer overview image."""
+    """Render the multi-layer overview image.
+
+    Resolves the macro / TD legend's contents up-front (the parsed
+    keymap's full lists, sorted) so the document composable
+    receives ready-to-paint data rather than reaching into the
+    keymap itself.
+    """
+    if config.output.style.show_special_keys_legend:
+        overview_macros = all_macros(keymap.macros)
+        overview_tap_dances = all_tap_dances(keymap.tap_dances)
+    else:
+        overview_macros = []
+        overview_tap_dances = []
     with using_render_context(RenderContext.build(config, keymap)):
         return render(
             KeymapOverviewDocument(
                 keymap=keymap,
                 title=_resolve_image_title(config),
                 copyright=config.output.copyright or "",
+                macros=overview_macros,
+                tap_dances=overview_tap_dances,
                 raw_keymap=raw_keymap,
                 keycode_mappings=keycode_mappings,
             )

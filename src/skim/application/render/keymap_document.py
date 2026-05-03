@@ -136,8 +136,8 @@ def KeymapLayerDocument(
     qmk_index: int,
     title: str,
     copyright: str | None = None,
-    macros: tuple[SvalboardMacro[SvalboardTargetKey], ...] = (),
-    tap_dances: tuple[SvalboardTapDance[SvalboardTargetKey], ...] = (),
+    macros: list[SvalboardMacro[SvalboardTargetKey]] | None = None,
+    tap_dances: list[SvalboardTapDance[SvalboardTargetKey]] | None = None,
     raw_layer_keycodes: list[str] | None = None,
     raw_keymap: SvalboardKeymap[str] | None = None,
     keycode_mappings: KeycodeMappings | None = None,
@@ -153,17 +153,20 @@ def KeymapLayerDocument(
     :func:`KeymapDocument` for the rounded background border +
     content_offset chrome.
 
+    ``macros`` and ``tap_dances`` are pre-resolved by the caller —
+    already filtered to what the layer references and sorted in the
+    order they should paint. The document doesn't reach into the
+    keymap or run id-resolution itself; that's the entry point's
+    concern. Pass ``None`` (the default) or an empty list to
+    suppress the legend section.
+
     A falsy ``copyright`` (``None`` or ``""``) suppresses the
-    footer. Macro / TD legend appears only when the style flag
-    ``show_special_keys_legend`` is on AND the layer references
-    at least one macro or tap-dance. Symbol legend appears only
-    when ``show_symbol_legend`` is on AND
-    ``raw_layer_keycodes`` + ``keycode_mappings`` are provided
-    AND the layer has resolvable symbols.
+    footer. Symbol legend appears only when ``show_symbol_legend``
+    is on AND ``raw_layer_keycodes`` + ``keycode_mappings`` are
+    provided AND the layer has resolvable symbols.
     """
     from .keymap_layer import KeymapLayer
     from .macros import MacroSection
-    from .section_data import collect_used_ids, resolve_macros, resolve_tap_dances
     from .symbol_legend import collect_used_descriptions
     from .symbols import FlowDirection, SymbolSection
     from .tap_dance import TapDanceSection
@@ -186,12 +189,8 @@ def KeymapLayerDocument(
     )
     content_w = keymap_layer.size.width
 
-    macro_entries: list = []
-    td_entries: list = []
-    if config.output.style.show_special_keys_legend:
-        used_macro_ids, used_td_ids = collect_used_ids(layer)
-        macro_entries = resolve_macros(used_macro_ids, macros)
-        td_entries = resolve_tap_dances(used_td_ids, tap_dances)
+    macro_entries = list(macros) if macros else []
+    td_entries = list(tap_dances) if tap_dances else []
 
     # Macro / TD section width split — same policy as
     # :func:`KeymapSpecialKeysDocument`. Half the content width
@@ -250,6 +249,8 @@ def KeymapOverviewDocument(
     keymap: SvalboardKeymap[SvalboardTargetKey],
     title: str,
     copyright: str | None = None,
+    macros: list[SvalboardMacro[SvalboardTargetKey]] | None = None,
+    tap_dances: list[SvalboardTapDance[SvalboardTargetKey]] | None = None,
     raw_keymap: SvalboardKeymap[str] | None = None,
     keycode_mappings: KeycodeMappings | None = None,
 ):
@@ -261,12 +262,18 @@ def KeymapOverviewDocument(
     :func:`KeymapDocument` for the rounded background border +
     content_offset chrome.
 
+    ``macros`` and ``tap_dances`` are pre-resolved by the caller —
+    the overview shows ALL parsed entries, sorted in the order the
+    pills should paint. The document doesn't reach into the keymap
+    or run the sort itself; that's the entry point's concern. Pass
+    ``None`` (the default) or an empty list to suppress the legend
+    section.
+
     When ``keymap`` has no layers there's nothing to render — return
     a zero-sized :func:`Spacer` so the caller skips painting.
     """
     from .keymap_overview import KeymapOverview
     from .macros import MacroSection
-    from .section_data import all_macros, all_tap_dances
     from .symbol_legend import collect_used_descriptions
     from .symbols import FlowDirection, SymbolSection
     from .tap_dance import TapDanceSection
@@ -282,13 +289,8 @@ def KeymapOverviewDocument(
     body = KeymapOverview(keymap=keymap)
     content_w = max(body.size.width, doc_content_w)
 
-    # Macro / TD legend — the overview shows ALL macros and tap-dances,
-    # not just those used on a specific layer.
-    macro_entries: list = []
-    td_entries: list = []
-    if config.output.style.show_special_keys_legend:
-        macro_entries = all_macros(keymap.macros)
-        td_entries = all_tap_dances(keymap.tap_dances)
+    macro_entries = list(macros) if macros else []
+    td_entries = list(tap_dances) if tap_dances else []
 
     col_gap = metrics.column_gap
     col_w = (content_w - col_gap) / 2 if macro_entries and td_entries else content_w
