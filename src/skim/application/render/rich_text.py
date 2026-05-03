@@ -371,33 +371,6 @@ def _parse_into_spans(
     return spans
 
 
-def measure_rich_text_width(text: str, style: TextStyle) -> float:
-    """Natural rendered width of a Nerd-Font-tokenised label.
-
-    Splits ``text`` on Nerd Font tokens (matching what
-    :func:`RichText` would render) and sums the per-span PIL-measured
-    widths at each span's effective font and size. Plain-text
-    fragments use ``style.font`` / ``style.size``; token spans
-    switch to :attr:`Font.SYMBOLS` at the same size — the same
-    routing :func:`RichText` applies.
-
-    Use this when a caller needs the natural width of a marked-up
-    label *before* deciding the layout slot to give to a
-    :func:`RichText` (e.g. pill-rectangle sizing, glyph-cell width
-    pre-pass). Saves the caller from instantiating a composable
-    just to read off a measurement.
-    """
-    spans = _parse_into_spans(text, style)
-    return sum(
-        measure_text_width(
-            span.text,
-            (span.style or style).font,
-            (span.style or style).size,
-        )
-        for span in spans
-    )
-
-
 # ---------------------------------------------------------------------------
 # Internal: relaxation + truncation
 # ---------------------------------------------------------------------------
@@ -837,4 +810,4 @@ def RichText(
     )
 
 
-__all__ = ["RichText", "measure_rich_text_width"]
+__all__ = ["RichText"]

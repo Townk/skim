@@ -41,7 +41,7 @@ from .adjustable_text import AdjustableText
 from .composable import Composable
 from .primitives import Column, Component, MetricsComponent, Point, Size
 from .render_context import RenderContext, TextStyle
-from .rich_text import RichText, measure_rich_text_width
+from .rich_text import RichText
 from .section_data import format_key_label
 from .section_stripe import SectionStripe, SectionStripeMetrics
 from .styling import derive_accent_line
@@ -195,15 +195,17 @@ class MacroMetrics:
 def _pill_width(label: str, *, metrics: MacroMetrics) -> float:
     """Compute the pill width that wraps ``label`` exactly.
 
-    Mirrors what :func:`MacroPill` produces so wrap-detection
-    (:func:`_macro_natural_widths`) and the painted pills agree on
-    width without instantiating composables. Defers to
-    :func:`measure_rich_text_width` so labels carrying Nerd Font
-    tokens measure correctly (icons on ``Font.SYMBOLS``, plain text
-    on ``Font.FINGER_KEY``).
+    Same math :func:`MacroPill` uses, lifted into a free function so
+    the section-level :func:`_macro_natural_widths` pre-pass can
+    measure pill rows without instantiating each pill's composable
+    chain. Builds a throwaway :func:`RichText` to get the natural
+    label width — the rich-text element reports its own size, so
+    going through it keeps measurement behaviour identical to what
+    the painted pill uses.
     """
     label_style = TextStyle(font=Font.FINGER_KEY, size=metrics.pill_font_size)
-    text_width = max(measure_rich_text_width(label, label_style), metrics.pill_min_text_width)
+    natural = RichText(text=label, style=label_style).size.width
+    text_width = max(natural, metrics.pill_min_text_width)
     return max(metrics.pill_min_total_width, text_width + metrics.pill_chrome_width)
 
 
@@ -420,7 +422,6 @@ def MacroPill(
     metrics = MacroMetrics.from_ctx(ctx, scale=scale)
     doc_width = ctx.document_metrics.doc_width * scale
 
-    pill_w = _pill_width(label, metrics=metrics)
     label_style = TextStyle(
         font=Font.FINGER_KEY,
         size=metrics.pill_font_size,
@@ -432,6 +433,8 @@ def MacroPill(
         text_anchor="start",
         dominant_baseline="central",
     )
+    text_width = max(label_el.size.width, metrics.pill_min_text_width)
+    pill_w = max(metrics.pill_min_total_width, text_width + metrics.pill_chrome_width)
     size = Size(pill_w, metrics.pill_row_height)
 
     def draw_at(d, origin):
