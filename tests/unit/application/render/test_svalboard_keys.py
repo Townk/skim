@@ -749,24 +749,24 @@ class TestPadKey:
             _draw(left, Point(0.0, 0.0)).as_svg()
         )
 
-    def test_label_anchors_inward(self, ctx: RenderContext):
-        """Pad's label sits on the side facing the cluster's centre.
-        Right-hand pad sits on the outward (right) side of the cluster
-        so its label hugs the LEFT (inward) edge; left-hand pad
-        mirrors. RichText normalises ``text-anchor`` to ``start`` and
-        offsets the x — so we assert on the rendered ``<text>`` x
-        being near the LEFT edge for right-hand and the RIGHT edge for
-        left-hand."""
+    def test_label_centred(self, ctx: RenderContext):
+        """Pad's label is centred horizontally on the key.
+
+        Center alignment is mirror-invariant — the rendered text's
+        ``x`` attribute (its leftmost position after RichText
+        normalisation) lands at the same offset on both halves.
+        """
         width = 185.0
         with using_render_context(ctx):
             right = _pad_key(side=KeyboardSide.RIGHT, width=width)
             left = _pad_key(side=KeyboardSide.LEFT, width=width)
         right_x = _label_text_x(_draw(right, Point(0.0, 0.0)).as_svg())
         left_x = _label_text_x(_draw(left, Point(0.0, 0.0)).as_svg())
-        # Right pad: label x sits in the LEFT half of the key.
+        # Mirror-invariant: both halves render the label at the same x.
+        assert abs(right_x - left_x) < 0.5
+        # Leftmost position sits in the left half (text extends from
+        # there past the centre).
         assert right_x < width / 2.0
-        # Left pad: label x sits in the RIGHT half of the key.
-        assert left_x > width / 2.0
 
 
 # ---------------------------------------------------------------------------
@@ -810,21 +810,16 @@ class TestNailKey:
         assert pad.metrics.indicator_direction is CompassDirection.EAST
         assert nail.metrics.indicator_direction is CompassDirection.WEST
 
-    def test_label_anchors_inward(self, ctx: RenderContext):
-        """Nail's label sits on the side facing the cluster's centre.
-        Right-hand nail sits on the inward (left) side of the cluster
-        — cluster centre is to its RIGHT — so the label hugs the right
-        edge of the nail key. Left-hand mirrors."""
+    def test_label_centred(self, ctx: RenderContext):
+        """Nail's label is centred horizontally — same x for both halves."""
         width = 195.0
         with using_render_context(ctx):
             right = _nail_key(side=KeyboardSide.RIGHT, width=width)
             left = _nail_key(side=KeyboardSide.LEFT, width=width)
         right_x = _label_text_x(_draw(right, Point(0.0, 0.0)).as_svg())
         left_x = _label_text_x(_draw(left, Point(0.0, 0.0)).as_svg())
-        # Right nail: label hugs the RIGHT edge (inward to cluster).
-        assert right_x > width / 2.0
-        # Left nail: label hugs the LEFT edge (inward to cluster).
-        assert left_x < width / 2.0
+        assert abs(right_x - left_x) < 0.5
+        assert right_x < width / 2.0
 
 
 # ---------------------------------------------------------------------------
@@ -861,13 +856,13 @@ class TestKnuckleKey:
             nail = _nail_key(width=187.0)
         assert knuckle.size.height > nail.size.height
 
-    def test_label_anchors_inward(self, ctx: RenderContext):
-        """Knuckle uses the same inward-label convention as Nail."""
+    def test_label_centred(self, ctx: RenderContext):
+        """Knuckle uses the same centre-aligned convention as Nail."""
         width = 187.0
         with using_render_context(ctx):
             right = _knuckle_key(side=KeyboardSide.RIGHT, width=width)
             left = _knuckle_key(side=KeyboardSide.LEFT, width=width)
         right_x = _label_text_x(_draw(right, Point(0.0, 0.0)).as_svg())
         left_x = _label_text_x(_draw(left, Point(0.0, 0.0)).as_svg())
-        assert right_x > width / 2.0
-        assert left_x < width / 2.0
+        assert abs(right_x - left_x) < 0.5
+        assert right_x < width / 2.0

@@ -878,22 +878,14 @@ def _vertical_trapezoid_thumb_key(
     )
     align_x = Alignment.END if narrow_on_right else Alignment.START
 
-    # Label anchored on the slanted edge — the side that faces the
-    # cluster's centre. With ``narrow_bottom`` trapezoids the wider
-    # face sits at the top and the slant runs from the wide top to
-    # the narrow bottom along the OPPOSITE side from the bottom-narrow
-    # corner: when the narrow bottom is right-aligned, the slant runs
-    # along the LEFT edge (from top-left out to bottom-narrow-left).
-    # The label sits on that slanted side because — for both pad
-    # (narrow-bottom-outward) and nail / knuckle (narrow-bottom-inward) —
-    # that orients the text toward the cluster's centre line, matching
-    # the legacy thumb-key conventions.
-    if narrow_on_right:
-        label_text_anchor = "start"
-        label_x_factor = label_margin_multiplier
-    else:
-        label_text_anchor = "end"
-        label_x_factor = 1.0 - label_margin_multiplier
+    # Label centred horizontally on the cell. Pad / nail / knuckle
+    # all carry their labels at the visual centre — keeps the text
+    # readable regardless of which side of the cluster the key sits
+    # on. ``label_margin_multiplier`` is intentionally unused under
+    # this rule.
+    _ = label_margin_multiplier  # accepted for caller-API parity
+    label_text_anchor = "middle"
+    label_x_factor = 0.5
 
     # Indicator: outward edge on the right hand vs. left hand differs;
     # the mirror helper does the reflection. ``ref_anchor`` is the
