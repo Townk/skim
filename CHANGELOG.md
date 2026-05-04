@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-05-03
+
+### Fixed
+
+- ``hold_symbol_position`` now actually reorders hold/tap labels.
+  The setting was silent for the entire 0.7.0 lifecycle:
+  ``_adjust_hold_symbol_label`` checked for the ASCII pipe ``|``
+  while real labels carry the box-drawing ``│`` (U+2502), so the
+  function early-returned every time. Once the swap path runs, the
+  semantics are now cluster-relative — ``OUTWARD`` puts HOLD on
+  the side of the cluster the key sits on (LEFT-side keys keep
+  the default ``HOLD│TAP`` order; RIGHT-side keys swap to
+  ``TAP│HOLD``). Applies uniformly to finger east/west keys and
+  to thumb pad / up / nail / knuckle keys regardless of which
+  keyboard half the cluster sits on.
+- Missing modifier-union mappings for the L/R OPT, CMD, and WIN
+  aliases (``MOD_LOPT``, ``MOD_LCMD``, ``MOD_LWIN``, ``MOD_ROPT``,
+  ``MOD_RCMD``, ``MOD_RWIN``) so labels referencing those modifiers
+  resolve to the same glyph as their ``ALT`` / ``GUI`` canonical
+  forms.
+
+### Changed
+
+- Thumb cluster label alignment is now uniformly centred for the
+  Pad, Nail, Knuckle, Down, and Double-down keys. Up keeps its
+  inward-aligned label (the trapezoid wants the text on the wide
+  outer face). Previously Pad / Nail / Knuckle anchored to the
+  slanted edge, which read inconsistently next to the centred
+  Down / Double-down labels.
+
 ## [0.7.0] - 2026-05-04
 
 This release replaces the imperative SVG renderer with a composable
