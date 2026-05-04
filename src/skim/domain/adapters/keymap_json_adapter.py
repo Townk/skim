@@ -24,10 +24,13 @@ Attributes:
         Vial/Keybard format (indices 0-5).
 
 Example:
+    ```pycon
     >>> from skim.domain.adapters import KeymapJsonAdapter
     >>> from skim.domain import KeymapType
     >>> raw_layers = [[["KC_A"] * 6] * 10]  # Vial format
     >>> normalized = KeymapJsonAdapter.transform(raw_layers, KeymapType.VIAL)
+
+    ```
 """
 
 from typing import Any
@@ -75,10 +78,13 @@ class KeymapJsonAdapter:
     for use as a utility class without instantiation.
 
     Example:
+        ```pycon
         >>> from skim.domain.domain_types import KeymapType
         >>> # Transform Keybard format to QMK ordering
         >>> keybard_layers = [["KC_A"] * 60, ["KC_B"] * 60]
         >>> qmk_layers = KeymapJsonAdapter.transform(keybard_layers, KeymapType.KEYBARD)
+
+        ```
     """
 
     @staticmethod
@@ -99,8 +105,11 @@ class KeymapJsonAdapter:
             contains 60 keycode strings in QMK's expected order.
 
         Example:
+            ```pycon
             >>> KeymapJsonAdapter.transform([["KC_A"] * 60], KeymapType.C2JSON)
             [['KC_A', 'KC_A', ...]]  # Returned unchanged
+
+            ```
         """
         if data_type == KeymapType.VIAL:
             return KeymapJsonAdapter._from_vial(json_data)

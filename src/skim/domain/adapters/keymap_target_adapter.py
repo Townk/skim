@@ -14,6 +14,7 @@ metadata extraction, producing keys that contain both display labels
 and layer-switching information.
 
 Example:
+    ```pycon
     >>> from skim.application.loaders import load_keycode_mappings
     >>> from skim.data import SkimConfig
     >>> from skim.domain.adapters import KeycodeLabelAdapter, KeymapTargetAdapter
@@ -22,6 +23,8 @@ Example:
     >>> label_adapter = KeycodeLabelAdapter(config.keyboard, mappings)
     >>> adapter = KeymapTargetAdapter(config, label_adapter)
     >>> target_keymap = adapter.transform(raw_keymap)
+
+    ```
 """
 
 from skim.data import SvalboardKeymap, SvalboardLayout
@@ -107,6 +110,7 @@ class KeymapTargetAdapter:
         _label_adapter: The adapter used to transform individual keycodes.
 
     Example:
+        ```pycon
         >>> from skim.application.loaders import load_keycode_mappings
         >>> from skim.data import SkimConfig
         >>> from skim.domain.adapters import KeycodeLabelAdapter, KeymapTargetAdapter
@@ -114,6 +118,8 @@ class KeymapTargetAdapter:
         >>> mappings = load_keycode_mappings(config.keycodes)
         >>> label_adapter = KeycodeLabelAdapter(config.keyboard, mappings)
         >>> adapter = KeymapTargetAdapter(label_adapter)
+
+        ```
     """
 
     _label_adapter: KeycodeLabelAdapter

@@ -13,6 +13,7 @@ Using a real browser ensures perfect rendering of fonts, CSS, and complex
 SVG features that might not be fully supported by pure Python SVG rasterizers.
 
 Example:
+    ```pycon
     >>> import asyncio
     >>> from pathlib import Path
     >>> import drawsvg as draw
@@ -25,6 +26,8 @@ Example:
     ...         await exporter.save(drawing, Path("output.png"))
     >>>
     >>> # asyncio.run(export_example())
+
+    ```
 """
 
 import io
@@ -54,8 +57,11 @@ class ChromiumExporter:
         _browser: The Playwright Browser instance used for rendering.
 
     Example:
+        ```pycon
         >>> async with chromium_exporter() as exporter:
         ...     await exporter.save(drawing, Path("keymap.png"))
+
+        ```
     """
 
     _browser: Browser
@@ -130,9 +136,12 @@ async def chromium_exporter() -> AsyncIterator[ChromiumExporter]:
         A ChromiumExporter instance ready to save drawings.
 
     Example:
+        ```pycon
         >>> async with chromium_exporter() as exporter:
         ...     await exporter.save(drawing1, Path("layer1.png"))
         ...     await exporter.save(drawing2, Path("layer2.png"))
+
+        ```
 
     Note:
         Requires Playwright browsers to be installed. Run

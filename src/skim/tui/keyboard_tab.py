@@ -287,7 +287,11 @@ class KeyboardTab(Widget):
 
         with SkimVerticalScroll(can_focus=False):
             with Vertical(id="info-section"):
-                yield Static("Information", classes="section-title section-title-first")
+                yield Static(
+                    "Information",
+                    id="keyboard-info-section",
+                    classes="section-title section-title-first",
+                )
                 with Horizontal(classes="field-row"):
                     yield Label("Keymap Title:", classes="field-label")
                     yield SkimStandaloneInput(
@@ -306,7 +310,11 @@ class KeyboardTab(Widget):
                     )
 
             with Vertical(id="features-section"):
-                yield Static("Features", classes="section-title")
+                yield Static(
+                    "Features",
+                    id="keyboard-feature-section",
+                    classes="section-title",
+                )
                 with Horizontal(id="features-row"):
                     yield Label("Double South: ", classes="field-label")
                     yield SkimSwitch(
@@ -315,7 +323,11 @@ class KeyboardTab(Widget):
                         help_key="keyboard-feature-double-south",
                     )
 
-            yield Static("Layers", classes="section-title")
+            yield Static(
+                "Layers",
+                id="keyboard-layer-section",
+                classes="section-title",
+            )
             yield LayerListPane(config_data=self.config_data)
 
     def on_mount(self) -> None:

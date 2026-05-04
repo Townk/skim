@@ -11,12 +11,15 @@ provide type-safe, immutable containers for input/output file specifications
 and layer selection options.
 
 Example:
+    ```pycon
     >>> from skim.data import InputFiles, OutputFiles, KeymapGeneratorTargets
     >>> from pathlib import Path
 
     >>> inputs = InputFiles(config=Path("config.yaml"), keymap=Path("keymap.kbi"))
     >>> outputs = OutputFiles(output_dir=Path("./images"), output_format="png")
     >>> targets = KeymapGeneratorTargets.from_args(("1", "3-5", "overview"))
+
+    ```
 """
 
 from collections.abc import Callable
@@ -59,6 +62,7 @@ class OutputFiles:
             first available engine. Defaults to None.
 
     Example:
+        ```pycon
         >>> output = OutputFiles(
         ...     output_dir=Path("./images"),
         ...     output_format="png",
@@ -66,6 +70,8 @@ class OutputFiles:
         ... )
         >>> output.output_format
         'png'
+
+        ```
     """
 
     output_dir: Path = field(default_factory=Path)
@@ -93,6 +99,7 @@ class InputFiles:
             Defaults to False.
 
     Example:
+        ```pycon
         >>> # Read keymap from file with custom config
         >>> inputs = InputFiles(
         ...     config=Path("my-config.yaml"),
@@ -101,6 +108,8 @@ class InputFiles:
 
         >>> # Read keymap from stdin
         >>> inputs = InputFiles(force_stdin_keymap=True)
+
+        ```
     """
 
     config: Path | None = None
@@ -127,6 +136,7 @@ class KeymapGeneratorTargets:
             empty list.
 
     Example:
+        ```pycon
         >>> # Generate specific layers and overview
         >>> targets = KeymapGeneratorTargets(
         ...     overview=True,
@@ -137,6 +147,8 @@ class KeymapGeneratorTargets:
 
         >>> # Generate all layers
         >>> targets = KeymapGeneratorTargets(all_layers=True, overview=True)
+
+        ```
     """
 
     all_layers: bool = False
@@ -177,6 +189,7 @@ class KeymapGeneratorTargets:
             parsed arguments.
 
         Example:
+            ```pycon
             >>> # No arguments = all layers + overview
             >>> targets = KeymapGeneratorTargets.from_args(())
             >>> targets.all_layers
@@ -195,6 +208,8 @@ class KeymapGeneratorTargets:
             True
             >>> targets.all_layers
             False
+
+            ```
         """
         if not layer:
             return KeymapGeneratorTargets(all_layers=True, overview=True, selected_layers=[])

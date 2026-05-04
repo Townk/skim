@@ -16,12 +16,15 @@ Log level formatting:
     - ERROR/CRITICAL: Red with error emoji (🚨)
 
 Example:
+    ```pycon
     >>> from skim.ui.logging_config import setup_logging
     >>> setup_logging("INFO", quiet=False)
     >>> import logging
     >>> logger = logging.getLogger(__name__)
     >>> logger.info("Processing...", extra={"emoji": "🔄"})
     🔄 Processing...
+
+    ```
 """
 
 import logging
@@ -116,6 +119,7 @@ def setup_logging(verbosity: str, quiet: bool) -> None:
             Equivalent to setting verbosity to "NONE".
 
     Example:
+        ```pycon
         >>> setup_logging("INFO", quiet=False)
         >>> logging.info("This will be shown")
 
@@ -124,6 +128,8 @@ def setup_logging(verbosity: str, quiet: bool) -> None:
 
         >>> setup_logging("DEBUG", quiet=True)
         >>> logging.debug("This will NOT be shown (quiet=True)")
+
+        ```
     """
     if quiet or verbosity == "NONE":
         logging.getLogger().setLevel(logging.CRITICAL + 1)

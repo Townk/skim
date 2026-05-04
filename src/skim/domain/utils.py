@@ -9,6 +9,7 @@ This module provides general-purpose utility functions used throughout
 the domain layer of the skim application.
 
 Example:
+    ```pycon
     >>> from skim.domain.utils import clip
     >>> clip(15, 0, 10)
     10
@@ -16,6 +17,8 @@ Example:
     0
     >>> clip(5, 0, 10)
     5
+
+    ```
 """
 
 
@@ -37,6 +40,7 @@ def clip(n: int | float, min_val: int | float, max_val: int | float) -> int | fl
         matches the most precise input type (float if any input is float).
 
     Example:
+        ```pycon
         >>> clip(5, 0, 10)
         5
         >>> clip(-5, 0, 10)
@@ -47,5 +51,7 @@ def clip(n: int | float, min_val: int | float, max_val: int | float) -> int | fl
         0.5
         >>> clip(1.5, 0.0, 1.0)
         1.0
+
+        ```
     """
     return max(min_val, min(n, max_val))

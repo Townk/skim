@@ -9,9 +9,12 @@ Provides a frozen, slotted dataclass that validates all bundled assets
 exist at first access—fail fast on broken installations.
 
 Example:
+    ```pycon
     >>> from skim.assets import ASSETS
     >>> mappings_path = ASSETS.keycode_mappings
     >>> font_path = ASSETS.font_roboto_regular
+
+    ```
 """
 
 from dataclasses import dataclass, field
@@ -28,9 +31,12 @@ class BundleAssets:
     Missing assets raise FileNotFoundError immediately.
 
     Example:
+        ```pycon
         >>> assets = BundleAssets()
         >>> str(assets.keycode_mappings)
         '.../assets/data/keycode-mappings.yaml'
+
+        ```
     """
 
     _cache: dict[str, Path] = field(default_factory=dict, init=False, repr=False, compare=False)

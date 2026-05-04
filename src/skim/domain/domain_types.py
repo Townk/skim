@@ -19,6 +19,7 @@ Attributes:
         hold-tap symbols, but for any two sides of a lable.
 
 Example:
+    ```pycon
     >>> from skim.domain.domain_types import KeyboardSide, KeyDirection
     >>> side = KeyboardSide.LEFT
     >>> side.opposite
@@ -26,6 +27,8 @@ Example:
     >>> direction = KeyDirection.NORTH
     >>> direction.opposite
     <KeyDirection.SOUTH: 'south'>
+
+    ```
 """
 
 from dataclasses import dataclass
@@ -46,11 +49,14 @@ class Alignment(Enum):
         END: Align to the end (right for horizontal, bottom for vertical).
 
     Example:
+        ```pycon
         >>> align = Alignment.START
         >>> align.opposite
         <Alignment.END: 'end'>
         >>> Alignment.CENTER.opposite
         <Alignment.CENTER: 'center'>
+
+        ```
     """
 
     __slots__ = ()
@@ -68,8 +74,11 @@ class Alignment(Enum):
             CENTER returns itself as it has no opposite.
 
         Example:
+            ```pycon
             >>> Alignment.START.opposite
             <Alignment.END: 'end'>
+
+            ```
         """
         if self == Alignment.START:
             return Alignment.END
@@ -89,9 +98,12 @@ class KeyboardSide(Enum):
         RIGHT: The right-hand side of the keyboard.
 
     Example:
+        ```pycon
         >>> side = KeyboardSide.LEFT
         >>> side.opposite
         <KeyboardSide.RIGHT: 'right'>
+
+        ```
     """
 
     __slots__ = ()
@@ -107,8 +119,11 @@ class KeyboardSide(Enum):
             LEFT if the current side is RIGHT, and vice versa.
 
         Example:
+            ```pycon
             >>> KeyboardSide.RIGHT.opposite
             <KeyboardSide.LEFT: 'left'>
+
+            ```
         """
         return KeyboardSide.LEFT if self == KeyboardSide.RIGHT else KeyboardSide.RIGHT
 
@@ -135,9 +150,12 @@ class KeyDirection(Enum):
         WEST: The westward (away from thumb) direction.
 
     Example:
+        ```pycon
         >>> direction = KeyDirection.NORTH
         >>> direction.opposite
         <KeyDirection.SOUTH: 'south'>
+
+        ```
     """
 
     __slots__ = ()
@@ -156,8 +174,11 @@ class KeyDirection(Enum):
             and vice versa.
 
         Example:
+            ```pycon
             >>> KeyDirection.EAST.opposite
             <KeyDirection.WEST: 'west'>
+
+            ```
         """
         if self == KeyDirection.NORTH:
             return KeyDirection.SOUTH
@@ -183,8 +204,11 @@ class KeymapType(Enum):
             data with Keybard-specific key ordering.
 
     Example:
+        ```pycon
         >>> KeymapType.VIAL.value
         'vial'
+
+        ```
     """
 
     __slots__ = ()
@@ -224,6 +248,7 @@ class SvalboardTargetKey:
             None when the key is not a tap-dance reference. Defaults to None.
 
     Example:
+        ```pycon
         >>> # Simple key with just a label
         >>> key = SvalboardTargetKey(label="A")
         >>> key.label
@@ -233,6 +258,8 @@ class SvalboardTargetKey:
         >>> key = SvalboardTargetKey(label="A│L1", layer_switch=1)
         >>> key.layer_switch
         1
+
+        ```
     """
 
     label: str = ""

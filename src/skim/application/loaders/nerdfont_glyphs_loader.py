@@ -14,10 +14,13 @@ The loaded mappings are cached using ``lru_cache`` for efficient repeated
 access across multiple keymap generation runs.
 
 Example:
+    ```pycon
     >>> from skim.application.loaders.nerdfont_glyphs_loader import load_nerdfont_glyphs
     >>> glyphs = load_nerdfont_glyphs()
     >>> "nf-md-home" in glyphs
     True
+
+    ```
 """
 
 import json
@@ -47,9 +50,12 @@ def load_nerdfont_glyphs() -> dict[str, str]:
             in the assets/data directory.
 
     Example:
+        ```pycon
         >>> glyphs = load_nerdfont_glyphs()
         >>> char = glyphs.get("nf-md-home")
         >>> # char contains the Unicode home icon character
+
+        ```
     """
     json_path = ASSETS.nerd_font_glyphs
 

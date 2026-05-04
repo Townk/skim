@@ -673,7 +673,11 @@ class OutputTab(Widget):
         with SkimVerticalScroll(can_focus=False):
             # --- Page section ---
             with Vertical(classes="section"):
-                yield Static("Page", classes="section-title section-title-first")
+                yield Static(
+                    "Page",
+                    id="output-page-section",
+                    classes="section-title section-title-first",
+                )
                 with Horizontal(classes="field-row"):
                     yield Label("Width:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
@@ -730,7 +734,11 @@ class OutputTab(Widget):
 
             # --- Style section ---
             with Vertical(classes="section"):
-                yield Static("Style", classes="section-title")
+                yield Static(
+                    "Style",
+                    id="output-style-section",
+                    classes="section-title",
+                )
                 with Horizontal(classes="field-row"):
                     yield Label("Hold symbol position:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
@@ -810,7 +818,11 @@ class OutputTab(Widget):
 
             # --- Palette section ---
             with Vertical(classes="section"):
-                yield Static("Palette", classes="section-title")
+                yield Static(
+                    "Palette",
+                    id="output-palette-section",
+                    classes="section-title",
+                )
                 for color_label, field_id, config_key, placeholder in [
                     ("Background color:", "palette-background-color", "background_color", "white"),
                     ("Text color:", "palette-text-color", "text_color", "black"),
@@ -840,7 +852,11 @@ class OutputTab(Widget):
 
             # --- Layer colors section ---
             with Vertical(classes="section"):
-                yield Static("Layer Colors", classes="section-title")
+                yield Static(
+                    "Layer Colors",
+                    id="output-layer-color-section",
+                    classes="section-title",
+                )
                 yield LayerColorListPane(config_data=self.config_data)
 
     def on_mount(self) -> None:

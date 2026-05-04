@@ -14,25 +14,29 @@ Configuration can be loaded from YAML files or constructed programmatically.
 All models use Pydantic's BaseModel for validation and serialization.
 
 Example:
-    Loading configuration from a YAML file::
+    Loading configuration from a YAML file:
 
-        import yaml
-        from skim.data.config import SkimConfig
+    ```python
+    import yaml
+    from skim.data.config import SkimConfig
 
-        with open("skim-config.yaml") as f:
-            data = yaml.safe_load(f)
-        config = SkimConfig(**data)
+    with open("skim-config.yaml") as f:
+        data = yaml.safe_load(f)
+    config = SkimConfig(**data)
+    ```
 
-    Creating configuration programmatically::
+    Creating configuration programmatically:
 
-        from skim.data.config import SkimConfig, LayerColor, Palette
+    ```python
+    from skim.data.config import SkimConfig, LayerColor, Palette
 
-        config = SkimConfig()
-        new_layers = config.output.style.palette.layers + (LayerColor(base_color="#FF0000"),)
-        new_palette = config.output.style.palette.model_copy(update={"layers": new_layers})
-        new_style = config.output.style.model_copy(update={"palette": new_palette})
-        new_output = config.output.model_copy(update={"style": new_style})
-        config = config.model_copy(update={"output": new_output})
+    config = SkimConfig()
+    new_layers = config.output.style.palette.layers + (LayerColor(base_color="#FF0000"),)
+    new_palette = config.output.style.palette.model_copy(update={"layers": new_layers})
+    new_style = config.output.style.model_copy(update={"palette": new_palette})
+    new_output = config.output.model_copy(update={"style": new_style})
+    config = config.model_copy(update={"output": new_output})
+    ```
 
 Attributes:
     SplitSidePositionStr: Annotated type alias for SplitSidePosition that
@@ -74,11 +78,14 @@ class KeyboardLayer(BaseModel):
             in the overview image. Defaults to None if not specified.
 
     Example:
-        >>> layer = KeyboardLayer(name="Base Layer")
+        ```pycon
+        >>> layer = KeyboardLayer(index=0, name="Base Layer")
         >>> layer.name
         'Base Layer'
         >>> layer.variant is None
         True
+
+        ```
     """
 
     model_config = ConfigDict(frozen=True)
@@ -96,14 +103,17 @@ class KeyboardFeatures(BaseModel):
     keymap images. These settings affect which keys are rendered.
 
     Attributes:
-        double_south: Whether to render the MH (double-south) keys on finger
+        double_south: Whether to render the DS (double-south) keys on finger
             clusters. When False, these positions are hidden. Defaults to
             False as not all Svalboard configurations have these keys.
 
     Example:
+        ```pycon
         >>> features = KeyboardFeatures(double_south=True)
         >>> features.double_south
         True
+
+        ```
 
     Note:
         Currently the Svalboard keyboard only have a single feature modifier
@@ -131,15 +141,18 @@ class Keyboard(BaseModel):
             indices (0, 1, 2, etc.).
 
     Example:
+        ```pycon
         >>> keyboard = Keyboard(
         ...     features=KeyboardFeatures(double_south=True),
         ...     layers=(
-        ...         KeyboardLayer(name="Base"),
-        ...         KeyboardLayer(name="Symbols"),
+        ...         KeyboardLayer(index=0, name="Base"),
+        ...         KeyboardLayer(index=1, name="Symbols"),
         ...     ),
         ... )
         >>> len(keyboard.layers)
         2
+
+        ```
     """
 
     model_config = ConfigDict(frozen=True)
@@ -165,6 +178,7 @@ class Keyboard(BaseModel):
                 the Pydantic post-init signature).
 
         Example:
+            ```pycon
             >>> keyboard = Keyboard(
             ...     layers=[
             ...         KeyboardLayer(index=0, id="base", name="Base"),
@@ -175,6 +189,8 @@ class Keyboard(BaseModel):
             0
             >>> keyboard.layer_index("1")  # Second layer has no id, uses QMK index
             15
+
+            ```
         """
         for idx, layer in enumerate(self.layers):
             if layer.id is not None:
@@ -202,6 +218,7 @@ class Keyboard(BaseModel):
             layer matches the given key or if key is ``None``.
 
         Example:
+            ```pycon
             >>> keyboard = Keyboard(
             ...     layers=[
             ...         KeyboardLayer(index=0, id="nav", name="Navigation"),
@@ -214,6 +231,8 @@ class Keyboard(BaseModel):
             15
             >>> keyboard.layer_index("unknown") is None
             True
+
+            ```
         """
         if key is None:
             return None
@@ -234,6 +253,7 @@ class Keyboard(BaseModel):
             ``None`` if no layer has the given QMK index.
 
         Example:
+            ```pycon
             >>> keyboard = Keyboard(
             ...     layers=[
             ...         KeyboardLayer(index=0, name="Base"),
@@ -244,6 +264,8 @@ class Keyboard(BaseModel):
             1
             >>> keyboard.qmk_index_to_position(5) is None
             True
+
+            ```
         """
         return self._qmk_index_map.get(qmk_idx)
 
@@ -260,6 +282,7 @@ class Keyboard(BaseModel):
             The QMK firmware layer index.
 
         Example:
+            ```pycon
             >>> keyboard = Keyboard(
             ...     layers=[
             ...         KeyboardLayer(index=0, name="Base"),
@@ -268,6 +291,8 @@ class Keyboard(BaseModel):
             ... )
             >>> keyboard.layer_qmk_index(1)
             15
+
+            ```
         """
         return self.layers[position].index
 
@@ -288,10 +313,13 @@ class Keycode(BaseModel):
             overrides, this is the display label.
 
     Example:
+        ```pycon
         >>> # Override KC_SPC to display as "Space"
         >>> override = Keycode(keycode="KC_SPC", target="Space")
         >>> override.keycode
         'KC_SPC'
+
+        ```
     """
 
     model_config = ConfigDict(frozen=True)
@@ -375,41 +403,50 @@ class Keycodes(BaseModel):
             precedence; new categories are appended after the bundled ones.
             Defaults to an empty dict (no overrides).
 
-            Example::
+            Example:
 
-                symbol_descriptions:
-                  Modifiers:
-                    KC_LEFT_CTRL: "Control (my label)"
-                  "My Section":
-                    MY_KEY: "Does the thing"
+            ```yaml
+            symbol_descriptions:
+              Modifiers:
+                KC_LEFT_CTRL: "Control (my label)"
+              "My Section":
+                MY_KEY: "Does the thing"
+            ```
 
         function_descriptions: User overrides for the bundled function
             description table, same shape as ``symbol_descriptions``.
             Defaults to an empty dict (no overrides).
 
-            Example::
+            Example:
 
-                function_descriptions:
-                  Layers:
-                    MO: "Custom MO description with @0;"
+            ```yaml
+            function_descriptions:
+              Layers:
+                MO: "Custom MO description with @0;"
+            ```
 
         symbol_legend_aliases: Shallow-merge overrides for the bundled
             ``symbol_legend_aliases`` map.  Each entry maps a keycode to
             the canonical keycode whose legend entry it should share.
             Defaults to an empty dict (no overrides).
 
-            Example::
+            Example:
 
-                symbol_legend_aliases:
-                  KC_RIGHT_GUI: KC_LEFT_GUI
+            ```yaml
+            symbol_legend_aliases:
+              KC_RIGHT_GUI: KC_LEFT_GUI
+            ```
 
     Example:
+        ```pycon
         >>> keycodes = Keycodes(
         ...     pre_process=(Keycode(keycode="LCTL_T(KC_A)", target="MT(MOD_LCTL,KC_A)"),),
         ...     overrides=(Keycode(keycode="KC_SPC", target="Space"),),
         ... )
         >>> len(keycodes.overrides)
         1
+
+        ```
     """
 
     model_config = ConfigDict(frozen=True)
@@ -460,9 +497,12 @@ class Spacing(BaseModel):
             resolved at render time.
 
     Example:
+        ```pycon
         >>> spacing = Spacing(margin=10, inset=25)
         >>> spacing.margin
-        10
+        10.0
+
+        ```
     """
 
     model_config = ConfigDict(frozen=True)
@@ -485,9 +525,12 @@ class Layout(BaseModel):
             to a Spacing instance with default values.
 
     Example:
+        ```pycon
         >>> layout = Layout(width=1200, spacing=Spacing(margin=20))
         >>> layout.width
-        1200
+        1200.0
+
+        ```
     """
 
     model_config = ConfigDict(frozen=True)
@@ -508,9 +551,12 @@ class Border(BaseModel):
             for square corners. Defaults to 10.
 
     Example:
+        ```pycon
         >>> border = Border(width=3, radius=15)
         >>> border.radius
         15.0
+
+        ```
     """
 
     model_config = ConfigDict(frozen=True)
@@ -542,6 +588,7 @@ class LayerColor(BaseModel):
             should be in.
 
     Example:
+        ```pycon
         >>> # Single color mode
         >>> layer = LayerColor(base_color="#FF0000")
         >>> layer[0]
@@ -554,6 +601,8 @@ class LayerColor(BaseModel):
         ... )
         >>> layer[1]
         '#CC0000'
+
+        ```
     """
 
     model_config = ConfigDict(frozen=True)
@@ -579,9 +628,12 @@ class LayerColor(BaseModel):
             IndexError: If index is outside the valid range (0-5).
 
         Example:
+            ```pycon
             >>> layer = LayerColor(base_color="#FFF")
             >>> layer[0]
             '#FFF'
+
+            ```
         """
         if not 0 <= index < 6:
             raise IndexError(f"Gradient index {index} out of range (0-5)")
@@ -598,8 +650,11 @@ class LayerColor(BaseModel):
             returns all 6 colors.
 
         Example:
+            ```pycon
             >>> str(LayerColor(base_color="#FFF"))
             '["#FFF"]'
+
+            ```
         """
         str_colors = (
             (f'"{self.base_color}"',) if not self.gradient else (f'"{x}"' for x in self.gradient)
@@ -618,12 +673,15 @@ class LayerColor(BaseModel):
             A CSS color string for the accent color.
 
         Example:
+            ```pycon
             >>> layer = LayerColor(
             ...     base_color="#FF0000",
             ...     gradient=("#FF0000", "#AA0000", "#880000", "#660000", "#440000", "#220000"),
             ... )
             >>> layer.dark_accent_color
             '#AA0000'
+
+            ```
         """
         return self.base_color if not self.gradient else self.gradient[1]
 
@@ -659,6 +717,7 @@ class Palette(BaseModel):
             Defaults to an empty tuple.
 
     Example:
+        ```pycon
         >>> palette = Palette(
         ...     background_color="#F0F0F0",
         ...     layers=(
@@ -668,6 +727,8 @@ class Palette(BaseModel):
         ... )
         >>> palette.background_color
         '#F0F0F0'
+
+        ```
     """
 
     model_config = ConfigDict(frozen=True)
@@ -715,10 +776,12 @@ as plain strings (e.g., "inward", "outward") which are automatically
 converted to SplitSidePosition enum members during validation.
 
 Example:
-    In a YAML configuration file::
+    In a YAML configuration file:
 
-        style:
-          hold_symbol_position: outward
+    ```yaml
+    style:
+      hold_symbol_position: outward
+    ```
 
     When parsed, "outward" is converted to SplitSidePosition.OUTWARD.
 """
@@ -793,12 +856,15 @@ class Style(BaseModel):
             image. Default 1.5.
 
     Example:
+        ```pycon
         >>> style = Style(
         ...     use_layer_colors_on_keys=True,
         ...     hold_symbol_position=SplitSidePosition.INWARD,
         ... )
         >>> style.hold_symbol_position
         <SplitSidePosition.INWARD: 'inward'>
+
+        ```
     """
 
     model_config = ConfigDict(frozen=True)
@@ -837,12 +903,15 @@ class Output(BaseModel):
             image. Defaults to None.
 
     Example:
+        ```pycon
         >>> output = Output(
         ...     layout=Layout(width=1000),
         ...     style=Style(use_layer_colors_on_keys=False),
         ... )
         >>> output.layout.width
-        1000
+        1000.0
+
+        ```
     """
 
     model_config = ConfigDict(frozen=True)
@@ -877,23 +946,27 @@ class SkimConfig(BaseModel):
             values.
 
     Example:
-        Creating a basic configuration::
+        Creating a basic configuration:
 
-            config = SkimConfig()
-            new_layout = config.output.layout.model_copy(update={"width": 1200})
-            new_output = config.output.model_copy(update={"layout": new_layout})
-            config = config.model_copy(update={"output": new_output})
+        ```python
+        config = SkimConfig()
+        new_layout = config.output.layout.model_copy(update={"width": 1200})
+        new_output = config.output.model_copy(update={"layout": new_layout})
+        config = config.model_copy(update={"output": new_output})
+        ```
 
-        Loading from a dictionary (e.g., parsed YAML)::
+        Loading from a dictionary (e.g., parsed YAML):
 
-            data = {
-                "keyboard": {
-                    "features": {"double_south": True},
-                    "layers": [{"label": "1", "name": "Base"}],
-                },
-                "output": {"layout": {"width": 1000}},
-            }
-            config = SkimConfig(**data)
+        ```python
+        data = {
+            "keyboard": {
+                "features": {"double_south": True},
+                "layers": [{"index": 0, "id": "1", "name": "Base"}],
+            },
+            "output": {"layout": {"width": 1000}},
+        }
+        config = SkimConfig(**data)
+        ```
     """
 
     model_config = ConfigDict(frozen=True)

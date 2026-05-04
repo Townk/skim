@@ -18,6 +18,7 @@ The generation pipeline follows these steps:
 5. Export drawings to output directory
 
 Example:
+    ```pycon
     >>> from pathlib import Path
     >>> from skim.data.cli import InputFiles, OutputFiles, KeymapGeneratorTargets
     >>> from skim.application.keymap_generator import generate_keymap
@@ -25,6 +26,8 @@ Example:
     >>> outputs = OutputFiles(output_dir=Path("./images"), output_format="png")
     >>> targets = KeymapGeneratorTargets(all_layers=True, overview=True)
     >>> generate_keymap(inputs, outputs, targets)
+
+    ```
 """
 
 import logging

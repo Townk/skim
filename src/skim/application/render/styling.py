@@ -33,10 +33,13 @@ def hex_str(red: float, green: float, blue: float) -> str:
         Format: '#RRGGBB'
 
     Examples:
+        ```pycon
         >>> hex_str(1.0, 0.0, 0.0)
         '#FF0000'
         >>> hex_str(0.5, 0.5, 0.5)
         '#808080'
+
+        ```
     """
     r = int(round(red * 255))
     g = int(round(green * 255))
@@ -64,10 +67,13 @@ def str_to_rgb(color_str: str) -> tuple[float, float, float]:
         Tuple of (red, green, blue) with values in range 0.0-1.0.
 
     Examples:
+        ```pycon
         >>> str_to_rgb("#FF0000")
         (1.0, 0.0, 0.0)
         >>> str_to_rgb("00FF00")
         (0.0, 1.0, 0.0)
+
+        ```
     """
     color_str = color_str.strip().lower()
 
@@ -174,38 +180,141 @@ def adjust_hls(
     return rgb_to_hex(*colorsys.hls_to_rgb(hue, lum, sat))
 
 
+_GREEN_HUE_OFFSET = 85
+"""Hue offset (on the 0-255 scale) that places ``layer_index=0`` at green.
+
+``85 / 255`` is exactly ``1/3``, which is the green primary on the HSV
+hue wheel. Using this offset matches the Svalboard convention of
+starting the layer-color sequence at green for the base layer.
+"""
+
+_HUE_STEP_8 = 32
+"""Hue step (on the 0-255 scale) between consecutive bit-reversed slots
+within an octet of 8 hues.
+
+``256 / 8 = 32`` — partitions the wheel into 8 hues at 45° apart, which
+is wide enough that adjacent hues read as decisively different colors
+(as opposed to 22.5° spacing where greens and yellow-greens blur).
+"""
+
+_INTERMEDIATE_HUE_OFFSET = 16
+"""Half-octet offset (``32 / 2``) applied to layers 16–31 so their hues
+land between the eight base hues used by layers 0–15."""
+
+_BRIGHT_LIGHTNESS = 0.22
+"""Lightness for the eight "bright" layers in each half (0–7 and 16–23)."""
+
+_DIM_LIGHTNESS = 0.40
+"""Lightness for the eight "dim" layers in each half (8–15 and 24–31).
+
+Same hue as the corresponding bright layer; the lightness shift makes
+them visually distinct without consuming another hue slot.
+"""
+
+
+def _bit_reverse_3(n: int) -> int:
+    """Reverse the low 3 bits of ``n`` (assumes ``0 <= n < 8``).
+
+    Used to walk the eight base hues so consecutive layers land on
+    maximally-distant hues: layer 0 → 0, layer 1 → 4 (180° away), layer
+    2 → 2 (90° back), layer 3 → 6 (180° from layer 2), then 1, 5, 3, 7
+    fill the remaining slots at 45° each.
+
+    Examples:
+        ```pycon
+        >>> _bit_reverse_3(0), _bit_reverse_3(1), _bit_reverse_3(2)
+        (0, 4, 2)
+        >>> _bit_reverse_3(3), _bit_reverse_3(4)
+        (6, 1)
+
+        ```
+    """
+    result = 0
+    for i in range(3):
+        if n & (1 << i):
+            result |= 1 << (2 - i)
+    return result
+
+
 def default_layer_color(
     layer_index: int,
-    target_lightness: float | None = 0.31,
-    target_saturation: float | None = 0.50,
+    target_lightness: float | None = None,
+    target_saturation: float | None = 0.65,
 ) -> str:
-    """Generate a default color for a layer using QMK's hue distribution.
+    """Generate a default color for a layer.
 
-    QMK distributes layer hues evenly across the color wheel using the
-    formula ``hue = layer_index * (256 / 16)`` on a 0-255 scale (16 layers
-    maximum). The saturation and value are both set to maximum (255).
+    Combines two dimensions to deliver 32 visually distinct colors —
+    well beyond what the human eye can separate in pure hue alone:
 
-    The resulting color is then adjusted using the same lightness and
-    saturation parameters used by the config generator.
+    - **Hue**: 8 bit-reversed hues at 45° apart (0, 180°, 90°, 270°, 45°,
+      225°, 135°, 315° — relative to green). This wider spacing reads
+      as decisively different colors instead of the 22.5° smear that
+      makes greens, yellow-greens, and lime all blur together.
+    - **Lightness**: alternates between a bright ``0.22`` and a dim
+      ``0.40`` every 8 layers, so layer 8 (dim green) is unmistakable
+      next to layer 0 (bright green) even though they share a hue.
+
+    The mapping for ``layer_index`` (taken mod 32 first):
+
+    | Range  | Hue band                            | Lightness |
+    |--------|-------------------------------------|-----------|
+    | 0–7    | 8 base hues (45° apart from green)  | bright    |
+    | 8–15   | same 8 base hues                    | dim       |
+    | 16–23  | 8 intermediate hues (offset 22.5°)  | bright    |
+    | 24–31  | same 8 intermediate hues            | dim       |
+
+    Layers 0–15 cover sixteen visually-distinct colors (eight hues × two
+    lightnesses); layers 16–31 fill in the intermediate hues for keymaps
+    that exceed the first half of the budget. Indices past 31 wrap.
+
+    The ``target_lightness`` argument, when not ``None``, overrides the
+    bright/dim split — pass it explicitly when you want the whole
+    palette at a single fixed lightness (e.g., when generating a
+    monochrome variant). Leave it as ``None`` to keep the bright/dim
+    alternation.
 
     Args:
         layer_index: Zero-based layer index.
-        target_lightness: Desired lightness value (0.0-1.0). Default: 0.31
-        target_saturation: Maximum saturation value (0.0-1.0). Default: 0.50
+        target_lightness: Desired lightness value (0.0-1.0). When
+            ``None`` (default), the bright/dim alternation chooses
+            lightness automatically.
+        target_saturation: Maximum saturation value (0.0-1.0). Default:
+            0.65
 
     Returns:
         Adjusted hex color string with '#' prefix.
 
     Examples:
-        >>> default_layer_color(0)  # hue=0 (red)
-        '#772828'
-        >>> default_layer_color(4)  # hue=64 (green-ish)
-        '#4F7728'
+        ```pycon
+        >>> default_layer_color(0)  # bright green base
+        '#145D14'
+        >>> default_layer_color(1)  # 180° from green, bright
+        '#5D145C'
+        >>> default_layer_color(8)  # same hue as layer 0, dim
+        '#24A824'
+        >>> default_layer_color(32) == default_layer_color(0)  # wraps
+        True
+
+        ```
     """
-    hue = (layer_index * 16) / 255.0  # QMK: layer * (256/16) on 0-255 scale
+    n = layer_index % 32
+    octet = n // 8  # 0, 1, 2, or 3
+    within_octet = n % 8
+    hue_slot = _bit_reverse_3(within_octet)  # 0..7 in shuffled order
+    is_intermediate = octet >= 2  # layers 16-31
+    is_dim = (octet % 2) == 1  # 8-15 or 24-31
+
+    intermediate_offset = _INTERMEDIATE_HUE_OFFSET if is_intermediate else 0
+    hue_byte = (hue_slot * _HUE_STEP_8 + intermediate_offset + _GREEN_HUE_OFFSET) % 256
+    hue = hue_byte / 255.0
+
+    lightness = target_lightness
+    if lightness is None:
+        lightness = _DIM_LIGHTNESS if is_dim else _BRIGHT_LIGHTNESS
+
     r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
     base_color = hex_str(r, g, b)
-    return adjust_color(base_color, target_lightness, target_saturation)
+    return adjust_color(base_color, lightness, target_saturation)
 
 
 def adjust_color(
@@ -231,8 +340,11 @@ def adjust_color(
         Adjusted color as hexadecimal string with '#' prefix.
 
     Examples:
+        ```pycon
         >>> adjust_color("#FF0000", 0.31, 0.50)
         '#7F0000'  # Darker, less saturated red
+
+        ```
     """
     red, green, blue = str_to_rgb(hex_color)
     hue, lightness, saturation = colorsys.rgb_to_hls(red, green, blue)
@@ -273,8 +385,11 @@ def nudge_color_hsl(
         Adjusted color as a ``#RRGGBB`` hexadecimal string.
 
     Examples:
+        ```pycon
         >>> nudge_color_hsl("#7F7F7F", lightness_delta=0.05)
         '#8C8C8C'
+
+        ```
     """
     red, green, blue = str_to_rgb(hex_color)
     hue, lightness, saturation = colorsys.rgb_to_hls(red, green, blue)
@@ -325,11 +440,14 @@ def make_gradient(base_color: str, base_index: int = 2) -> tuple[str, str, str, 
         List of 6 hexadecimal color strings forming a gradient.
 
     Examples:
+        ```pycon
         >>> grad = make_gradient("#347156", base_index=2)
         >>> len(grad)
         6
         >>> gradient[2]  # Base color at index 2
         '#347156'
+
+        ```
     """
     red, green, blue = str_to_rgb(base_color)
     hue, lightness, saturation = colorsys.rgb_to_hls(red, green, blue)

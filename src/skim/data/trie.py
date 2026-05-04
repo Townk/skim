@@ -11,6 +11,7 @@ internally by the keycode label adapter to efficiently match QMK macro
 function names like "LT", "MO", "TG", etc.
 
 Example:
+    ```pycon
     >>> from skim.data.trie import Trie
     >>> trie = Trie(["LT", "MO", "TG", "OSL"])
     >>> trie.get_matching_prefix("LT0")
@@ -19,6 +20,8 @@ Example:
     'MO'
     >>> trie.get_matching_prefix("KC_A") is None
     True
+
+    ```
 """
 
 from collections.abc import Iterable
@@ -43,6 +46,7 @@ class Trie:
             complete word string.
 
     Example:
+        ```pycon
         >>> trie = Trie(["cat", "car", "card"])
         >>> trie.get_matching_prefix("catalog")
         'cat'
@@ -50,6 +54,8 @@ class Trie:
         'car'
         >>> trie.get_matching_prefix("dog") is None
         True
+
+        ```
     """
 
     __slots__ = ["root"]
@@ -66,6 +72,7 @@ class Trie:
                 tuple, set, generator, or any other iterable of strings.
 
         Example:
+            ```pycon
             >>> trie = Trie(["LT", "MO", "TG"])
             >>> trie.get_matching_prefix("LT0")
             'LT'
@@ -74,6 +81,8 @@ class Trie:
             >>> trie = Trie(w.upper() for w in ["lt", "mo", "tg"])
             >>> trie.get_matching_prefix("MO(1)")
             'MO'
+
+            ```
         """
         self.root: dict = {}
         for word in words:
@@ -97,6 +106,7 @@ class Trie:
             doesn't start with any indexed word.
 
         Example:
+            ```pycon
             >>> trie = Trie(["LT", "LM", "OSL"])
             >>> trie.get_matching_prefix("LT(1, KC_A)")
             'LT'
@@ -106,6 +116,8 @@ class Trie:
             True
             >>> trie.get_matching_prefix("LT")
             'LT'
+
+            ```
         """
         node = self.root
         for char in search_string:

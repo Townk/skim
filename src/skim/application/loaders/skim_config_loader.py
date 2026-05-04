@@ -10,11 +10,14 @@ YAML files. If no configuration file is specified or the file doesn't
 exist, a default configuration is returned.
 
 Example:
+    ```pycon
     >>> from pathlib import Path
     >>> from skim.application.loaders.skim_config_loader import load_skim_config
     >>> config = load_skim_config(Path("my-config.yaml"))
     >>> config.output.layout.width
     800
+
+    ```
 """
 
 from pathlib import Path
@@ -45,6 +48,7 @@ def load_skim_config(config_path: Path | None = None) -> SkimConfig:
         yaml.YAMLError: If the file content is not valid YAML.
 
     Example:
+        ```pycon
         >>> # Load from file
         >>> config = load_skim_config(Path("custom-config.yaml"))
 
@@ -52,6 +56,8 @@ def load_skim_config(config_path: Path | None = None) -> SkimConfig:
         >>> config = load_skim_config()
         >>> config.output.layout.width
         800
+
+        ```
     """
     path = config_path or Path("")
     if path.is_file():

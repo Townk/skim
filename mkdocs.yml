@@ -1,0 +1,114 @@
+site_name: skim
+site_description: Svalboard Keymap Image Maker
+site_author: Thiago Alves
+copyright: Copyright &copy; 2025 Thiago Alves
+repo_url: https://github.com/Townk/skim
+repo_name: Townk/skim
+edit_uri: edit/mainline/docs/
+
+docs_dir: docs
+
+exclude_docs: |
+  superpowers/
+
+watch:
+  - src
+  - docs/_overrides
+
+
+theme:
+  name: material
+  custom_dir: docs/_overrides
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.indexes
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - markdown_callouts.github_callouts
+  - def_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+  - include-markdown
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_if_no_docstring: true
+            members_order: source
+            merge_init_into_class: true
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            docstring_section_style: table
+            inherited_members: false
+            filters: ["!^_[^_]"]
+          import:
+            - https://docs.python.org/3/objects.inv
+
+nav:
+  - Home: index.md
+  - User Guide:
+      - Introduction: introduction.md
+      - Getting Started: getting-started.md
+      - Configuration:
+          - configuration/index.md
+          - Configuration File: configuration/config-file.md
+          - Command Line Options: configuration/cli-options.md
+          - Configurator UI: configuration/configurator-ui.md
+  - Developer Reference:
+      - API Reference:
+          - Overview: api/index.md
+          - Data Layer: api/data.md
+          - Domain Layer: api/domain.md
+          - Application Layer: api/application.md
+          - UI Layer: api/ui.md
+      - Changelog: changelog.md

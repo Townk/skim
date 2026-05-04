@@ -8,10 +8,13 @@
 A Python CLI tool for generating high-quality keymap layout images for the
 [Svalboard](https://svalboard.com) keyboard.
 
+![Overview Keymap](docs/_static/svalboard-overview.svg)
+
 ## Features
 
 - Generate individual layer keymap images with layer indicator circles
 - Generate overview images showing all layers with connector lines
+- Supports Tap-dance and Macro keys
 - Interactive TUI configurator for editing configuration files
 - System dependency checker (`skim doctor`)
 - Support for multiple keymap formats:
@@ -31,19 +34,25 @@ You can install `qmk-skim` using `pip`, `pipx`, or `uv`.
 ### Using uv (Recommended)
 
 ```bash
-uv tool install qmk-skim
+uv tool install 'qmk-skim[playwright,cairo,tui]'
+```
+
+You can upgrade to a new version using:
+
+```bash
+uv tool upgrade qmk-skim
 ```
 
 ### Using pipx
 
 ```bash
-pipx install qmk-skim
+pipx install 'qmk-skim[playwright,cairo,tui]'
 ```
 
 ### Using pip
 
 ```bash
-pip install qmk-skim
+pip install 'qmk-skim[playwright,cairo,tui]'
 ```
 
 ## Usage
@@ -82,6 +91,12 @@ cat my-keymap.json | skim generate - --output-dir ./images
 ```
 
 ### Configure appearance
+
+The easiest way to tweak your keymap image is to use our interactive
+configurator where almost every configurable option is available for you to
+learn and change.
+
+![skim configurator](docs/_static/tui/keyboard-tab.svg)
 
 ```bash
 # Launch the interactive TUI configurator

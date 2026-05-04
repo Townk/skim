@@ -18,6 +18,7 @@ The transformation is driven by a YAML configuration file containing
 keycode-to-label mappings and macro function templates.
 
 Example:
+    ```pycon
     >>> from skim.application.loaders import load_keycode_mappings
     >>> from skim.data import SkimConfig
     >>> config = SkimConfig()
@@ -29,6 +30,8 @@ Example:
     >>> label, layer = adapter.transform("LT(1, KC_SPC)")
     >>> layer
     1
+
+    ```
 
 Attributes:
     _LAYER_FUNCTIONS: Trie containing layer-switching function prefixes.
@@ -88,6 +91,7 @@ class KeycodeLabelAdapter:
         _label_separator: Character used to separate tap/hold labels.
 
     Example:
+        ```pycon
         >>> from skim.application.loaders import load_keycode_mappings
         >>> from skim.data.config import SkimConfig
         >>> config = SkimConfig()
@@ -97,6 +101,8 @@ class KeycodeLabelAdapter:
         ('A', None)
         >>> adapter.transform("MO(2)")
         ('L3', 2)
+
+        ```
     """
 
     _keycodes: dict[str, str]
@@ -119,12 +125,15 @@ class KeycodeLabelAdapter:
                 modifier_union.
 
         Example:
+            ```pycon
             >>> from skim.application.loaders import load_keycode_mappings
             >>> from skim.data import Keyboard, KeyboardLayer, SkimConfig
             >>> keyboard = Keyboard(layers=[KeyboardLayer(id="base", name="Base")])
             >>> config = SkimConfig()
             >>> mappings = load_keycode_mappings(config.keycodes)
             >>> adapter = KeycodeLabelAdapter(keyboard, mappings)
+
+            ```
         """
         self._keycodes = keycode_mappings.get("keycodes", {})
         self._pre_processing = keycode_mappings.get("pre_processing", {})
@@ -143,16 +152,18 @@ class KeycodeLabelAdapter:
             text: The raw QMK keycode string (e.g., "KC_A", "LT(1, KC_SPC)").
 
         Returns:
-            A SvalboardTargetKey containing:
-            - label: The human-readable display string
-            - layer_switch: The layer index if this key switches layers,
-              or None if no layer switching occurs.
+            A SvalboardTargetKey containing the human-readable display string
+            in ``label``, and the target layer index in ``layer_switch`` if this
+            key switches layers (otherwise ``None``).
 
         Example:
+            ```pycon
             >>> adapter.transform("KC_SPACE")
             SvalboardTargetKey(label='Space', layer_switch=None)
             >>> adapter.transform("MO(1)")
             SvalboardTargetKey(label='L2', layer_switch=1)
+
+            ```
         """
         keycode = self._apply_pre_processing(text)
 
@@ -390,10 +401,13 @@ class KeycodeLabelAdapter:
             List of individual argument strings.
 
         Example:
+            ```pycon
             >>> KeycodeLabelAdapter._parse_function_arguments("1, KC_A")
             ['1', 'KC_A']
             >>> KeycodeLabelAdapter._parse_function_arguments("1, MT(MOD_LCTL, KC_A)")
             ['1', 'MT(MOD_LCTL,KC_A)']
+
+            ```
         """
         args: list[str] = []
         current: list[str] = []

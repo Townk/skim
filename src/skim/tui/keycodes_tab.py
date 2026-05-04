@@ -818,19 +818,35 @@ class KeycodesTab(Widget):
     def compose(self) -> ComposeResult:
         with SkimVerticalScroll(can_focus=False):
             with Vertical(id="pre-process-section", classes="keycodes-section"):
-                yield Static("Pre-process", classes="section-title section-title-first")
+                yield Static(
+                    "Pre-process",
+                    id="keycodes-pre-proc-section",
+                    classes="section-title section-title-first",
+                )
                 yield PreProcessListPane(config_data=self.config_data)
 
             with Vertical(id="overrides-section", classes="keycodes-section"):
-                yield Static("Overrides", classes="section-title")
+                yield Static(
+                    "Overrides",
+                    id="keycodes-override-section",
+                    classes="section-title",
+                )
                 yield OverrideListPane(config_data=self.config_data)
 
             with Vertical(id="macros-section", classes="keycodes-section"):
-                yield Static("Macros", classes="section-title")
+                yield Static(
+                    "Macros",
+                    id="keycodes-macro-section",
+                    classes="section-title",
+                )
                 yield MacroListPane(config_data=self.config_data)
 
             with Vertical(id="tap-dances-section", classes="keycodes-section"):
-                yield Static("Tap-dances", classes="section-title")
+                yield Static(
+                    "Tap-dances",
+                    id="keycodes-tap-dance-section",
+                    classes="section-title",
+                )
                 yield TapDanceListPane(config_data=self.config_data)
 
     def on_mount(self) -> None:

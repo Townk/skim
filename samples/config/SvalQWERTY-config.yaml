@@ -25,18 +25,17 @@ keyboard:
 keycodes:
   pre_process: []
   overrides: []
+  macros: []
+  tap_dances: []
+  symbol_descriptions: {}
+  function_descriptions: {}
+  symbol_legend_aliases: {}
 output:
   layout:
     width: 1600.0
-    spacing:
-      margin: 0.0
-      inset: 20.0
   style:
     use_layer_colors_on_keys: false
     hold_symbol_position: outward
-    border:
-      width: 2.0
-      radius: 10.0
     palette:
       overrides: {}
       neutral_color: '#6F768B'
@@ -44,6 +43,8 @@ output:
       key_label_color: white
       background_color: white
       border_color: black
+      macro_color: '#89511C'
+      tap_dance_color: '#41687F'
       layers:
       - base_color: '#037065'
         color_index: 2
@@ -88,5 +89,12 @@ output:
     show_layer_indicators: true
     show_layer_connectors: true
     show_transparent_fallthrough: true
+    show_special_keys_legend: true
+    show_symbol_legend: true
+    symbol_legend_flow: column
+    symbol_legend_columns: null
+    macros_scale: 1.5
+    tap_dances_scale: 1.5
+    symbols_scale: 1.5
   keymap_title: Qwerty Layers Layout
   copyright: "\xA9 2024, SVALBOARD.COM"

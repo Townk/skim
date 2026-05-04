@@ -13,12 +13,15 @@ The mappings control how QMK keycodes are transformed into human-readable
 labels for display on keymap images.
 
 Example:
+    ```pycon
     >>> from skim.data.config import SkimConfig
     >>> from skim.application.loaders import load_keycode_mappings
     >>> config = SkimConfig()
     >>> mappings = load_keycode_mappings(config.keycodes)
     >>> "KC_A" in mappings["keycodes"]
     True
+
+    ```
 """
 
 from functools import lru_cache
