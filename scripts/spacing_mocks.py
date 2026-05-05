@@ -34,7 +34,7 @@ import drawsvg as draw
 
 from skim.application.render.composable import Component
 from skim.application.render.macros import MacroMetrics, MacroPill
-from skim.application.render.primitives import Point
+from skim.application.render.primitives import BaseComponent, Point, Size
 from skim.application.render.render_context import (
     RenderContext,
     using_render_context,
@@ -48,7 +48,7 @@ from skim.application.render.tap_dance import (
     TapDanceRow,
     TapDanceTable,
 )
-from skim.data.config import KeyboardLayer, LayerColor, Palette, SkimConfig
+from skim.data.config import KeyboardLayer, LayerColor, Palette, SkimConfig, SplitSidePosition
 from skim.data.keyboard import (
     FingerCluster as FingerClusterData,
     SvalboardKeymap,
@@ -1289,7 +1289,7 @@ def _build_layer_indicator_stroke_mock() -> draw.Drawing:
             from skim.data import resolve_spacing
 
             stroke_w = resolve_spacing(
-                ctx.config.output.style.strokes.layer_indicator,
+                ctx.config.output.style.layer_indicator.width,
                 base=ctx.document_metrics.doc_width,
                 default_proportion=_CIRCLE_STROKE_WIDTH_RATIO,
             )
@@ -1425,6 +1425,241 @@ def _build_layer_connector_dot_spacing_mock() -> draw.Drawing:
 
 
 # ---------------------------------------------------------------------------
+# Flag-option mocks — before/after (or N-way) comparisons illustrating
+# how a boolean / enum config switch changes the rendered output. Each
+# variant gets a short caption underneath so the comparison reads as
+# "this configured value yields this visual".
+# ---------------------------------------------------------------------------
+
+
+def _build_side_by_side(
+    *,
+    panels: list[tuple[Component, str]],
+    panel_gap: float = 28.0,
+    outer_padding: float = 16.0,
+    label_font_size: float = 12.0,
+) -> draw.Drawing:
+    """Render N components horizontally with a caption under each.
+
+    All panels align to the top; each caption centres horizontally
+    under its component and the canvas height tracks the tallest
+    panel plus a single caption row beneath.
+    """
+    label_gap = 8.0
+    label_height = label_font_size + label_gap
+    panel_h = max(c.size.height for c, _ in panels)
+    panel_widths = [c.size.width for c, _ in panels]
+    total_w = sum(panel_widths) + panel_gap * (len(panels) - 1)
+    canvas_w = total_w + 2 * outer_padding
+    canvas_h = panel_h + label_height + 2 * outer_padding
+    d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+
+    cursor_x = outer_padding
+    for component, caption in panels:
+        component.draw_at(d, Point(cursor_x, outer_padding))
+        d.append(
+            draw.Text(
+                caption,
+                x=cursor_x + component.size.width / 2,
+                y=outer_padding + panel_h + label_gap,
+                font_size=label_font_size,
+                text_anchor="middle",
+                dominant_baseline="text-before-edge",
+                font_family="Roboto, sans-serif",
+                fill=_GREY_TEXT,
+            )
+        )
+        cursor_x += component.size.width + panel_gap
+
+    return d
+
+
+def _build_hold_symbol_position_mock() -> draw.Drawing:
+    """Three LEFT thumb clusters illustrating the three
+    ``hold_symbol_position`` modes. Hold-tap labels sit on pad / up /
+    nail / knuckle so the swap behaviour reads on every relevant key.
+    """
+    config = _grey_config()
+    keymap = _empty_keymap()
+    ctx = RenderContext.build(config=config, keymap=keymap)
+
+    hold_tap = SvalboardTargetKey(label="HOLD│TAP")
+    blank = SvalboardTargetKey(label="")
+    cluster_data = ThumbClusterData(
+        down_key=blank,
+        pad_key=hold_tap,
+        up_key=hold_tap,
+        nail_key=hold_tap,
+        knuckle_key=hold_tap,
+        double_down_key=blank,
+    )
+    cluster_width = 240.0
+
+    positions = [
+        (SplitSidePosition.QMK_DEFINED, '"qmk"'),
+        (SplitSidePosition.INWARD, '"inward"'),
+        (SplitSidePosition.OUTWARD, '"outward"'),
+    ]
+
+    with using_render_context(ctx):
+        panels: list[tuple[Component, str]] = []
+        for pos, caption in positions:
+            cluster = ThumbCluster(
+                cluster=cluster_data,
+                side=KeyboardSide.LEFT,
+                width=cluster_width,
+                layer_qmk_index=0,
+                use_layer_colors_on_keys=False,
+                show_layer_indicators=False,
+                hold_symbol_position=pos,
+            )
+            panels.append((cluster, caption))
+        return _build_side_by_side(panels=panels)
+
+
+def _build_layer_indicator_show_mock() -> draw.Drawing:
+    """Finger cluster with a layer-switching north key, rendered with
+    and without the layer-indicator badge.
+    """
+    config = _grey_config()
+    keymap = _empty_keymap()
+    ctx = RenderContext.build(config=config, keymap=keymap)
+
+    blank = SvalboardTargetKey(label="")
+    cluster_data = FingerClusterData(
+        blank, north_key=SvalboardTargetKey(label="", layer_switch=2)
+    )
+    cluster_width = 220.0
+
+    with using_render_context(ctx):
+        panels: list[tuple[Component, str]] = []
+        for show, caption in ((True, "show: true"), (False, "show: false")):
+            cluster = FingerCluster(
+                cluster=cluster_data,
+                side=KeyboardSide.LEFT,
+                width=cluster_width,
+                layer_qmk_index=0,
+                has_double_south=False,
+                use_layer_colors_on_keys=False,
+                show_layer_indicators=show,
+            )
+            panels.append((cluster, caption))
+        return _build_side_by_side(panels=panels)
+
+
+def _build_use_layer_colors_on_keys_mock() -> draw.Drawing:
+    """Finger cluster where the north key activates layer 2, rendered
+    once with the destination layer's colour painting the key and
+    once with the neutral fall-back.
+
+    The grey-mock palette is replaced for this single illustration
+    with one that gives layer 2 a distinct accent so the toggle reads
+    visibly.
+    """
+    palette = _grey_palette()
+    accent_layer = LayerColor(base_color="#3F7BB6")
+    layers = list(palette.layers)
+    while len(layers) < 3:
+        layers.append(LayerColor(base_color=_GREY_NEUTRAL))
+    layers[2] = accent_layer
+    palette = palette.model_copy(update={"layers": tuple(layers)})
+
+    config = SkimConfig()
+    keyboard = config.keyboard.model_copy(
+        update={
+            "layers": tuple(KeyboardLayer(index=i, name=f"Layer {i}") for i in range(4)),
+        }
+    )
+    style = config.output.style.model_copy(
+        update={"use_system_fonts": True, "palette": palette}
+    )
+    output = config.output.model_copy(update={"style": style})
+    config = config.model_copy(update={"keyboard": keyboard, "output": output})
+    keymap = _empty_keymap()
+    ctx = RenderContext.build(config=config, keymap=keymap)
+
+    blank = SvalboardTargetKey(label="")
+    cluster_data = FingerClusterData(
+        blank, north_key=SvalboardTargetKey(label="", layer_switch=2)
+    )
+    cluster_width = 220.0
+
+    with using_render_context(ctx):
+        panels: list[tuple[Component, str]] = []
+        for use_layer_colors, caption in ((True, "true"), (False, "false")):
+            cluster = FingerCluster(
+                cluster=cluster_data,
+                side=KeyboardSide.LEFT,
+                width=cluster_width,
+                layer_qmk_index=0,
+                has_double_south=False,
+                use_layer_colors_on_keys=use_layer_colors,
+                show_layer_indicators=True,
+            )
+            panels.append((cluster, caption))
+        return _build_side_by_side(panels=panels)
+
+
+def _build_show_transparent_fallthrough_mock() -> draw.Drawing:
+    """Two single keys side-by-side: one with a faded "ghost" label
+    (the ``true`` / fall-through behaviour) and one blank (the
+    ``false`` behaviour). Painted as primitives rather than going
+    through the full multi-layer transparency path so the mock stays
+    self-contained.
+    """
+    panel_w = 110.0
+    panel_h = 110.0
+    key_w = 88.0
+    key_h = 88.0
+    radius = 6.0
+    label_text = "K"
+    label_font = 28.0
+
+    def _key_panel(*, ghost: bool) -> Component:
+        size = Size(panel_w, panel_h)
+
+        def draw_at(d, origin):
+            kx = origin.x + (panel_w - key_w) / 2
+            ky = origin.y + (panel_h - key_h) / 2
+            d.append(
+                draw.Rectangle(
+                    x=kx,
+                    y=ky,
+                    width=key_w,
+                    height=key_h,
+                    rx=radius,
+                    ry=radius,
+                    fill=_GREY_NEUTRAL,
+                    stroke=_GREY_BORDER,
+                    stroke_width=1.0,
+                )
+            )
+            if ghost:
+                d.append(
+                    draw.Text(
+                        label_text,
+                        x=kx + key_w / 2,
+                        y=ky + key_h / 2,
+                        font_size=label_font,
+                        font_family="Roboto, sans-serif",
+                        text_anchor="middle",
+                        dominant_baseline="central",
+                        fill="#FFFFFF",
+                        opacity=0.45,
+                    )
+                )
+
+        return BaseComponent(size=size, draw_fn=draw_at)
+
+    return _build_side_by_side(
+        panels=[
+            (_key_panel(ghost=True), "true (ghost label)"),
+            (_key_panel(ghost=False), "false (blank)"),
+        ]
+    )
+
+
+# ---------------------------------------------------------------------------
 # Registry & main
 # ---------------------------------------------------------------------------
 
@@ -1456,6 +1691,11 @@ BUILDERS: dict[str, MockBuilder] = {
     "layer-indicator-stroke": _build_layer_indicator_stroke_mock,
     "layer-connector-width": _build_layer_connector_width_mock,
     "layer-connector-dot-spacing": _build_layer_connector_dot_spacing_mock,
+    # Flag options (before / after comparisons)
+    "hold-symbol-position": _build_hold_symbol_position_mock,
+    "layer-indicator-show": _build_layer_indicator_show_mock,
+    "use-layer-colors-on-keys": _build_use_layer_colors_on_keys_mock,
+    "show-transparent-fallthrough": _build_show_transparent_fallthrough_mock,
     # NOTE: ``layer_indicator_endpoint_inset`` is omitted — the connector
     # path it inset-trims only renders inside the keymap overview, which
     # would dwarf the rest of these mocks. Will revisit if the value
