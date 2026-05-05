@@ -5,7 +5,11 @@ on:
     branches:
       - mainline
   release:
-    types: [published]
+    # Use ``released`` (not ``published``) so dev pre-releases produced
+    # by release.yml on ordinary mainline pushes don't overwrite the
+    # versioned doc slot — only true (non-prerelease) releases trigger
+    # a versioned doc deploy.
+    types: [released]
   workflow_dispatch:
 
 # mike pushes to the gh-pages branch — needs write access to the repo,

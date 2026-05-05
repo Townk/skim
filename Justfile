@@ -144,3 +144,104 @@ clean:
 # Full CI pipeline: all checks + all tests
 [group('Project Actions')]
 ci: check test
+
+# End-to-end release: regenerate docs assets, format, check, bump+tag, push, create GitHub Release
+[group('Project Actions')]
+release:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # ──────── Preflight ────────
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "Error: working tree is not clean. Commit or stash first." >&2
+        git status --short
+        exit 1
+    fi
+
+    BRANCH=$(git branch --show-current)
+    if [ "$BRANCH" != "mainline" ]; then
+        echo "Error: must run from 'mainline' (currently on '$BRANCH')." >&2
+        exit 1
+    fi
+
+    git fetch origin mainline
+    if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/mainline)" ]; then
+        echo "Error: local mainline is not in sync with origin/mainline." >&2
+        echo "       Run 'git pull --rebase' first." >&2
+        exit 1
+    fi
+
+    if ! command -v gh >/dev/null 2>&1; then
+        echo "Error: 'gh' CLI is required to create the GitHub Release." >&2
+        exit 1
+    fi
+
+    # ──────── 1. Regenerate doc assets ────────
+    echo ""
+    echo "==> Regenerating doc images..."
+    just option-images
+    just screenshots
+    if [ -n "$(git status --porcelain docs/_static/)" ]; then
+        git add docs/_static/
+        git commit -m "chore(docs): regenerate option/screenshot images"
+    else
+        echo "    (no image changes)"
+    fi
+
+    # ──────── 2. Format ────────
+    echo ""
+    echo "==> Running formatter..."
+    just format
+    if [ -n "$(git status --porcelain)" ]; then
+        git add -u
+        git commit -m "chore: ruff format"
+    else
+        echo "    (no format changes)"
+    fi
+
+    # ──────── 3. Checks ────────
+    echo ""
+    echo "==> Running checks (lint + format-check + type-check)..."
+    just check
+
+    # ──────── 4. Strip .dev → release version ────────
+    echo ""
+    echo "==> Bumping to release version..."
+    RELEASE_VERSION=$(uv run python scripts/release_version.py strip-dev)
+    echo "    Released: $RELEASE_VERSION"
+    git add pyproject.toml
+    git commit -m "chore: release v$RELEASE_VERSION"
+
+    # ──────── 5. Tag ────────
+    echo ""
+    echo "==> Tagging v$RELEASE_VERSION..."
+    git tag -a "v$RELEASE_VERSION" -m "Release v$RELEASE_VERSION"
+
+    # ──────── 6. Bump to next dev ────────
+    echo ""
+    echo "==> Bumping to next dev version..."
+    NEW_DEV_VERSION=$(uv run python scripts/release_version.py bump-patch)
+    echo "    Next dev: $NEW_DEV_VERSION"
+    git add pyproject.toml
+    git commit -m "chore: bump version to v$NEW_DEV_VERSION"
+
+    # ──────── 7. Push (atomic: branch + tag in one event) ────────
+    echo ""
+    echo "==> Pushing to origin..."
+    git push --atomic origin mainline "v$RELEASE_VERSION"
+
+    # ──────── 8. Create GitHub Release ────────
+    # `gh release create` defaults to a published, non-prerelease release
+    # — that fires the `release: types: [released]` event the docs.yml
+    # workflow listens for, so the new version's docs auto-deploy.
+    echo ""
+    echo "==> Creating GitHub Release..."
+    gh release create "v$RELEASE_VERSION" \
+        --title "Release v$RELEASE_VERSION" \
+        --generate-notes
+
+    echo ""
+    echo "================================================"
+    echo "  Released v$RELEASE_VERSION"
+    echo "  Mainline is now at v$NEW_DEV_VERSION"
+    echo "================================================"
