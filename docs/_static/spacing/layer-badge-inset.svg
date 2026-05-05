@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="277.05" height="154.0" viewBox="0 0 277.05 154.0">
+<defs>
+</defs>
+<rect x="12.0" y="12.0" width="253.05" height="60.0" rx="12.0" ry="12.0" fill="#B8BCC3" />
+<text x="57.24" y="42.0" font-size="27.0" text-anchor="end" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFFFFF">0</text>
+<text x="72.24000000000001" y="42.0" font-size="27.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFFFFF">LAYER NAME</text>
+<rect x="12.0" y="12.0" width="15.0" height="60.0" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
+<rect x="57.24" y="12.0" width="15.0" height="60.0" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
+<rect x="235.05" y="12.0" width="30.0" height="60.0" fill="#E11D48" fill-opacity="0.175" stroke="#E11D48" stroke-width="1.5" stroke-dasharray="4 3" />
+<rect x="12.0" y="82.0" width="253.05" height="60.0" rx="12.0" ry="12.0" fill="#B8BCC3" />
+<text x="57.24" y="112.0" font-size="27.0" text-anchor="end" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFFFFF">12</text>
+<text x="72.24000000000001" y="112.0" font-size="27.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFFFFF">LAYER NAME</text>
+<rect x="12.0" y="82.0" width="15.0" height="60.0" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
+<rect x="57.24" y="82.0" width="15.0" height="60.0" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
+<rect x="235.05" y="82.0" width="30.0" height="60.0" fill="#E11D48" fill-opacity="0.175" stroke="#E11D48" stroke-width="1.5" stroke-dasharray="4 3" />
+</svg>

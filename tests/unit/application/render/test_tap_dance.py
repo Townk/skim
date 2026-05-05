@@ -89,7 +89,7 @@ class TestResolveNameColumnWidth:
         )
 
         # name_column_width = leading + text + symmetric trailing gap.
-        assert width == 2 * metrics.name_gap + long_natural
+        assert width == 2 * metrics.chip_padding + long_natural
 
     def test_caps_column_at_budget_when_longest_overflows(self):
         metrics = TapDanceMetrics.for_doc_width(1600.0)
@@ -104,8 +104,8 @@ class TestResolveNameColumnWidth:
         natural_long_w = _measure(long_name, metrics.name_font_size)
         max_width = (
             metrics.chip_width
-            + metrics.name_gap
-            + metrics.name_gap  # trailing gap
+            + metrics.chip_padding
+            + metrics.chip_padding  # trailing gap
             + cells_block_w
             + (natural_long_w / 4)  # only a quarter of the natural name width
         )
@@ -119,8 +119,8 @@ class TestResolveNameColumnWidth:
         # name_column_width is capped at max budget — leading + text +
         # trailing. AdjustableText handles per-row ellipsis truncation
         # at render time.
-        expected_text_w = max_width - metrics.chip_width - 2 * metrics.name_gap - cells_block_w
-        assert width == 2 * metrics.name_gap + expected_text_w
+        expected_text_w = max_width - metrics.chip_width - 2 * metrics.chip_padding - cells_block_w
+        assert width == 2 * metrics.chip_padding + expected_text_w
 
 
 # ---------------------------------------------------------------------------
@@ -165,7 +165,7 @@ class TestTapDanceTable:
         natural = _measure("short", metrics.name_font_size)
         expected = (
             metrics.chip_width
-            + 2 * metrics.name_gap  # leading + trailing
+            + 2 * metrics.chip_padding  # leading + trailing
             + natural
             + metrics.table_header_spacing
             + 4 * metrics.cell_w

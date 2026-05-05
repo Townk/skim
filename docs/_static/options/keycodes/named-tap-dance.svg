@@ -30,7 +30,7 @@
 <rect x="20.0" y="57.0" width="400.0" height="44.0" rx="8.0" ry="8.0" fill="none" stroke="#8BA5B5" stroke-width="2.4" />
 <text x="55.0" y="80.0" font-size="24.0" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="#FFF" opacity="1.0">󰌏 </text>
 <text x="84.0" y="78.5" font-size="24.0" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="#FFF" opacity="1.0">6</text>
-<text x="152.0" y="80.0" font-size="24.0" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0">Modifier dance</text>
+<text x="172.0" y="80.0" font-size="24.0" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0">Modifier dance</text>
 <rect x="444.0" y="57.0" width="160.0" height="44.0" rx="8.0" ry="8.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <text x="515.0" y="80.0" font-size="24.0" text-anchor="start" dominant-baseline="central" font-family="Unicode-Symbols" fill="black" opacity="1.0">⇧</text>
 <rect x="616.0" y="57.0" width="160.0" height="44.0" rx="8.0" ry="8.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />

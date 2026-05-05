@@ -35,6 +35,8 @@ from typing import TYPE_CHECKING
 
 import drawsvg as draw
 
+from skim.data import resolve_spacing
+
 from .adjustable_text import AdjustableText, measure_text_width
 from .composable import Composable
 from .font import Font
@@ -60,11 +62,22 @@ _CHIP_STROKE_WIDTH_RATIO = 1.2 / 1600.0
 _CHIP_CORNER_RADIUS_RATIO = 4.0 / 1600.0
 _CHIP_INNER_FONT_SIZE_RATIO = 12.0 / 1600.0
 _CHIP_INNER_TEXT_BASELINE_OFFSET_RATIO = 0.5 / 1600.0
-_NAME_GAP_RATIO = 10.0 / 1600.0
+# Symmetric horizontal inset inside any chip-shaped element.
+# Today governs the symmetric padding inside the TD chip outline
+# around the name text (leading + trailing). Vertical padding is
+# ``chip_padding * 0.25``.
+_CHIP_PADDING_RATIO = 20.0 / 1600.0
+_CHIP_VERTICAL_PADDING_PROPORTION_OF_CHIP_PADDING = 0.25
 _NAME_FONT_SIZE_RATIO = 12.0 / 1600.0
 _NAME_W_RATIO = 200.0 / 1600.0
 _CELL_W_RATIO = 80.0 / 1600.0
 _CELL_LABEL_FONT_SIZE_RATIO = 12.0 / 1600.0
+# Symmetric horizontal inset inside a TD pill (cell). Today the pill
+# width is fixed at ``_CELL_W_RATIO`` and the label centres inside;
+# this value is the configurable inset that an auto-sized cell will
+# use once that refactor lands. Vertical inset is
+# ``tap_dance_pill_padding * 0.25``.
+_TAP_DANCE_PILL_PADDING_RATIO = 20.0 / 1600.0
 _ROW_HEIGHT_RATIO = 22.0 / 1600.0
 _COLUMN_LABEL_FONT_SIZE_RATIO = 9.0 / 1600.0
 _COLUMN_LABEL_LETTER_SPACING_RATIO = 1.5 / 1600.0
@@ -115,13 +128,21 @@ class TapDanceMetrics:
     chip_corner_radius: float
     chip_inner_font_size: float
     chip_inner_text_baseline_offset: float
-    name_gap: float
+    chip_padding: float
+    """Symmetric horizontal inset inside any chip-shaped element.
+    Used today as the symmetric padding inside the TD chip outline
+    around the name text (leading + trailing)."""
     name_font_size: float
     name_w: float
     # Cells (one per variant: TAP / HOLD / DOUBLE-TAP / TAP & HOLD).
     # ``cell_w`` is the visible cell rectangle's width.
     cell_w: float
     cell_label_font_size: float
+    tap_dance_pill_padding: float
+    """Symmetric horizontal inset inside a TD pill (cell). Today the
+    cell width is fixed at ``cell_w`` and the label centres inside;
+    this is the configurable inset that an auto-sized cell will use
+    once that refactor lands."""
     # Rows
     row_height: float
     # Column-header text typography. The strip's *height* is
@@ -147,18 +168,36 @@ class TapDanceMetrics:
         chrome stays at its unscaled per-image size.
         """
         doc_m = ctx.document_metrics
+        spacing = ctx.config.output.layout.spacing
         w = doc_m.doc_width * scale
+        chip_padding = (
+            resolve_spacing(
+                spacing.chip_padding,
+                base=doc_m.doc_width,
+                default_proportion=_CHIP_PADDING_RATIO,
+            )
+            * scale
+        )
+        pill_padding = (
+            resolve_spacing(
+                spacing.tap_dance_pill_padding,
+                base=doc_m.doc_width,
+                default_proportion=_TAP_DANCE_PILL_PADDING_RATIO,
+            )
+            * scale
+        )
         return cls(
             chip_width=w * _CHIP_WIDTH_RATIO,
             chip_stroke_width=w * _CHIP_STROKE_WIDTH_RATIO,
             chip_corner_radius=w * _CHIP_CORNER_RADIUS_RATIO,
             chip_inner_font_size=w * _CHIP_INNER_FONT_SIZE_RATIO,
             chip_inner_text_baseline_offset=w * _CHIP_INNER_TEXT_BASELINE_OFFSET_RATIO,
-            name_gap=w * _NAME_GAP_RATIO,
+            chip_padding=chip_padding,
             name_font_size=w * _NAME_FONT_SIZE_RATIO,
             name_w=w * _NAME_W_RATIO,
             cell_w=w * _CELL_W_RATIO,
             cell_label_font_size=w * _CELL_LABEL_FONT_SIZE_RATIO,
+            tap_dance_pill_padding=pill_padding,
             row_height=w * _ROW_HEIGHT_RATIO,
             column_label_font_size=w * _COLUMN_LABEL_FONT_SIZE_RATIO,
             column_label_letter_spacing=w * _COLUMN_LABEL_LETTER_SPACING_RATIO,
@@ -173,7 +212,10 @@ class TapDanceMetrics:
 
         Produces values identical to what :meth:`from_ctx` would when
         the active context's ``document_metrics.doc_width`` equals
-        ``doc_width`` and ``scale=1.0``.
+        ``doc_width``, ``scale=1.0``, AND every
+        ``Spacing`` field is left at its default (``None``). Tests that
+        need to exercise overrides should push a real
+        :class:`RenderContext` and call :meth:`from_ctx`.
         """
         return cls(
             chip_width=doc_width * _CHIP_WIDTH_RATIO,
@@ -181,11 +223,12 @@ class TapDanceMetrics:
             chip_corner_radius=doc_width * _CHIP_CORNER_RADIUS_RATIO,
             chip_inner_font_size=doc_width * _CHIP_INNER_FONT_SIZE_RATIO,
             chip_inner_text_baseline_offset=doc_width * _CHIP_INNER_TEXT_BASELINE_OFFSET_RATIO,
-            name_gap=doc_width * _NAME_GAP_RATIO,
+            chip_padding=doc_width * _CHIP_PADDING_RATIO,
             name_font_size=doc_width * _NAME_FONT_SIZE_RATIO,
             name_w=doc_width * _NAME_W_RATIO,
             cell_w=doc_width * _CELL_W_RATIO,
             cell_label_font_size=doc_width * _CELL_LABEL_FONT_SIZE_RATIO,
+            tap_dance_pill_padding=doc_width * _TAP_DANCE_PILL_PADDING_RATIO,
             row_height=doc_width * _ROW_HEIGHT_RATIO,
             column_label_font_size=doc_width * _COLUMN_LABEL_FONT_SIZE_RATIO,
             column_label_letter_spacing=doc_width * _COLUMN_LABEL_LETTER_SPACING_RATIO,
@@ -399,10 +442,10 @@ def TapDanceRow(
     # Pre-build the optional name element so :func:`AdjustableText`
     # handles per-row truncation if the natural rendered width
     # overflows the column's text slot. The name area reserves
-    # symmetric ``name_gap`` padding inside the chip outline (leading
+    # symmetric ``chip_padding`` inside the chip outline (leading
     # and trailing), so the text slot is the column width minus those
     # two gaps.
-    name_text_width = max(0.0, name_column_width - 2 * metrics.name_gap)
+    name_text_width = max(0.0, name_column_width - 2 * metrics.chip_padding)
     name_el = (
         AdjustableText(
             text=td.name,
@@ -504,7 +547,7 @@ def TapDanceRow(
         # font's visual centre).
         if name_el is not None:
             name_origin = Point(
-                x + metrics.chip_width + metrics.name_gap,
+                x + metrics.chip_width + metrics.chip_padding,
                 cy - name_el.size.height / 2 + metrics.chip_inner_text_baseline_offset,
             )
             name_el.draw_at(d, name_origin)
@@ -728,7 +771,7 @@ def _resolve_name_column_width(
         return 0.0
 
     name_font_size = metrics.name_font_size
-    leading_gap = metrics.name_gap
+    leading_gap = metrics.chip_padding
     trailing_gap = leading_gap  # symmetric padding inside the chip outline
     # Tap-dance names are plain text (no Nerd Font tokens), so the
     # single-style ``measure_text_width`` matches what the rendered
@@ -792,7 +835,7 @@ def TapDanceSection(
     """
     palette = ctx.theme.palette
     accent_line = derive_accent_line(palette.tap_dance_color)
-    stripe_metrics = SectionStripeMetrics.for_doc_width(ctx.config.output.layout.width)
+    stripe_metrics = SectionStripeMetrics.from_ctx(ctx)
 
     table = TapDanceTable(
         tap_dances=tap_dances,

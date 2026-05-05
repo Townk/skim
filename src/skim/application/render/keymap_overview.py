@@ -52,7 +52,7 @@ from typing import Protocol
 
 import drawsvg as draw
 
-from skim.data import SkimConfig, SvalboardKeymap
+from skim.data import SkimConfig, SvalboardKeymap, resolve_spacing
 from skim.data.keyboard import (
     FingerCluster as FingerClusterData,
     SplitSide,
@@ -102,11 +102,13 @@ _BADGE_BORDER_RADIUS_RATIO = 0.2
 # LAYERS heading text's after-edge baseline and the first badge's top.
 _VARIANT_LABEL_OFFSET_RATIO_OF_FONT = 0.2
 
-# Internal badge text padding, expressed as fractions of the document
-# width — kept on the legacy ratios so badge typography stays
-# unchanged across the migration.
-_BADGE_PADDING_LEFT_RATIO = 15 / 1600
-_BADGE_PADDING_RIGHT_RATIO = 30 / 1600
+# Default proportion (of doc width) for ``layer_badge_inset`` — the
+# leading gap between the badge edge and the label text. The trailing
+# gap (label end → badge end) is ``2 * layer_badge_inset`` by design:
+# a single configurable value governs both, with the trailing side
+# weighted heavier so the right edge reads as breathing room rather
+# than crowding the next column.
+_BADGE_INSET_RATIO = 15 / 1600
 
 # Connector routing constants — mirrored from the legacy overview so
 # the new path produces identical-rhythm dotted lines. ``keymap_spacing``
@@ -127,12 +129,20 @@ _CONNECTOR_PATH_OPACITY = 0.7
 _CONNECTOR_PATH_FALLBACK_COLOR = "#808080"
 
 
-def _badge_padding_left(doc_width: float) -> float:
-    return doc_width * _BADGE_PADDING_LEFT_RATIO
+def _badge_inset(config: SkimConfig) -> float:
+    """Leading gap inside a layer badge — badge edge → label text.
 
-
-def _badge_padding_right(doc_width: float) -> float:
-    return doc_width * _BADGE_PADDING_RIGHT_RATIO
+    Reads the user's ``Spacing.layer_badge_inset`` override and
+    resolves it through :func:`resolve_spacing`, falling back to the
+    default proportion when unset. The trailing gap (label end → badge
+    edge) is ``2 *`` this value; callers compute it inline via
+    ``_badge_inset(config) * 2``.
+    """
+    return resolve_spacing(
+        config.output.layout.spacing.layer_badge_inset,
+        base=config.output.layout.width,
+        default_proportion=_BADGE_INSET_RATIO,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -145,20 +155,41 @@ class _BadgeDims:
     width: float
     height: float
     border_radius: float
+    index_col_w: float
+    """Width of the index column shared across all named badges in this
+    overview (PIL-measured against the widest index string). ``0.0``
+    when no named badge is present — auto-named badges render with no
+    index column."""
 
 
-def _badge_text(qmk_idx: int, name: str) -> str:
+@dataclass(frozen=True, slots=True)
+class _BadgeLabel:
+    """Resolved label parts for a layer badge.
+
+    ``index_text`` is ``None`` when the layer's name is the
+    auto-generated ``Layer N`` placeholder — the badge then renders
+    just the name with no index column (and the variant label below
+    the badge aligns at the leading inset, matching the auto-named
+    legacy layout).
+    """
+
+    index_text: str | None
+    name_text: str
+
+
+def _badge_label(qmk_idx: int, name: str) -> _BadgeLabel:
     """Compose a layer badge label, deduping the redundant ``Layer N`` case.
 
     When the layer name is the auto-generated ``Layer N`` placeholder
-    matching ``qmk_idx`` (case-insensitive), drop the leading number to
-    avoid badges that read ``"0 LAYER 0"``. Named layers keep the index
-    prefix (e.g. ``"0 LETTERS"``).
+    matching ``qmk_idx`` (case-insensitive), drop the index column so
+    badges don't read ``"0 LAYER 0"``. Named layers carry both: a
+    right-aligned index (in a fixed-width column shared across the
+    overview) and the upper-cased name.
     """
     upper = name.upper()
     if upper == f"LAYER {qmk_idx}":
-        return upper
-    return f"{qmk_idx} {upper}"
+        return _BadgeLabel(index_text=None, name_text=upper)
+    return _BadgeLabel(index_text=str(qmk_idx), name_text=upper)
 
 
 def _measure_badge_text_width(text: str, font_size: float) -> float:
@@ -170,26 +201,52 @@ def _measure_badge_text_width(text: str, font_size: float) -> float:
 
 def _compute_badge_dims(
     *,
-    doc_width: float,
+    config: SkimConfig,
     finger_cluster_width: float,
-    badge_texts: list[str],
+    badge_labels: list[_BadgeLabel],
 ) -> _BadgeDims:
     """Compute uniform badge dimensions.
 
     Height matches the outer-key (E/W key) size of a finger cluster.
-    Width = ``badge_pad_left + widest_text + badge_pad_right``.
+    Width is the wider of the two badge layouts:
+
+    - **Named badge**: ``inset + index_col_w + inset + name_w + 2*inset``
+      where ``index_col_w`` is the widest index string PIL-measured
+      across all named badges, and ``name_w`` is the widest name string.
+    - **Auto-named badge**: ``inset + name_w + 2*inset`` (no index
+      column).
+
+    The badge column in the overview shares a single width across all
+    badges, so the named-case width dominates whenever any layer has a
+    custom name.
     """
     height = finger_cluster_width * _OUTER_KEY_PROPORTION
     font_size = height * _BADGE_FONT_SIZE_RATIO
-    if badge_texts:
-        max_text_width = max(_measure_badge_text_width(t, font_size) for t in badge_texts)
+    inset = _badge_inset(config)
+
+    if badge_labels:
+        index_widths = [
+            _measure_badge_text_width(lbl.index_text, font_size)
+            for lbl in badge_labels
+            if lbl.index_text is not None
+        ]
+        name_widths = [_measure_badge_text_width(lbl.name_text, font_size) for lbl in badge_labels]
+        index_col_w = max(index_widths) if index_widths else 0.0
+        max_name_w = max(name_widths)
     else:
-        max_text_width = 50.0
-    width = _badge_padding_left(doc_width) + max_text_width + _badge_padding_right(doc_width)
+        index_col_w = 0.0
+        max_name_w = 50.0
+
+    if index_col_w > 0:
+        width = inset + index_col_w + inset + max_name_w + 2 * inset
+    else:
+        width = inset + max_name_w + 2 * inset
+
     return _BadgeDims(
         width=width,
         height=height,
         border_radius=height * _BADGE_BORDER_RADIUS_RATIO,
+        index_col_w=index_col_w,
     )
 
 
@@ -246,10 +303,12 @@ def _resolve_overview_layout(
             ]
         )
     )
-    badge_texts: list[str] = [
-        _badge_text(qmk_idx, config.keyboard.layers[pos].name) for pos, qmk_idx in render_layers
+    badge_labels: list[_BadgeLabel] = [
+        _badge_label(qmk_idx, config.keyboard.layers[pos].name) for pos, qmk_idx in render_layers
     ]
-    badge_texts.append("THUMBS")
+    # The static THUMBS badge has no index — treat it as auto-named so
+    # its rendering matches the auto-name path (no index column).
+    badge_labels.append(_BadgeLabel(index_text=None, name_text="THUMBS"))
 
     def _solve(badge_w: float) -> tuple[float, float, float]:
         col1 = badge_w
@@ -263,15 +322,15 @@ def _resolve_overview_layout(
     ) / 8.0
     seed_fcw = max(seed_fcw, 50.0)
     seed_badge = _compute_badge_dims(
-        doc_width=metrics.doc_width,
+        config=config,
         finger_cluster_width=seed_fcw,
-        badge_texts=badge_texts,
+        badge_labels=badge_labels,
     )
     _, _, fcw = _solve(seed_badge.width)
     badge = _compute_badge_dims(
-        doc_width=metrics.doc_width,
+        config=config,
         finger_cluster_width=fcw,
-        badge_texts=badge_texts,
+        badge_labels=badge_labels,
     )
     col1, side_w, fcw = _solve(badge.width)
     return _OverviewLayoutDims(
@@ -315,10 +374,12 @@ class LayerBadgeMetrics:
 def LayerBadge(
     ctx,
     *,
-    text: str,
+    index_text: str | None,
+    name_text: str,
     badge_width: float,
     badge_height: float,
     border_radius: float,
+    index_col_w: float,
     fill_color: str,
     text_color: str = "white",
     variant: str | None = None,
@@ -326,17 +387,34 @@ def LayerBadge(
 ):
     """A coloured rectangle + label, with an optional variant label below.
 
-    Reports :class:`MetricsComponent[LayerBadgeMetrics]`. The
-    composable's :attr:`Size` is the full bounding box including the
-    variant label (when present); the badge rectangle itself is
-    ``badge_size`` on the metrics. ``draw_at(d, origin)`` paints the
-    badge starting at ``origin`` (top-left of the rectangle).
+    The label is laid out as up to four columns:
+
+    1. Leading inset (``layer_badge_inset``).
+    2. Index column (``index_col_w`` wide; index right-aligned inside).
+       Skipped when ``index_text`` is ``None``.
+    3. Inter-column inset (``layer_badge_inset``). Skipped with the index.
+    4. Name column (``name_text``, left-aligned).
+    5. Trailing inset (``2 * layer_badge_inset``) implicit in
+       ``badge_width``.
+
+    The variant label below the badge left-aligns with the **name**'s
+    starting x: under the name column when the index is present, or
+    under the leading-inset edge when the badge is auto-named (where
+    the name itself sits flush with the leading inset).
+
+    Reports :class:`MetricsComponent[LayerBadgeMetrics]`.
     """
     badge_font_size = badge_height * _BADGE_FONT_SIZE_RATIO
     use_system_fonts = ctx.config.output.style.use_system_fonts
     family = Font.FINGER_KEY.get_system_font_family() if use_system_fonts else Font.FINGER_KEY.value
 
-    badge_pad_left = _badge_padding_left(ctx.config.output.layout.width)
+    inset = _badge_inset(ctx.config)
+    # Auto-named badges (no index column): name + variant align at the
+    # leading inset — matches today's single-text behaviour for "LAYER N".
+    # Named badges: index right-aligns inside its column; the name
+    # starts after an inter-column inset, and the variant aligns under
+    # the name.
+    name_x_offset = inset if index_text is None else inset + index_col_w + inset
 
     variant_offset = badge_font_size * _VARIANT_LABEL_OFFSET_RATIO_OF_FONT
     total_height = badge_height + (variant_offset + badge_font_size if variant else 0.0)
@@ -355,11 +433,26 @@ def LayerBadge(
                 fill=fill_color,
             )
         )
+        if index_text is not None:
+            # Right-aligned index, anchored at the index column's right
+            # edge so digits stack across all named badges in the column.
+            d.append(
+                draw.Text(
+                    index_text,
+                    font_size=badge_font_size,
+                    x=origin.x + inset + index_col_w,
+                    y=origin.y + badge_height / 2.0,
+                    text_anchor="end",
+                    dominant_baseline="central",
+                    font_family=family,
+                    fill=text_color,
+                )
+            )
         d.append(
             draw.Text(
-                text,
+                name_text,
                 font_size=badge_font_size,
-                x=origin.x + badge_pad_left,
+                x=origin.x + name_x_offset,
                 y=origin.y + badge_height / 2.0,
                 text_anchor="start",
                 dominant_baseline="central",
@@ -372,7 +465,7 @@ def LayerBadge(
                 draw.Text(
                     variant,
                     font_size=badge_font_size,
-                    x=origin.x + badge_pad_left,
+                    x=origin.x + name_x_offset,
                     y=origin.y + badge_height + variant_offset,
                     text_anchor="start",
                     dominant_baseline="text-before-edge",
@@ -679,12 +772,15 @@ def KeymapOverview(
             if pos < len(config_palette.layers)
             else palette.neutral_color
         )
+        layer_label = _badge_label(qmk_idx, layer_cfg.name)
         layer_badges.append(
             LayerBadge(
-                text=_badge_text(qmk_idx, layer_cfg.name),
+                index_text=layer_label.index_text,
+                name_text=layer_label.name_text,
                 badge_width=badge_dims.width,
                 badge_height=badge_dims.height,
                 border_radius=badge_dims.border_radius,
+                index_col_w=badge_dims.index_col_w,
                 fill_color=layer_color,
                 variant=layer_cfg.variant or None,
                 variant_color=layer_color,
@@ -724,11 +820,16 @@ def KeymapOverview(
         layer_qmk_index=base_qmk_idx,
         **common_thumb_kwargs,
     )
+    # THUMBS badge: no index column (auto-name path) so the label
+    # left-aligns at the leading inset like the legacy single-text
+    # rendering did.
     thumbs_badge = LayerBadge(
-        text="THUMBS",
+        index_text=None,
+        name_text="THUMBS",
         badge_width=badge_dims.width,
         badge_height=badge_dims.height,
         border_radius=badge_dims.border_radius,
+        index_col_w=badge_dims.index_col_w,
         fill_color=palette.text_color,
     )
 
@@ -1066,7 +1167,7 @@ def KeymapOverview(
     layers_heading_baseline_y = (
         placements[0].badge_y - badge_font_size * _VARIANT_LABEL_OFFSET_RATIO_OF_FONT
     )
-    layers_heading_x = badge_x + _badge_padding_left(config.output.layout.width)
+    layers_heading_x = badge_x + _badge_inset(config)
     use_system_fonts = config.output.style.use_system_fonts
     label_font = (
         Font.FINGER_KEY.get_system_font_family() if use_system_fonts else Font.FINGER_KEY.value

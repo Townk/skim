@@ -144,15 +144,15 @@
 <text x="883.2667323529413" y="464.3639758823529" font-size="24.799764705882353" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="white" opacity="1.0">⎇</text>
 <path fill="#0F460F" stroke="white" stroke-width="1.9574100000000003" d="M 972.3768860171143 378.12179452935584 A 5.089266 5.089266 0 0 1 977.651094 373.03589 L 1003.488906 373.03589 A 5.089266 5.089266 0 0 1 1008.7631139828857 378.12179452935584 L 1009.9591580171143 411.01300547064415 A 5.089266 5.089266 0 0 1 1005.054834 416.09891 L 976.085166 416.09891 A 5.089266 5.089266 0 0 1 971.1808419828857 411.01300547064415 Z" />
 <text x="979.6386180000001" y="394.5674" font-size="25.837812000000003" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󰘳</text>
-<path d="M1041.7638,514.57169 L1024.2125,514.57169" stroke="#952093" stroke-width="2.0" />
+<path d="M1040.2125,514.57169 L1024.2125,514.57169" stroke="#952093" stroke-width="2.0" />
 <circle cx="1024.2125" cy="514.57169" r="2.0" fill="#952093" />
-<circle cx="1056.8208" cy="514.57169" r="15.057" fill="#5D145C" stroke="#952093" stroke-width="2.0" />
-<text x="1051.5904736842106" y="514.57169" font-size="18.0684" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">1</text>
-<path d="M1121.86704,453.73228454545455 L1104.31574,453.73228454545455" stroke="#205A95" stroke-width="2.0" />
+<circle cx="1055.2695" cy="514.57169" r="15.057" fill="#5D145C" stroke="#952093" stroke-width="2.0" />
+<text x="1050.0391736842107" y="514.57169" font-size="18.0684" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">1</text>
+<path d="M1120.31574,453.73228454545455 L1104.31574,453.73228454545455" stroke="#205A95" stroke-width="2.0" />
 <circle cx="1104.31574" cy="453.73228454545455" r="2.0" fill="#205A95" />
-<circle cx="1136.9240399999999" cy="453.73228454545455" r="15.057" fill="#14385D" stroke="#205A95" stroke-width="2.0" />
-<text x="1131.6937136842105" y="453.73228454545455" font-size="18.0684" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">2</text>
-<text x="43.0" y="597.8902499999999" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" font-family="'Roboto', sans-serif" fill="#888888">SYMBOLS</text>
+<circle cx="1135.37274" cy="453.73228454545455" r="15.057" fill="#14385D" stroke="#205A95" stroke-width="2.0" />
+<text x="1130.1424136842106" y="453.73228454545455" font-size="18.0684" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">2</text>
+<text x="43.0" y="585.8902499999999" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#888888">SYMBOLS</text>
 <path d="M43.0,605.8902499999999 L1557.0,605.8902499999999" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
 <text x="48.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="black" opacity="1.0" font-weight="700">⎇</text>
 <text x="78.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Alt</text>

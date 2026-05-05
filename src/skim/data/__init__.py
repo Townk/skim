@@ -30,9 +30,11 @@ from .config import (
     Palette,
     SkimConfig,
     Spacing,
+    SpacingValue,
     SplitSidePosition,
     Style,
     SymbolLegendFlow,
+    resolve_spacing,
 )
 from .keyboard import (
     ClusterT,
@@ -65,9 +67,11 @@ __all__ = [
     "Palette",
     "SkimConfig",
     "Spacing",
+    "SpacingValue",
     "SplitSidePosition",
     "Style",
     "SymbolLegendFlow",
+    "resolve_spacing",
     "ClusterT",
     "FingerCluster",
     "SplitSide",

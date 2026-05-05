@@ -380,7 +380,7 @@ def SymbolSection(
     unscaled per-image size.
     """
     palette = ctx.theme.palette
-    stripe_metrics = SectionStripeMetrics.for_doc_width(ctx.config.output.layout.width)
+    stripe_metrics = SectionStripeMetrics.from_ctx(ctx)
 
     table = SymbolTable(
         entries=entries,

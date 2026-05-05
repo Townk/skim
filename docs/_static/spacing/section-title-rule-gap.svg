@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="368.0" height="68.0" viewBox="0 0 368.0 68.0">
+<defs>
+</defs>
+<text x="24.0" y="24.0" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#6B7280">MACROS</text>
+<text x="344.0" y="24.0" font-size="10.0" text-anchor="end" dominant-baseline="text-before-edge" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">2 ENTRIES</text>
+<path d="M24.0,44.0 L344.0,44.0" stroke="#6B7280" stroke-opacity="0.5" stroke-width="1.2" />
+<rect x="24.0" y="35.0" width="320.0" height="9.0" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
+</svg>

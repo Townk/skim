@@ -38,7 +38,7 @@ from __future__ import annotations
 import colorsys
 from dataclasses import dataclass
 
-from skim.data import LayerColor, SplitSidePosition
+from skim.data import LayerColor, SplitSidePosition, resolve_spacing
 from skim.data.keyboard import FingerCluster as FingerClusterData, ThumbCluster as ThumbClusterData
 from skim.domain import SEPARATOR_CHAR, KeyboardSide, KeyDirection, SvalboardTargetKey
 
@@ -77,12 +77,21 @@ _CENTER_KEY_WIDTH_PROPORTION = 0.309
 _OUTER_KEY_WIDTH_PROPORTION = 0.328
 _INSET_WIDTH_PROPORTION = 0.018
 
-# Layer-indicator chrome — sized as proportions of an outer key's
-# width so the badge stays visually balanced with the cluster
-# regardless of canvas size. Mirrors the legacy
-# :class:`FingerClusterComponent.build` constants.
+# Default proportion (of doc width) for ``layer_indicator_spacing``
+# when ``Spacing.layer_indicator_spacing`` is left at ``None``. Chosen
+# so finger and thumb cluster indicators share the same gap regardless
+# of cluster size — the legacy code used cluster-relative ratios that
+# produced different gaps on each cluster type. ``12 / 1600`` lands
+# midway between the legacy finger gap (~9 at the canonical layout)
+# and the legacy thumb gap (~14), giving a uniform visual rhythm.
+_LAYER_INDICATOR_SPACING_DEFAULT_PROPORTION = 12.0 / 1600.0
+
+# Layer-indicator badge diameter — proportion of an outer key's width
+# so badge size scales with the cluster. The gap between the key edge
+# and the indicator circle is **not** a cluster-relative ratio; it
+# comes from ``Spacing.layer_indicator_spacing`` (see
+# ``_LAYER_INDICATOR_SPACING_DEFAULT_PROPORTION`` above).
 _INDICATOR_DIAMETER_PROPORTION = 0.55
-_INDICATOR_GAP_PROPORTION = 0.18
 # The centre key's indicator runs diagonally past the surrounding
 # E / W / S keys; the larger gap multiplier keeps the badge clear of
 # their edges. Matches legacy ``key_gap = gap * 3`` for the centre
@@ -541,7 +550,12 @@ class _FingerClusterSlots:
     cluster_height: float
 
 
-def _compute_slots(*, cluster_width: float, has_double_south: bool) -> _FingerClusterSlots:
+def _compute_slots(
+    *,
+    cluster_width: float,
+    has_double_south: bool,
+    inset: float | None = None,
+) -> _FingerClusterSlots:
     """Resolve per-key boundaries from the cluster's outer width.
 
     Layout matches the legacy ``FingerClusterLayout``: outer keys
@@ -549,10 +563,18 @@ def _compute_slots(*, cluster_width: float, has_double_south: bool) -> _FingerCl
     key inset from the inner edges of the outer keys by
     ``inset_width``; double-south sits below south by
     ``inset_width`` when present.
+
+    ``inset`` overrides the default ``cluster_width *
+    _INSET_WIDTH_PROPORTION``. Callers with a render context read
+    ``Spacing.finger_key_gap`` and resolve it via
+    :func:`resolve_spacing` before passing it in; callers without a
+    context (mocks, isolated tests) leave ``inset=None`` to use the
+    built-in default.
     """
     center_width = cluster_width * _CENTER_KEY_WIDTH_PROPORTION
     outer_width = cluster_width * _OUTER_KEY_WIDTH_PROPORTION
-    inset = cluster_width * _INSET_WIDTH_PROPORTION
+    if inset is None:
+        inset = cluster_width * _INSET_WIDTH_PROPORTION
 
     cx = cluster_width / 2.0  # cluster's horizontal centre
 
@@ -687,7 +709,17 @@ def FingerCluster(
     double_south_colors = _colors(nudged_cluster.double_south_key, slot_defaults.double_south_key)
 
     # Layout — per-key origins + widths inside the cluster bbox.
-    slots = _compute_slots(cluster_width=width, has_double_south=has_double_south)
+    # ``finger_key_gap`` scales to the cluster's own width, so the
+    # resolution base is ``width`` (this cluster's width), not
+    # ``doc_width``.
+    finger_inset = resolve_spacing(
+        ctx.config.output.layout.spacing.finger_key_gap,
+        base=width,
+        default_proportion=_INSET_WIDTH_PROPORTION,
+    )
+    slots = _compute_slots(
+        cluster_width=width, has_double_south=has_double_south, inset=finger_inset
+    )
 
     # Per-key composables.
     center = CenterKey(
@@ -747,11 +779,17 @@ def FingerCluster(
     )
 
     # Layer indicators — one per slot whose key has a layer_switch
-    # set, sized as proportions of the outer key width so badges stay
-    # visually balanced with the cluster. ``None`` for slots without
-    # a layer-switch or when indicators are disabled.
+    # set. Diameter is a proportion of the outer-key width (badge size
+    # tracks the cluster); the gap between the key edge and the
+    # indicator circle comes from the doc-width-relative
+    # ``layer_indicator_spacing`` so finger and thumb clusters share
+    # the same gap regardless of their per-cluster sizing.
     indicator_diameter = slots.outer_width * _INDICATOR_DIAMETER_PROPORTION
-    indicator_gap = slots.outer_width * _INDICATOR_GAP_PROPORTION
+    indicator_gap = resolve_spacing(
+        ctx.config.output.layout.spacing.layer_indicator_spacing,
+        base=ctx.document_metrics.doc_width,
+        default_proportion=_LAYER_INDICATOR_SPACING_DEFAULT_PROPORTION,
+    )
 
     def _maybe_indicator(
         slot_key: SvalboardTargetKey,
@@ -899,12 +937,11 @@ _THUMB_INSET_PROPORTION = 0.038
 # from its width.
 _THUMB_CLUSTER_HEIGHT_RATIO = 1.0 / 1.5
 
-# Layer-indicator chrome on the thumb cluster — sized as proportions
-# of the down key's width (matches legacy
-# ``LayerIndicatorOverlay.for_thumb_cluster`` invocation in
-# :class:`ThumbClusterComponent`).
+# Thumb-cluster layer-indicator badge diameter — proportion of the
+# down key's width. The gap between the key edge and the indicator
+# circle comes from ``Spacing.layer_indicator_spacing``, shared with
+# the finger cluster.
 _THUMB_INDICATOR_DIAMETER_PROPORTION = 0.4
-_THUMB_INDICATOR_GAP_PROPORTION = 0.18
 
 
 # ---------------------------------------------------------------------------
@@ -1090,7 +1127,12 @@ class _ThumbClusterSlots:
     cluster_height: float
 
 
-def _compute_thumb_slots(*, cluster_width: float, side: KeyboardSide) -> _ThumbClusterSlots:
+def _compute_thumb_slots(
+    *,
+    cluster_width: float,
+    side: KeyboardSide,
+    inset: float | None = None,
+) -> _ThumbClusterSlots:
     """Resolve per-key thumb-cluster boundaries from the bbox width.
 
     Layout matches the legacy ``ThumbClusterLayout._compute_layout``
@@ -1098,6 +1140,12 @@ def _compute_thumb_slots(*, cluster_width: float, side: KeyboardSide) -> _ThumbC
     knuckle's outward edges point; the down + double-down keys are
     horizontally centred on the cluster's vertical midline and
     don't depend on side.
+
+    ``inset`` overrides the default ``cluster_width *
+    _THUMB_INSET_PROPORTION``. Callers with a render context resolve
+    ``Spacing.thumb_key_gap`` via :func:`resolve_spacing` before
+    passing it in; callers without a context (mocks, tests) leave
+    ``inset=None`` to use the built-in default.
     """
     cluster_height = cluster_width * _THUMB_CLUSTER_HEIGHT_RATIO
     center_x = cluster_width / 2.0
@@ -1109,7 +1157,8 @@ def _compute_thumb_slots(*, cluster_width: float, side: KeyboardSide) -> _ThumbC
     nail_w = cluster_width * _NAIL_KEY_PROPORTION
     knuckle_w = cluster_width * _KNUCKLE_KEY_PROPORTION
     double_down_w = cluster_width * _DOUBLE_DOWN_KEY_PROPORTION
-    inset = cluster_width * _THUMB_INSET_PROPORTION
+    if inset is None:
+        inset = cluster_width * _THUMB_INSET_PROPORTION
 
     is_left = side is KeyboardSide.LEFT
     down_origin = Point(center_x - down_w / 2.0, 0.0)
@@ -1229,7 +1278,14 @@ def ThumbCluster(
     knuckle_colors = _colors(nudged_cluster.knuckle_key, neutral)
     double_down_colors = _colors(nudged_cluster.double_down_key, layer_dark_accent)
 
-    slots = _compute_thumb_slots(cluster_width=width, side=side)
+    # ``thumb_key_gap`` scales to this cluster's own width, so the
+    # resolution base is ``width``, not ``doc_width``.
+    thumb_inset = resolve_spacing(
+        ctx.config.output.layout.spacing.thumb_key_gap,
+        base=width,
+        default_proportion=_THUMB_INSET_PROPORTION,
+    )
+    slots = _compute_thumb_slots(cluster_width=width, side=side, inset=thumb_inset)
 
     # Per-key composables.
     down = DownKey(
@@ -1277,11 +1333,17 @@ def ThumbCluster(
         stroke_color=double_down_colors.stroke,
     )
 
-    # Layer indicators — sized as proportions of the down key's
-    # width (legacy convention). Each indicator anchors to its own
-    # key via :class:`SvalboardKeyMetrics`.
+    # Layer indicators. Diameter is a proportion of the down key's
+    # width (badge size tracks the cluster); the gap between the key
+    # edge and the indicator circle comes from the doc-width-relative
+    # ``layer_indicator_spacing`` so finger and thumb clusters share
+    # the same gap regardless of cluster sizing.
     indicator_diameter = slots.down_width * _THUMB_INDICATOR_DIAMETER_PROPORTION
-    indicator_gap = slots.down_width * _THUMB_INDICATOR_GAP_PROPORTION
+    indicator_gap = resolve_spacing(
+        ctx.config.output.layout.spacing.layer_indicator_spacing,
+        base=ctx.document_metrics.doc_width,
+        default_proportion=_LAYER_INDICATOR_SPACING_DEFAULT_PROPORTION,
+    )
 
     # The double-down indicator points NORTH but the cluster's
     # outermost top edge isn't DD's top — it's the down key, which

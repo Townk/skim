@@ -479,19 +479,19 @@
 <text x="979.480241597704" y="864.934860770461" font-size="21.256062510102954" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="white" opacity="1.0">⎇</text>
 <path fill="#0F460F" stroke="white" stroke-width="1.6777106481188406" d="M 1055.9151871782192 791.01604663703 A 4.362047685108985 4.362047685108985 0 0 1 1060.4357500103702 786.6568800933748 L 1082.5815305655387 786.6568800933748 A 4.362047685108985 4.362047685108985 0 0 1 1087.1020933976897 791.01604663703 L 1088.127231622101 819.207347808334 A 4.362047685108985 4.362047685108985 0 0 1 1083.9236990840338 823.5665143519892 L 1059.093581491875 823.5665143519892 A 4.362047685108985 4.362047685108985 0 0 1 1054.890048953808 819.207347808334 Z" />
 <text x="1062.3614700586456" y="805.111697222682" font-size="22.145780555168695" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󰘳</text>
-<path d="M1115.3872264695242,907.9682654188908 L1099.7723065979321,907.9682654188908" stroke="#952093" stroke-width="2.0" />
+<path d="M1115.7723065979321,907.9682654188908 L1099.7723065979321,907.9682654188908" stroke="#952093" stroke-width="2.0" />
 <circle cx="1099.7723065979321" cy="907.9682654188908" r="2.0" fill="#952093" />
-<circle cx="1128.2926929935152" cy="907.9682654188908" r="12.90546652399108" fill="#5D145C" stroke="#952093" stroke-width="2.0" />
-<text x="1123.9370980416682" y="907.9682654188908" font-size="15.486559828789296" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">1</text>
-<path d="M1184.0443083771568,855.8223591671039 L1168.429388505565,855.8223591671039" stroke="#205A95" stroke-width="2.0" />
+<circle cx="1128.6777731219233" cy="907.9682654188908" r="12.90546652399108" fill="#5D145C" stroke="#952093" stroke-width="2.0" />
+<text x="1124.3221781700763" y="907.9682654188908" font-size="15.486559828789296" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">1</text>
+<path d="M1184.429388505565,855.8223591671039 L1168.429388505565,855.8223591671039" stroke="#205A95" stroke-width="2.0" />
 <circle cx="1168.429388505565" cy="855.8223591671039" r="2.0" fill="#205A95" />
-<circle cx="1196.949774901148" cy="855.8223591671039" r="12.90546652399108" fill="#14385D" stroke="#205A95" stroke-width="2.0" />
-<text x="1192.594179949301" y="855.8223591671039" font-size="15.486559828789296" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">2</text>
+<circle cx="1197.334855029556" cy="855.8223591671039" r="12.90546652399108" fill="#14385D" stroke="#205A95" stroke-width="2.0" />
+<text x="1192.979260077709" y="855.8223591671039" font-size="15.486559828789296" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">2</text>
 <g transform="translate(43.0, 112.0)">
-<path d="M1178.8552414251392,743.8223591671039 L1562.6633288552725,743.8223591671039 L1562.6633288552725,224.58930381331768 L1538.3316644276363,224.58930381331768" fill="none" stroke="#205A95" stroke-width="4.375" stroke-dasharray="0.1 12.25" stroke-linecap="round" opacity="0.7" />
-<path d="M1110.1981595175064,795.9682654188908 L1586.9949932829088,795.9682654188908 L1586.9949932829088,388.34944655754475 L1538.3316644276363,388.34944655754475" fill="none" stroke="#952093" stroke-width="4.375" stroke-dasharray="0.1 12.25" stroke-linecap="round" opacity="0.7" />
+<path d="M1179.2403215535471,743.8223591671039 L1562.6633288552725,743.8223591671039 L1562.6633288552725,224.58930381331768 L1538.3316644276363,224.58930381331768" fill="none" stroke="#205A95" stroke-width="4.375" stroke-dasharray="0.1 12.25" stroke-linecap="round" opacity="0.7" />
+<path d="M1110.5832396459145,795.9682654188908 L1586.9949932829088,795.9682654188908 L1586.9949932829088,388.34944655754475 L1538.3316644276363,388.34944655754475" fill="none" stroke="#952093" stroke-width="4.375" stroke-dasharray="0.1 12.25" stroke-linecap="round" opacity="0.7" />
 </g>
-<text x="43.0" y="987.8116357887923" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" font-family="'Roboto', sans-serif" fill="#888888">SYMBOLS</text>
+<text x="43.0" y="975.8116357887923" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#888888">SYMBOLS</text>
 <path d="M43.0,995.8116357887923 L1632.1824932829088,995.8116357887923" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
 <text x="52.5" y="1029.8116357887923" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">\</text>
 <text x="79.0" y="1029.8116357887923" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Non-US backslash</text>

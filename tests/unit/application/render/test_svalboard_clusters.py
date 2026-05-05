@@ -1012,7 +1012,10 @@ class TestThumbLayerIndicators:
         # at y = -(gap + 2*inset + radius)).
         inset = cluster_width * 0.038
         radius = dd_ind.circle_radius
-        gap = cluster_width * 0.25 * 0.18  # down_width * gap proportion
+        # Layer-indicator gap is now doc-width-relative (the legacy
+        # ``down_width * 0.18`` was per-cluster; the unified default
+        # is ``doc_width * 12/1600``). Default config doc_width = 1600.
+        gap = 1600.0 * 12.0 / 1600.0
         expected_circle_cy = -(gap + 2 * inset + radius)
         assert dd_ind.circle_center.y == pytest.approx(expected_circle_cy)
         # Translated to cluster-relative coords (DD origin + DD-local

@@ -18,8 +18,11 @@ from dataclasses import dataclass
 
 import drawsvg as draw
 
+from skim.data import resolve_spacing
+
 from .composable import Composable
 from .primitives import Size
+from .render_context import RenderContext
 
 # ---------------------------------------------------------------------------
 # Per-doc-width ratios — title font size, letter spacing, rule
@@ -30,10 +33,12 @@ from .primitives import Size
 
 _TITLE_FONT_SIZE_RATIO = 11.0 / 1600.0
 _TITLE_LETTER_SPACING_RATIO = 3.0 / 1600.0
-_TITLE_BASELINE_OFFSET_RATIO = 12.0 / 1600.0
 _COUNT_FONT_SIZE_RATIO = 10.0 / 1600.0
 _COUNT_LETTER_SPACING_RATIO = 1.0 / 1600.0
-_RULE_OFFSET_RATIO = 20.0 / 1600.0
+# Visible breathing room between the title's bottom edge and the
+# rule line below. The strip is sized as ``title_font_size +
+# title_rule_gap`` — top-anchored title, no dangling space above.
+_TITLE_RULE_GAP_RATIO = 9.0 / 1600.0
 _RULE_STROKE_RATIO = 1.2 / 1600.0
 
 
@@ -46,31 +51,64 @@ class SectionStripeMetrics:
     so the component owns its measurements; nothing else in the
     codebase reads these values.
 
-    The seven fields cover everything a stripe paints: title
-    typography (size + tracking), the right-aligned ``N ENTRIES``
-    count typography (size + tracking), the rule line's vertical
-    offset from the strip's top, and the rule's stroke width. The
-    title is anchored at ``baseline_offset`` from the top.
+    The strip is top-anchored: the title text's em-box top sits at
+    ``y=0`` and the rule line lands at ``title_font_size +
+    title_rule_gap``. ``rule_offset`` (== strip total height) is
+    surfaced for parents that need to align baseline-relative chrome
+    around the strip.
     """
 
     title_font_size: float
     title_letter_spacing: float
-    title_baseline_offset: float
     count_font_size: float
     count_letter_spacing: float
+    title_rule_gap: float
     rule_offset: float
     rule_stroke: float
 
     @classmethod
     def for_doc_width(cls, doc_width: float) -> SectionStripeMetrics:
-        """Build from a (possibly scaled) document width."""
+        """Build from a (possibly scaled) document width.
+
+        Test-friendly factory: applies the built-in default
+        ``title_rule_gap`` proportion (no Spacing override). Production
+        callers should use :meth:`from_ctx` so the user's
+        ``Spacing.section_title_rule_gap`` is honoured.
+        """
+        title_font_size = doc_width * _TITLE_FONT_SIZE_RATIO
+        title_rule_gap = doc_width * _TITLE_RULE_GAP_RATIO
         return cls(
-            title_font_size=doc_width * _TITLE_FONT_SIZE_RATIO,
+            title_font_size=title_font_size,
             title_letter_spacing=doc_width * _TITLE_LETTER_SPACING_RATIO,
-            title_baseline_offset=doc_width * _TITLE_BASELINE_OFFSET_RATIO,
             count_font_size=doc_width * _COUNT_FONT_SIZE_RATIO,
             count_letter_spacing=doc_width * _COUNT_LETTER_SPACING_RATIO,
-            rule_offset=doc_width * _RULE_OFFSET_RATIO,
+            title_rule_gap=title_rule_gap,
+            rule_offset=title_font_size + title_rule_gap,
+            rule_stroke=doc_width * _RULE_STROKE_RATIO,
+        )
+
+    @classmethod
+    def from_ctx(cls, ctx: RenderContext) -> SectionStripeMetrics:
+        """Build from the active render context.
+
+        Reads ``Spacing.section_title_rule_gap`` from the user's config
+        and resolves it through :func:`resolve_spacing`. Falls back to
+        the built-in default proportion when the field is ``None``.
+        """
+        doc_width = ctx.config.output.layout.width
+        title_font_size = doc_width * _TITLE_FONT_SIZE_RATIO
+        title_rule_gap = resolve_spacing(
+            ctx.config.output.layout.spacing.section_title_rule_gap,
+            base=doc_width,
+            default_proportion=_TITLE_RULE_GAP_RATIO,
+        )
+        return cls(
+            title_font_size=title_font_size,
+            title_letter_spacing=doc_width * _TITLE_LETTER_SPACING_RATIO,
+            count_font_size=doc_width * _COUNT_FONT_SIZE_RATIO,
+            count_letter_spacing=doc_width * _COUNT_LETTER_SPACING_RATIO,
+            title_rule_gap=title_rule_gap,
+            rule_offset=title_font_size + title_rule_gap,
             rule_stroke=doc_width * _RULE_STROKE_RATIO,
         )
 
@@ -107,20 +145,24 @@ def SectionStripe(
     ``accent_line`` — the section's derived accent — since that's a
     per-section value, not a theme preset.
     """
-    metrics = SectionStripeMetrics.for_doc_width(ctx.config.output.layout.width)
+    metrics = SectionStripeMetrics.from_ctx(ctx)
     size = Size(width, metrics.rule_offset)
 
     def draw_at(d, origin):
         x, y = origin.x, origin.y
+        # Top-anchor both texts via ``text-before-edge`` so the strip
+        # has no configurable dangling space above the title; the
+        # only configurable vertical value is the title→rule gap.
         d.append(
             draw.Text(
                 title,
                 x=x,
-                y=y + metrics.title_baseline_offset,
+                y=y,
                 font_size=metrics.title_font_size,
                 font_weight="700",
                 letter_spacing=metrics.title_letter_spacing,
                 text_anchor="start",
+                dominant_baseline="text-before-edge",
                 font_family="'Roboto', sans-serif",
                 fill=accent_line,
             )
@@ -130,9 +172,10 @@ def SectionStripe(
                 draw.Text(
                     f"{count} ENTRIES",
                     x=x + width,
-                    y=y + metrics.title_baseline_offset,
+                    y=y,
                     font_size=metrics.count_font_size,
                     text_anchor="end",
+                    dominant_baseline="text-before-edge",
                     fill="#888",
                     font_weight="400",
                     letter_spacing=metrics.count_letter_spacing,

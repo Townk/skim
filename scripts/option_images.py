@@ -33,7 +33,11 @@ import yaml
 
 from skim.application.render.composable import Component
 from skim.application.render.font import Font, FontSubsetter, current_font_usage_collector
-from skim.application.render.keymap_overview import LayerBadge
+from skim.application.render.keymap_overview import (
+    LayerBadge,
+    _badge_label,
+    _measure_badge_text_width,
+)
 from skim.application.render.macros import MacroRow
 from skim.application.render.primitives import Column, Point, Size
 from skim.application.render.render_context import (
@@ -387,31 +391,43 @@ def _build_keyboard_layers() -> Iterator[tuple[str, draw.Drawing]]:
         )
 
         # 3 & 4. Layer badges from the overview image — one for an
-        # auto-named layer, one with a custom name. Widths chosen to fit
+        # auto-named layer (no index column), one with a custom name
+        # (right-aligned index column + name). Widths chosen to fit
         # the longest text comfortably.
+        badge_font_size = badge_height * 0.45  # _BADGE_FONT_SIZE_RATIO
+
+        unnamed_label = _badge_label(3, "Layer 3")
         badge_layer_3_color = config.output.style.palette.layers[3].base_color
         yield (
             "badge-unnamed",
             _render_partial(
                 LayerBadge(
-                    text="LAYER 3",
+                    index_text=unnamed_label.index_text,
+                    name_text=unnamed_label.name_text,
                     badge_width=260.0,
                     badge_height=badge_height,
                     border_radius=badge_height * 0.2,
+                    index_col_w=0.0,
                     fill_color=badge_layer_3_color,
                 )
             ),
         )
 
+        named_label = _badge_label(2, "My Custom Name")
+        named_index_col_w = _measure_badge_text_width(
+            named_label.index_text or "", badge_font_size
+        )
         badge_layer_2_color = config.output.style.palette.layers[2].base_color
         yield (
             "badge-named",
             _render_partial(
                 LayerBadge(
-                    text="2 MY CUSTOM NAME",
+                    index_text=named_label.index_text,
+                    name_text=named_label.name_text,
                     badge_width=400.0,
                     badge_height=badge_height,
                     border_radius=badge_height * 0.2,
+                    index_col_w=named_index_col_w,
                     fill_color=badge_layer_2_color,
                 )
             ),
@@ -419,14 +435,20 @@ def _build_keyboard_layers() -> Iterator[tuple[str, draw.Drawing]]:
 
         # 5. Layer badge with a variant label below it (the `variant`
         #    field in keyboard.layers). Layer 0 of the COLEMAK sample.
-        #    Wrapped in the shared white card so the variant text reads
-        #    cleanly even when the docs are viewed in dark mode.
+        #    The variant label aligns with the name column (under
+        #    "LETTERS"), not with the index column.
+        variant_label = _badge_label(0, "Letters")
+        variant_index_col_w = _measure_badge_text_width(
+            variant_label.index_text or "", badge_font_size
+        )
         badge_layer_0_color = config.output.style.palette.layers[0].base_color
         variant_badge = LayerBadge(
-            text="0 LETTERS",
+            index_text=variant_label.index_text,
+            name_text=variant_label.name_text,
             badge_width=300.0,
             badge_height=badge_height,
             border_radius=badge_height * 0.2,
+            index_col_w=variant_index_col_w,
             fill_color=badge_layer_0_color,
             variant="QWERTY",
             variant_color=badge_layer_0_color,

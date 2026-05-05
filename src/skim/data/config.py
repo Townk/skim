@@ -479,36 +479,203 @@ class Keycodes(BaseModel):
         )
 
 
-class Spacing(BaseModel):
-    """Spacing configuration for layout margins and inset (padding and
-    in-between elements spacing).
+def _parse_spacing(value: Any) -> float | None:
+    """Normalize a Spacing field input to a float (or None).
 
-    Controls the whitespace around and within the generated keymap images.
-    Spacing is specified in SVG units (typically pixels at default scale).
+    Accepted input forms:
 
-    Attributes:
-        margin: Outer margin around the entire keyboard layout. Space
-            between the image edge and the rounded border. ``None`` (the
-            default) falls back to ``0``.
-        inset: Inner padding within the keyboard border — used both as
-            the gap between the border and the content AND as the gap
-            between elements stacked in the document column. ``None``
-            (the default) falls back to a width-proportional value
-            resolved at render time.
+    - ``None`` — keep the field's default (renderer falls back to its
+      built-in proportion).
+    - ``int`` / ``float`` — passed through as-is.
+    - ``"N%"`` string — converted to ``N / 100.0`` (proportion form).
+    - Plain numeric string (``"42"``, ``"0.05"``) — parsed as float.
+
+    The renderer applies the **magnitude rule** to the resulting float:
+
+    - ``x < 1.0`` → proportion of the field's documented base.
+    - ``x >= 1.0`` → absolute SVG units (independent of doc width).
+
+    Bools are rejected explicitly; without this they'd silently coerce
+    to ``0.0`` / ``1.0`` because ``bool`` is a subclass of ``int``.
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        raise TypeError(f"Spacing value cannot be a bool, got {value!r}")
+    if isinstance(value, int | float):
+        return float(value)
+    if isinstance(value, str):
+        s = value.strip()
+        if s.endswith("%"):
+            try:
+                return float(s[:-1]) / 100.0
+            except ValueError as exc:
+                raise ValueError(f"Invalid percentage spacing: {value!r}") from exc
+        try:
+            return float(s)
+        except ValueError as exc:
+            raise ValueError(f"Invalid spacing value: {value!r}") from exc
+    raise TypeError(
+        f"Spacing must be a float, int, or string; got {type(value).__name__}"
+    )
+
+
+SpacingValue = Annotated[float | None, BeforeValidator(_parse_spacing)]
+"""A spacing field accepting None, float, int, or a ``'N%'`` string.
+
+After validation the value is always ``float | None``; the renderer
+interprets the float's magnitude (``< 1.0`` proportion, ``>= 1.0``
+absolute units).
+"""
+
+
+def resolve_spacing(
+    value: float | None, *, base: float, default_proportion: float
+) -> float:
+    """Resolve a :data:`SpacingValue` to absolute SVG units.
+
+    Implements the magnitude rule:
+
+    - ``None`` → ``base * default_proportion`` (renderer's built-in).
+    - ``value < 1.0`` → ``base * value`` (proportion of base).
+    - ``value >= 1.0`` → ``value`` (absolute SVG units).
+
+    The ``1.0`` boundary is conventional: proportions live in
+    ``[0, 1)``, and any meaningful spacing in this codebase is at
+    least 1 SVG unit (sub-pixel gaps are invisible anyway).
 
     Example:
         ```pycon
-        >>> spacing = Spacing(margin=10, inset=25)
+        >>> resolve_spacing(None, base=1600.0, default_proportion=0.025)
+        40.0
+        >>> resolve_spacing(0.05, base=1600.0, default_proportion=0.025)
+        80.0
+        >>> resolve_spacing(20, base=1600.0, default_proportion=0.025)
+        20.0
+
+        ```
+    """
+    if value is None:
+        return base * default_proportion
+    if value < 1.0:
+        return max(0.0, base * value)
+    return value
+
+
+class Spacing(BaseModel):
+    """Configurable spacing values for the document layout.
+
+    Every gap, padding, and inset the renderer applies has a built-in
+    proportional default. Override any of them here. Each field accepts:
+
+    - **Float < 1.0** — proportion of the field's base.
+    - **Float ≥ 1.0** — absolute SVG units (independent of doc width).
+    - **String ``"N%"``** — shorthand for ``N / 100.0`` (proportion form).
+    - **``None`` (default)** — the field's built-in default proportion.
+
+    Each field documents its **base**. Most scale to the document width
+    (``output.layout.width``); the two cluster geometry fields scale to
+    the cluster's own width so they stay proportional regardless of how
+    the keyboard is positioned in the canvas.
+
+    Example:
+        ```pycon
+        >>> spacing = Spacing(margin=20, inset="3%", chip_padding=12)
         >>> spacing.margin
-        10.0
+        20.0
+        >>> spacing.inset
+        0.03
+        >>> spacing.chip_padding
+        12.0
 
         ```
     """
 
     model_config = ConfigDict(frozen=True)
 
-    margin: float | None = None
-    inset: float | None = None
+    # ------------------------------------------------------------------
+    # Document chrome — base: ``output.layout.width``
+    # ------------------------------------------------------------------
+
+    margin: SpacingValue = Field(default=None)
+    """Canvas edge → outer border line. Default: ``0`` (flush)."""
+
+    inset: SpacingValue = Field(default=None)
+    """Border line → content. Also the inter-element gap inside the
+    document Column. Default: ``40/1600`` (2.5%) of doc width."""
+
+    column_gap: SpacingValue = Field(default=None)
+    """Horizontal gap between half-keyboards (and between side-by-side
+    sections). Default: ``40/1600`` (2.5%) of doc width."""
+
+    # ------------------------------------------------------------------
+    # Section / table rhythm — base: ``output.layout.width``
+    # ------------------------------------------------------------------
+
+    section_spacing: SpacingValue = Field(default=None)
+    """Section title stripe → section body. Default:
+    ``24/1600`` (1.5%) of doc width."""
+
+    section_title_rule_gap: SpacingValue = Field(default=None)
+    """Section title bottom → rule line below it. Default:
+    ``9/1600`` (~0.56%) of doc width."""
+
+    table_header_spacing: SpacingValue = Field(default=None)
+    """Table header → first row (also: chip → cells, named-macro
+    header → pill row). Default: ``12/1600`` (0.75%) of doc width."""
+
+    table_col_spacing: SpacingValue = Field(default=None)
+    """Between adjacent table columns (pills, cells). Default:
+    ``6/1600`` (0.375%) of doc width."""
+
+    table_row_spacing: SpacingValue = Field(default=None)
+    """Between adjacent table rows. Default: ``9/1600`` (~0.56%) of
+    doc width."""
+
+    # ------------------------------------------------------------------
+    # Cluster geometry — base: the cluster's own width
+    # ------------------------------------------------------------------
+
+    finger_key_gap: SpacingValue = Field(default=None)
+    """Center key → outer keys inside a finger cluster. Base: finger
+    cluster width. Default: ``3.8%``."""
+
+    thumb_key_gap: SpacingValue = Field(default=None)
+    """Vertical gap above each outer thumb key (pad / nail / up /
+    knuckle). Base: thumb cluster width. Default: ``3.8%``."""
+
+    # ------------------------------------------------------------------
+    # Layer indicators — base: ``output.layout.width``
+    # ------------------------------------------------------------------
+
+    layer_indicator_spacing: SpacingValue = Field(default=None)
+    """Outer key → its layer indicator circle. Default chosen so finger
+    and thumb indicators share the same gap regardless of cluster size."""
+
+    # ------------------------------------------------------------------
+    # Chip / pill / badge internals — base: ``output.layout.width``
+    # ------------------------------------------------------------------
+
+    chip_padding: SpacingValue = Field(default=None)
+    """Symmetric horizontal inset inside any chip. Vertical inset is
+    derived as ``chip_padding * 0.25``. Default:
+    ``20/1600`` (1.25%) of doc width."""
+
+    tap_dance_pill_padding: SpacingValue = Field(default=None)
+    """Symmetric horizontal inset inside a tap-dance pill (cell).
+    Vertical inset is derived as ``tap_dance_pill_padding * 0.25``.
+    Default: ``20/1600`` (1.25%) of doc width."""
+
+    macro_action_inset: SpacingValue = Field(default=None)
+    """Uniform inset for all three positions inside a macro pill —
+    pill edge → icon centre, icon centre → text start, text end →
+    pill edge. Default: ``10/1600`` (0.625%) of doc width."""
+
+    layer_badge_inset: SpacingValue = Field(default=None)
+    """Leading horizontal inset inside a layer badge (badge edge →
+    label text). Trailing inset is derived as
+    ``layer_badge_inset * 2``. Default: ``15/1600`` (~0.94%) of doc
+    width."""
 
 
 class Layout(BaseModel):

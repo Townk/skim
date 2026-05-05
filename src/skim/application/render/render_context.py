@@ -45,7 +45,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 
-from skim.data import LayerColor, SkimConfig, SvalboardKeymap
+from skim.data import LayerColor, SkimConfig, SvalboardKeymap, resolve_spacing
 from skim.domain import SvalboardTargetKey
 
 from .font import Font
@@ -221,20 +221,19 @@ class Theme:
 # ---------------------------------------------------------------------------
 
 
-# Width-proportional fallback for ``Spacing.inset`` when the user
-# hasn't set it explicitly. Matches the canonical 40-unit gap at the
-# canonical 1600-unit document width — the value the legacy
-# ``_outer_padding`` floor was tuned against.
-_INSET_DEFAULT_RATIO = 40.0 / 1600.0
-
-# Per-doc-width ratios for the four cross-cutting spacings populated
-# on :class:`DocumentMetrics`. Expressed as fractions of the document
-# width so the document's internal rhythm scales together with chrome.
-_COLUMN_GAP_RATIO = 40.0 / 1600.0
-_SECTION_SPACING_RATIO = 24.0 / 1600.0
-_TABLE_HEADER_SPACING_RATIO = 12.0 / 1600.0
-_TABLE_COL_SPACING_RATIO = 6.0 / 1600.0
-_TABLE_ROW_SPACING_RATIO = 9.0 / 1600.0
+# Default proportions used when the corresponding ``Spacing`` field
+# is left at ``None``. Each value is a fraction of the document width
+# so the document's internal rhythm scales together with the chrome.
+# Resolved into absolute SVG units by :func:`resolve_spacing`, which
+# also lets the user override with a float < 1 (proportion), a float
+# >= 1 (absolute SVG unit), or a ``"N%"`` string.
+_MARGIN_DEFAULT_PROPORTION = 0.0  # flush — no margin by default
+_INSET_DEFAULT_PROPORTION = 40.0 / 1600.0
+_COLUMN_GAP_DEFAULT_PROPORTION = 40.0 / 1600.0
+_SECTION_SPACING_DEFAULT_PROPORTION = 24.0 / 1600.0
+_TABLE_HEADER_SPACING_DEFAULT_PROPORTION = 12.0 / 1600.0
+_TABLE_COL_SPACING_DEFAULT_PROPORTION = 6.0 / 1600.0
+_TABLE_ROW_SPACING_DEFAULT_PROPORTION = 9.0 / 1600.0
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -308,21 +307,34 @@ class DocumentMetrics:
     def from_config(cls, config: SkimConfig) -> "DocumentMetrics":
         """Compute document-wide metrics from a config.
 
-        Resolves margin / border_width / inset directly — this is the
-        canonical source for those values.
+        Each spacing field is resolved through :func:`resolve_spacing`:
+        the user's override (if any) lives on
+        ``config.output.layout.spacing.<field>`` and is interpreted by
+        magnitude (``< 1`` proportion, ``>= 1`` absolute SVG units),
+        falling back to the per-field default proportion documented at
+        the top of this module when the field is ``None``.
         """
         doc_width = config.output.layout.width
         spacing = config.output.layout.spacing
         border = config.output.style.border
 
         border_width = border.width if border is not None else 0.0
-        configured_margin = spacing.margin if spacing.margin is not None else 0.0
+
+        margin = resolve_spacing(
+            spacing.margin,
+            base=doc_width,
+            default_proportion=_MARGIN_DEFAULT_PROPORTION,
+        )
         # Floor the margin at ``border_width / 2`` so a centred stroke
         # never extends past the canvas edge.
-        margin = (
-            max(border_width / 2.0, configured_margin) if border is not None else configured_margin
+        if border is not None:
+            margin = max(border_width / 2.0, margin)
+
+        inset = resolve_spacing(
+            spacing.inset,
+            base=doc_width,
+            default_proportion=_INSET_DEFAULT_PROPORTION,
         )
-        inset = spacing.inset if spacing.inset is not None else doc_width * _INSET_DEFAULT_RATIO
 
         return cls(
             doc_width=doc_width,
@@ -330,15 +342,35 @@ class DocumentMetrics:
             border_width=border_width,
             inset=inset,
             border_radius=border.radius if border is not None else None,
-            column_gap=doc_width * _COLUMN_GAP_RATIO,
+            column_gap=resolve_spacing(
+                spacing.column_gap,
+                base=doc_width,
+                default_proportion=_COLUMN_GAP_DEFAULT_PROPORTION,
+            ),
             # Universal table spacings — unscaled (per document); the
             # body-scaled standalone images multiply by ``BODY_SCALE``
             # locally via the per-component ``MacroMetrics`` /
             # ``TapDanceMetrics`` ``from_ctx`` factories.
-            section_spacing=doc_width * _SECTION_SPACING_RATIO,
-            table_header_spacing=doc_width * _TABLE_HEADER_SPACING_RATIO,
-            table_col_spacing=doc_width * _TABLE_COL_SPACING_RATIO,
-            table_row_spacing=doc_width * _TABLE_ROW_SPACING_RATIO,
+            section_spacing=resolve_spacing(
+                spacing.section_spacing,
+                base=doc_width,
+                default_proportion=_SECTION_SPACING_DEFAULT_PROPORTION,
+            ),
+            table_header_spacing=resolve_spacing(
+                spacing.table_header_spacing,
+                base=doc_width,
+                default_proportion=_TABLE_HEADER_SPACING_DEFAULT_PROPORTION,
+            ),
+            table_col_spacing=resolve_spacing(
+                spacing.table_col_spacing,
+                base=doc_width,
+                default_proportion=_TABLE_COL_SPACING_DEFAULT_PROPORTION,
+            ),
+            table_row_spacing=resolve_spacing(
+                spacing.table_row_spacing,
+                base=doc_width,
+                default_proportion=_TABLE_ROW_SPACING_DEFAULT_PROPORTION,
+            ),
         )
 
 

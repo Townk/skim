@@ -126,6 +126,11 @@ screenshots:
 option-images:
     uv run python scripts/option_images.py
 
+# Generate spacing-mock SVGs (greyscale keymap with a single highlighted gap)
+[group('Documentation')]
+spacing-mocks:
+    uv run python scripts/spacing_mocks.py
+
 # ------------------------------------------------------------------------------
 # Project Actions
 

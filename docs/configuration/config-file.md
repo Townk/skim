@@ -669,46 +669,18 @@ output:
   keymap_title: <string>
   copyright: <string>
   layout:
-    width: <float>
-    spacing:
-      margin: <float>
-      inset: <float>
+    ...
   style:
-    hold_symbol_position: qmk | inward | outward
-    macros_scale: <float>
-    show_layer_connectors: <boolean>
-    show_layer_indicators: <boolean>
-    show_special_keys_legend: <boolean>
-    show_symbol_legend: <boolean>
-    show_transparent_fallthrough: <boolean>
-    symbol_legend_columns: <int>
-    symbol_legend_flow: row | column
-    symbols_scale: <float>
-    tap_dances_scale: <float>
-    use_layer_colors_on_keys: <boolean>
-    use_system_fonts: <boolean>
-    border:
-      width: <float>
-      radius: <float>
-    palette:
-      background_color: <color:string>
-      border_color: <color:string>
-      key_label_color: <color:string>
-      macro_color: <color:string>
-      neutral_color: <color:string>
-      tap_dance_color: <color:string>
-      text_color: <color:string>
-      layers:
-        - base_color: <color:string>
-          color_index: <int>
-          gradient:
-            - <color:string>
-            - ...
-        - ...
-      overrides:
-        <NAME:string>: <color:string>
-        ...
+    ...
 ```
+
+Skim is configured to layout the keymap elements proportionally everywhere.
+Although opinionated, the design decisions regarding spacing and typography
+follow a small set of rules to create a consistent image; that being said,
+you're free to override these decisions.
+
+The next sub-sections will explain in details how each field affect the output
+of your keymap.
 
 ### `output.keymap_title`
 
@@ -716,9 +688,10 @@ output:
 | ---------------- | ------- |
 | `string \| null` | `null`  |
 
-Override for the auto-generated title rendered at the top of the overview
-image. Leave `null` to use the auto-generated one (typically derived from
-the input file's name).
+Your keymap layout title. This name will be used as the title of each keymap
+image created by Skim. If you don't set this property (or set it to `null`), an
+auto-generated name will be used instead. The name is derived from the keymap
+file name used to create the images.
 
 ### `output.copyright`
 
@@ -726,9 +699,9 @@ the input file's name).
 | ---------------- | ------- |
 | `string \| null` | `null`  |
 
-A copyright notice rendered in the footer area of the overview image.
-Leave `null` to omit it. Standard conventions apply
-(`"© 2026 Your Name"`); Skim does not enforce a format.
+An optional copyright notice rendered in the footer area of the keymap images.
+Leave `null` to omit it. Standard conventions apply (`"© 2026 Your Name"`);
+Skim does not enforce a format.
 
 ### `output.layout`
 

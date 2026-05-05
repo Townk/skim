@@ -149,25 +149,25 @@
 <path fill="#6F768B" d="M 838.19316 439.16121499999997 A 5.796945000000001 5.796945000000001 0 0 1 843.9901050000001 433.36427 L 948.335115 433.36427 A 5.796945000000001 5.796945000000001 0 0 1 953.8289471778568 439.1532849378005 L 951.1888836221433 489.57466682690534 A 5.796945000000001 5.796945000000001 0 0 1 945.0888258 495.36368176470586 L 843.9901050000001 495.36368176470586 A 5.796945000000001 5.796945000000001 0 0 1 838.19316 489.56673676470587 Z" />
 <text x="883.2667323529413" y="464.3639758823529" font-size="24.799764705882353" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="white" opacity="1.0">⎇</text>
 <path fill="#667E1B" stroke="white" stroke-width="1.9574100000000003" d="M 972.3768860171143 378.12179452935584 A 5.089266 5.089266 0 0 1 977.651094 373.03589 L 1003.488906 373.03589 A 5.089266 5.089266 0 0 1 1008.7631139828857 378.12179452935584 L 1009.9591580171143 411.01300547064415 A 5.089266 5.089266 0 0 1 1005.054834 416.09891 L 976.085166 416.09891 A 5.089266 5.089266 0 0 1 971.1808419828857 411.01300547064415 Z" />
-<path d="M1041.7638,514.57169 L1024.2125,514.57169" stroke="#955A20" stroke-width="2.0" />
+<path d="M1040.2125,514.57169 L1024.2125,514.57169" stroke="#955A20" stroke-width="2.0" />
 <circle cx="1024.2125" cy="514.57169" r="2.0" fill="#955A20" />
-<circle cx="1056.8208" cy="514.57169" r="15.057" fill="#5D3814" stroke="#955A20" stroke-width="2.0" />
-<text x="1051.5904736842106" y="514.57169" font-size="18.0684" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">3</text>
-<text x="43.0" y="597.8902499999999" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" font-family="'Roboto', sans-serif" fill="#CF9155">MACROS</text>
-<text x="1557.0" y="597.8902499999999" font-size="10.0" text-anchor="end" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">1 ENTRIES</text>
+<circle cx="1055.2695" cy="514.57169" r="15.057" fill="#5D3814" stroke="#955A20" stroke-width="2.0" />
+<text x="1050.0391736842107" y="514.57169" font-size="18.0684" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">3</text>
+<text x="43.0" y="585.8902499999999" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#CF9155">MACROS</text>
+<text x="1557.0" y="585.8902499999999" font-size="10.0" text-anchor="end" dominant-baseline="text-before-edge" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">1 ENTRIES</text>
 <path d="M43.0,605.8902499999999 L1557.0,605.8902499999999" stroke="#CF9155" stroke-opacity="0.5" stroke-width="1.2" />
 <rect x="43.0" y="629.8902499999999" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="60.5" y="641.3902499999999" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="640.8902499999999" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">5</text>
-<rect x="111.0" y="631.8902499999999" width="50.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<circle cx="119.0" cy="640.8902499999999" r="3.0" fill="black" />
-<text x="133.5" y="641.3902499999999" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰹍 </text>
-<text x="145.5" y="640.8902499999999" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">9</text>
-<rect x="167.0" y="631.8902499999999" width="52.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<circle cx="175.0" cy="640.8902499999999" r="3.0" fill="black" />
-<text x="189.5" y="641.3902499999999" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰁨 </text>
-<text x="202.5" y="641.3902499999999" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰍽</text>
-<text x="43.0" y="703.8902499999999" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" font-family="'Roboto', sans-serif" fill="#888888">SYMBOLS</text>
+<rect x="111.0" y="631.8902499999999" width="54.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
+<circle cx="121.0" cy="640.8902499999999" r="3.0" fill="black" />
+<text x="135.5" y="641.3902499999999" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰹍 </text>
+<text x="147.5" y="640.8902499999999" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">9</text>
+<rect x="171.0" y="631.8902499999999" width="56.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
+<circle cx="181.0" cy="640.8902499999999" r="3.0" fill="black" />
+<text x="195.5" y="641.3902499999999" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰁨 </text>
+<text x="208.5" y="641.3902499999999" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰍽</text>
+<text x="43.0" y="691.8902499999999" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#888888">SYMBOLS</text>
 <path d="M43.0,711.8902499999999 L1557.0,711.8902499999999" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
 <text x="48.5" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="black" opacity="1.0" font-weight="700">⎇</text>
 <text x="79.0" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Alt</text>

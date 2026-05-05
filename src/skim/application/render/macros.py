@@ -30,6 +30,7 @@ from dataclasses import dataclass
 
 import drawsvg as draw
 
+from skim.data import resolve_spacing
 from skim.domain import (
     SvalboardMacro,
     SvalboardMacroAction,
@@ -54,21 +55,31 @@ from .styling import derive_accent_line
 # ---------------------------------------------------------------------------
 
 _CHIP_WIDTH_RATIO = 56.0 / 1600.0
-_CHIP_HEIGHT_RATIO = 22.0 / 1600.0
 _CORNER_RADIUS_RATIO = 4.0 / 1600.0
 _CHIP_STROKE_WIDTH_RATIO = 1.2 / 1600.0
 _CHIP_INNER_FONT_SIZE_RATIO = 12.0 / 1600.0
 _CHIP_INNER_TEXT_BASELINE_OFFSET_RATIO = 0.5 / 1600.0
 _NAME_FONT_SIZE_RATIO = 13.0 / 1600.0
-_NAME_GAP_RATIO = 10.0 / 1600.0
+# Default proportion (of doc width) for ``chip_padding`` when the
+# user leaves ``Spacing.chip_padding`` at ``None``. Symmetric
+# horizontal inset inside any chip-shaped element. Vertical padding
+# is ``chip_padding * 0.25``; ``chip_height`` derives as
+# ``font_size + 2 * vertical_padding``.
+_CHIP_PADDING_RATIO = 20.0 / 1600.0
+_CHIP_VERTICAL_PADDING_PROPORTION_OF_CHIP_PADDING = 0.25
 _RULE_INSET_RATIO = 0.5 / 1600.0
 _RULE_STROKE_RATIO = 1.0 / 1600.0
 _PILL_ROW_HEIGHT_RATIO = 22.0 / 1600.0
 _PILL_HEIGHT_RATIO = 18.0 / 1600.0
 _PILL_FONT_SIZE_RATIO = 10.0 / 1600.0
-_PILL_PAD_X_RATIO = 8.0 / 1600.0
+# Default proportion (of doc width) for ``macro_action_inset`` when
+# the user leaves ``Spacing.macro_action_inset`` at ``None``. A
+# single uniform inset governs every gap inside a macro action pill:
+# pill edge → icon centre, icon centre → text start, text end → pill
+# edge. One configurable value keeps the pill's internal rhythm
+# consistent without exposing three knobs that have to move together.
+_MACRO_ACTION_INSET_RATIO = 10.0 / 1600.0
 _PILL_ICON_WIDTH_RATIO = 6.0 / 1600.0
-_PILL_ICON_TEXT_GAP_RATIO = 10.0 / 1600.0
 _PILL_MIN_TEXT_WIDTH_RATIO = 8.0 / 1600.0
 _PILL_MIN_TOTAL_WIDTH_RATIO = 28.0 / 1600.0
 
@@ -123,14 +134,18 @@ class MacroMetrics:
     # Chip (the colored ID tag at the row header).
     chip_width: float
     chip_height: float
+    """Derived as ``chip_inner_font_size + 2 * chip_padding * 0.25``."""
     chip_corner_radius: float
     chip_stroke_width: float
     chip_inner_font_size: float
     chip_inner_text_baseline_offset: float
+    chip_padding: float
+    """Symmetric horizontal inset inside any chip-shaped element.
+    Used today for the leading gap between the chip body and the
+    named-macro name text."""
 
     # Named-header extras (chip + name + horizontal rule).
     name_font_size: float
-    name_gap: float
     rule_inset: float
     rule_stroke: float
 
@@ -139,9 +154,11 @@ class MacroMetrics:
     pill_height: float
     pill_corner_radius: float
     pill_font_size: float
-    pill_pad_x: float
+    macro_action_inset: float
+    """Uniform inset inside a pill — pill edge → icon centre,
+    icon centre → text start, and text end → pill edge all use this
+    same value."""
     pill_icon_width: float
-    pill_icon_text_gap: float
     pill_min_text_width: float
     pill_min_total_width: float
     pill_chrome_width: float
@@ -156,34 +173,54 @@ class MacroMetrics:
         chrome stays at its unscaled per-image size.
         """
         doc_m = ctx.document_metrics
+        spacing = ctx.config.output.layout.spacing
         w = doc_m.doc_width * scale
-        pad_x = w * _PILL_PAD_X_RATIO
+        action_inset = (
+            resolve_spacing(
+                spacing.macro_action_inset,
+                base=doc_m.doc_width,
+                default_proportion=_MACRO_ACTION_INSET_RATIO,
+            )
+            * scale
+        )
         icon_w = w * _PILL_ICON_WIDTH_RATIO
-        icon_text_gap = w * _PILL_ICON_TEXT_GAP_RATIO
+        chip_padding = (
+            resolve_spacing(
+                spacing.chip_padding,
+                base=doc_m.doc_width,
+                default_proportion=_CHIP_PADDING_RATIO,
+            )
+            * scale
+        )
+        chip_inner_font_size = w * _CHIP_INNER_FONT_SIZE_RATIO
+        chip_height = chip_inner_font_size + 2 * (
+            chip_padding * _CHIP_VERTICAL_PADDING_PROPORTION_OF_CHIP_PADDING
+        )
         return cls(
             table_col_spacing=doc_m.table_col_spacing * scale,
             table_header_spacing=doc_m.table_header_spacing * scale,
             table_row_spacing=doc_m.table_row_spacing * scale,
             chip_width=w * _CHIP_WIDTH_RATIO,
-            chip_height=w * _CHIP_HEIGHT_RATIO,
+            chip_height=chip_height,
             chip_corner_radius=w * _CORNER_RADIUS_RATIO,
             chip_stroke_width=w * _CHIP_STROKE_WIDTH_RATIO,
-            chip_inner_font_size=w * _CHIP_INNER_FONT_SIZE_RATIO,
+            chip_inner_font_size=chip_inner_font_size,
             chip_inner_text_baseline_offset=w * _CHIP_INNER_TEXT_BASELINE_OFFSET_RATIO,
+            chip_padding=chip_padding,
             name_font_size=w * _NAME_FONT_SIZE_RATIO,
-            name_gap=w * _NAME_GAP_RATIO,
             rule_inset=w * _RULE_INSET_RATIO,
             rule_stroke=w * _RULE_STROKE_RATIO,
             pill_row_height=w * _PILL_ROW_HEIGHT_RATIO,
             pill_height=w * _PILL_HEIGHT_RATIO,
             pill_corner_radius=w * _CORNER_RADIUS_RATIO,
             pill_font_size=w * _PILL_FONT_SIZE_RATIO,
-            pill_pad_x=pad_x,
+            macro_action_inset=action_inset,
             pill_icon_width=icon_w,
-            pill_icon_text_gap=icon_text_gap,
             pill_min_text_width=w * _PILL_MIN_TEXT_WIDTH_RATIO,
             pill_min_total_width=w * _PILL_MIN_TOTAL_WIDTH_RATIO,
-            pill_chrome_width=2 * pad_x + icon_w + icon_text_gap,
+            # Total non-text width: leading inset + icon + icon-text
+            # inset + trailing inset.
+            pill_chrome_width=3 * action_inset + icon_w,
         )
 
 
@@ -454,22 +491,23 @@ def MacroPill(
                 stroke_opacity=0.18,
             )
         )
-        # Action glyph — icon centred at ``x + pill_pad_x`` so the
-        # left padding from pill edge to icon centre = ``pill_pad_x``.
+        # Action glyph — icon centred at ``x + macro_action_inset`` so
+        # the leading inset (pill edge → icon centre) equals the same
+        # configurable value the icon → text gap and trailing pad use.
         d.append(
             build_action_glyph(
                 kind,
-                cx=x + metrics.pill_pad_x,
+                cx=x + metrics.macro_action_inset,
                 cy=y + metrics.pill_row_height / 2,
                 color=text_color,
                 doc_width=doc_width,
             )
         )
         # Label — centred in the available text region:
-        #   left  = x + pill_pad_x + icon_width/2 + icon_text_gap
-        #   right = x + pill_w - pill_pad_x
-        #   centre = x + (icon_width/2 + icon_text_gap + pill_w) / 2
-        text_centre_x = x + (metrics.pill_icon_width / 2 + metrics.pill_icon_text_gap + pill_w) / 2
+        #   left  = x + macro_action_inset + icon_width/2 + macro_action_inset
+        #   right = x + pill_w - macro_action_inset
+        #   centre = x + (icon_width/2 + macro_action_inset + pill_w) / 2
+        text_centre_x = x + (metrics.pill_icon_width / 2 + metrics.macro_action_inset + pill_w) / 2
         cy = y + metrics.pill_row_height / 2 + metrics.chip_inner_text_baseline_offset
         label_el.draw_at(
             d,
@@ -581,9 +619,9 @@ def MacroRow(
         height = metrics.chip_height + metrics.table_header_spacing + pill_row.size.height
         # Pre-build the name as :func:`AdjustableText` so a long name
         # would shrink to fit before overflowing the rule's right edge.
-        # The text slot starts at ``chip_width + name_gap`` from the
-        # row's left and ends at ``content_width``.
-        name_max_width = max(0.0, content_width - metrics.chip_width - metrics.name_gap)
+        # The text slot starts at ``chip_width + chip_padding`` from
+        # the row's left and ends at ``content_width``.
+        name_max_width = max(0.0, content_width - metrics.chip_width - metrics.chip_padding)
         name_el = AdjustableText(
             text=macro.name,
             style=TextStyle(font=Font.FINGER_KEY, size=metrics.name_font_size, color=text_color),
@@ -606,7 +644,7 @@ def MacroRow(
             # the header strip.
             assert name_el is not None
             name_origin = Point(
-                x + metrics.chip_width + metrics.name_gap,
+                x + metrics.chip_width + metrics.chip_padding,
                 y
                 + metrics.chip_height / 2
                 + metrics.chip_inner_text_baseline_offset
@@ -764,7 +802,7 @@ def MacroSection(
     palette = ctx.theme.palette
     accent_fill = palette.macro_color
     accent_line = derive_accent_line(accent_fill)
-    stripe_metrics = SectionStripeMetrics.for_doc_width(ctx.config.output.layout.width)
+    stripe_metrics = SectionStripeMetrics.from_ctx(ctx)
 
     if wrap_content:
         table_metrics = MacroMetrics.from_ctx(ctx, scale=scale)
