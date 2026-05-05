@@ -409,11 +409,16 @@ def _build_column_gap_mock() -> draw.Drawing:
 
 def _doc_chrome_mock(*, highlight: str) -> draw.Drawing:
     """Render a small KeymapDocument with a real keymap inside, then
-    highlight either the ``margin`` band (canvas edge → border line) or
-    the ``inset`` band (border line → content). Both spacings are
-    document chrome that the renderer applies around any document body,
-    so showing a real keymap inside makes the band's role legible at a
-    glance.
+    highlight one of three document-chrome values:
+
+    * ``margin`` — band between canvas edge and the border line.
+    * ``inset`` — band between the border line and the content.
+    * ``border`` — rose stroke overlaid on the border path itself
+      (the value is a stroke width, not a band).
+
+    Showing a real keymap inside makes each value's role legible at a
+    glance. The mock uses an exaggerated ``border_width = 4`` so the
+    stroke reads cleanly even on the small canvas.
     """
     from skim.application.render.keymap_document import KeymapDocument
     from skim.application.render.keymap_layer import KeymapLayer
@@ -421,7 +426,7 @@ def _doc_chrome_mock(*, highlight: str) -> draw.Drawing:
 
     margin = 18.0
     inset = 22.0
-    border_width = 2.0
+    border_width = 4.0
     border_radius = 8.0
     doc_width = 720.0
 
@@ -514,6 +519,24 @@ def _doc_chrome_mock(*, highlight: str) -> draw.Drawing:
                 width=inset,
                 height=canvas_h - 2 * (inner + inset),
             )
+        elif highlight == "border":
+            # Rose overlay on the border path. The path is centred at
+            # ``margin`` from each edge with ``border_width`` stroke,
+            # so the overlay re-paints the same rectangle in rose to
+            # show what the border-width value strokes.
+            d.append(
+                draw.Rectangle(
+                    x=margin,
+                    y=margin,
+                    width=canvas_w - 2 * margin,
+                    height=canvas_h - 2 * margin,
+                    rx=border_radius,
+                    ry=border_radius,
+                    fill="none",
+                    stroke=_HIGHLIGHT,
+                    stroke_width=border_width,
+                )
+            )
         else:
             raise ValueError(f"unknown highlight {highlight!r}")
 
@@ -522,6 +545,10 @@ def _doc_chrome_mock(*, highlight: str) -> draw.Drawing:
 
 def _build_margin_mock() -> draw.Drawing:
     return _doc_chrome_mock(highlight="margin")
+
+
+def _build_border_width_mock() -> draw.Drawing:
+    return _doc_chrome_mock(highlight="border")
 
 
 def _build_inset_mock() -> draw.Drawing:
@@ -1423,6 +1450,7 @@ BUILDERS: dict[str, MockBuilder] = {
     # Overview / chrome
     "layer-badge-inset": _build_layer_badge_inset_mock,
     # Strokes
+    "border-width": _build_border_width_mock,
     "chip-outline-stroke": _build_chip_outline_mock,
     "header-rule-stroke": _build_header_rule_stroke_mock,
     "layer-indicator-stroke": _build_layer_indicator_stroke_mock,
