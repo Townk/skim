@@ -515,9 +515,7 @@ def _parse_spacing(value: Any) -> float | None:
             return float(s)
         except ValueError as exc:
             raise ValueError(f"Invalid spacing value: {value!r}") from exc
-    raise TypeError(
-        f"Spacing must be a float, int, or string; got {type(value).__name__}"
-    )
+    raise TypeError(f"Spacing must be a float, int, or string; got {type(value).__name__}")
 
 
 SpacingValue = Annotated[float | None, BeforeValidator(_parse_spacing)]
@@ -529,9 +527,7 @@ absolute units).
 """
 
 
-def resolve_spacing(
-    value: float | None, *, base: float, default_proportion: float
-) -> float:
+def resolve_spacing(value: float | None, *, base: float, default_proportion: float) -> float:
     """Resolve a :data:`SpacingValue` to absolute SVG units.
 
     Implements the magnitude rule:
