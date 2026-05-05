@@ -32,14 +32,17 @@ import drawsvg as draw
 import yaml
 
 from skim.application.render.composable import Component
+from skim.application.render.font import Font, FontSubsetter, current_font_usage_collector
 from skim.application.render.keymap_overview import LayerBadge
-from skim.application.render.primitives import Point, Size
+from skim.application.render.macros import MacroRow
+from skim.application.render.primitives import Column, Point, Size
 from skim.application.render.render_context import (
     RenderContext,
     using_render_context,
 )
-from skim.application.render.styling import default_layer_color
+from skim.application.render.styling import default_layer_color, derive_accent_line
 from skim.application.render.svalboard_clusters import FingerCluster, ThumbCluster
+from skim.application.render.tap_dance import TapDanceColumnHeader, TapDanceRow
 from skim.data.config import (
     KeyboardLayer,
     LayerColor,
@@ -51,7 +54,14 @@ from skim.data.keyboard import (
     SvalboardLayout,
     ThumbCluster as ThumbClusterData,
 )
-from skim.domain import KeyboardSide, SvalboardTargetKey
+from skim.domain import (
+    KeyboardSide,
+    SvalboardMacro,
+    SvalboardMacroAction,
+    SvalboardMacroActionKind,
+    SvalboardTapDance,
+    SvalboardTargetKey,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_ROOT = ROOT / "docs" / "_static" / "options"
@@ -164,6 +174,7 @@ def _build_palette_config(
     *,
     num_layers: int,
     palette_layers: tuple[LayerColor, ...] | None = None,
+    use_system_fonts: bool = True,
 ) -> SkimConfig:
     """Build a SkimConfig with N keyboard layers and matching palette stops.
 
@@ -176,6 +187,12 @@ def _build_palette_config(
     config (typically loaded via :func:`_load_palette_layers`) so the
     snippets read like a real keymap. When ``None``, falls back to the
     auto-generated :func:`default_layer_color` palette.
+
+    ``use_system_fonts`` defaults to ``True`` so most snippets stay
+    tiny — but builders that paint Nerd-Font glyphs (macro / tap-dance
+    rows, symbol legends) need ``False`` plus :func:`_render_in_card`
+    with ``embed_fonts=True`` so the SVG carries the glyphs and renders
+    correctly in browsers without those fonts installed.
     """
     config = SkimConfig()
     keyboard = config.keyboard.model_copy(
@@ -191,7 +208,7 @@ def _build_palette_config(
         )
     palette = config.output.style.palette.model_copy(update={"layers": palette_layers})
     style = config.output.style.model_copy(
-        update={"use_system_fonts": True, "palette": palette}
+        update={"use_system_fonts": use_system_fonts, "palette": palette}
     )
     output = config.output.model_copy(update={"style": style})
     return config.model_copy(update={"keyboard": keyboard, "output": output})
@@ -222,6 +239,7 @@ def _render_in_card(
     stroke_color: str = "#D4D8DD",
     stroke_width: float = 1.0,
     fill: str = "#FFFFFF",
+    embed_fonts: bool = False,
 ) -> draw.Drawing:
     """Render a component centred inside a fixed-size rounded-rect "card".
 
@@ -234,9 +252,30 @@ def _render_in_card(
 
     The component is centred inside the canvas, preserving its natural
     proportions; whatever space remains becomes white margin.
+
+    Pass ``embed_fonts=True`` for components that paint Nerd-Font or
+    Roboto glyphs — every bundled :class:`Font` is base64-embedded as
+    an ``@font-face`` rule so the SVG renders correctly in browsers
+    without those fonts installed locally. Default ``False`` keeps the
+    other snippets lean (cluster shots have no labels, so the bundled
+    fonts buy nothing).
     """
     canvas_w, canvas_h = canvas.width, canvas.height
     d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+    if embed_fonts:
+        # Mirror :func:`composable.render` — when a ``FontUsageCollector``
+        # is active (it is, automatically, inside ``using_render_context``),
+        # subset every bundled font to only the glyphs the component
+        # actually paints. Drops the embedded payload from ~4.5 MB
+        # (every TTF in full) to ~50–100 KB.
+        collector = current_font_usage_collector()
+        if collector is None:
+            for font in Font:
+                d.append_css(font.css_style)
+        else:
+            subsetter = FontSubsetter(collector)
+            css = subsetter.generate_subsetted_css()
+            d.append_css(css if css else subsetter.generate_full_fonts_css())
     inset = stroke_width / 2.0  # keep the stroke fully inside the canvas
     d.append(
         draw.Rectangle(
@@ -402,9 +441,140 @@ def _build_keyboard_layers() -> Iterator[tuple[str, draw.Drawing]]:
         )
 
 
+def _build_keycodes() -> Iterator[tuple[str, draw.Drawing]]:
+    """Named macro and named tap-dance rows, both wrapped in cards.
+
+    Demonstrates the per-row composables Skim uses inside the macros /
+    tap-dance legend tables — same accent colours from the COLEMAK
+    palette, same white rounded-rect frame as the cluster shots, so the
+    docs land a consistent visual identity across all option images.
+    """
+    palette_layers = _load_palette_layers("SvalCOLEMAK-config.yaml", count=1)
+    # The macro/tap-dance pills carry Nerd-Font glyphs (chip icons) and
+    # Roboto labels — those need the bundled fonts embedded in the SVG
+    # so browsers without them installed render the icons and not boxes.
+    config = _build_palette_config(
+        num_layers=1,
+        palette_layers=palette_layers,
+        use_system_fonts=False,
+    )
+    keymap = _empty_keymap(layer_index=0)
+    ctx = RenderContext.build(config=config, keymap=keymap)
+
+    palette = config.output.style.palette
+    macro_fill = palette.macro_color
+    macro_line = derive_accent_line(macro_fill)
+    td_fill = palette.tap_dance_color
+    td_line = derive_accent_line(td_fill)
+    text_color = palette.text_color
+
+    # Build a named macro that exercises every SvalboardMacroActionKind.
+    # The resulting pill row reads as a single human-friendly sequence:
+    # press shift, tap H, release shift, type "ello world", wait, press enter.
+    macro = SvalboardMacro(
+        id="0",
+        name="Greeting",
+        actions=(
+            SvalboardMacroAction(
+                kind=SvalboardMacroActionKind.DOWN,
+                keys=(SvalboardTargetKey(label="⇧"),),
+            ),
+            SvalboardMacroAction(
+                kind=SvalboardMacroActionKind.TAP,
+                keys=(SvalboardTargetKey(label="H"),),
+            ),
+            SvalboardMacroAction(
+                kind=SvalboardMacroActionKind.UP,
+                keys=(SvalboardTargetKey(label="⇧"),),
+            ),
+            SvalboardMacroAction(
+                kind=SvalboardMacroActionKind.TEXT,
+                text="ello world",
+            ),
+            SvalboardMacroAction(
+                kind=SvalboardMacroActionKind.DELAY,
+                duration_ms=100,
+            ),
+            SvalboardMacroAction(
+                kind=SvalboardMacroActionKind.TAP,
+                keys=(SvalboardTargetKey(label="↵"),),
+            ),
+        ),
+    )
+
+    # Named tap-dance with all four variants populated. The id is the
+    # bare numeric index `6` (i.e., reads as `TD(6)` in QMK), not a
+    # named handle, so the chip carries just the number — matches the
+    # most common Vial/Keybard tap-dance addressing.
+    td = SvalboardTapDance(
+        id="6",
+        name="Modifier dance",
+        tap=SvalboardTargetKey(label="⇧"),
+        hold=SvalboardTargetKey(label="⇪"),
+        double_tap=SvalboardTargetKey(label="⌥"),
+        tap_then_hold=SvalboardTargetKey(label="⌃"),
+    )
+
+    # 2× scale doubles the natural row size — chips and pills end up
+    # readable at the small physical dimensions a docs page reserves
+    # for an option image.
+    keycode_scale = 2.0
+    macro_content_width = 760.0
+    # The macro and tap-dance rows are short-stature composables — bump
+    # the frame to 40 px total (20 each side) so the rows have room to
+    # breathe inside the card.
+    keycode_card_padding = 40.0
+
+    with using_render_context(ctx):
+        macro_row = MacroRow(
+            macro=macro,
+            accent_fill=macro_fill,
+            accent_line=macro_line,
+            text_color=text_color,
+            content_width=macro_content_width,
+            scale=keycode_scale,
+        )
+        macro_card = Size(
+            macro_row.size.width + keycode_card_padding,
+            macro_row.size.height + keycode_card_padding,
+        )
+        yield (
+            "named-macro",
+            _render_in_card(macro_row, canvas=macro_card, embed_fonts=True),
+        )
+
+        td_header = TapDanceColumnHeader(
+            text_color=text_color,
+            scale=keycode_scale,
+        )
+        td_row = TapDanceRow(
+            td=td,
+            accent_fill=td_fill,
+            accent_line=td_line,
+            text_color=text_color,
+            scale=keycode_scale,
+        )
+        # Stack the column header above the row so the snippet shows
+        # the four variant labels (TAP / HOLD / DOUBLE-TAP / TAP & HOLD)
+        # the way the tap-dance legend table does in a real keymap.
+        # ``gap=0`` because the header strip already carries
+        # ``table_header_spacing`` of empty space below its text — see
+        # ``TapDanceColumnHeader``.
+        td_stack = Column([td_header, td_row], gap=0)
+        td_card = Size(
+            td_stack.size.width + keycode_card_padding,
+            td_stack.size.height + keycode_card_padding,
+        )
+        yield (
+            "named-tap-dance",
+            _render_in_card(td_stack, canvas=td_card, embed_fonts=True),
+        )
+
+
 BUILDERS: dict[str, OptionBuilder] = {
     "double-south": _build_double_south,
     "keyboard-layers": _build_keyboard_layers,
+    "keycodes": _build_keycodes,
 }
 
 

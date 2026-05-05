@@ -1498,7 +1498,7 @@ function_descriptions:
     DF: "Default layer to #0;"
     PDF: "Set permanent default layer to #0;"
     MO: "Hold to layer #0;"
-    LM: "Hold to layer #0; with $1; pressed"
+    LM: "Hold to layer #0; with @1; pressed"
     OSL: "One-shot layer #0;"
     TG: "Toggle layer #0;"
     TO: "Make #0; the only active layer"
@@ -1506,7 +1506,7 @@ function_descriptions:
 
   Modifiers:
     # One-shot modifier — describes the one-shot mechanic (not tap-hold).
-    OSM: "One-shot $0;"
+    OSM: "One-shot @0;"
 
   Tap-dance:
     TD: "Execute tap-dance @0;"
