@@ -714,8 +714,7 @@ output:
   layout:
     width: <float>
     spacing:
-      margin: <float>
-      inset: <float>
+      ...                      # see output.layout.spacing below
 ```
 
 #### `output.layout.width`
@@ -729,38 +728,317 @@ The image height is computed automatically to preserve the Svalboard
 aspect ratio, so you only specify width.
 
 Increase this for prints/documentation that need extra detail; decrease
-for thumbnails or sharing on width-constrained platforms.
+for thumbnails or sharing on width-constrained platforms. Every spacing
+and stroke value in the rest of this section can be expressed as a
+**proportion** of this width, so changing `width` rescales the whole
+image's rhythm without touching anything else.
 
-#### `output.layout.spacing.margin`
+#### `output.layout.spacing`
 
-| Type             | Default       |
-| ---------------- | ------------- |
-| `float \| null`  | `null` (→ `0`) |
+Every gap, padding, and inset Skim paints is configurable here. Skim
+ships with sensible defaults — every field accepts `null` to keep the
+default — but each one can be overridden in three forms that all
+follow a single magnitude rule:
 
-The **outer** margin between the image edge and the rounded keyboard
-border, in SVG units. `null` and `0` are equivalent — the keyboard sits
-flush against the image edge.
+| Form              | Example         | Meaning |
+| ----------------- | --------------- | --------------------------------------------------- |
+| Float `< 1.0`     | `0.025`         | Proportion of the field's **base** (usually doc width). |
+| Float `≥ 1.0`     | `40`            | Absolute SVG units (independent of doc width). |
+| String `"N%"`     | `"2.5%"`        | Shorthand for the proportion form (`N / 100`). |
+| `null` (default)  | `null` or omit  | The field's built-in default proportion. |
+
+Most fields scale to **the document width** (`output.layout.width`).
+Two cluster-internal fields (`finger_key_gap`, `thumb_key_gap`) scale
+to the **cluster's own width** so they stay proportional regardless of
+how the keyboard is sized inside the canvas. Each field below states
+its base.
+
+Current schema:
 
 ```yaml
 output:
   layout:
     spacing:
-      margin: 12   # 12-unit blank ring around the keyboard
+      # Document chrome
+      margin: <float | "N%" | null>
+      inset: <float | "N%" | null>
+      column_gap: <float | "N%" | null>
+
+      # Section / table rhythm
+      section_spacing: <float | "N%" | null>
+      section_title_rule_gap: <float | "N%" | null>
+      table_header_spacing: <float | "N%" | null>
+      table_col_spacing: <float | "N%" | null>
+      table_row_spacing: <float | "N%" | null>
+
+      # Cluster geometry
+      finger_key_gap: <float | "N%" | null>
+      thumb_key_gap: <float | "N%" | null>
+      layer_indicator_spacing: <float | "N%" | null>
+
+      # Chip / pill / badge internals
+      chip_padding: <float | "N%" | null>
+      tap_dance_pill_padding: <float | "N%" | null>
+      macro_action_inset: <float | "N%" | null>
+      layer_badge_inset: <float | "N%" | null>
 ```
 
-#### `output.layout.spacing.inset`
+In every illustration below, the rose-red highlight marks the value
+the field controls; everything else is greyed out so the value reads
+at a glance.
 
-| Type             | Default                          |
-| ---------------- | -------------------------------- |
-| `float \| null`  | `null` (→ width-proportional)    |
+##### Document chrome
+
+###### `output.layout.spacing.margin`
+
+| Type                            | Default        | Base       |
+| ------------------------------- | -------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0`) | doc width  |
+
+The **outer** margin between the image edge and the rounded keyboard
+border. `null` and `0` are equivalent — the keyboard sits flush
+against the image edge.
+
+<figure markdown="1">
+<figcaption>The rose bands trace the four-sided gap between the canvas edge and the document border.</figcaption>
+![Margin highlighted around a small keymap document](../_static/spacing/margin.svg){ width="520" loading=lazy }
+</figure>
+
+###### `output.layout.spacing.inset`
+
+| Type                            | Default                       | Base       |
+| ------------------------------- | ----------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `2.5%` of doc width) | doc width  |
 
 The **inner** padding inside the keyboard border. Used both as the gap
-between the border and the first content row, and as the spacing between
-stacked elements (clusters, legends) inside the document column.
+between the border line and the first content row, and as the inter-element
+gap between stacked sections (clusters, legends, footer) inside the
+document column.
 
-`null` (the default) lets Skim choose a width-proportional value at render
-time, which scales nicely as you change `width`. Set an explicit number
-when you want a fixed look across multiple sizes.
+<figure markdown="1">
+<figcaption>The rose bands trace the gap between the document border and the content.</figcaption>
+![Inset highlighted between border and content](../_static/spacing/inset.svg){ width="520" loading=lazy }
+</figure>
+
+###### `output.layout.spacing.column_gap`
+
+| Type                            | Default                        | Base       |
+| ------------------------------- | ------------------------------ | ---------- |
+| `float \| string \| null`       | `null` (→ `2.5%` of doc width)  | doc width  |
+
+Horizontal gap between side-by-side columns of content — between the
+two halves of the keyboard, and between the macros and tap-dance
+sections when both are rendered.
+
+<figure markdown="1">
+<figcaption>The three rose bands fall between the four finger clusters of one half-keyboard.</figcaption>
+![Column gap highlighted between clusters](../_static/spacing/column-gap.svg){ width="520" loading=lazy }
+</figure>
+
+##### Section and table rhythm
+
+###### `output.layout.spacing.section_spacing`
+
+| Type                            | Default                         | Base       |
+| ------------------------------- | ------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `1.5%` of doc width)   | doc width  |
+
+Vertical gap between a section's title strip (the `MACROS` / `TAP-DANCE`
+header rule) and the section body that follows it.
+
+<figure markdown="1">
+<figcaption>The rose band sits between the title rule and the column-header strip.</figcaption>
+![Section spacing highlighted between stripe and body](../_static/spacing/section-spacing.svg){ width="360" loading=lazy }
+</figure>
+
+###### `output.layout.spacing.section_title_rule_gap`
+
+| Type                            | Default                         | Base       |
+| ------------------------------- | ------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.56%` of doc width)  | doc width  |
+
+Vertical breathing room between the title text and the rule line below
+it inside a section title strip. The strip is top-anchored: the title
+sits at the strip's top edge, the rule sits `section_title_rule_gap`
+units below the title's bottom edge, and that defines the strip's
+total height.
+
+<figure markdown="1">
+<figcaption>The rose band shows the gap between the section title bottom and the rule line.</figcaption>
+![Section title rule gap highlighted](../_static/spacing/section-title-rule-gap.svg){ width="380" loading=lazy }
+</figure>
+
+###### `output.layout.spacing.table_header_spacing`
+
+| Type                            | Default                          | Base       |
+| ------------------------------- | -------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.75%` of doc width)   | doc width  |
+
+The "header to content" gap inside any table-shaped composable. Used
+in three places that all share the same rhythm:
+
+* Tap-dance column header (`TAP / HOLD / DOUBLE-TAP / TAP & HOLD`) →
+  the first row's variant cells.
+* Tap-dance / macro chip → its body content (variant cells, pill row).
+* Named-macro header strip (chip + name + rule) → the macro's pill
+  row below it.
+
+<figure markdown="1">
+<figcaption>The rose band sits between the column-header text and the first data row.</figcaption>
+![Table header spacing highlighted](../_static/spacing/table-header-spacing.svg){ width="460" loading=lazy }
+</figure>
+
+###### `output.layout.spacing.table_col_spacing`
+
+| Type                            | Default                           | Base       |
+| ------------------------------- | --------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.375%` of doc width)   | doc width  |
+
+Horizontal gap between adjacent columns inside a table — the four
+tap-dance variant cells in a row, and the action pills inside a macro
+pill row.
+
+<figure markdown="1">
+<figcaption>Three rose slivers between the four variant cells of one tap-dance row.</figcaption>
+![Table column spacing highlighted](../_static/spacing/table-col-spacing.svg){ width="460" loading=lazy }
+</figure>
+
+###### `output.layout.spacing.table_row_spacing`
+
+| Type                            | Default                          | Base       |
+| ------------------------------- | -------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.56%` of doc width)   | doc width  |
+
+Vertical gap between adjacent rows inside a table.
+
+<figure markdown="1">
+<figcaption>Two rose bands between three stacked tap-dance rows.</figcaption>
+![Table row spacing highlighted](../_static/spacing/table-row-spacing.svg){ width="500" loading=lazy }
+</figure>
+
+##### Cluster geometry
+
+###### `output.layout.spacing.finger_key_gap`
+
+| Type                            | Default                | Base                  |
+| ------------------------------- | ---------------------- | --------------------- |
+| `float \| string \| null`       | `null` (→ `1.8%`)      | finger cluster width  |
+
+Gap between the **center** key and the four **outer** keys (N / E / S / W)
+inside a finger cluster. This is the visible space that surrounds the
+center key's cross. Scales to the cluster's width, not the doc width,
+so the geometry stays proportional however the cluster gets sized.
+
+<figure markdown="1">
+<figcaption>Four rose bands frame the center key inside a finger cluster.</figcaption>
+![Finger key gap highlighted](../_static/spacing/finger-key-gap.svg){ width="320" loading=lazy }
+</figure>
+
+###### `output.layout.spacing.thumb_key_gap`
+
+| Type                            | Default                | Base                 |
+| ------------------------------- | ---------------------- | -------------------- |
+| `float \| string \| null`       | `null` (→ `3.8%`)      | thumb cluster width  |
+
+Vertical breathing room above each of the four outer thumb keys (pad,
+nail, up, knuckle). Thumb clusters tessellate rather than gap — the
+keys overlap by half this value at their seams — so a clean
+inter-key rectangle doesn't exist; the highlighted bands sit
+**directly above** each outer key. Scales to the thumb cluster's own
+width.
+
+<figure markdown="1">
+<figcaption>Four rose bands sit on top of the pad, nail, up, and knuckle keys.</figcaption>
+![Thumb key gap highlighted](../_static/spacing/thumb-key-gap.svg){ width="420" loading=lazy }
+</figure>
+
+###### `output.layout.spacing.layer_indicator_spacing`
+
+| Type                            | Default                          | Base       |
+| ------------------------------- | -------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.75%` of doc width)   | doc width  |
+
+Distance between an outer key's edge and its layer-indicator badge —
+the small coloured circle showing the layer this key switches to.
+Doc-width-relative on purpose: finger and thumb clusters share the
+same gap, so indicators read at a uniform visual weight regardless of
+cluster sizing.
+
+<figure markdown="1">
+<figcaption>The rose band sits between the north key's top edge and its layer indicator.</figcaption>
+![Layer indicator spacing highlighted](../_static/spacing/layer-indicator-spacing.svg){ width="320" loading=lazy }
+</figure>
+
+##### Chip / pill / badge internals
+
+###### `output.layout.spacing.chip_padding`
+
+| Type                            | Default                          | Base       |
+| ------------------------------- | -------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `1.25%` of doc width)   | doc width  |
+
+Symmetric horizontal inset inside any chip-shaped element: the
+named-macro / tap-dance chip outline. Acts as the leading and trailing
+padding around the chip's name text. Vertical padding inside the chip
+is **derived** as `chip_padding * 0.25`, so the chip's height adjusts
+in step with horizontal changes.
+
+<figure markdown="1">
+<figcaption>The rose bands flank the name text inside a tap-dance chip outline.</figcaption>
+![Chip padding highlighted](../_static/spacing/chip-padding.svg){ width="320" loading=lazy }
+</figure>
+
+###### `output.layout.spacing.tap_dance_pill_padding`
+
+| Type                            | Default                          | Base       |
+| ------------------------------- | -------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `1.25%` of doc width)   | doc width  |
+
+Symmetric horizontal inset inside a tap-dance variant cell (the small
+pill that carries one of `TAP` / `HOLD` / `DOUBLE-TAP` / `TAP & HOLD`).
+Vertical padding is `tap_dance_pill_padding * 0.25`.
+
+<figure markdown="1">
+<figcaption>The rose bands flank the centred label inside a tap-dance variant cell.</figcaption>
+![Tap-dance pill padding highlighted](../_static/spacing/tap-dance-pill-padding.svg){ width="460" loading=lazy }
+</figure>
+
+###### `output.layout.spacing.macro_action_inset`
+
+| Type                            | Default                           | Base       |
+| ------------------------------- | --------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.625%` of doc width)   | doc width  |
+
+Uniform inset for all three positions inside a macro action pill:
+
+1. Pill edge → action icon centre.
+2. Action icon → label text.
+3. Label text → pill edge.
+
+A single value drives all three so the pill's internal rhythm stays
+consistent.
+
+<figure markdown="1">
+<figcaption>Three rose bands inside one macro action pill.</figcaption>
+![Macro action inset highlighted](../_static/spacing/macro-action-inset.svg){ width="320" loading=lazy }
+</figure>
+
+###### `output.layout.spacing.layer_badge_inset`
+
+| Type                            | Default                          | Base       |
+| ------------------------------- | -------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.94%` of doc width)   | doc width  |
+
+Leading horizontal inset inside the overview's layer badge — the gap
+between the badge edge and the start of the layer index. The trailing
+inset (gap between the layer name and the badge's right edge) is
+**derived** as `layer_badge_inset * 2`, weighted heavier so the right
+edge reads as breathing room rather than crowding the next column.
+
+<figure markdown="1">
+<figcaption>Two rose bands flank the index column; the dashed band on the right shows the derived trailing inset (= 2× the leading value).</figcaption>
+![Layer badge inset highlighted](../_static/spacing/layer-badge-inset.svg){ width="380" loading=lazy }
+</figure>
 
 ### `output.style`
 
@@ -787,6 +1065,10 @@ output:
     border:
       width: <float>
       radius: <float>
+    layer_connector:
+      ...                      # see output.style.layer_connector below
+    strokes:
+      ...                      # see output.style.strokes below
     palette:
       ...                      # see output.style.palette below
 ```
@@ -968,11 +1250,19 @@ output:
 
 ##### `output.style.border.width`
 
-| Type    | Default |
-| ------- | ------- |
-| `float` | `2`     |
+| Type    | Default | Base       |
+| ------- | ------- | ---------- |
+| `float \| string` | `2` | doc width |
 
-Stroke width of the border line in SVG units.
+Stroke width of the border line. Accepts the same magnitude rule as
+the spacings — a float `< 1` is a proportion of the doc width, a
+float `≥ 1` is absolute SVG units, and a `"N%"` string is the
+proportion shorthand.
+
+<figure markdown="1">
+<figcaption>The rose stroke replaces the document border at the configured width.</figcaption>
+![Border width highlighted](../_static/spacing/border-width.svg){ width="520" loading=lazy }
+</figure>
 
 ##### `output.style.border.radius`
 
@@ -981,6 +1271,119 @@ Stroke width of the border line in SVG units.
 | `float` | `10`    |
 
 Corner radius for the rounded rectangle. Set to `0` for square corners.
+
+#### `output.style.layer_connector`
+
+Configures the dotted connector paths painted in the keymap overview
+image — the lines linking each layer indicator circle to its
+corresponding key on the miniature keymap.
+
+```yaml
+output:
+  style:
+    layer_connector:
+      width: <float | "N%" | null>
+      dot_spacing: <float | "N%" | null>
+```
+
+Both fields accept the same magnitude rule as the spacings (`< 1`
+proportion / `≥ 1` absolute / `"N%"` shorthand / `null` default).
+
+##### `output.style.layer_connector.width`
+
+| Type                            | Default                          | Base       |
+| ------------------------------- | -------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.27%` of doc width)   | doc width  |
+
+Stroke width of the connector path. The default value is tuned to
+read clearly on the canonical 1600-unit overview image; bump it for
+larger canvases or when you want the connectors to dominate the
+overview's chrome more.
+
+<figure markdown="1">
+<figcaption>The rose dotted line illustrates a connector path painted at the configured width.</figcaption>
+![Layer connector width highlighted](../_static/spacing/layer-connector-width.svg){ width="360" loading=lazy }
+</figure>
+
+##### `output.style.layer_connector.dot_spacing`
+
+| Type                            | Default                          | Base       |
+| ------------------------------- | -------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.77%` of doc width)   | doc width  |
+
+Gap between adjacent dots along the connector path. Controls the
+visible cadence of the dotted line — smaller values pack the dots
+tighter; larger values space them out so the line reads as a sparser
+trail.
+
+<figure markdown="1">
+<figcaption>The rose band sits in the gap between two adjacent dots.</figcaption>
+![Layer connector dot spacing highlighted](../_static/spacing/layer-connector-dot-spacing.svg){ width="360" loading=lazy }
+</figure>
+
+#### `output.style.strokes`
+
+Stroke widths for every line Skim paints **other than** the document
+border (which lives on `output.style.border.width`) and the layer
+connector (which has its own block above). All three fields below
+follow the same magnitude rule as the spacings — float `< 1` is a
+proportion of the doc width, float `≥ 1` is absolute SVG units,
+`"N%"` is the proportion shorthand, `null` keeps the default.
+
+```yaml
+output:
+  style:
+    strokes:
+      chip_outline: <float | "N%" | null>
+      header_rule: <float | "N%" | null>
+      layer_indicator: <float | "N%" | null>
+```
+
+##### `output.style.strokes.chip_outline`
+
+| Type                            | Default                           | Base       |
+| ------------------------------- | --------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.075%` of doc width)   | doc width  |
+
+Stroke around macro and tap-dance chips — the rounded rectangle that
+carries the chip's icon and id (and, for named entries, extends across
+the name area on the right).
+
+<figure markdown="1">
+<figcaption>The rose stroke replaces the chip outline at the configured width.</figcaption>
+![Chip outline stroke highlighted](../_static/spacing/chip-outline-stroke.svg){ width="320" loading=lazy }
+</figure>
+
+##### `output.style.strokes.header_rule`
+
+| Type                            | Default                           | Base       |
+| ------------------------------- | --------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.075%` of doc width)   | doc width  |
+
+Stroke of every header rule — the line under each section title
+strip (`MACROS`, `TAP-DANCE`, `SYMBOLS`) and the hairline below a
+named-macro's chip-and-name header. A single value drives both so
+the rule weights stay consistent across all sections.
+
+<figure markdown="1">
+<figcaption>The rose stroke replaces the rule line under the section title.</figcaption>
+![Header rule stroke highlighted](../_static/spacing/header-rule-stroke.svg){ width="380" loading=lazy }
+</figure>
+
+##### `output.style.strokes.layer_indicator`
+
+| Type                            | Default                          | Base       |
+| ------------------------------- | -------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.125%` of doc width)  | doc width  |
+
+Stroke around the layer indicator circles — the small badges painted
+next to layer-switch keys in each cluster, and the matching badges in
+the overview's `LAYERS` column.
+
+<figure markdown="1">
+<figcaption>The rose stroke traces the layer indicator circle on the north key.</figcaption>
+![Layer indicator stroke highlighted](../_static/spacing/layer-indicator-stroke.svg){ width="320" loading=lazy }
+</figure>
 
 #### `output.style.palette`
 
