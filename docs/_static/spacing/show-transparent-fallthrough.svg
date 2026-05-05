@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-     width="280.0" height="162.0" viewBox="0 0 280.0 162.0">
+     width="300.0" height="172.0" viewBox="0 0 300.0 172.0">
 <defs>
 </defs>
-<rect x="27.0" y="27.0" width="88.0" height="88.0" rx="6.0" ry="6.0" fill="#B8BCC3" stroke="#6B7280" stroke-width="1.0" />
-<text x="71.0" y="71.0" font-size="28.0" font-family="Roboto, sans-serif" text-anchor="middle" dominant-baseline="central" fill="#FFFFFF" opacity="0.45">K</text>
-<text x="71.0" y="134.0" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">true (ghost label)</text>
-<rect x="165.0" y="27.0" width="88.0" height="88.0" rx="6.0" ry="6.0" fill="#B8BCC3" stroke="#6B7280" stroke-width="1.0" />
-<text x="209.0" y="134.0" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">false (blank)</text>
+<rect x="28.0" y="28.0" width="96.0" height="96.0" rx="6.0" ry="6.0" fill="#3F7BB6" />
+<text x="76.0" y="76.0" font-size="32.0" font-family="Roboto, sans-serif" text-anchor="middle" dominant-baseline="central" fill="#9CBEDD">K</text>
+<text x="76.0" y="144.0" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">true (ghost label)</text>
+<rect x="176.0" y="28.0" width="96.0" height="96.0" rx="6.0" ry="6.0" fill="#3F7BB6" />
+<text x="224.0" y="144.0" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">false (blank)</text>
 </svg>

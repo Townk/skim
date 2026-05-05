@@ -1432,6 +1432,26 @@ def _build_layer_connector_dot_spacing_mock() -> draw.Drawing:
 # ---------------------------------------------------------------------------
 
 
+def _panel_extents(component: Component) -> tuple[Size, Point]:
+    """Return ``(overflow_size, overflow_offset)`` for any component.
+
+    Composables that paint chrome past their keys-only bbox (finger /
+    thumb clusters with layer indicators) expose an
+    ``overflow_size`` and an ``overflow_offset`` on their metrics —
+    the latter is the negative-magnitude vector from the keys-only
+    origin to the overflow bbox's top-left corner. Plain components
+    (no metrics, or metrics without overflow) fall back to the
+    component's own ``size`` and a zero offset.
+    """
+    metrics = getattr(component, "metrics", None)
+    if metrics is not None:
+        overflow_size = getattr(metrics, "overflow_size", None)
+        overflow_offset = getattr(metrics, "overflow_offset", None)
+        if overflow_size is not None and overflow_offset is not None:
+            return overflow_size, overflow_offset
+    return component.size, Point(0.0, 0.0)
+
+
 def _build_side_by_side(
     *,
     panels: list[tuple[Component, str]],
@@ -1441,26 +1461,33 @@ def _build_side_by_side(
 ) -> draw.Drawing:
     """Render N components horizontally with a caption under each.
 
-    All panels align to the top; each caption centres horizontally
-    under its component and the canvas height tracks the tallest
-    panel plus a single caption row beneath.
+    Each panel is laid out using its **overflow** extents when
+    available, so chrome that protrudes past the keys-only bbox
+    (layer-indicator badges, thumb double-down indicators) lands on
+    canvas instead of getting clipped at the panel edge.
     """
     label_gap = 8.0
     label_height = label_font_size + label_gap
-    panel_h = max(c.size.height for c, _ in panels)
-    panel_widths = [c.size.width for c, _ in panels]
-    total_w = sum(panel_widths) + panel_gap * (len(panels) - 1)
+    extents = [_panel_extents(c) for c, _ in panels]
+    panel_h = max(size.height for size, _ in extents)
+    total_w = sum(size.width for size, _ in extents) + panel_gap * (len(panels) - 1)
     canvas_w = total_w + 2 * outer_padding
     canvas_h = panel_h + label_height + 2 * outer_padding
     d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
 
     cursor_x = outer_padding
-    for component, caption in panels:
-        component.draw_at(d, Point(cursor_x, outer_padding))
+    for (component, caption), (overflow_size, overflow_offset) in zip(panels, extents, strict=True):
+        # Translate the keys-only origin so the overflow bbox's
+        # top-left corner lands at (cursor_x, outer_padding).
+        keys_origin = Point(
+            cursor_x - overflow_offset.x,
+            outer_padding - overflow_offset.y,
+        )
+        component.draw_at(d, keys_origin)
         d.append(
             draw.Text(
                 caption,
-                x=cursor_x + component.size.width / 2,
+                x=cursor_x + overflow_size.width / 2,
                 y=outer_padding + panel_h + label_gap,
                 font_size=label_font_size,
                 text_anchor="middle",
@@ -1469,28 +1496,56 @@ def _build_side_by_side(
                 fill=_GREY_TEXT,
             )
         )
-        cursor_x += component.size.width + panel_gap
+        cursor_x += overflow_size.width + panel_gap
 
     return d
 
 
 def _build_hold_symbol_position_mock() -> draw.Drawing:
     """Three LEFT thumb clusters illustrating the three
-    ``hold_symbol_position`` modes. Hold-tap labels sit on pad / up /
-    nail / knuckle so the swap behaviour reads on every relevant key.
+    ``hold_symbol_position`` modes. Each pad / up / nail / knuckle
+    key carries a real hold-tap label (modifier glyph on hold,
+    short key name on tap) so the swap behaviour reads at a glance.
+    The default skim palette renders the cluster in colour rather
+    than greyscale so the modifier glyphs and the down-key fill
+    contrast cleanly.
     """
-    config = _grey_config()
+    # Use the default Skim palette (colourful) rather than the
+    # spacings-mock greyscale one so the cluster reads as a real
+    # rendered keyboard chunk.
+    config = SkimConfig()
+    config = config.model_copy(
+        update={
+            "keyboard": config.keyboard.model_copy(
+                update={
+                    "layers": tuple(
+                        KeyboardLayer(index=i, name=f"Layer {i}") for i in range(4)
+                    )
+                }
+            ),
+            "output": config.output.model_copy(
+                update={
+                    "style": config.output.style.model_copy(
+                        update={"use_system_fonts": True}
+                    )
+                }
+            ),
+        }
+    )
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
-    hold_tap = SvalboardTargetKey(label="HOLD│TAP")
+    # Real hold-tap labels: modifier glyph on hold, key name on tap.
+    # The box-drawing pipe (│) is the SEPARATOR_CHAR the hold-symbol
+    # logic splits on. Modifier glyphs are Unicode (no Nerd Font
+    # required) so the labels render even under ``use_system_fonts``.
     blank = SvalboardTargetKey(label="")
     cluster_data = ThumbClusterData(
-        down_key=blank,
-        pad_key=hold_tap,
-        up_key=hold_tap,
-        nail_key=hold_tap,
-        knuckle_key=hold_tap,
+        down_key=SvalboardTargetKey(label="SPC"),
+        pad_key=SvalboardTargetKey(label="⌘│TAB"),
+        up_key=SvalboardTargetKey(label="⌃│ESC"),
+        nail_key=SvalboardTargetKey(label="⌥│ENT"),
+        knuckle_key=SvalboardTargetKey(label="⇧│DEL"),
         double_down_key=blank,
     )
     cluster_width = 240.0
@@ -1509,7 +1564,7 @@ def _build_hold_symbol_position_mock() -> draw.Drawing:
                 side=KeyboardSide.LEFT,
                 width=cluster_width,
                 layer_qmk_index=0,
-                use_layer_colors_on_keys=False,
+                use_layer_colors_on_keys=True,
                 show_layer_indicators=False,
                 hold_symbol_position=pos,
             )
@@ -1520,8 +1575,30 @@ def _build_hold_symbol_position_mock() -> draw.Drawing:
 def _build_layer_indicator_show_mock() -> draw.Drawing:
     """Finger cluster with a layer-switching north key, rendered with
     and without the layer-indicator badge.
+
+    Uses the default Skim palette so layer 2's colour gives the
+    indicator badge enough contrast against the cluster's neutral
+    keys to read.
     """
-    config = _grey_config()
+    config = SkimConfig()
+    config = config.model_copy(
+        update={
+            "keyboard": config.keyboard.model_copy(
+                update={
+                    "layers": tuple(
+                        KeyboardLayer(index=i, name=f"Layer {i}") for i in range(4)
+                    )
+                }
+            ),
+            "output": config.output.model_copy(
+                update={
+                    "style": config.output.style.model_copy(
+                        update={"use_system_fonts": True}
+                    )
+                }
+            ),
+        }
+    )
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
@@ -1552,29 +1629,28 @@ def _build_use_layer_colors_on_keys_mock() -> draw.Drawing:
     once with the destination layer's colour painting the key and
     once with the neutral fall-back.
 
-    The grey-mock palette is replaced for this single illustration
-    with one that gives layer 2 a distinct accent so the toggle reads
-    visibly.
+    Uses the default Skim palette so layer 2's colour comes through
+    naturally on the ``true`` panel.
     """
-    palette = _grey_palette()
-    accent_layer = LayerColor(base_color="#3F7BB6")
-    layers = list(palette.layers)
-    while len(layers) < 3:
-        layers.append(LayerColor(base_color=_GREY_NEUTRAL))
-    layers[2] = accent_layer
-    palette = palette.model_copy(update={"layers": tuple(layers)})
-
     config = SkimConfig()
-    keyboard = config.keyboard.model_copy(
+    config = config.model_copy(
         update={
-            "layers": tuple(KeyboardLayer(index=i, name=f"Layer {i}") for i in range(4)),
+            "keyboard": config.keyboard.model_copy(
+                update={
+                    "layers": tuple(
+                        KeyboardLayer(index=i, name=f"Layer {i}") for i in range(4)
+                    )
+                }
+            ),
+            "output": config.output.model_copy(
+                update={
+                    "style": config.output.style.model_copy(
+                        update={"use_system_fonts": True}
+                    )
+                }
+            ),
         }
     )
-    style = config.output.style.model_copy(
-        update={"use_system_fonts": True, "palette": palette}
-    )
-    output = config.output.model_copy(update={"style": style})
-    config = config.model_copy(update={"keyboard": keyboard, "output": output})
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
@@ -1601,19 +1677,30 @@ def _build_use_layer_colors_on_keys_mock() -> draw.Drawing:
 
 
 def _build_show_transparent_fallthrough_mock() -> draw.Drawing:
-    """Two single keys side-by-side: one with a faded "ghost" label
-    (the ``true`` / fall-through behaviour) and one blank (the
-    ``false`` behaviour). Painted as primitives rather than going
-    through the full multi-layer transparency path so the mock stays
-    self-contained.
+    """Two single layer-tinted keys side-by-side: one carrying a
+    "ghost" version of the layer-0 label (the ``true`` /
+    fall-through behaviour) and one blank (``false``).
+
+    The key fill mirrors what a transparent key on a layer above 0
+    actually renders as in production — the activating layer's
+    colour. The ghost label is painted in a lightness-shifted
+    variant of that colour, matching the legacy ghost-rendering
+    contrast (rather than fighting against a white-on-grey
+    background).
     """
-    panel_w = 110.0
-    panel_h = 110.0
-    key_w = 88.0
-    key_h = 88.0
+    panel_w = 120.0
+    panel_h = 120.0
+    key_w = 96.0
+    key_h = 96.0
     radius = 6.0
     label_text = "K"
-    label_font = 28.0
+    label_font = 32.0
+    # Colour mirrors a typical layer accent (a dusty blue from the
+    # default skim palette). The ghost label is painted as a
+    # lightness-shifted version of that colour — the legacy
+    # production behaviour.
+    key_fill = "#3F7BB6"
+    ghost_fill = "#9CBEDD"  # = key_fill with HSL lightness +0.18
 
     def _key_panel(*, ghost: bool) -> Component:
         size = Size(panel_w, panel_h)
@@ -1629,9 +1716,7 @@ def _build_show_transparent_fallthrough_mock() -> draw.Drawing:
                     height=key_h,
                     rx=radius,
                     ry=radius,
-                    fill=_GREY_NEUTRAL,
-                    stroke=_GREY_BORDER,
-                    stroke_width=1.0,
+                    fill=key_fill,
                 )
             )
             if ghost:
@@ -1644,8 +1729,7 @@ def _build_show_transparent_fallthrough_mock() -> draw.Drawing:
                         font_family="Roboto, sans-serif",
                         text_anchor="middle",
                         dominant_baseline="central",
-                        fill="#FFFFFF",
-                        opacity=0.45,
+                        fill=ghost_fill,
                     )
                 )
 
