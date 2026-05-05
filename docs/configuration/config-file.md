@@ -728,10 +728,22 @@ The image height is computed automatically to preserve the Svalboard
 aspect ratio, so you only specify width.
 
 Increase this for prints/documentation that need extra detail; decrease
-for thumbnails or sharing on width-constrained platforms. Every spacing
-and stroke value in the rest of this section can be expressed as a
-**proportion** of this width, so changing `width` rescales the whole
-image's rhythm without touching anything else.
+for thumbnails or sharing on width-constrained platforms.
+
+> [!IMPORTANT]
+> `width` is the **driving value for every other layout metric** in the
+> system. By default, every spacing, padding, and stroke in the rest of
+> this section is stored as a **proportion** of `width` — so doubling
+> `width` doubles every gap, every chip's stroke, and every margin in
+> lockstep. The image rescales as a whole and its visual rhythm stays
+> intact.
+>
+> The only way to opt a single value out of this proportional scaling
+> is to give it an **absolute** number (any value `≥ 1.0`, see the
+> magnitude rule on each field). Absolute values stay fixed in SVG
+> units regardless of `width`, which is occasionally what you want
+> (e.g. pinning a 2-pixel border on every render size) but means you
+> own the consequences on smaller / larger canvases.
 
 #### `output.layout.spacing`
 
