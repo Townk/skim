@@ -1,0 +1,4074 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Svalboard Keymap Image Maker">
+      
+      
+        <meta name="author" content="Thiago Alves">
+      
+      
+        <link rel="canonical" href="https://townk.github.io/skim/dev/configuration/config-file/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../cli-options/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Configuration File - skim</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#configuration-file" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="skim" class="md-header__button md-logo" aria-label="skim" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            skim
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Configuration File
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Townk/skim" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Townk/skim
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Developer Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="skim" class="md-nav__button md-logo" aria-label="skim" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    skim
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Townk/skim" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Townk/skim
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../introduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Configuration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration File
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration File
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#top-level-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Top-level structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keyboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keyboard
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keyboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keyboardfeatures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keyboard.features
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keyboard.features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#double_south" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        double_south
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keyboardlayers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keyboard.layers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keyboard.layers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        variant
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keycodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keycodes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keycodespre_process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.pre_process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodesoverrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodesmacros" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.macros
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keycodes.macros">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#id_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#name_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#preview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        preview
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodestap_dances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.tap_dances
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keycodes.tap_dances">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#id_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#name_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#preview_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        preview
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodessymbol_descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.symbol_descriptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodesfunction_descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.function_descriptions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keycodes.function_descriptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Placeholders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generic-vs-per-instance-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generic vs per-instance entries
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodessymbol_legend_aliases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.symbol_legend_aliases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-label-resolution-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Label Resolution algorithm
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outputkeymap_title" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.keymap_title
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputcopyright" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.copyright
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputlayout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.layout
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="output.layout">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outputlayoutwidth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.layout.width
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputlayoutspacingmargin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.layout.spacing.margin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputlayoutspacinginset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.layout.spacing.inset
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="output.style">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outputstylehold_symbol_position" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.hold_symbol_position
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylemacros_scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.macros_scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleshow_layer_connectors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.show_layer_connectors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleshow_layer_indicators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.show_layer_indicators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleshow_special_keys_legend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.show_special_keys_legend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleshow_symbol_legend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.show_symbol_legend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleshow_transparent_fallthrough" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.show_transparent_fallthrough
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylesymbol_legend_columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.symbol_legend_columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylesymbol_legend_flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.symbol_legend_flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylesymbols_scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.symbols_scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyletap_dances_scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.tap_dances_scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleuse_layer_colors_on_keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.use_layer_colors_on_keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleuse_system_fonts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.use_system_fonts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleborder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.border
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="output.style.border">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleborderwidth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.border.width
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleborderradius" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.border.radius
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylepalette" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.palette
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="output.style.palette">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chrome-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chrome colors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylepalettelayers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.palette.layers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto-generated-layer-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-generated layer colors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Auto-generated layer colors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#base_color" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        base_color
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#color_index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        color_index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gradient" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gradient
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylepaletteoverrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.palette.overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli-options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configurator-ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configurator UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developer Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Domain Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/application/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Application Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#top-level-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Top-level structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keyboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keyboard
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keyboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keyboardfeatures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keyboard.features
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keyboard.features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#double_south" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        double_south
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keyboardlayers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keyboard.layers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keyboard.layers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        variant
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keycodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keycodes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keycodespre_process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.pre_process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodesoverrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodesmacros" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.macros
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keycodes.macros">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#id_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#name_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#preview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        preview
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodestap_dances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.tap_dances
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keycodes.tap_dances">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#id_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#name_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#preview_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        preview
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodessymbol_descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.symbol_descriptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodesfunction_descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.function_descriptions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="keycodes.function_descriptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Placeholders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generic-vs-per-instance-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generic vs per-instance entries
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycodessymbol_legend_aliases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        keycodes.symbol_legend_aliases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-label-resolution-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Label Resolution algorithm
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outputkeymap_title" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.keymap_title
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputcopyright" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.copyright
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputlayout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.layout
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="output.layout">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outputlayoutwidth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.layout.width
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputlayoutspacingmargin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.layout.spacing.margin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputlayoutspacinginset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.layout.spacing.inset
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="output.style">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outputstylehold_symbol_position" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.hold_symbol_position
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylemacros_scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.macros_scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleshow_layer_connectors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.show_layer_connectors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleshow_layer_indicators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.show_layer_indicators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleshow_special_keys_legend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.show_special_keys_legend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleshow_symbol_legend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.show_symbol_legend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleshow_transparent_fallthrough" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.show_transparent_fallthrough
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylesymbol_legend_columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.symbol_legend_columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylesymbol_legend_flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.symbol_legend_flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylesymbols_scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.symbols_scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyletap_dances_scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.tap_dances_scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleuse_layer_colors_on_keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.use_layer_colors_on_keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleuse_system_fonts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.use_system_fonts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleborder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.border
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="output.style.border">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleborderwidth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.border.width
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstyleborderradius" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.border.radius
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylepalette" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.palette
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="output.style.palette">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chrome-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chrome colors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylepalettelayers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.palette.layers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto-generated-layer-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-generated layer colors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Auto-generated layer colors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#base_color" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        base_color
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#color_index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        color_index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gradient" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gradient
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputstylepaletteoverrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output.style.palette.overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+  <nav class="md-section-nav md-section-nav--top" aria-label="Section navigation"><a href="../" class="md-section-nav__link md-section-nav__link--prev" rel="prev">
+          <span class="md-section-nav__direction">&laquo; Prev</span>
+          <span class="md-section-nav__title">Configuration</span>
+        </a><a href="../cli-options/" class="md-section-nav__link md-section-nav__link--next" rel="next">
+          <span class="md-section-nav__direction">Next &raquo;</span>
+          <span class="md-section-nav__title">Command Line Options</span>
+        </a></nav>
+  
+                  
+
+
+  
+    <a href="https://github.com/Townk/skim/edit/mainline/docs/configuration/config-file.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="configuration-file">Configuration File<a class="headerlink" href="#configuration-file" title="Permanent link">&para;</a></h1>
+<p>Skim's configuration lives in a single YAML file. YAML was chosen over JSON
+because it tolerates comments, optional quoting, and trailing-comma slips —
+small ergonomic wins that matter when a non-developer is hand-editing the
+file from a tutorial.</p>
+<p>The file is hierarchical and <strong>every field is optional</strong>. Skim fills in
+sensible defaults for anything you leave out, so a working configuration can
+be as short as a single <code>keyboard.layers</code> list. The full schema is large only
+because it lets you fine-tune nearly every visual element.</p>
+<p>You point Skim at a config with the <code>--config &lt;path&gt;</code> flag (see
+<a href="../cli-options/">Command Line Options</a>). If you'd rather generate or edit the
+file interactively, see the <a href="../configurator-ui/">Configurator UI</a>.</p>
+<h2 id="top-level-structure">Top-level structure<a class="headerlink" href="#top-level-structure" title="Permanent link">&para;</a></h2>
+<p>The file has three top-level sections:</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>What it controls</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>keyboard</code></td>
+<td>Physical hardware features and per-layer metadata.</td>
+</tr>
+<tr>
+<td><code>keycodes</code></td>
+<td>How QMK keycodes are transformed and labelled on keys.</td>
+</tr>
+<tr>
+<td><code>output</code></td>
+<td>Image dimensions, colors, borders, legends, and styling.</td>
+</tr>
+</tbody>
+</table>
+<p>A minimal file looks like:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">keyboard</span><span class="p">:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">layers</span><span class="p">:</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Base&quot;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Symbols&quot;</span>
+</code></pre></div>
+<p>A complete reference file with every section populated lives at
+<a href="https://github.com/Townk/skim/blob/mainline/samples/config/skim-config.yaml"><code>samples/config/skim-config.yaml</code></a>
+in the repository.</p>
+<hr />
+<h2 id="keyboard"><code>keyboard</code><a class="headerlink" href="#keyboard" title="Permanent link">&para;</a></h2>
+<p>Describes the hardware variant you're rendering and gives each layer in the
+keymap a human-readable identity.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">keyboard</span><span class="p">:</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">features</span><span class="p">:</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">double_south</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">layers</span><span class="p">:</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;base&quot;</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Letters&quot;</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">      </span><span class="nt">variant</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;QWERTY&quot;</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Numbers</span><span class="nv"> </span><span class="s">/</span><span class="nv"> </span><span class="s">Navigation&quot;</span>
+</code></pre></div>
+<h3 id="keyboardfeatures"><code>keyboard.features</code><a class="headerlink" href="#keyboardfeatures" title="Permanent link">&para;</a></h3>
+<p>A bag of hardware-feature toggles. Today there's only one knob, but the
+sub-section exists to keep room for future hardware variants without
+breaking the schema.</p>
+<p>Current schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">keyboard</span><span class="p">:</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">features</span><span class="p">:</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">double_south</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+</code></pre></div>
+<h4 id="double_south"><code>double_south</code><a class="headerlink" href="#double_south" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Whether the finger clusters render the double-south (DS) key positions. Set
+to <code>true</code> only if your physical keyboard has these extra southern switches.</p>
+<p>On a stock Svalboard build, leave it <code>false</code> — those positions will be
+hidden in the output.</p>
+<div class="option-comparison">
+<figure>
+<figcaption><code>double_south: false</code></figcaption>
+<p><img alt="Finger cluster without double-south" loading="lazy" src="../../_static/options/double-south/without.svg" width="180" /></p>
+</figure>
+<figure>
+<figcaption><code>double_south: true</code></figcaption>
+<p><img alt="Finger cluster with double-south" loading="lazy" src="../../_static/options/double-south/with.svg" width="180" /></p>
+</figure>
+</div>
+<h3 id="keyboardlayers"><code>keyboard.layers</code><a class="headerlink" href="#keyboardlayers" title="Permanent link">&para;</a></h3>
+<p>A list of layer descriptors. The list does two unrelated jobs at once, and
+it helps to keep them separate when reading the rest of this section:</p>
+<ul>
+<li><strong>Order of the list</strong> controls how layers stack in the <strong>overview image</strong>.
+  The first entry renders on the <em>bottom</em> row and the last on the top, so
+  reading the list top-to-bottom corresponds to reading the overview
+  bottom-to-top. This is intentional: layer 0 is conventionally the base
+  layer, and stacking it at the bottom matches how most users think about
+  layer "depth."</li>
+<li><strong><code>index</code> field</strong> on each entry is the layer's <strong>QMK firmware index</strong> —
+  the slot the layer occupies in the compiled binary, and the integer that
+  keycodes like <code>MO(...)</code>, <code>LT(...)</code>, and <code>TG(...)</code> target.</li>
+</ul>
+<p>List position and firmware index are independent. You can list a layer first
+and give it <code>index: 14</code> if your firmware skips middle slots — useful for Vial
+and Keybard keymaps that can populate non-sequential layers like <code>0, 1, 2, 14,
+15</code>.</p>
+<p>Current schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">keyboard</span><span class="p">:</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">layers</span><span class="p">:</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;int&gt;</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">      </span><span class="nt">variant</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</code></pre></div>
+<p>Each entry has these fields:</p>
+<h4 id="index"><code>index</code><a class="headerlink" href="#index" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>integer</code></td>
+<td>yes</td>
+<td><code>0</code>–<code>31</code></td>
+</tr>
+</tbody>
+</table>
+<p>The QMK firmware layer index — what the binary firmware ends up with after <code>qmk
+compile</code>, and what <code>LT(...)</code> / <code>MO(...)</code> / <code>TG(...)</code> keycodes target. If this
+doesn't match what's actually programmed into your firmware, layer-switching
+keys will point at the wrong layer in the rendered image.</p>
+<p>The range matches QMK's stock <code>MAX_LAYERS</code> of 32. The Configurator UI enforces
+<code>0</code>–<code>31</code>; the YAML schema itself doesn't bound the value, so hand-edited config
+files can technically set higher indices, but the renderer and the default
+color generator are calibrated for <code>0</code>–<code>31</code>.</p>
+<p>This value is used in the "Overview" keymap and on the "Layer Indicators" to
+represent the layers defined in your keymap.</p>
+<div class="option-comparison">
+<figure>
+<figcaption>Indicator on a finger-cluster centre key</figcaption>
+<p><img alt="Finger cluster with layer indicator" height="160" loading="lazy" src="../../_static/options/keyboard-layers/finger-with-indicator.svg" /></p>
+</figure>
+<figure>
+<figcaption>Indicator on a thumb-cluster down key</figcaption>
+<p><img alt="Thumb cluster with layer indicator" height="160" loading="lazy" src="../../_static/options/keyboard-layers/thumb-with-indicator.svg" /></p>
+</figure>
+</div>
+<h4 id="name"><code>name</code><a class="headerlink" href="#name" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p>The full descriptive name shown as the title of the per-layer image and as
+the layer's row label in the overview. Long names are fine — the overview
+sizes them automatically.</p>
+<div class="option-comparison">
+<figure>
+<figcaption>Auto-named layer badge</figcaption>
+<p><img alt="Layer badge reading &quot;LAYER 3&quot;" loading="lazy" src="../../_static/options/keyboard-layers/badge-unnamed.svg" width="200" /></p>
+</figure>
+<figure>
+<figcaption>Custom-named layer badge</figcaption>
+<p><img alt="Layer badge reading &quot;2 MY CUSTOM NAME&quot;" loading="lazy" src="../../_static/options/keyboard-layers/badge-named.svg" width="280" /></p>
+</figure>
+</div>
+<p>When no name is provided, Skim simply uses the word <em>LAYER</em> followed by the QMK firmware layer index.</p>
+<h4 id="id"><code>id</code><a class="headerlink" href="#id" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string \| null</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>An optional alphanumeric handle for this layer, used when your keymap
+references layers by C <code>#define</code> macros (the form <code>qmk c2json</code> produces). If
+your <code>LT(...)</code> / <code>MO(...)</code> arguments use literal integers, you don't need this.
+If they use <code>#define</code>d names like <code>_BASE</code> or <code>_NAV</code>, set <code>id: "_BASE"</code> so Skim
+can resolve them back to the firmware index.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This option has no visual impact in the final image, but is required to produce
+an image with the correct connections between layers.</p>
+</div>
+<h4 id="variant"><code>variant</code><a class="headerlink" href="#variant" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string \| null</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>A short secondary label rendered below the layer name in the overview
+image — typically used to tag the keymap variant (<code>"QWERTY"</code>, <code>"COLEMAK"</code>,
+<code>"DVORAK"</code>). Leave <code>null</code> to not display any text below the layer name.</p>
+<div class="option-comparison">
+<figure>
+<figcaption>Layer badge with a variant label</figcaption>
+<p><img alt="Layer badge reading &quot;0 LETTERS&quot; with &quot;QWERTY&quot; below" loading="lazy" src="../../_static/options/keyboard-layers/badge-with-variant.svg" width="240" /></p>
+</figure>
+</div>
+<hr />
+<h2 id="keycodes"><code>keycodes</code><a class="headerlink" href="#keycodes" title="Permanent link">&para;</a></h2>
+<p>Customizes how Skim turns raw QMK keycode strings into the labels that
+appear on rendered keys, plus metadata for macros, tap-dances, and the
+legends Skim emits.</p>
+<p>Current schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">keycodes</span><span class="p">:</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">pre_process</span><span class="p">:</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">keycode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">      </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="nt">overrides</span><span class="p">:</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">keycode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">      </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">  </span><span class="nt">macros</span><span class="p">:</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">      </span><span class="nt">preview</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">  </span><span class="nt">tap_dances</span><span class="p">:</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">      </span><span class="nt">preview</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="w">  </span><span class="nt">symbol_legend_aliases</span><span class="p">:</span>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="w">    </span><span class="nt">&lt;KEY_CODE:string&gt;</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;TARGET_KEY_CODE:string&gt;,</span>
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a>
+<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a><span class="w">  </span><span class="nt">symbol_descriptions</span><span class="p">:</span>
+<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="w">    </span><span class="nt">&lt;CATEGORY:string&gt;</span><span class="p">:</span>
+<a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="w">      </span><span class="nt">&lt;KEY_CODE:string&gt;</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;DESCRIPTION:string&gt;,</span>
+<a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a>
+<a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a><span class="w">  </span><span class="nt">function_descriptions</span><span class="p">:</span>
+<a id="__codelineno-4-35" name="__codelineno-4-35" href="#__codelineno-4-35"></a><span class="w">    </span><span class="nt">&lt;CATEGORY:string&gt;</span><span class="p">:</span>
+<a id="__codelineno-4-36" name="__codelineno-4-36" href="#__codelineno-4-36"></a><span class="w">      </span><span class="nt">&lt;FUNCTION_NAME:string&gt;</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;DESCRIPTION:string&gt;,</span>
+<a id="__codelineno-4-37" name="__codelineno-4-37" href="#__codelineno-4-37"></a><span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">...,</span>
+<a id="__codelineno-4-38" name="__codelineno-4-38" href="#__codelineno-4-38"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</code></pre></div>
+<p>The pipeline that produces a key's label runs in this order:</p>
+<ol>
+<li><strong><code>pre_process</code></strong> rewrites the <em>input</em> keycode string before any resolution
+   happens. Think of this step as a plain search-and-replace pass that runs
+   before Skim looks anything up.</li>
+<li>Skim's <strong>bundled keycode-to-label table</strong> turns the (possibly rewritten)
+   keycode into a label. The bundled table is internal to Skim, but its
+   entries follow the exact same shape as <code>overrides</code> below — what you can
+   write in <code>overrides</code> is the same kind of thing Skim writes in the bundled
+   table.</li>
+<li><strong><code>overrides</code></strong> has the final word: it can replace the resolved label with
+   anything you like, and entries here win against the bundled table.</li>
+</ol>
+<h3 id="keycodespre_process"><code>keycodes.pre_process</code><a class="headerlink" href="#keycodespre_process" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>list of <code>{keycode, target}</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table>
+<p>Use this to <strong>normalise non-standard keycodes</strong> so the standard resolver
+recognises them. A common case: a custom keycode in your firmware that
+behaves like a stock QMK construct. For instance:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">keycodes</span><span class="p">:</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">pre_process</span><span class="p">:</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">keycode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;MY_CUSTOM_KEY&quot;</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">      </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;MT(MOD_LCTL,KC_A)&quot;</span>
+</code></pre></div>
+<p>After this rule, every appearance of <code>MY_CUSTOM_KEY</code> in the keymap is
+treated as <code>MT(MOD_LCTL,KC_A)</code>, which the bundled resolver knows how to
+render.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>pre_process</code> rules are <strong>textual substitutions</strong> that happen before label
+resolution, so they should not rely on alias-resolution features in keycode
+strings. Use plain canonical QMK syntax in the <code>target</code>.</p>
+</div>
+<h3 id="keycodesoverrides"><code>keycodes.overrides</code><a class="headerlink" href="#keycodesoverrides" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>list of <code>{keycode, target}</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table>
+<p>Force the rendered label for a specific keycode, regardless of what the default
+mapping produces. Common uses: spelling words out (<code>KC_SPC</code> → <code>"Space"</code>),
+choosing a glyph (<code>KC_ENT</code> → <code>"⏎"</code>). For instance:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">keycodes</span><span class="p">:</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">overrides</span><span class="p">:</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">keycode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;KC_SPC&quot;</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">      </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Space&quot;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">keycode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;KC_LCTL&quot;</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">      </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;^&quot;</span>
+</code></pre></div>
+<p>The <code>target</code> field is always processed by the <a href="#key-label-resolution-algorithm">Key Label Resolution
+algorithm</a>, which allows you to create a rich
+graphic set of key code symbols without repeating yourself.</p>
+<h3 id="keycodesmacros"><code>keycodes.macros</code><a class="headerlink" href="#keycodesmacros" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>list of <code>{id, name, preview}</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table>
+<p>Metadata for QMK macros. Each entry binds a macro identifier to a friendly
+name that Skim uses in the macros legend table on generated images.</p>
+<div class="option-comparison">
+<figure>
+<figcaption>Named macro with all action kinds</figcaption>
+<p><img alt="Named macro &quot;Greeting&quot;" loading="lazy" src="../../_static/options/keycodes/named-macro.svg" width="600" />
+  </p>
+</figure>
+</div>
+<h4 id="id_1"><code>id</code><a class="headerlink" href="#id_1" title="Permanent link">&para;</a></h4>
+<p>The string used to reference this macro in your keymap. For Vial and Keybard
+keymaps that's one of the standard slot names (<code>M0</code>, <code>M1</code>, …, <code>M49</code>); for
+QMK <code>keymap.c</code> keymaps it's the name you used in your <code>#define</code> (e.g.
+<code>MY_MACRO</code> for <code>MACRO_MY_MACRO</code>).</p>
+<h4 id="name_1"><code>name</code><a class="headerlink" href="#name_1" title="Permanent link">&para;</a></h4>
+<p>A short human-readable label shown in the macros legend. This field is
+Skim-only — it has no equivalent in Vial or Keybard, so changes here
+don't round-trip back to your keyboard's firmware. Defaults to <code>null</code>.</p>
+<h4 id="preview"><code>preview</code><a class="headerlink" href="#preview" title="Permanent link">&para;</a></h4>
+<p>A read-only single-line text representation of the macro, displayed below
+the macro's name in the legend. Although saved in the configuration file,
+this field is <strong>not</strong> intended for hand-editing. To regenerate it, run the
+Configurator UI with the <code>-k</code> / <code>--keymap</code> option pointed at your keymap
+file — Skim will read the macro definition from the keymap and refresh the
+preview.</p>
+<h3 id="keycodestap_dances"><code>keycodes.tap_dances</code><a class="headerlink" href="#keycodestap_dances" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>list of <code>{id, name, preview}</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table>
+<p>Like <code>macros</code>, the <code>tap_dances</code> field carries metadata for QMK tap-dance
+keys. Each entry binds a tap-dance identifier to a friendly name that Skim
+uses in the tap-dance legend table on generated images.</p>
+<div class="option-comparison">
+<figure>
+<figcaption>Named tap-dance row</figcaption>
+<p><img alt="Named tap-dance &quot;Modifier dance&quot;" loading="lazy" src="../../_static/options/keycodes/named-tap-dance.svg" width="600" />
+  </p>
+</figure>
+</div>
+<h4 id="id_2"><code>id</code><a class="headerlink" href="#id_2" title="Permanent link">&para;</a></h4>
+<p>Must match the tap-dance index supplied to QMK's <code>TD(...)</code> macro: one of
+<code>TD(0)</code>, <code>TD(1)</code>, <code>TD(2)</code>, …, <code>TD(49)</code>.</p>
+<p>Skim's internal <code>pre_process</code> table also rewrites these calls to plain
+identifiers (<code>TD(0)</code> → <code>TD0</code>, <code>TD(1)</code> → <code>TD1</code>, …, <code>TD(49)</code> → <code>TD49</code>) — that
+mapping isn't a QMK standard, but it lets Skim render specific <code>keymap.c</code>
+styles that reference the tap-dance by an unwrapped name.</p>
+<h4 id="name_2"><code>name</code><a class="headerlink" href="#name_2" title="Permanent link">&para;</a></h4>
+<p>A short human-readable label shown in the tap-dance legend. Like
+<code>macros.name</code>, this field is Skim-only — it has no equivalent in Vial or
+Keybard, and changes don't round-trip back to your firmware. Defaults to
+<code>null</code>.</p>
+<h4 id="preview_1"><code>preview</code><a class="headerlink" href="#preview_1" title="Permanent link">&para;</a></h4>
+<p>A read-only single-line text representation of the tap-dance, displayed
+below its name in the legend. Although saved in the configuration file,
+this field is <strong>not</strong> intended for hand-editing. To regenerate it, run the
+Configurator UI with the <code>-k</code> / <code>--keymap</code> option pointed at your keymap
+file — Skim will read the tap-dance definition and refresh the preview.</p>
+<h3 id="keycodessymbol_descriptions"><code>keycodes.symbol_descriptions</code><a class="headerlink" href="#keycodessymbol_descriptions" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{category: {keycode: description}}</code></td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+<p>Per-keycode description overrides for the symbol legend. The legend ships
+with a curated default table; entries here either override an existing
+keycode within a bundled category or add brand-new categories.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">keycodes</span><span class="p">:</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">symbol_descriptions</span><span class="p">:</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="nt">Modifiers</span><span class="p">:</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">      </span><span class="nt">KC_LEFT_CTRL</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Control</span><span class="nv"> </span><span class="s">(my</span><span class="nv"> </span><span class="s">custom</span><span class="nv"> </span><span class="s">label)&quot;</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="s">&quot;My</span><span class="nv"> </span><span class="s">Section&quot;</span><span class="p p-Indicator">:</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">      </span><span class="nt">MY_KEY</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Does</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">thing&quot;</span>
+</code></pre></div>
+<p>User keys in an existing bundled category take precedence over the bundled
+description for the same keycode. Brand-new categories are appended after
+the bundled ones in the legend.</p>
+<h3 id="keycodesfunction_descriptions"><code>keycodes.function_descriptions</code><a class="headerlink" href="#keycodesfunction_descriptions" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{category: {keycode: description}}</code></td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+<p>Per-function description overrides for the function-keycode legend — the
+table that explains constructs like <code>MO</code>, <code>LT</code>, <code>OSL</code>, <code>OSM</code>, <code>TG</code>, and
+<code>TT</code>. Same shape and merge rules as <code>symbol_descriptions</code>: user keys
+override bundled entries within a category, and new categories are
+appended after the bundled ones.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">keycodes</span><span class="p">:</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">function_descriptions</span><span class="p">:</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">Layers</span><span class="p">:</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">      </span><span class="nt">MO</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Hold</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">layer</span><span class="nv"> </span><span class="s">#0;&quot;</span>
+</code></pre></div>
+<h4 id="placeholders">Placeholders<a class="headerlink" href="#placeholders" title="Permanent link">&para;</a></h4>
+<p>Description strings support a small substitution syntax that lets the text
+reference the function's arguments and pull in other keycode glyphs:</p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>#N;</code></td>
+<td>The Nth argument, rendered as a literal <code>#</code> character. Use when you want to say "an arg goes here" without showing its actual value.</td>
+</tr>
+<tr>
+<td><code>@N;</code></td>
+<td>The Nth argument, <strong>recursively resolved</strong> to its rendered label. Triggers per-instance mode (see below).</td>
+</tr>
+<tr>
+<td><code>@@KEYCODE;</code></td>
+<td>An alias reference — replaced by the resolved label of <code>KEYCODE</code>. Lets a description embed a glyph that's already named in the bundled keycode table.</td>
+</tr>
+<tr>
+<td><code>\|;</code></td>
+<td>The tap/hold separator character (the box-drawing <code>│</code>). Rare in descriptions; appears mostly in keycode aliases.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="generic-vs-per-instance-entries">Generic vs per-instance entries<a class="headerlink" href="#generic-vs-per-instance-entries" title="Permanent link">&para;</a></h4>
+<p>Whether a description produces <strong>one</strong> legend row per function or <strong>one
+per unique call</strong> depends entirely on whether it contains an <code>@N;</code>
+placeholder. Skim flips automatically based on the description text.</p>
+<ul>
+<li>
+<p><strong>Generic</strong> (no <code>@N;</code>): one row in the legend per function name,
+  shared across every call site in the keymap. Both <code>#N;</code> and any <code>@N;</code>
+  that <em>would</em> have appeared collapse to a literal <code>#</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">Layers</span><span class="p">:</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">MO</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Hold</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">layer</span><span class="nv"> </span><span class="s">#0;&quot;</span>
+</code></pre></div>
+<p>Whether your keymap uses <code>MO(0)</code>, <code>MO(1)</code>, or <code>MO(14)</code>, the legend
+shows a single <code>MO</code> row reading <strong>"Hold to layer #"</strong>.</p>
+</li>
+<li>
+<p><strong>Per-instance</strong> (at least one <code>@N;</code>): one row per unique
+  <code>(function, args)</code> tuple that appears in the keymap. Each <code>@N;</code> slot
+  is replaced with the recursively-resolved label of the actual
+  argument.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nt">Modifiers</span><span class="p">:</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nt">OSM</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;One-shot</span><span class="nv"> </span><span class="s">@0;&quot;</span>
+</code></pre></div>
+<p>A keymap that uses both <code>OSM(MOD_LCTL)</code> and <code>OSM(MOD_LSFT)</code> will show
+two rows: <strong>"One-shot ⌃"</strong> and <strong>"One-shot ⇧"</strong>.</p>
+</li>
+</ul>
+<p>You can mix <code>#N;</code> and <code>@N;</code> in the same description. Any single <code>@N;</code> is
+enough to flip the description into per-instance mode; <code>#N;</code> then keeps
+its "literal #" meaning inside each per-instance row.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The bundled descriptions use <code>#N;</code> for layer functions (<code>MO</code>, <code>OSL</code>,
+<code>LM</code>, etc.) so every layer-switch keycode in your keymap shares a
+single legend entry. Override the bundled entry with <code>@N;</code> if you'd
+rather see one row per unique layer destination.</p>
+</div>
+<h3 id="keycodessymbol_legend_aliases"><code>keycodes.symbol_legend_aliases</code><a class="headerlink" href="#keycodessymbol_legend_aliases" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{keycode: canonical_keycode}</code></td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+<p>Tells the symbol legend to render two keycodes as a single combined entry
+sharing the legend description of the canonical one. Handy when your
+keymap uses left/right variants of the same conceptual key and you don't
+want each to occupy a separate row.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nt">keycodes</span><span class="p">:</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="nt">symbol_legend_aliases</span><span class="p">:</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="nt">KC_RIGHT_GUI</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">KC_LEFT_GUI</span>
+</code></pre></div>
+<p>You <strong>don't</strong> need to list every alternative spelling for keycodes. Skim
+resolves legend aliases transitively through the <code>@@KEYCODE;</code> chain in the
+bundled keycodes table — when it looks up a keycode, it walks every rung of
+that chain and checks <code>symbol_legend_aliases</code> at each step. As long as one rung
+is aliased, every spelling that already chains to it follows along
+automatically.</p>
+<p>For example, the bundled table chains <code>KC_RCTL</code> → <code>@@KC_RIGHT_CTRL;</code>. So
+a single user alias is enough:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nt">keycodes</span><span class="p">:</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="nt">symbol_legend_aliases</span><span class="p">:</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="nt">KC_RIGHT_CTRL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">KC_LEFT_CTRL</span>
+</code></pre></div>
+<p>…and <code>KC_RCTL</code>, <code>KC_RIGHT_CTRL</code>, and any other short-form that resolves
+to <code>KC_RIGHT_CTRL</code> all collapse onto the <code>KC_LEFT_CTRL</code> legend row. You
+only have to alias the names that aren't <em>already</em> covered by the
+bundled chain.</p>
+<h3 id="key-label-resolution-algorithm">Key Label Resolution algorithm<a class="headerlink" href="#key-label-resolution-algorithm" title="Permanent link">&para;</a></h3>
+<p>Several of the configuration options in <code>keycodes</code> produce labels through
+<strong>Key Label Resolution</strong> — a small recursive substitution pass Skim runs
+on every label string. It lets a key's displayed symbol be composed from
+one or more of:</p>
+<ul>
+<li>A glyph from the Nerd Fonts package</li>
+<li>Any printable character supported by the fonts Skim uses</li>
+<li>A reference to another key's resolved label, expanded inline</li>
+</ul>
+<p>By the time this algorithm runs, the keycode has already been
+pre-processed (step 1 of the keycodes pipeline above), and any user
+<code>overrides</code> have already been merged into Skim's bundled keycode-to-label
+table. Key Label Resolution is <strong>step 2</strong> of the pipeline — the
+resolver against that merged table.</p>
+<p>When a key's label needs to resolve to a final string, Skim walks these
+steps in order. Each step's output becomes the next step's input.</p>
+<ol>
+<li>
+<p><strong>Branch on shape</strong> — the keycode is matched against the regex
+   <code>^[A-Z0-9_]+\(.+\)$</code>:</p>
+<ul>
+<li><strong>Function call</strong> (<code>FUNC(args)</code>) where <code>FUNC</code> exists in the
+  bundled <code>macro_functions</code> table → go to step 2.</li>
+<li><strong>Atomic keycode</strong> (no parens, or <code>FUNC</code> not in
+  <code>macro_functions</code>) → skip to step 4.</li>
+</ul>
+</li>
+<li>
+<p><strong>Expand the macro template</strong> — Skim looks up <code>FUNC</code> in
+   <code>macro_functions</code> and parses the arguments (respecting nested
+   parentheses, so <code>MT(MOD_LCTL, KC_A)</code> produces <code>["MOD_LCTL", "KC_A"]</code>).
+   The template string is then walked left-to-right, replacing every
+   placeholder it contains:</p>
+<table>
+<thead>
+<tr>
+<th>Placeholder</th>
+<th>Substituted with</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>\|;</code></td>
+<td>The tap/hold separator character <code>│</code> (U+2502).</td>
+</tr>
+<tr>
+<td><code>#N;</code></td>
+<td>The Nth argument inserted verbatim. Used in templates whose displayed text is a layer index, e.g. <code>MO</code>, <code>LT</code>.</td>
+</tr>
+<tr>
+<td><code>@N;</code></td>
+<td>The Nth argument <strong>recursively resolved</strong> as a keycode — the argument is fed back to step 1 of this algorithm, and its final label is spliced in.</td>
+</tr>
+<tr>
+<td><code>@@KEYCODE;</code></td>
+<td>Resolved in step 3, after the placeholders above.</td>
+</tr>
+</tbody>
+</table>
+<p>For layer-switching functions (<code>DF</code>, <code>PDF</code>, <code>MO</code>, <code>LM</code>, <code>LT</code>, <code>OSL</code>,
+<code>TG</code>, <code>TO</code>, <code>TT</code>), Skim also reads the layer argument and stores
+its numeric index on the resulting <code>SvalboardTargetKey</code> so the
+renderer can paint a layer-indicator circle. If the argument is a
+string identifier (e.g. <code>MO(_NAV)</code>), Skim looks it up in
+<code>keyboard.layers[*].id</code> to find the firmware index — that's the
+layer the indicator points at, separate from what the displayed
+label shows.</p>
+</li>
+<li>
+<p><strong>Resolve <code>@@KEYCODE;</code> aliases</strong> — the partially-expanded label is
+   scanned for <code>@@KEYCODE;</code> patterns. Each one is replaced with the
+   recursively-resolved label of the referenced keycode (back to step 4
+   on that keycode). A <code>visited</code> set guards against circular references
+   — encountering the same keycode twice in the same chain raises a
+   <code>ValueError</code> rather than looping forever.</p>
+</li>
+<li>
+<p><strong>Atomic keycode lookup</strong> — Skim looks up the keycode in the merged
+   <code>keycodes</code> table (bundled entries with user <code>overrides</code> already
+   applied).</p>
+<ul>
+<li>If the table has an entry, its value becomes the label string. If
+  the value contains any <code>@@KEYCODE;</code> references, those are resolved
+  via step 3.</li>
+<li>If the table has no entry, the keycode name itself is used as the
+  label (graceful degradation — better to print <code>KC_FOO_NEW</code> than to
+  drop the key entirely).</li>
+</ul>
+</li>
+<li>
+<p><strong>Collapse empty dual labels</strong> — for function-resolved labels, if
+   one side of the tap/hold separator resolved to an empty string (which
+   happens when an arg like <code>KC_NO</code> resolves to <code>""</code>), the separator is
+   dropped so dual-label keys with one empty side render as a clean
+   single label.</p>
+</li>
+</ol>
+<p>After resolution, the rendered label is a string that may still contain
+<code>%%nf-md-…;</code> (or <code>%%nf-fa-…;</code>, etc.) Nerd Font glyph tokens. Those tokens
+are <strong>not</strong> part of Key Label Resolution — they pass through verbatim
+and are substituted with their corresponding glyph characters at the
+later text-rendering stage by the rich-text layer.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Step 2's <code>@N;</code> placeholder is what makes the algorithm recursive: a
+nested keycode like <code>LT(1, LSFT(KC_1))</code> resolves the outer <code>LT</code> first,
+hits <code>@1;</code> for the second arg <code>LSFT(KC_1)</code>, and feeds that back into
+step 1 — which itself runs through function expansion and alias
+resolution before returning a label that gets spliced into the outer
+template.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Skim ships 3 open source fonts bundled (one of them with 3 variants) as
+companion assets for you to use:</p>
+<ul>
+<li>Roboto:<ul>
+<li>Thin (<code>Roboto-Thin.ttf</code>)</li>
+<li>Regular (<code>Roboto-Regular.ttf</code>)</li>
+<li>Black (<code>Roboto-Black.ttf</code>)</li>
+</ul>
+</li>
+<li>Symbols Nerd Font (<code>SymbolsNerdFont-Regular.ttf</code>)</li>
+<li>DejaVu Sans Condensed (<code>DejaVuSansCondensed.ttf</code>)</li>
+</ul>
+<p>If these fonts support the glyph you're trying to use, Skim will render your
+key without major problems.</p>
+</div>
+<hr />
+<h2 id="output"><code>output</code><a class="headerlink" href="#output" title="Permanent link">&para;</a></h2>
+<p>Controls everything visual: image dimensions, layer colors, borders, fonts,
+which legends to draw, and the relative scale of standalone tables.</p>
+<p>Current schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">keymap_title</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nt">copyright</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="nt">layout</span><span class="p">:</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span><span class="nt">width</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="nt">spacing</span><span class="p">:</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">      </span><span class="nt">margin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">      </span><span class="nt">inset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">  </span><span class="nt">style</span><span class="p">:</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">    </span><span class="nt">hold_symbol_position</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">qmk | inward | outward</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">    </span><span class="nt">macros_scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">    </span><span class="nt">show_layer_connectors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">    </span><span class="nt">show_layer_indicators</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">    </span><span class="nt">show_special_keys_legend</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">    </span><span class="nt">show_symbol_legend</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="w">    </span><span class="nt">show_transparent_fallthrough</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="w">    </span><span class="nt">symbol_legend_columns</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;int&gt;</span>
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="w">    </span><span class="nt">symbol_legend_flow</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">row | column</span>
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a><span class="w">    </span><span class="nt">symbols_scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a><span class="w">    </span><span class="nt">tap_dances_scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a><span class="w">    </span><span class="nt">use_layer_colors_on_keys</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a><span class="w">    </span><span class="nt">use_system_fonts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="w">    </span><span class="nt">border</span><span class="p">:</span>
+<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a><span class="w">      </span><span class="nt">width</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a><span class="w">      </span><span class="nt">radius</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a><span class="w">    </span><span class="nt">palette</span><span class="p">:</span>
+<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a><span class="w">      </span><span class="nt">background_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a><span class="w">      </span><span class="nt">border_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a><span class="w">      </span><span class="nt">key_label_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a><span class="w">      </span><span class="nt">macro_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a><span class="w">      </span><span class="nt">neutral_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a><span class="w">      </span><span class="nt">tap_dance_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a><span class="w">      </span><span class="nt">text_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a><span class="w">      </span><span class="nt">layers</span><span class="p">:</span>
+<a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">base_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a><span class="w">          </span><span class="nt">color_index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;int&gt;</span>
+<a id="__codelineno-13-37" name="__codelineno-13-37" href="#__codelineno-13-37"></a><span class="w">          </span><span class="nt">gradient</span><span class="p">:</span>
+<a id="__codelineno-13-38" name="__codelineno-13-38" href="#__codelineno-13-38"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-13-39" name="__codelineno-13-39" href="#__codelineno-13-39"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-13-40" name="__codelineno-13-40" href="#__codelineno-13-40"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-13-41" name="__codelineno-13-41" href="#__codelineno-13-41"></a><span class="w">      </span><span class="nt">overrides</span><span class="p">:</span>
+<a id="__codelineno-13-42" name="__codelineno-13-42" href="#__codelineno-13-42"></a><span class="w">        </span><span class="nt">&lt;NAME:string&gt;</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-13-43" name="__codelineno-13-43" href="#__codelineno-13-43"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</code></pre></div>
+<h3 id="outputkeymap_title"><code>output.keymap_title</code><a class="headerlink" href="#outputkeymap_title" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string \| null</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Override for the auto-generated title rendered at the top of the overview
+image. Leave <code>null</code> to use the auto-generated one (typically derived from
+the input file's name).</p>
+<h3 id="outputcopyright"><code>output.copyright</code><a class="headerlink" href="#outputcopyright" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string \| null</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>A copyright notice rendered in the footer area of the overview image.
+Leave <code>null</code> to omit it. Standard conventions apply
+(<code>"© 2026 Your Name"</code>); Skim does not enforce a format.</p>
+<h3 id="outputlayout"><code>output.layout</code><a class="headerlink" href="#outputlayout" title="Permanent link">&para;</a></h3>
+<p>Image dimensions and whitespace.</p>
+<p>Current schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="nt">layout</span><span class="p">:</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="nt">width</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="nt">spacing</span><span class="p">:</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">      </span><span class="nt">margin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">      </span><span class="nt">inset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+</code></pre></div>
+<h4 id="outputlayoutwidth"><code>output.layout.width</code><a class="headerlink" href="#outputlayoutwidth" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>1600</code></td>
+</tr>
+</tbody>
+</table>
+<p>Total image width in SVG units (effectively pixels at the default scale).
+The image height is computed automatically to preserve the Svalboard
+aspect ratio, so you only specify width.</p>
+<p>Increase this for prints/documentation that need extra detail; decrease
+for thumbnails or sharing on width-constrained platforms.</p>
+<h4 id="outputlayoutspacingmargin"><code>output.layout.spacing.margin</code><a class="headerlink" href="#outputlayoutspacingmargin" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float \| null</code></td>
+<td><code>null</code> (→ <code>0</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>outer</strong> margin between the image edge and the rounded keyboard
+border, in SVG units. <code>null</code> and <code>0</code> are equivalent — the keyboard sits
+flush against the image edge.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="nt">layout</span><span class="p">:</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="nt">spacing</span><span class="p">:</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">      </span><span class="nt">margin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">12</span><span class="w">   </span><span class="c1"># 12-unit blank ring around the keyboard</span>
+</code></pre></div>
+<h4 id="outputlayoutspacinginset"><code>output.layout.spacing.inset</code><a class="headerlink" href="#outputlayoutspacinginset" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float \| null</code></td>
+<td><code>null</code> (→ width-proportional)</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>inner</strong> padding inside the keyboard border. Used both as the gap
+between the border and the first content row, and as the spacing between
+stacked elements (clusters, legends) inside the document column.</p>
+<p><code>null</code> (the default) lets Skim choose a width-proportional value at render
+time, which scales nicely as you change <code>width</code>. Set an explicit number
+when you want a fixed look across multiple sizes.</p>
+<h3 id="outputstyle"><code>output.style</code><a class="headerlink" href="#outputstyle" title="Permanent link">&para;</a></h3>
+<p>The largest sub-section. Every visual switch and color knob lives here.</p>
+<p>Current schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="nt">style</span><span class="p">:</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="nt">hold_symbol_position</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">qmk | inward | outward</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="nt">macros_scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">    </span><span class="nt">show_layer_connectors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">    </span><span class="nt">show_layer_indicators</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">    </span><span class="nt">show_special_keys_legend</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">    </span><span class="nt">show_symbol_legend</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="w">    </span><span class="nt">show_transparent_fallthrough</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">    </span><span class="nt">symbol_legend_columns</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;int&gt;</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="w">    </span><span class="nt">symbol_legend_flow</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">row | column</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="w">    </span><span class="nt">symbols_scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="w">    </span><span class="nt">tap_dances_scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="w">    </span><span class="nt">use_layer_colors_on_keys</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="w">    </span><span class="nt">use_system_fonts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="w">    </span><span class="nt">border</span><span class="p">:</span>
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a><span class="w">      </span><span class="nt">width</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="w">      </span><span class="nt">radius</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="w">    </span><span class="nt">palette</span><span class="p">:</span>
+<a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a><span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w">                      </span><span class="c1"># see output.style.palette below</span>
+</code></pre></div>
+<h4 id="outputstylehold_symbol_position"><code>output.style.hold_symbol_position</code><a class="headerlink" href="#outputstylehold_symbol_position" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Allowed values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td><code>"outward"</code></td>
+<td><code>"qmk"</code>, <code>"inward"</code>, <code>"outward"</code></td>
+</tr>
+</tbody>
+</table>
+<p>For hold-tap keys (<code>LT</code>, <code>MT</code>, etc.) Skim splits the key visually into the
+"hold" portion and the "tap" portion. This setting controls which side of
+the split each portion goes on:</p>
+<ul>
+<li><strong><code>"outward"</code></strong> — the <strong>hold</strong> side faces outward from the cluster's
+  centre. Left-hand keys put hold on the left, right-hand keys put hold
+  on the right. Reads naturally because the "modifier-ish" hold action
+  ends up on the outer edge of the keyboard.</li>
+<li><strong><code>"inward"</code></strong> — the mirror of the above. Hold faces the cluster
+  centre; tap faces the outer edge.</li>
+<li><strong><code>"qmk"</code></strong> — uses the argument order QMK macros define. Since QMK
+  always lists hold first and tap second (e.g., <code>LT(layer, key)</code>), this
+  mode draws hold on the left and tap on the right regardless of which
+  side of the keyboard the key is on.</li>
+</ul>
+<h4 id="outputstylemacros_scale"><code>output.style.macros_scale</code><a class="headerlink" href="#outputstylemacros_scale" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>1.5</code></td>
+</tr>
+</tbody>
+</table>
+<p>Body-scale multiplier for the <strong>standalone macros</strong> image (the one Skim
+emits when you ask for just the macros legend on its own). Body chips and
+pills scale by this factor; the chrome (title, footer, outer padding)
+stays unscaled. Default <code>1.5</code> matches the body scale Skim uses internally
+in per-image renders.</p>
+<h4 id="outputstyleshow_layer_connectors"><code>output.style.show_layer_connectors</code><a class="headerlink" href="#outputstyleshow_layer_connectors" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p>In the <strong>overview</strong> image only, draws faint dashed lines from each layer
+indicator to the row representing the destination layer, making the
+layer-graph explicit. Has no effect on per-layer images. Set to <code>false</code>
+to suppress the connectors for a cleaner overview.</p>
+<h4 id="outputstyleshow_layer_indicators"><code>output.style.show_layer_indicators</code><a class="headerlink" href="#outputstyleshow_layer_indicators" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p>Enables the small colored circles drawn in the corner of keys that
+activate a layer. Each circle is tinted with the destination layer's
+color, giving an at-a-glance hint of "where does this key take me." Set
+to <code>false</code> to suppress them.</p>
+<h4 id="outputstyleshow_special_keys_legend"><code>output.style.show_special_keys_legend</code><a class="headerlink" href="#outputstyleshow_special_keys_legend" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p>Toggles two related legend tables:</p>
+<ul>
+<li>On <strong>per-layer images</strong>, a table of every macro and tap-dance referenced
+  on that layer, with its <code>name</code> and <code>preview</code> from <code>keycodes.macros</code> /
+  <code>keycodes.tap_dances</code>.</li>
+<li>On the <strong>overview image</strong>, a single combined legend covering every
+  macro and tap-dance used anywhere in the keymap.</li>
+</ul>
+<p>Set to <code>false</code> to omit both legends.</p>
+<h4 id="outputstyleshow_symbol_legend"><code>output.style.show_symbol_legend</code><a class="headerlink" href="#outputstyleshow_symbol_legend" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p>Toggles the symbol legend — the table that explains the non-obvious
+glyphs Skim renders on keys (modifier symbols, function indicators, etc.).
+Per-layer images carry only the symbols actually used on that layer; the
+overview carries the union across all rendered layers.</p>
+<h4 id="outputstyleshow_transparent_fallthrough"><code>output.style.show_transparent_fallthrough</code><a class="headerlink" href="#outputstyleshow_transparent_fallthrough" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p>When <code>true</code>, transparent keycodes (<code>KC_TRNS</code> / <code>_______</code>) on layers above
+0 render the label from layer 0 in a faded "ghost" color, so you can see
+what's underneath. Set to <code>false</code> to leave transparent keys completely
+blank.</p>
+<h4 id="outputstylesymbol_legend_columns"><code>output.style.symbol_legend_columns</code><a class="headerlink" href="#outputstylesymbol_legend_columns" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>integer \| null</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Forces the <strong>standalone</strong> symbols image to lay out at exactly this many
+columns and shrinks the canvas to fit. <code>null</code> (the default) lets the
+layout pick the largest column count that fits the canvas budget — the
+behaviour used in per-layer and overview images. Has no effect on the
+embedded legends inside per-layer / overview images, only on the
+standalone symbols-only output.</p>
+<h4 id="outputstylesymbol_legend_flow"><code>output.style.symbol_legend_flow</code><a class="headerlink" href="#outputstylesymbol_legend_flow" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Allowed values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td><code>"column"</code></td>
+<td><code>"row"</code>, <code>"column"</code></td>
+</tr>
+</tbody>
+</table>
+<p>Controls how multi-column symbol-legend layouts fill themselves:</p>
+<ul>
+<li><strong><code>"column"</code></strong> — fills each column top-to-bottom before starting the
+  next column. Reads top-to-bottom first.</li>
+<li><strong><code>"row"</code></strong> — fills each row left-to-right before dropping to the next
+  row. Reads left-to-right first.</li>
+</ul>
+<h4 id="outputstylesymbols_scale"><code>output.style.symbols_scale</code><a class="headerlink" href="#outputstylesymbols_scale" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>1.5</code></td>
+</tr>
+</tbody>
+</table>
+<p>Body-scale multiplier for the <strong>standalone symbols</strong> image. Same
+semantics as <code>macros_scale</code>.</p>
+<h4 id="outputstyletap_dances_scale"><code>output.style.tap_dances_scale</code><a class="headerlink" href="#outputstyletap_dances_scale" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>1.5</code></td>
+</tr>
+</tbody>
+</table>
+<p>Body-scale multiplier for the <strong>standalone tap-dances</strong> image. Same
+semantics as <code>macros_scale</code>.</p>
+<h4 id="outputstyleuse_layer_colors_on_keys"><code>output.style.use_layer_colors_on_keys</code><a class="headerlink" href="#outputstyleuse_layer_colors_on_keys" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p>When <code>true</code>, layer-switching keys (the keys that activate or hold a layer)
+get tinted using the activating layer's color from <code>palette.layers</code>. When
+<code>false</code>, every key uses the standard neutral background regardless of the
+layer it activates. Useful when you want a more uniform look or when you
+prefer to encode layer membership only in the badge column of the
+overview.</p>
+<h4 id="outputstyleuse_system_fonts"><code>output.style.use_system_fonts</code><a class="headerlink" href="#outputstyleuse_system_fonts" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>When <code>false</code> (default), the SVG embeds the bundled fonts so the rendered
+image looks identical on every machine. When <code>true</code>, the SVG references
+system fonts by name — the file is smaller and may pick up your system's
+preferred typefaces, but viewers without those fonts installed will see a
+fallback.</p>
+<h4 id="outputstyleborder"><code>output.style.border</code><a class="headerlink" href="#outputstyleborder" title="Permanent link">&para;</a></h4>
+<p>Configures the rounded rectangle border drawn around the entire keyboard.
+Set the whole <code>border</code> object to <code>null</code> to suppress the border.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="nt">style</span><span class="p">:</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">    </span><span class="nt">border</span><span class="p">:</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">      </span><span class="nt">width</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">      </span><span class="nt">radius</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+</code></pre></div>
+<h5 id="outputstyleborderwidth"><code>output.style.border.width</code><a class="headerlink" href="#outputstyleborderwidth" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>2</code></td>
+</tr>
+</tbody>
+</table>
+<p>Stroke width of the border line in SVG units.</p>
+<h5 id="outputstyleborderradius"><code>output.style.border.radius</code><a class="headerlink" href="#outputstyleborderradius" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>10</code></td>
+</tr>
+</tbody>
+</table>
+<p>Corner radius for the rounded rectangle. Set to <code>0</code> for square corners.</p>
+<h4 id="outputstylepalette"><code>output.style.palette</code><a class="headerlink" href="#outputstylepalette" title="Permanent link">&para;</a></h4>
+<p>Color tokens used throughout the rendered image.</p>
+<p>Current schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="nt">style</span><span class="p">:</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">    </span><span class="nt">palette</span><span class="p">:</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">      </span><span class="nt">neutral_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">      </span><span class="nt">text_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">      </span><span class="nt">key_label_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">      </span><span class="nt">background_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">      </span><span class="nt">border_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">      </span><span class="nt">macro_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">      </span><span class="nt">tap_dance_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="w">      </span><span class="nt">layers</span><span class="p">:</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">base_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="w">          </span><span class="nt">color_index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;int&gt;</span>
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="w">          </span><span class="nt">gradient</span><span class="p">:</span>
+<a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a><span class="w">      </span><span class="nt">overrides</span><span class="p">:</span>
+<a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="w">        </span><span class="nt">&lt;NAME:string&gt;</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</code></pre></div>
+<p>A worked example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span><span class="nt">style</span><span class="p">:</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">    </span><span class="nt">palette</span><span class="p">:</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">      </span><span class="nt">background_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#FFFFFF&quot;</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">      </span><span class="nt">text_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#1F2933&quot;</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="w">      </span><span class="nt">key_label_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#FFFFFF&quot;</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="w">      </span><span class="nt">neutral_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#6F768B&quot;</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="w">      </span><span class="nt">border_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#000000&quot;</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="w">      </span><span class="nt">macro_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#89511C&quot;</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="w">      </span><span class="nt">tap_dance_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#41687F&quot;</span>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="w">      </span><span class="nt">overrides</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="w">      </span><span class="nt">layers</span><span class="p">:</span>
+<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">base_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#3366CC&quot;</span>
+<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">base_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#CC6633&quot;</span>
+</code></pre></div>
+<h5 id="chrome-colors">Chrome colors<a class="headerlink" href="#chrome-colors" title="Permanent link">&para;</a></h5>
+<p>These apply to the document chrome (background, headings, borders) and to
+keys that don't get a layer-specific tint.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>What it tints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>background_color</code></td>
+<td><code>"white"</code></td>
+<td>The image background.</td>
+</tr>
+<tr>
+<td><code>text_color</code></td>
+<td><code>"black"</code></td>
+<td>Body text outside of keys (titles, legends, footer).</td>
+</tr>
+<tr>
+<td><code>key_label_color</code></td>
+<td><code>"white"</code></td>
+<td>Text on key faces (chosen for contrast against typically dark key backgrounds).</td>
+</tr>
+<tr>
+<td><code>neutral_color</code></td>
+<td><code>"#6F768B"</code></td>
+<td>Keys without a layer-specific color (most thumb cluster keys, transparent fall-throughs).</td>
+</tr>
+<tr>
+<td><code>border_color</code></td>
+<td><code>"black"</code></td>
+<td>Keyboard outer border and cluster outlines.</td>
+</tr>
+<tr>
+<td><code>macro_color</code></td>
+<td><code>"#89511C"</code></td>
+<td>Macro badges on keys and the title bar of the macros legend.</td>
+</tr>
+<tr>
+<td><code>tap_dance_color</code></td>
+<td><code>"#41687F"</code></td>
+<td>Tap-dance badges on keys and the title bar of the tap-dances legend.</td>
+</tr>
+</tbody>
+</table>
+<p>All accept any CSS color string (<code>"red"</code>, <code>"#3366CC"</code>, <code>"rgb(51,102,204)"</code>,
+<code>"hsl(218 60% 50%)"</code>).</p>
+<h5 id="outputstylepalettelayers"><code>output.style.palette.layers</code><a class="headerlink" href="#outputstylepalettelayers" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>list of <code>LayerColor</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table>
+<p>Per-layer color configurations. The list aligns by <strong>position</strong> with
+<code>keyboard.layers</code>: the <em>N</em>-th palette entry colors the <em>N</em>-th keyboard
+layer. If <code>palette.layers</code> is shorter than <code>keyboard.layers</code>, the extra
+layers get auto-generated colors — so you can leave the list empty for
+a quick start and fill it in later.</p>
+<p>Current schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="nt">style</span><span class="p">:</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="nt">palette</span><span class="p">:</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">      </span><span class="nt">layers</span><span class="p">:</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">base_color</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">          </span><span class="nt">color_index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;int&gt;</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">          </span><span class="nt">gradient</span><span class="p">:</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;color:string&gt;</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</code></pre></div>
+<p>Each entry has these fields:</p>
+<h5 id="auto-generated-layer-colors">Auto-generated layer colors<a class="headerlink" href="#auto-generated-layer-colors" title="Permanent link">&para;</a></h5>
+<p>When a layer has no explicit <code>palette.layers</code> entry, Skim derives a
+base color from its <code>index</code> field. Sixteen visually-distinct colors
+are produced from <strong>8 hues × 2 lightness levels</strong>, walked in
+bit-reversed order so consecutive indices always land on
+maximally-distant hues. Layers 16–31 fill in the gaps with eight
+<em>intermediate</em> hues at the same two lightness levels:</p>
+<table>
+<thead>
+<tr>
+<th><code>index</code></th>
+<th>Hue band</th>
+<th>Lightness</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code>–<code>7</code></td>
+<td>8 base hues, 45° apart (starting on green)</td>
+<td>bright</td>
+</tr>
+<tr>
+<td><code>8</code>–<code>15</code></td>
+<td>the same 8 base hues</td>
+<td>dim</td>
+</tr>
+<tr>
+<td><code>16</code>–<code>23</code></td>
+<td>8 intermediate hues (22.5° offset)</td>
+<td>bright</td>
+</tr>
+<tr>
+<td><code>24</code>–<code>31</code></td>
+<td>the same 8 intermediate hues</td>
+<td>dim</td>
+</tr>
+</tbody>
+</table>
+<p>Why 45° between hues instead of 22.5°? Sixteen evenly-spaced hues sit
+22.5° apart — narrow enough that several adjacent ones (especially in
+the green region) blur together. Eight hues at 45° apart read as
+decisively different colors, and the bright/dim alternation gives a
+second axis of distinction so layers <code>0</code> and <code>8</code> (both green) still
+look like separate layers.</p>
+<p>The hue sequence for layers <code>0</code>–<code>7</code> lands on green, magenta, blue,
+orange, yellow-green, red, purple, and yellow — eight slots that read
+clearly as different colors. Layers <code>8</code>–<code>15</code> repeat the same hue walk
+at the dim lightness; layers <code>16</code>–<code>23</code> and <code>24</code>–<code>31</code> do the same with
+the intermediate hue set.</p>
+<p>Saturation is capped at <code>0.65</code> so auto-generated colors share
+the muted profile of the curated sample palettes shipped with Skim.</p>
+<h6 id="base_color"><code>base_color</code><a class="headerlink" href="#base_color" title="Permanent link">&para;</a></h6>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p>The primary CSS color for the layer. In single-color mode (no <code>gradient</code>),
+every key on the layer uses this color. In gradient mode, this is the
+"anchor" color used to derive the gradient automatically when one isn't
+provided explicitly.</p>
+<h6 id="color_index"><code>color_index</code><a class="headerlink" href="#color_index" title="Permanent link">&para;</a></h6>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>integer</code></td>
+<td><code>2</code></td>
+</tr>
+</tbody>
+</table>
+<p>Which gradient stop (<code>0</code>–<code>5</code>) is the "primary" color for this layer.
+Cluster keys use this index to pick their fill, and adjacent positions
+get progressively darker/lighter shades of the gradient. Only meaningful
+when <code>gradient</code> is set or auto-generated.</p>
+<h6 id="gradient"><code>gradient</code><a class="headerlink" href="#gradient" title="Permanent link">&para;</a></h6>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6-tuple of CSS color strings, or <code>null</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Six colors that map to the six positions in a finger cluster (centre,
+north, east, south, west, double-south). When <code>null</code>, Skim derives a
+gradient automatically from <code>base_color</code> and <code>color_index</code> — six tints
+ranging from very dark to very light, with <code>base_color</code> placed at
+<code>color_index</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="nt">style</span><span class="p">:</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">    </span><span class="nt">palette</span><span class="p">:</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">      </span><span class="nt">layers</span><span class="p">:</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">        </span><span class="c1"># Layer 0: single red, no gradient — every key the same shade.</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">base_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#FF0000&quot;</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="w">        </span><span class="c1"># Layer 1: explicit 6-stop gradient for cluster depth.</span>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">base_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#CC6633&quot;</span>
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="w">          </span><span class="nt">color_index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="w">          </span><span class="nt">gradient</span><span class="p">:</span>
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;#CC6633&quot;</span>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;#AA5522&quot;</span>
+<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;#884411&quot;</span>
+<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;#663300&quot;</span>
+<a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;#442200&quot;</span>
+<a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;#221100&quot;</span>
+</code></pre></div>
+<h5 id="outputstylepaletteoverrides"><code>output.style.palette.overrides</code><a class="headerlink" href="#outputstylepaletteoverrides" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{name: color}</code></td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+<p>Lets you <strong>redefine</strong> the W3C named colors that SVG renderers ship with
+(147 of them). Useful when you want a name like <code>"crimson"</code> to refer to
+your brand red instead of the W3C-spec value, and you've referenced
+<code>"crimson"</code> in several places in your config.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="nt">style</span><span class="p">:</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">    </span><span class="nt">palette</span><span class="p">:</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">      </span><span class="nt">overrides</span><span class="p">:</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">        </span><span class="nt">crimson</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#B11226&quot;</span>
+</code></pre></div>
+<p>Empty by default, so the standard W3C names apply unmodified.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+  <nav class="md-section-nav md-section-nav--bottom" aria-label="Section navigation"><a href="../" class="md-section-nav__link md-section-nav__link--prev" rel="prev">
+          <span class="md-section-nav__direction">&laquo; Prev</span>
+          <span class="md-section-nav__title">Configuration</span>
+        </a><a href="../cli-options/" class="md-section-nav__link md-section-nav__link--next" rel="next">
+          <span class="md-section-nav__direction">Next &raquo;</span>
+          <span class="md-section-nav__title">Command Line Options</span>
+        </a></nav>
+
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2025 Thiago Alves
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.indexes", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{#-
+  Render prev/next links constrained to the current top-level tab.
+  A page's "tab" is its outermost ancestor section in the nav tree.
+  Pages with no ancestors (e.g. the home page) get no section nav.
+-#}
+{% macro section_nav(page, position) -%}
+  {%- set current_tab = page.ancestors[-1] if page.ancestors else None -%}
+  {%- set prev = page.previous_page -%}
+  {%- set next = page.next_page -%}
+  {%- if not current_tab -%}
+    {%- set prev = None -%}
+    {%- set next = None -%}
+  {%- else -%}
+    {%- if prev and (not prev.ancestors or prev.ancestors[-1] != current_tab) -%}
+      {%- set prev = None -%}
+    {%- endif -%}
+    {%- if next and (not next.ancestors or next.ancestors[-1] != current_tab) -%}
+      {%- set next = None -%}
+    {%- endif -%}
+  {%- endif -%}
+  {%- if prev or next -%}
+    <nav class="md-section-nav md-section-nav--{{ position }}" aria-label="Section navigation">
+      {%- if prev -%}
+        <a href="{{ prev.url|url }}" class="md-section-nav__link md-section-nav__link--prev" rel="prev">
+          <span class="md-section-nav__direction">&laquo; Prev</span>
+          <span class="md-section-nav__title">{{ prev.title }}</span>
+        </a>
+      {%- else -%}
+        <span class="md-section-nav__spacer"></span>
+      {%- endif -%}
+      {%- if next -%}
+        <a href="{{ next.url|url }}" class="md-section-nav__link md-section-nav__link--next" rel="next">
+          <span class="md-section-nav__direction">Next &raquo;</span>
+          <span class="md-section-nav__title">{{ next.title }}</span>
+        </a>
+      {%- else -%}
+        <span class="md-section-nav__spacer"></span>
+      {%- endif -%}
+    </nav>
+  {%- endif -%}
+{%- endmacro %}
+
+{% block content %}
+  {{ section_nav(page, "top") }}
+  {{ super() }}
+  {{ section_nav(page, "bottom") }}
+{% endblock %}

@@ -1,0 +1,2606 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Svalboard Keymap Image Maker">
+      
+      
+        <meta name="author" content="Thiago Alves">
+      
+      
+        <link rel="canonical" href="https://townk.github.io/skim/dev/changelog/">
+      
+      
+        <link rel="prev" href="../api/ui/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Changelog - skim</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#changelog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="skim" class="md-header__button md-logo" aria-label="skim" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            skim
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Townk/skim" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Townk/skim
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../api/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Developer Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="skim" class="md-nav__button md-logo" aria-label="skim" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    skim
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Townk/skim" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Townk/skim
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../configuration/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Configuration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/config-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration File
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/cli-options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/configurator-ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configurator UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developer Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Domain Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/application/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Application Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unreleased
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#072-2026-05-03" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.7.2] - 2026-05-03
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.7.2] - 2026-05-03">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#070-2026-05-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.7.0] - 2026-05-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.7.0] - 2026-05-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#055-2026-04-26" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.5.5] - 2026-04-26
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.5.5] - 2026-04-26">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#054-2026-04-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.5.4] - 2026-04-24
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.5.4] - 2026-04-24">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#053-2026-04-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.5.3 - 2026-04-24
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.5.3 - 2026-04-24">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#052-2026-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.5.2 - 2026-04-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.5.2 - 2026-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#051-2026-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.5.1 - 2026-04-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.5.1 - 2026-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#050-2026-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.5.0 - 2026-04-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.5.0 - 2026-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#044-2026-01-19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.4 - 2026-01-19
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.4 - 2026-01-19">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#043-2026-01-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.3 - 2026-01-15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.3 - 2026-01-15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#042-2026-01-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.2 - 2026-01-15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.2 - 2026-01-15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#041-2026-01-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.1 - 2026-01-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.1 - 2026-01-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#040-2025-01-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.0 - 2025-01-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.0 - 2025-01-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unreleased
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#072-2026-05-03" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.7.2] - 2026-05-03
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.7.2] - 2026-05-03">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#070-2026-05-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.7.0] - 2026-05-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.7.0] - 2026-05-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#055-2026-04-26" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.5.5] - 2026-04-26
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.5.5] - 2026-04-26">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#054-2026-04-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.5.4] - 2026-04-24
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.5.4] - 2026-04-24">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#053-2026-04-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.5.3 - 2026-04-24
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.5.3 - 2026-04-24">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#052-2026-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.5.2 - 2026-04-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.5.2 - 2026-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#051-2026-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.5.1 - 2026-04-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.5.1 - 2026-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#050-2026-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.5.0 - 2026-04-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.5.0 - 2026-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#044-2026-01-19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.4 - 2026-01-19
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.4 - 2026-01-19">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#043-2026-01-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.3 - 2026-01-15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.3 - 2026-01-15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#042-2026-01-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.2 - 2026-01-15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.2 - 2026-01-15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#041-2026-01-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.1 - 2026-01-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.1 - 2026-01-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#040-2025-01-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.0 - 2025-01-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.0 - 2025-01-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+  <nav class="md-section-nav md-section-nav--top" aria-label="Section navigation"><a href="../api/ui/" class="md-section-nav__link md-section-nav__link--prev" rel="prev">
+          <span class="md-section-nav__direction">&laquo; Prev</span>
+          <span class="md-section-nav__title">UI Layer</span>
+        </a><span class="md-section-nav__spacer"></span></nav>
+  
+                  
+
+
+  
+    <a href="https://github.com/Townk/skim/edit/mainline/docs/changelog.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
+<p>All notable changes to this project will be documented in this file.</p>
+<p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>,
+and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<h2 id="unreleased"><a href="https://github.com/Townk/skim/compare/v0.5.3...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="072-2026-05-03">[0.7.2] - 2026-05-03<a class="headerlink" href="#072-2026-05-03" title="Permanent link">&para;</a></h2>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>hold_symbol_position</code> now actually reorders hold/tap labels.
+  The setting was silent for the entire 0.7.0 lifecycle:
+  <code>_adjust_hold_symbol_label</code> checked for the ASCII pipe <code>|</code>
+  while real labels carry the box-drawing <code>│</code> (U+2502), so the
+  function early-returned every time. Once the swap path runs, the
+  semantics are now cluster-relative — <code>OUTWARD</code> puts HOLD on
+  the side of the cluster the key sits on (LEFT-side keys keep
+  the default <code>HOLD│TAP</code> order; RIGHT-side keys swap to
+  <code>TAP│HOLD</code>). Applies uniformly to finger east/west keys and
+  to thumb pad / up / nail / knuckle keys regardless of which
+  keyboard half the cluster sits on.</li>
+<li>Missing modifier-union mappings for the L/R OPT, CMD, and WIN
+  aliases (<code>MOD_LOPT</code>, <code>MOD_LCMD</code>, <code>MOD_LWIN</code>, <code>MOD_ROPT</code>,
+  <code>MOD_RCMD</code>, <code>MOD_RWIN</code>) so labels referencing those modifiers
+  resolve to the same glyph as their <code>ALT</code> / <code>GUI</code> canonical
+  forms.</li>
+</ul>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Thumb cluster label alignment is now uniformly centred for the
+  Pad, Nail, Knuckle, Down, and Double-down keys. Up keeps its
+  inward-aligned label (the trapezoid wants the text on the wide
+  outer face). Previously Pad / Nail / Knuckle anchored to the
+  slanted edge, which read inconsistently next to the centred
+  Down / Double-down labels.</li>
+</ul>
+<h2 id="070-2026-05-04">[0.7.0] - 2026-05-04<a class="headerlink" href="#070-2026-05-04" title="Permanent link">&para;</a></h2>
+<p>This release replaces the imperative SVG renderer with a composable
+rendering framework, adds automatic font subsetting, and ships a wave
+of layout-quality fixes.</p>
+<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Composable rendering framework.</strong> Every image — per-layer keymaps,
+  multi-layer overview, macros, tap-dances, special-keys, symbols — is
+  now built as a tree of small, single-purpose composables that report
+  a <code>Size</code> plus a <code>draw_at(d, origin)</code> painter. Replaces ~5K lines of
+  positional layout math with a uniform tree-building model.</li>
+<li><code>RenderContext</code> carries config / keymap / theme / document metrics
+    via a <code>ContextVar</code>; <code>@Composable(use_context=True)</code> factories
+    receive it implicitly.</li>
+<li><code>MetricsComponent[M]</code> lets composables expose typed metrics
+    (e.g., <code>LayerIndicatorMetrics.routing_origin</code>,
+    <code>FingerHalfMetrics.overflow_size</code>) without exposing internals.</li>
+<li>Overflow-aware geometry — every cluster / half reports
+    <code>(size, overflow_size, overflow_offset)</code> so parents can place
+    chrome like layer-switch indicators without hidden assumptions.</li>
+<li>Single-page documents: <code>KeymapLayerDocument</code>,
+    <code>KeymapOverviewDocument</code>, <code>KeymapMacroDocument</code>,
+    <code>KeymapTapDanceDocument</code>, <code>KeymapSpecialKeysDocument</code>,
+    <code>KeymapSymbolDocument</code>. Each entry point reduces to
+    <code>render(&lt;Document&gt;(...))</code>.</li>
+<li><strong>Automatic font subsetting</strong> in SVG output. <code>FontUsageCollector</code>
+  records every character painted via <code>AdjustableText</code> / <code>RichText</code> /
+  the title text; on render, only the glyphs actually used are
+  embedded. SVG output sizes drop dramatically (overview: ~5MB → ~360KB;
+  per-layer: ~104KB → ~89KB). <code>--use-system-fonts</code> skips embedding
+  entirely.</li>
+<li><strong><code>AdjustableText</code> and <code>RichText</code> composables.</strong> Single-style and
+  multi-span text with synchronised shrink-to-fit, per-span
+  proportional <code>min_font_size</code> floors, and ellipsis truncation.
+  RichText accepts a markup string with Nerd Font tokens
+  (<code>%%nf-md-keyboard;</code>) and the <code>│</code> separator character; the parser
+  handles font routing (Symbols / Unicode Symbols fallbacks)
+  automatically.</li>
+<li><strong>Transparent fall-through rendering</strong> — <code>KC_TRANSPARENT</code> /
+  <code>KC_TRNS</code> / <code>_______</code> keys on layers above 0 borrow the layer-0
+  label and are drawn as a faded "ghost".</li>
+<li>Ghost text colour is the key's fill colour with HSL lightness
+    shifted by 0.12 — lighter when the fill sits at or below the
+    layer's base colour in the gradient, darker when it sits above.</li>
+<li>When the layer-0 source maps to a layer change (<code>MO()</code>, <code>LT()</code>,
+    etc.), the ghost key inherits that <code>layer_switch</code> and is treated
+    as a layer-triggering key — getting the destination layer's
+    background colour, indicator badge, and overview connector.</li>
+<li>New <code>style.show_transparent_fallthrough</code> option (default <code>true</code>)
+    lets users opt out and revert to blank transparent keys. TUI
+    configurator gets a matching toggle and contextual help blurb.</li>
+<li><strong>Per-image body-scale flags</strong> for the standalone images:
+  <code>--macros-scale</code>, <code>--tap-dances-scale</code>, <code>--symbols-scale</code>. Body
+  content (chips, pills, glyphs, symbol descriptions) scales by the
+  multiplier; chrome (title, footer, padding) stays at the unscaled
+  per-image size. CLI overrides matching config fields persist on
+  the resolved <code>Style</code>.</li>
+<li><strong>Symbols image and symbol legend.</strong> A new standalone <code>keymap-symbols</code>
+  image plus a per-layer / overview symbol legend. Walks each key's
+  raw keycode, recurses through wrapper functions (<code>LT(N, KC_A)</code>),
+  tap-dance variants, and macro action keys; resolves alias chains;
+  renders one row per distinct canonical keycode or function name.
+  Categories are read from <code>keycode-mappings.yaml</code>'s
+  <code>symbol_descriptions</code> insertion order — edit the YAML to reorder
+  legend groupings.</li>
+<li><code>--symbol-columns</code> flag forces an exact column count (canvas
+    shrinks to the resulting width).</li>
+<li><code>--no-symbols</code> opts out of the legend.</li>
+<li><strong>Cross-layer connector routing in the overview.</strong> Multi-source
+  Phase-1/Phase-2 router that draws dotted lines from each
+  layer-trigger key (in finger or thumb clusters) to its target
+  layer's row. Paths share routing columns when their Y-spans don't
+  overlap; paths to the same target merge their final horizontal
+  segment so a single visible LEFT segment connects all sources to
+  that layer's row. Special-cases: LT_Up/LT_Down on the same thumb
+  cluster, S+DS triggers on non-R4 finger clusters.</li>
+<li><strong>Auto-derived configuration</strong> from the input keymap when
+  <code>--config</code> isn't provided.</li>
+<li><strong>DejaVu Sans Mono / Condensed</strong> as Unicode-symbol fallback —
+  covers <code>⎇</code>, <code>│</code>, and other characters Roboto doesn't carry.</li>
+<li><strong>Per-image <code>wrap_content</code> semantics</strong> on <code>MacroSection</code>,
+  <code>TapDanceSection</code>, <code>SymbolSection</code>. The standalone images snug
+  the canvas to natural content width; combined / per-layer
+  documents inflate sections to fill the column budget.</li>
+</ul>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Layout overhaul of the multi-layer overview.</strong></li>
+<li>Badge column → cluster column gap pinned at exactly
+    <code>2 × column_gap</code>. Indicators that bleed left of the keys-only
+    edge paint visually into the gap (paint-only, no layout claim).</li>
+<li>Central gap between the two halves pinned at <code>2 × column_gap</code>
+    measured between the finger halves' inward-indicator extents.</li>
+<li>Thumb clusters align with the finger halves' keys-only edges
+    (left thumb's right edge with the left half's right edge; right
+    thumb's left edge with the right half's left edge). When BOTH
+    thumbs have inward-bleeding indicators (knuckle / nail keys
+    with a <code>layer_switch</code>), the central column widens so the
+    visible chrome-to-chrome gap is at least <code>column_gap</code>.</li>
+<li>Layers render highest-to-lowest QMK index — most-specialised
+    layers read first, layer 0 at the bottom.</li>
+<li>Layer-row spacing is indicator-aware; canvas extents account
+    for layer-switch indicator circles that overflow cluster bounds.</li>
+<li>Default canvas width bumped from 800 to 1600 SVG units.</li>
+<li>Title and copyright font sizes are now doc-width-proportional
+    (~31pt title, ~17pt copyright at the canonical width).</li>
+<li><strong>Spacing convention is uniform across every image.</strong> <code>inset</code> for
+  vertical spacing (Column gaps, outer chrome border-to-content
+  gap), <code>column_gap</code> for horizontal spacing (inter-cluster gap
+  inside a half), <code>2 × column_gap</code> for primary visual dividers
+  (central halves gap, badge → cluster gap, macro/TD pair gap).</li>
+<li><strong>Connector spacing</strong> pinned at <code>0.6 × outer_key_width</code> for
+  tighter, more readable lane / column placement.</li>
+<li><strong>Macro / tap-dance display.</strong></li>
+<li>Named macros sort first (named-block then unnamed-block,
+    separated by <code>section_spacing</code> instead of the usual row gap).</li>
+<li>Tap-dance name column resizes dynamically to fit the longest
+    name within the available budget; per-row ellipsis truncation
+    when names still overflow.</li>
+<li>Macro pills and tap-dance cells render through <code>RichText</code>, so
+    labels containing Nerd Font tokens render with the right
+    per-span fonts.</li>
+<li><strong>Function-description templates</strong> in <code>keycode-mappings.yaml</code> use
+  <code>@N;</code> / <code>#N;</code> placeholders for argument substitution and <code>|;</code> for
+  the separator character. Per-instance descriptions (e.g. specific
+  layer numbers) and generic descriptions (one entry per function
+  name) are both supported.</li>
+<li><strong>Renamed CLI flag</strong> <code>--keybard-keymap</code> → <code>--keymap</code>.</li>
+<li><strong>Render-engine selection</strong> via <code>--render-engine chromium|cairo</code>.
+  The Cairo path converts text elements to SVG paths so output
+  rasterises consistently regardless of which fonts the system has
+  installed.</li>
+</ul>
+<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Title text now correctly renders in Roboto Thin — the title
+  characters are registered with the font subsetter so the embedded
+  <code>@font-face</code> rule is included in the output SVG.</li>
+<li><code>--width</code> is honoured as the final SVG / PNG canvas width.</li>
+<li>Tap-dance name truncation measures actually-painted text width
+  instead of overshooting from font-metrics estimates.</li>
+<li>Symbol legend's <code>symbol_legend_aliases</code> apply to function-call
+  patterns (e.g. <code>A(KC_RGHT)</code> resolves to <code>A(KC_RIGHT)</code>'s entry).</li>
+<li>F-keys in the <code>c2json-sample.json</code> Function Keys layer are
+  positioned correctly (previously mirrored across the right
+  cluster's E↔W axis).</li>
+<li><code>skim</code> prompts for overwrite confirmation via <code>/dev/tty</code> when
+  stdin is a pipe.</li>
+</ul>
+<h3 id="internal">Internal<a class="headerlink" href="#internal" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Module structure consolidated. <code>text.py</code> → <code>font.py</code>; <code>legend.py</code>
+  → <code>section_data.py</code> (now also hosts the symbol-entry resolution
+  layer that previously lived in a now-deleted <code>symbol_legend.py</code>).
+  <code>text_to_paths.py</code> moved from <code>render/</code> to <code>exporter/</code> (its only
+  consumer is the Cairo exporter). <code>layout.py</code> deleted.</li>
+<li>All concrete document composables consolidated in
+  <code>keymap_document.py</code>. Body composables stay in their per-image
+  modules (<code>keymap_layer.py</code>, <code>keymap_overview.py</code>).</li>
+<li>Entry points in <code>__init__.py</code> own all data prep — pre-resolving
+  macros / tap-dances / symbol entries before passing pre-resolved
+  lists to the document composables. Documents are pure layout
+  consumers.</li>
+<li><code>__all__</code> exports tightened across the rendering layer to advertise
+  only what other production modules actually import.</li>
+</ul>
+<h2 id="055-2026-04-26">[0.5.5] - 2026-04-26<a class="headerlink" href="#055-2026-04-26" title="Permanent link">&para;</a></h2>
+<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Multi-source overview connector routing — dotted lines from each layer-trigger key (in finger and thumb clusters) to its target layer's row.</li>
+<li>Per-layer finger-cluster routing across every rendered layer; <code>MO()</code> / <code>LT()</code> / equivalent layer-switch keys produce a connector regardless of which layer they live on.</li>
+<li>Thumb-cluster routing with the LT_Up + LT_Down LEFT-DOWN special case (the LT_Up path detours west of LT_Down's drop column when both trigger).</li>
+<li>Non-R4 finger clusters with both <code>south_key</code> and <code>double_south_key</code> triggering produce a RIGHT-DOWN-RIGHT South path that clears the DS drop column.</li>
+<li>Global Phase 2 column allocation: paths from all sources share routing columns when their vertical Y-spans don't overlap, so column count tracks Y-overlap instead of total path count.</li>
+<li>Multi-target merge: paths targeting the same layer share a final horizontal segment, so a single visible LEFT segment connects all sources to that layer's row.</li>
+<li>Macro (<code>M1</code>–<code>M50</code>) and tap-dance keycode mappings, rendered with distinct nf-md icon glyphs in the overview.</li>
+<li>Synthetic Vial fixture (<code>tests/integration/fixtures/connector-routing-coverage.vil</code>) plus structured-assertion integration tests covering R4 / non-R4 / S+DS / multi-layer routing.</li>
+</ul>
+<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Connector spacing pinned at <code>0.6 × outer_key_width</code> for tighter, more readable lane/column placement.</li>
+<li>Layer-badge column gap pinned at <code>4 × KEYMAP_SPACING</code> so the visual rhythm tracks the connector router instead of canvas-relative inset units.</li>
+<li>Layer badges now align exactly with the West finger key in their row — same Y (top edge) and same height (<code>outer_key_size</code>).</li>
+<li>Default canvas width bumped from 800 to 1600 SVG units for better legibility.</li>
+<li>Inter-row spacing rhythm in the overview is now consistent regardless of Double-South presence.</li>
+<li>Layer-row spacing is now indicator-aware — canvas extents account for layer-switch indicator circles that overflow cluster bounds.</li>
+<li><code>skim</code> derives a default config from the input keymap when <code>--config</code> isn't provided.</li>
+</ul>
+<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>skim</code> now prompts for overwrite confirmation via <code>/dev/tty</code> when stdin is a pipe (previously silently overwrote or hung).</li>
+<li>F-keys in the <code>c2json-sample.json</code> Function Keys layer were mirrored across the right cluster's E↔W axis (F1↔F4 and F2↔F3); now positioned correctly.</li>
+</ul>
+<h2 id="054-2026-04-24">[0.5.4] - 2026-04-24<a class="headerlink" href="#054-2026-04-24" title="Permanent link">&para;</a></h2>
+<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Pydantic 2.13+ compatibility: <code>SplitSidePosition</code> enum used as a <code>BeforeValidator</code> caused a crash on Python 3.12+ due to stricter validator signature inspection.</li>
+</ul>
+<h3 id="changed_3">Changed<a class="headerlink" href="#changed_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Development environment now uses the latest Python version (via mise) to catch compatibility issues earlier. The project still supports Python 3.10+.</li>
+</ul>
+<h2 id="053-2026-04-24"><a href="https://github.com/Townk/skim/compare/v0.5.2...v0.5.3">0.5.3</a> - 2026-04-24<a class="headerlink" href="#053-2026-04-24" title="Permanent link">&para;</a></h2>
+<h3 id="added_2">Added<a class="headerlink" href="#added_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Contextual help system for the TUI configurator — press F1 or Alt+H on any field to see a help modal with field-specific documentation.</li>
+<li>Per-field markdown help content for all fields across Keyboard, Keycodes, and Style tabs.</li>
+<li>Vim-style scroll bindings in help modal (j/k, Ctrl+D/U, Ctrl+F/B, G/g).</li>
+<li>General help fallback with keyboard shortcuts overview.</li>
+<li><code>show_layer_connectors</code> configuration option to toggle layer connector lines in overview images.</li>
+<li><code>--title</code> and <code>--copyright</code> options to <code>configure</code> command.</li>
+<li><code>--layer-count</code> option with sparse fill logic for <code>configure</code> command.</li>
+<li><code>--keymap</code> option to <code>configure</code> for Vial and c2json format support.</li>
+<li>Layer move mode to reorder layers in list views.</li>
+<li>Custom <code>SkimButton</code> widget with Space and Enter activation.</li>
+</ul>
+<h3 id="changed_4">Changed<a class="headerlink" href="#changed_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Renamed <code>--keybard-keymap</code> CLI option to <code>--keymap</code>.</li>
+<li>Non-standard keycode scanning for configuration generation.</li>
+<li>Skip empty layers and simplify keycode override detection.</li>
+<li>Updated documentation: README, Sphinx docs, and example SVGs to reflect current features.</li>
+</ul>
+<h3 id="fixed_4">Fixed<a class="headerlink" href="#fixed_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Directional focus navigation inside modal dialogs.</li>
+<li>QMK firmware index used for layer lookup, fixing overview rendering issues.</li>
+<li>Circular dots for overview layer connectors (previously rendered as pills).</li>
+<li>Footer keybind display order and styling standardised.</li>
+<li>GitHub Actions and PyPI publishing fixes.</li>
+</ul>
+<h2 id="052-2026-04-22"><a href="https://github.com/Townk/skim/compare/v0.5.1...v0.5.2">0.5.2</a> - 2026-04-22<a class="headerlink" href="#052-2026-04-22" title="Permanent link">&para;</a></h2>
+<h3 id="fixed_5">Fixed<a class="headerlink" href="#fixed_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>GitHub Actions and PyPI publishing fixes.</li>
+</ul>
+<h2 id="051-2026-04-22"><a href="https://github.com/Townk/skim/compare/v0.5.0...v0.5.1">0.5.1</a> - 2026-04-22<a class="headerlink" href="#051-2026-04-22" title="Permanent link">&para;</a></h2>
+<h3 id="fixed_6">Fixed<a class="headerlink" href="#fixed_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>GitHub Actions and PyPI publishing fixes.</li>
+</ul>
+<h2 id="050-2026-04-22"><a href="https://github.com/Townk/skim/compare/v0.4.4...v0.5.0">0.5.0</a> - 2026-04-22<a class="headerlink" href="#050-2026-04-22" title="Permanent link">&para;</a></h2>
+<h3 id="added_3">Added<a class="headerlink" href="#added_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Interactive TUI for configuration editing via <code>skim configure --interactive</code>.</li>
+<li>Tabbed interface with Keyboard, Keycodes, and Style tabs.</li>
+<li>List/detail panels for layers, keycodes, and layer colors.</li>
+<li>Enter-to-edit, Escape-to-rollback field editing with commit/cancel hints.</li>
+<li>Add/Remove buttons for layers, keycodes, and layer colors.</li>
+<li>Color swatches and W3C named color suggestions for color input fields.</li>
+<li>Gradient preview on dark and light backgrounds with index numbers.</li>
+<li>Dynamic/Manual gradient type selector for layer colors.</li>
+<li>Keycode autocomplete and spatial arrow-key focus navigation.</li>
+<li>Save &amp; quit dialog with confirmation.</li>
+<li>Overview image rendering with layer badges and cluster layout.</li>
+<li>Dotted connector lines from layer indicator circles to target layers.</li>
+<li>Intelligent connector routing with per-key escape directions.</li>
+<li>Layer indicator circles on individual layer images.</li>
+<li>Non-sequential layer index support (QMK index independent of config position).</li>
+<li>Layer index field editing with validation in TUI.</li>
+<li>Dict-based keymap layers in data model.</li>
+<li><code>skim doctor</code> command with cairo optional dependency check.</li>
+<li><code>ConfigGenerator</code> for generating default and keybard-based configurations.</li>
+<li>Font subsetting support via <code>FontUsageAnalyzer</code> and <code>FontSubsetter</code>.</li>
+<li><code>subtitle</code> (later renamed to <code>variant</code>) field for <code>KeyboardLayer</code>.</li>
+<li>Optional <code>copyright</code> field in Output configuration.</li>
+<li><code>--interactive</code> and <code>--config</code> flags for <code>configure</code> command.</li>
+</ul>
+<h3 id="changed_5">Changed<a class="headerlink" href="#changed_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Renamed <code>KeyboardLayer.subtitle</code> to <code>variant</code>.</li>
+<li>Extracted reusable <code>ListDetailPane</code> base class for TUI widgets.</li>
+<li>Major overview layout overhaul with improved badge positioning and connector routing.</li>
+<li>Upgraded dependencies.</li>
+</ul>
+<h3 id="fixed_7">Fixed<a class="headerlink" href="#fixed_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Resolved all ruff lint, formatting, and basedpyright errors.</li>
+<li>Granted <code>id-token</code> permission for PyPI trusted publishing.</li>
+<li>Numerous TUI layout, focus, and interaction fixes.</li>
+</ul>
+<h2 id="044-2026-01-19"><a href="https://github.com/Townk/skim/compare/v0.4.3...v0.4.4">0.4.4</a> - 2026-01-19<a class="headerlink" href="#044-2026-01-19" title="Permanent link">&para;</a></h2>
+<h3 id="added_4">Added<a class="headerlink" href="#added_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Support for QMK hold-tap keys (e.g., <code>LT(1, KC_SPC)</code>, <code>LSFT_T(KC_A)</code>).</li>
+<li>Support for complex macro functions via <code>macro_functions</code> mapping.</li>
+<li>Support for modifier union arguments (e.g., <code>OSM(MOD_LCTL|MOD_LSFT)</code>).</li>
+</ul>
+<h3 id="changed_6">Changed<a class="headerlink" href="#changed_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Updated config generator to create <code>USER##</code> mappings for custom keycodes found in Keybard files.</li>
+<li>Improved config generator to prevent duplicate custom key entries if they already exist in internal mappings.</li>
+<li>Refactored keycode transformer to use a unified, data-driven pipeline for
+  resolving all function-style keycodes (modifiers, layers, macros).</li>
+<li>Modified the release workflow to call the publish workflow directly to
+  guarantee PyPI always receives a new release version when there is one.</li>
+</ul>
+<h3 id="fixed_8">Fixed<a class="headerlink" href="#fixed_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed incorrect nesting of <code>named_colors</code> in generated configuration files (now directly under <code>appearance</code>).</li>
+<li>Fixed issue where layer toggle targets were not identified when using aliased keycodes in <code>reversed_alias</code>.</li>
+<li>Fixed bug where <code>skim generate</code> would create files even when user aborted the overwrite prompt.</li>
+<li>Fixed inconsistent behavior in <code>skim configure</code> by adding an overwrite confirmation prompt (matching <code>generate</code>).</li>
+<li>Fixed false positive overwrite prompt in <code>skim configure</code> when output is an existing directory (now targets <code>skim-config.yaml</code> inside it).</li>
+</ul>
+<h2 id="043-2026-01-15"><a href="https://github.com/Townk/skim/compare/v0.4.2...v0.4.3">0.4.3</a> - 2026-01-15<a class="headerlink" href="#043-2026-01-15" title="Permanent link">&para;</a></h2>
+<h3 id="added_5">Added<a class="headerlink" href="#added_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Version validation script (<code>scripts/validate_version.py</code>)</li>
+<li>Git hooks for release automation (<code>scripts/hooks/</code>)</li>
+<li>Hook setup script (<code>scripts/setup-hooks.sh</code>)</li>
+</ul>
+<h3 id="changed_7">Changed<a class="headerlink" href="#changed_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Release workflow now supports both dev and release versions from
+  <code>pyproject.toml</code></li>
+<li>Renamed <code>prerelease.yml</code> to <code>release.yml</code></li>
+<li>Release automation via <code>reference-transaction</code> hook auto-bumps and pushes
+  dev version after release push</li>
+</ul>
+<h2 id="042-2026-01-15"><a href="https://github.com/Townk/skim/compare/v0.4.1...v0.4.2">0.4.2</a> - 2026-01-15<a class="headerlink" href="#042-2026-01-15" title="Permanent link">&para;</a></h2>
+<h3 id="added_6">Added<a class="headerlink" href="#added_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Overwrite protection with interactive confirmation prompt when output files
+  exist</li>
+<li><code>--force</code> flag for <code>skim generate</code> to skip overwrite confirmation</li>
+<li>OpenSpec framework for AI-assisted change management (<code>openspec/</code>)</li>
+</ul>
+<h2 id="041-2026-01-14"><a href="https://github.com/Townk/skim/compare/v0.4.0...v0.4.1">0.4.1</a> - 2026-01-14<a class="headerlink" href="#041-2026-01-14" title="Permanent link">&para;</a></h2>
+<h3 id="added_7">Added<a class="headerlink" href="#added_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Pre-release GitHub Actions workflow to auto-build versions on commit</li>
+<li>Package keywords and classifiers in <code>pyproject.toml</code></li>
+<li>Automated coverage badge updates via pre-commit hook</li>
+<li>Sphinx documentation theme changed to Furo with GitHub integration</li>
+<li>New helper script <code>scripts/update_coverage.py</code></li>
+</ul>
+<h3 id="changed_8">Changed<a class="headerlink" href="#changed_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Renamed package to <code>qmk-skim</code></li>
+<li>Updated uv build configuration</li>
+<li>Updated README badges for coverage, build status, and PyPI version</li>
+</ul>
+<h2 id="040-2025-01-14"><a href="https://github.com/Townk/skim/releases/tag/v0.4.0">0.4.0</a> - 2025-01-14<a class="headerlink" href="#040-2025-01-14" title="Permanent link">&para;</a></h2>
+<h3 id="added_8">Added<a class="headerlink" href="#added_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Initial public release of skim (Svalboard Keymap Image Maker)</li>
+<li>CLI tool for generating keyboard layout images from keymap files</li>
+<li>Support for Keybard (<code>.kbi</code>), Vial (<code>.vil</code>), and QMK c2json (<code>.json</code>) formats</li>
+<li>SVG and PNG output format support</li>
+<li>Layer selection options (all, overview, specific layers, ranges)</li>
+<li>Configuration file support for customizing appearance</li>
+<li>Configuration generator for extracting metadata from Keybard files</li>
+<li>QMK color.h import support with lightness/saturation adjustment</li>
+<li>Stdin support for piping keymap data</li>
+<li>Comprehensive test suite with 96% code coverage</li>
+<li>Google-style docstrings for all public APIs</li>
+<li>Sphinx documentation with GitHub Pages deployment workflow</li>
+<li>Pre-commit hooks for ruff formatting/linting and basedpyright type checking</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+  <nav class="md-section-nav md-section-nav--bottom" aria-label="Section navigation"><a href="../api/ui/" class="md-section-nav__link md-section-nav__link--prev" rel="prev">
+          <span class="md-section-nav__direction">&laquo; Prev</span>
+          <span class="md-section-nav__title">UI Layer</span>
+        </a><span class="md-section-nav__spacer"></span></nav>
+
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2025 Thiago Alves
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.indexes", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

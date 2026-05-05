@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="320.0" height="131.1264" viewBox="0 0 320.0 131.1264">
+<defs>
+</defs>
+<rect x="0.5" y="0.5" width="319.0" height="130.1264" rx="18.0" ry="18.0" fill="#FFFFFF" stroke="#D4D8DD" stroke-width="1.0" />
+<rect x="10.0" y="10.0" width="300.0" height="72.16" rx="14.432" ry="14.432" fill="#037065" />
+<text x="25.0" y="46.08" font-size="32.472" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white">0 LETTERS</text>
+<text x="25.0" y="88.6544" font-size="32.472" text-anchor="start" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#037065">QWERTY</text>
+</svg>
