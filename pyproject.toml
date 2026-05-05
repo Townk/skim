@@ -62,6 +62,7 @@ docs = [
     "mkdocstrings[python]>=0.27.0",
     "markdown-callouts>=0.4.0",
     "ruff>=0.8.0",  # mkdocstrings uses ruff to format API signatures
+    "mike>=2.1.0",  # versioned doc deploys to the gh-pages branch
 ]
 
 [project.scripts]

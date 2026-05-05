@@ -1,10 +1,16 @@
 site_name: skim
 site_description: Svalboard Keymap Image Maker
 site_author: Thiago Alves
+site_url: https://townk.github.io/skim/
 copyright: Copyright &copy; 2025 Thiago Alves
 repo_url: https://github.com/Townk/skim
 repo_name: Townk/skim
 edit_uri: edit/mainline/docs/
+
+extra:
+  version:
+    provider: mike
+    default: latest
 
 docs_dir: docs
 

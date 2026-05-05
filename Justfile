@@ -95,10 +95,26 @@ docs:
 docs-serve:
     uv run --group docs mkdocs serve --livereload
 
-# Deploy documentation to GitHub Pages
+# Preview every published doc version locally (http://127.0.0.1:8000)
 [group('Documentation')]
-docs-deploy:
-    uv run --group docs mkdocs gh-deploy --force
+docs-serve-versions:
+    uv run --group docs mike serve
+
+# Deploy current source as the "dev" version (what CI does on push to mainline)
+[group('Documentation')]
+docs-deploy-dev:
+    uv run --group docs mike deploy --push --update-aliases dev mainline
+
+# Deploy a tagged version (e.g. `just docs-deploy-version 0.7`) and alias it as "latest"
+[group('Documentation')]
+docs-deploy-version VERSION:
+    uv run --group docs mike deploy --push --update-aliases {{ VERSION }} latest
+    uv run --group docs mike set-default --push latest
+
+# List every deployed doc version on the gh-pages branch
+[group('Documentation')]
+docs-list-versions:
+    uv run --group docs mike list
 
 # Generate TUI screenshots (SVG) into docs/_static/tui/
 [group('Documentation')]
