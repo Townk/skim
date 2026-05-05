@@ -728,6 +728,82 @@ class Border(BaseModel):
     radius: float = 10
 
 
+class LayerConnector(BaseModel):
+    """Styling for the dotted connector paths in the keymap overview.
+
+    The overview links each layer indicator circle to its key on the
+    miniature keymap with a dotted path. This block configures the
+    path's visual rhythm. Both fields follow the
+    :data:`SpacingValue` magnitude rule (``< 1.0`` proportion of doc
+    width, ``>= 1.0`` absolute SVG units, ``"N%"`` string shorthand).
+
+    Attributes:
+        width: Stroke width of the connector path. Default:
+            ``4.375 / 1600`` (~0.27%) of doc width — the legacy
+            magic number tuned to read clearly on the canonical
+            1600-unit overview.
+        dot_spacing: Gap between adjacent dots along the path —
+            controls the visible cadence of the dotted line. Default:
+            ``12.25 / 1600`` (~0.77%) of doc width.
+
+    Example:
+        ```pycon
+        >>> connector = LayerConnector(width=5, dot_spacing="1%")
+        >>> connector.width
+        5.0
+        >>> connector.dot_spacing
+        0.01
+
+        ```
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    width: SpacingValue = Field(default=None)
+    dot_spacing: SpacingValue = Field(default=None)
+
+
+class Strokes(BaseModel):
+    """Configurable stroke widths for the rendered chrome.
+
+    Every line the renderer paints (chip outlines, section rules,
+    layer indicator circles) goes through a stroke-width value here.
+    All fields follow the :data:`SpacingValue` magnitude rule
+    (``< 1.0`` proportion of doc width, ``>= 1.0`` absolute SVG units,
+    ``"N%"`` string shorthand).
+
+    The document border (``output.style.border.width``) is intentionally
+    NOT in this block — :class:`Border` carries radius alongside its
+    stroke width, so it stays its own configuration object.
+
+    Attributes:
+        chip_outline: Stroke around macro and tap-dance chips.
+            Default: ``1.2 / 1600`` (~0.075%) of doc width.
+        header_rule: Stroke of every header rule — the section title
+            stripe rule and the named-macro hairline below the chip.
+            Default: ``1.2 / 1600`` (~0.075%) of doc width.
+        layer_indicator: Stroke of the layer indicator circles in
+            both clusters and the overview's badge column. Default:
+            ``2.0 / 1600`` (~0.125%) of doc width.
+
+    Example:
+        ```pycon
+        >>> strokes = Strokes(chip_outline=2, layer_indicator="0.2%")
+        >>> strokes.chip_outline
+        2.0
+        >>> strokes.layer_indicator
+        0.002
+
+        ```
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    chip_outline: SpacingValue = Field(default=None)
+    header_rule: SpacingValue = Field(default=None)
+    layer_indicator: SpacingValue = Field(default=None)
+
+
 class LayerColor(BaseModel):
     """Color configuration for a keyboard layer.
 
@@ -1035,6 +1111,8 @@ class Style(BaseModel):
     use_layer_colors_on_keys: bool = True
     hold_symbol_position: SplitSidePositionStr = Field(default=SplitSidePosition.OUTWARD)
     border: Border | None = Field(default_factory=Border)
+    layer_connector: LayerConnector = Field(default_factory=LayerConnector)
+    strokes: Strokes = Field(default_factory=Strokes)
     palette: Palette = Field(default_factory=Palette)
     use_system_fonts: bool = False
     show_layer_indicators: bool = True

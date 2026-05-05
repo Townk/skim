@@ -39,6 +39,10 @@ _COUNT_LETTER_SPACING_RATIO = 1.0 / 1600.0
 # rule line below. The strip is sized as ``title_font_size +
 # title_rule_gap`` — top-anchored title, no dangling space above.
 _TITLE_RULE_GAP_RATIO = 9.0 / 1600.0
+# Default proportion (of doc width) for ``header_rule`` when
+# ``Strokes.header_rule`` is left at ``None``. Same value applies to
+# the named-macro hairline rule (was 1.0/1600 in the legacy code,
+# unified here at 1.2/1600 to match the section-stripe rule).
 _RULE_STROKE_RATIO = 1.2 / 1600.0
 
 
@@ -102,6 +106,11 @@ class SectionStripeMetrics:
             base=doc_width,
             default_proportion=_TITLE_RULE_GAP_RATIO,
         )
+        rule_stroke = resolve_spacing(
+            ctx.config.output.style.strokes.header_rule,
+            base=doc_width,
+            default_proportion=_RULE_STROKE_RATIO,
+        )
         return cls(
             title_font_size=title_font_size,
             title_letter_spacing=doc_width * _TITLE_LETTER_SPACING_RATIO,
@@ -109,7 +118,7 @@ class SectionStripeMetrics:
             count_letter_spacing=doc_width * _COUNT_LETTER_SPACING_RATIO,
             title_rule_gap=title_rule_gap,
             rule_offset=title_font_size + title_rule_gap,
-            rule_stroke=doc_width * _RULE_STROKE_RATIO,
+            rule_stroke=rule_stroke,
         )
 
 

@@ -56,6 +56,8 @@ from .styling import derive_accent_line
 
 _CHIP_WIDTH_RATIO = 56.0 / 1600.0
 _CORNER_RADIUS_RATIO = 4.0 / 1600.0
+# Default proportion (of doc width) for ``chip_outline`` when
+# ``Strokes.chip_outline`` is left at ``None``.
 _CHIP_STROKE_WIDTH_RATIO = 1.2 / 1600.0
 _CHIP_INNER_FONT_SIZE_RATIO = 12.0 / 1600.0
 _CHIP_INNER_TEXT_BASELINE_OFFSET_RATIO = 0.5 / 1600.0
@@ -67,8 +69,11 @@ _NAME_FONT_SIZE_RATIO = 13.0 / 1600.0
 # ``font_size + 2 * vertical_padding``.
 _CHIP_PADDING_RATIO = 20.0 / 1600.0
 _CHIP_VERTICAL_PADDING_PROPORTION_OF_CHIP_PADDING = 0.25
-_RULE_INSET_RATIO = 0.5 / 1600.0
-_RULE_STROKE_RATIO = 1.0 / 1600.0
+# Default proportion (of doc width) for the named-macro hairline
+# stroke when ``Strokes.header_rule`` is left at ``None``. Unified
+# with the section-stripe rule at 1.2/1600 (was 1.0/1600 in the
+# legacy code).
+_RULE_STROKE_RATIO = 1.2 / 1600.0
 _PILL_ROW_HEIGHT_RATIO = 22.0 / 1600.0
 _PILL_HEIGHT_RATIO = 18.0 / 1600.0
 _PILL_FONT_SIZE_RATIO = 10.0 / 1600.0
@@ -147,6 +152,9 @@ class MacroMetrics:
     # Named-header extras (chip + name + horizontal rule).
     name_font_size: float
     rule_inset: float
+    """Vertical offset that pulls the hairline rule up by half a
+    stroke so its centred path visually aligns with the chip's
+    stroked bottom edge. Derived: ``rule_stroke / 2``."""
     rule_stroke: float
 
     # Pills (action steps painted to the right of each chip).
@@ -174,7 +182,16 @@ class MacroMetrics:
         """
         doc_m = ctx.document_metrics
         spacing = ctx.config.output.layout.spacing
+        strokes = ctx.config.output.style.strokes
         w = doc_m.doc_width * scale
+        rule_stroke = (
+            resolve_spacing(
+                strokes.header_rule,
+                base=doc_m.doc_width,
+                default_proportion=_RULE_STROKE_RATIO,
+            )
+            * scale
+        )
         action_inset = (
             resolve_spacing(
                 spacing.macro_action_inset,
@@ -203,13 +220,18 @@ class MacroMetrics:
             chip_width=w * _CHIP_WIDTH_RATIO,
             chip_height=chip_height,
             chip_corner_radius=w * _CORNER_RADIUS_RATIO,
-            chip_stroke_width=w * _CHIP_STROKE_WIDTH_RATIO,
+            chip_stroke_width=resolve_spacing(
+                strokes.chip_outline,
+                base=doc_m.doc_width,
+                default_proportion=_CHIP_STROKE_WIDTH_RATIO,
+            )
+            * scale,
             chip_inner_font_size=chip_inner_font_size,
             chip_inner_text_baseline_offset=w * _CHIP_INNER_TEXT_BASELINE_OFFSET_RATIO,
             chip_padding=chip_padding,
             name_font_size=w * _NAME_FONT_SIZE_RATIO,
-            rule_inset=w * _RULE_INSET_RATIO,
-            rule_stroke=w * _RULE_STROKE_RATIO,
+            rule_inset=rule_stroke / 2.0,
+            rule_stroke=rule_stroke,
             pill_row_height=w * _PILL_ROW_HEIGHT_RATIO,
             pill_height=w * _PILL_HEIGHT_RATIO,
             pill_corner_radius=w * _CORNER_RADIUS_RATIO,

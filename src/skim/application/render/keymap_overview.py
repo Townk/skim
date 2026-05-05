@@ -119,9 +119,10 @@ _CONNECTOR_SPACING_RATIO = 0.6
 _CIRCLE_STROKE_WIDTH_RATIO = 2.0 / 1600.0
 _INDICATOR_RECT_PADDING_MULTIPLIER = 6.0
 
-# Connector path stroke styling — the dotted cadence stays legible
-# across canvas sizes because both stroke width and dash gap track
-# ``doc_width``.
+# Default proportions (of doc width) for ``LayerConnector`` fields
+# when they're left at ``None``. The dot length stays hard-coded —
+# it draws each "dot" as essentially a point, an SVG-renderer quirk
+# users have no reason to tune.
 _CONNECTOR_PATH_STROKE_WIDTH_RATIO = 4.375 / 1600
 _CONNECTOR_PATH_DASH_DOT_RATIO = 0.1 / 1600
 _CONNECTOR_PATH_DASH_GAP_RATIO = 12.25 / 1600
@@ -1012,10 +1013,10 @@ def KeymapOverview(
             right=thumb_layer_data.right.thumb,
         )
 
-        rect_offset = (
-            _INDICATOR_RECT_PADDING_MULTIPLIER
-            * config.output.layout.width
-            * _CIRCLE_STROKE_WIDTH_RATIO
+        rect_offset = _INDICATOR_RECT_PADDING_MULTIPLIER * resolve_spacing(
+            config.output.style.strokes.layer_indicator,
+            base=config.output.layout.width,
+            default_proportion=_CIRCLE_STROKE_WIDTH_RATIO,
         )
 
         routing_layout = _OverviewRoutingLayout(
@@ -1115,8 +1116,19 @@ def KeymapOverview(
     thumbs_badge_y = thumb_y + thumb_pad_offset
     cluster_bottom = thumb_y + left_thumb.size.height
     doc_width = config.output.layout.width
-    connector_stroke_width = doc_width * _CONNECTOR_PATH_STROKE_WIDTH_RATIO
-    indicator_stroke_half = doc_width * _CIRCLE_STROKE_WIDTH_RATIO / 2.0
+    connector_stroke_width = resolve_spacing(
+        config.output.style.layer_connector.width,
+        base=doc_width,
+        default_proportion=_CONNECTOR_PATH_STROKE_WIDTH_RATIO,
+    )
+    indicator_stroke_half = (
+        resolve_spacing(
+            config.output.style.strokes.layer_indicator,
+            base=doc_width,
+            default_proportion=_CIRCLE_STROKE_WIDTH_RATIO,
+        )
+        / 2.0
+    )
     connector_stroke_half = connector_stroke_width / 2.0
 
     # Indicator circles paint past the cluster's keys-only edge by
@@ -1181,7 +1193,11 @@ def KeymapOverview(
     }
 
     dot = doc_width * _CONNECTOR_PATH_DASH_DOT_RATIO
-    dash_gap = doc_width * _CONNECTOR_PATH_DASH_GAP_RATIO
+    dash_gap = resolve_spacing(
+        config.output.style.layer_connector.dot_spacing,
+        base=doc_width,
+        default_proportion=_CONNECTOR_PATH_DASH_GAP_RATIO,
+    )
 
     size = Size(body_width, body_height)
 

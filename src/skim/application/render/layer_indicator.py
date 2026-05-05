@@ -39,6 +39,8 @@ from dataclasses import dataclass
 
 import drawsvg as draw
 
+from skim.data import resolve_spacing
+
 from .composable import Composable
 from .font import Font
 from .primitives import CompassDirection, MetricsComponent, Point, Size
@@ -52,6 +54,8 @@ from .rich_text import RichText
 # ---------------------------------------------------------------------------
 
 _CONNECTOR_WIDTH_RATIO = 2.0 / 1600.0
+# Default proportion (of doc width) for ``layer_indicator`` stroke
+# when ``Strokes.layer_indicator`` is left at ``None``.
 _CIRCLE_STROKE_WIDTH_RATIO = 2.0 / 1600.0
 _ENDPOINT_RADIUS_RATIO = 2.0 / 1600.0
 _ENDPOINT_INSET_RATIO = 4.0 / 1600.0
@@ -135,7 +139,11 @@ def LayerIndicator(
     radius = circle_diameter / 2.0
     doc_width = ctx.config.output.layout.width
     connector_width = doc_width * _CONNECTOR_WIDTH_RATIO
-    circle_stroke_width = doc_width * _CIRCLE_STROKE_WIDTH_RATIO
+    circle_stroke_width = resolve_spacing(
+        ctx.config.output.style.strokes.layer_indicator,
+        base=doc_width,
+        default_proportion=_CIRCLE_STROKE_WIDTH_RATIO,
+    )
     endpoint_radius = doc_width * _ENDPOINT_RADIUS_RATIO
     endpoint_inset = doc_width * _ENDPOINT_INSET_RATIO
 

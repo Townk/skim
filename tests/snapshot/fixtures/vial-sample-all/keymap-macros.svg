@@ -9,7 +9,7 @@
 <text x="43.0" y="112.0" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#CF9155">MACROS</text>
 <text x="636.0" y="112.0" font-size="10.0" text-anchor="end" dominant-baseline="text-before-edge" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">7 ENTRIES</text>
 <path d="M43.0,132.0 L636.0,132.0" stroke="#CF9155" stroke-opacity="0.5" stroke-width="1.2" />
-<rect x="43.0" y="156.0" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.8" />
+<rect x="43.0" y="156.0" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.7999999999999998" />
 <text x="69.0" y="173.25" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="91.0" y="172.25" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">0</text>
 <rect x="145.0" y="159.0" width="86.0" height="27.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
@@ -20,13 +20,13 @@
 <path d="M250.5,177.0 L259.5,177.0 L255.0,168.0 Z" fill="black" />
 <text x="276.75" y="173.25" font-size="15.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰌨 </text>
 <text x="292.75" y="172.25" font-size="15.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">15</text>
-<rect x="43.0" y="202.5" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.8" />
+<rect x="43.0" y="202.5" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.7999999999999998" />
 <text x="69.0" y="219.75" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="91.0" y="218.75" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">4</text>
 <rect x="145.0" y="205.5" width="70.0" height="27.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <text x="160.0" y="219.0" font-size="13.5" fill="black" font-weight="700" font-style="italic" text-anchor="middle" dominant-baseline="central" font-family="'Roboto', sans-serif">T</text>
 <text x="181.75" y="219.75" font-size="15.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">;qj</text>
-<rect x="43.0" y="249.0" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.8" />
+<rect x="43.0" y="249.0" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.7999999999999998" />
 <text x="69.0" y="266.25" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="91.0" y="265.25" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">5</text>
 <rect x="145.0" y="252.0" width="79.0" height="27.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
@@ -37,7 +37,7 @@
 <circle cx="248.0" cy="265.5" r="4.5" fill="black" />
 <text x="269.75" y="266.25" font-size="15.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰁨 </text>
 <text x="287.75" y="266.25" font-size="15.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰍽</text>
-<rect x="43.0" y="295.5" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.8" />
+<rect x="43.0" y="295.5" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.7999999999999998" />
 <text x="69.0" y="312.75" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="91.0" y="311.75" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">6</text>
 <rect x="145.0" y="298.5" width="66.0" height="27.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
@@ -66,7 +66,7 @@
 <rect x="570.0" y="298.5" width="66.0" height="27.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <path d="M580.5,316.5 L589.5,316.5 L585.0,307.5 Z" fill="black" />
 <text x="608.75" y="312.75" font-size="15.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">1</text>
-<rect x="43.0" y="342.0" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.8" />
+<rect x="43.0" y="342.0" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.7999999999999998" />
 <text x="69.0" y="359.25" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="91.0" y="358.25" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">7</text>
 <rect x="145.0" y="345.0" width="66.0" height="27.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
@@ -95,7 +95,7 @@
 <rect x="570.0" y="345.0" width="66.0" height="27.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <path d="M580.5,363.0 L589.5,363.0 L585.0,354.0 Z" fill="black" />
 <text x="608.75" y="359.25" font-size="15.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">2</text>
-<rect x="43.0" y="388.5" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.8" />
+<rect x="43.0" y="388.5" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.7999999999999998" />
 <text x="69.0" y="405.75" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="91.0" y="404.75" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">8</text>
 <rect x="145.0" y="391.5" width="66.0" height="27.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
@@ -124,7 +124,7 @@
 <rect x="570.0" y="391.5" width="66.0" height="27.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <path d="M580.5,409.5 L589.5,409.5 L585.0,400.5 Z" fill="black" />
 <text x="608.75" y="405.75" font-size="15.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">4</text>
-<rect x="43.0" y="435.0" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.8" />
+<rect x="43.0" y="435.0" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="#89511C" stroke="#CF9155" stroke-width="1.7999999999999998" />
 <text x="64.0" y="452.25" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="86.0" y="451.25" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">20</text>
 <rect x="145.0" y="438.0" width="66.0" height="27.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />

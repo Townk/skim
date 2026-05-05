@@ -1117,6 +1117,287 @@ def _build_thumb_key_gap_mock() -> draw.Drawing:
 
 
 # ---------------------------------------------------------------------------
+# Stroke-width mocks — overlay a rose-red stroke on top of the real
+# rendered chrome at the configured width, so the user sees what the
+# stroke value actually paints. The underlying greyscale render gives
+# context (where the stroke sits inside the component).
+# ---------------------------------------------------------------------------
+
+
+def _build_chip_outline_mock() -> draw.Drawing:
+    """Highlight the ``Strokes.chip_outline`` value as a rose stroke
+    overlaid on a TapDance chip outline.
+    """
+    from skim.application.render.adjustable_text import measure_text_width
+    from skim.application.render.font import Font
+
+    config = _grey_config()
+    keymap = _empty_keymap()
+    ctx = RenderContext.build(config=config, keymap=keymap)
+
+    with using_render_context(ctx):
+        metrics = TapDanceMetrics.from_ctx(ctx)
+        name_text = "MY-TD"
+        natural_name_w = measure_text_width(name_text, Font.FINGER_KEY, metrics.name_font_size)
+        name_column_width = 2 * metrics.chip_padding + natural_name_w
+        outline_width = metrics.chip_width + name_column_width
+
+        row = TapDanceRow(
+            td=_grey_td(idx="0", name=name_text),
+            accent_fill=_GREY_NEUTRAL,
+            accent_line=_GREY_BORDER,
+            text_color=_GREY_TEXT,
+            name_column_width=name_column_width,
+        )
+
+        offset = 12.0
+        canvas_w = outline_width + 2 * offset
+        canvas_h = row.size.height + 2 * offset
+        d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+        row.draw_at(d, Point(offset, offset))
+
+        # Rose overlay on the chip's outlined path. ``chip_corner_radius``
+        # matches the underlying outline so the rose sits flush.
+        d.append(
+            draw.Rectangle(
+                x=offset,
+                y=offset,
+                width=outline_width,
+                height=metrics.row_height,
+                rx=metrics.chip_corner_radius,
+                ry=metrics.chip_corner_radius,
+                fill="none",
+                stroke=_HIGHLIGHT,
+                stroke_width=metrics.chip_stroke_width,
+            )
+        )
+
+    return d
+
+
+def _build_header_rule_stroke_mock() -> draw.Drawing:
+    """Highlight ``Strokes.header_rule`` as a rose-coloured rule line
+    underneath a SectionStripe title.
+    """
+    config = _grey_config()
+    keymap = _empty_keymap()
+    ctx = RenderContext.build(config=config, keymap=keymap)
+
+    with using_render_context(ctx):
+        metrics = SectionStripeMetrics.from_ctx(ctx)
+        stripe = SectionStripe(
+            title="MACROS", count=3, width=320.0, accent_line=_GREY_BORDER
+        )
+        pad = 24.0
+        canvas_w = stripe.size.width + 2 * pad
+        canvas_h = stripe.size.height + 2 * pad
+        d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+
+        x = pad
+        y = pad
+        stripe.draw_at(d, Point(x, y))
+
+        # Rose overlay on the rule line at the same y position the
+        # stripe paints its own rule.
+        d.append(
+            draw.Line(
+                sx=x,
+                sy=y + metrics.rule_offset,
+                ex=x + stripe.size.width,
+                ey=y + metrics.rule_offset,
+                stroke=_HIGHLIGHT,
+                stroke_width=metrics.rule_stroke,
+            )
+        )
+
+    return d
+
+
+def _build_layer_indicator_stroke_mock() -> draw.Drawing:
+    """Highlight ``Strokes.layer_indicator`` as a rose-coloured stroke
+    on the indicator circle next to a finger cluster's north key.
+    """
+    config = _grey_config()
+    keymap = _empty_keymap()
+    ctx = RenderContext.build(config=config, keymap=keymap)
+
+    blank = SvalboardTargetKey(label="")
+    cluster_width = 240.0
+    cluster_data = FingerClusterData(
+        blank, north_key=SvalboardTargetKey(label="", layer_switch=2)
+    )
+
+    with using_render_context(ctx):
+        cluster = FingerCluster(
+            cluster=cluster_data,
+            side=KeyboardSide.LEFT,
+            width=cluster_width,
+            layer_qmk_index=0,
+            has_double_south=False,
+            use_layer_colors_on_keys=False,
+            show_layer_indicators=True,
+        )
+
+        from skim.application.render.svalboard_clusters import _compute_slots
+
+        metrics = cluster.metrics
+        padding = 24.0
+        canvas_w = metrics.overflow_size.width + padding
+        canvas_h = metrics.overflow_size.height + padding
+        d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+
+        cluster_origin_x = padding / 2 - metrics.overflow_offset.x
+        cluster_origin_y = padding / 2 - metrics.overflow_offset.y
+        cluster.draw_at(d, Point(cluster_origin_x, cluster_origin_y))
+
+        slots = _compute_slots(cluster_width=cluster_width, has_double_south=False)
+        north_indicator = metrics.indicators.north_key
+        if north_indicator is not None:
+            key_origin_y = cluster_origin_y + slots.north_origin.y
+            key_origin_x = cluster_origin_x + slots.north_origin.x
+            cx = key_origin_x + north_indicator.circle_center.x
+            cy = key_origin_y + north_indicator.circle_center.y
+
+            from skim.application.render.layer_indicator import _CIRCLE_STROKE_WIDTH_RATIO
+            from skim.data import resolve_spacing
+
+            stroke_w = resolve_spacing(
+                ctx.config.output.style.strokes.layer_indicator,
+                base=ctx.document_metrics.doc_width,
+                default_proportion=_CIRCLE_STROKE_WIDTH_RATIO,
+            )
+            d.append(
+                draw.Circle(
+                    cx=cx,
+                    cy=cy,
+                    r=north_indicator.circle_radius,
+                    fill="none",
+                    stroke=_HIGHLIGHT,
+                    stroke_width=stroke_w,
+                )
+            )
+
+    return d
+
+
+def _build_layer_connector_width_mock() -> draw.Drawing:
+    """Highlight ``LayerConnector.width`` as a rose-coloured dotted
+    path mirroring the overview's connector chrome.
+    """
+    config = _grey_config()
+    keymap = _empty_keymap()
+    ctx = RenderContext.build(config=config, keymap=keymap)
+
+    with using_render_context(ctx):
+        from skim.application.render.keymap_overview import (
+            _CONNECTOR_PATH_DASH_DOT_RATIO,
+            _CONNECTOR_PATH_DASH_GAP_RATIO,
+            _CONNECTOR_PATH_STROKE_WIDTH_RATIO,
+        )
+        from skim.data import resolve_spacing
+
+        doc_width = ctx.document_metrics.doc_width
+        stroke_w = resolve_spacing(
+            ctx.config.output.style.layer_connector.width,
+            base=doc_width,
+            default_proportion=_CONNECTOR_PATH_STROKE_WIDTH_RATIO,
+        )
+        dot = doc_width * _CONNECTOR_PATH_DASH_DOT_RATIO
+        dash_gap = resolve_spacing(
+            ctx.config.output.style.layer_connector.dot_spacing,
+            base=doc_width,
+            default_proportion=_CONNECTOR_PATH_DASH_GAP_RATIO,
+        )
+
+        # Short horizontal connector path so the dotted cadence reads.
+        canvas_w = 320.0
+        canvas_h = 60.0
+        d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+        d.append(
+            draw.Line(
+                sx=20,
+                sy=canvas_h / 2,
+                ex=canvas_w - 20,
+                ey=canvas_h / 2,
+                stroke=_HIGHLIGHT,
+                stroke_width=stroke_w,
+                stroke_linecap="round",
+                stroke_dasharray=f"{dot} {dash_gap}",
+                opacity=0.85,
+            )
+        )
+
+    return d
+
+
+def _build_layer_connector_dot_spacing_mock() -> draw.Drawing:
+    """Highlight ``LayerConnector.dot_spacing`` as a rose band sitting
+    in the gap between two adjacent dots on a grey connector path.
+    """
+    config = _grey_config()
+    keymap = _empty_keymap()
+    ctx = RenderContext.build(config=config, keymap=keymap)
+
+    with using_render_context(ctx):
+        from skim.application.render.keymap_overview import (
+            _CONNECTOR_PATH_DASH_DOT_RATIO,
+            _CONNECTOR_PATH_DASH_GAP_RATIO,
+            _CONNECTOR_PATH_STROKE_WIDTH_RATIO,
+        )
+        from skim.data import resolve_spacing
+
+        doc_width = ctx.document_metrics.doc_width
+        stroke_w = resolve_spacing(
+            ctx.config.output.style.layer_connector.width,
+            base=doc_width,
+            default_proportion=_CONNECTOR_PATH_STROKE_WIDTH_RATIO,
+        )
+        dot = doc_width * _CONNECTOR_PATH_DASH_DOT_RATIO
+        dash_gap = resolve_spacing(
+            ctx.config.output.style.layer_connector.dot_spacing,
+            base=doc_width,
+            default_proportion=_CONNECTOR_PATH_DASH_GAP_RATIO,
+        )
+
+        canvas_w = 320.0
+        canvas_h = 60.0
+        d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+        line_x_start = 20.0
+        line_x_end = canvas_w - 20.0
+        cy = canvas_h / 2
+        d.append(
+            draw.Line(
+                sx=line_x_start,
+                sy=cy,
+                ex=line_x_end,
+                ey=cy,
+                stroke=_GREY_BORDER,
+                stroke_width=stroke_w,
+                stroke_linecap="round",
+                stroke_dasharray=f"{dot} {dash_gap}",
+                opacity=0.85,
+            )
+        )
+
+        # Highlight the gap that sits between the 3rd and 4th dots.
+        # Each cycle is ``dot + dash_gap``; gap N spans
+        # ``[line_start + N * cycle + dot, line_start + (N+1) * cycle]``.
+        cycle = dot + dash_gap
+        gap_idx = 3
+        gap_start_x = line_x_start + gap_idx * cycle + dot
+        gap_height = max(stroke_w * 4, 12.0)
+        _highlight_rect(
+            d,
+            x=gap_start_x,
+            y=cy - gap_height / 2,
+            width=dash_gap,
+            height=gap_height,
+        )
+
+    return d
+
+
+# ---------------------------------------------------------------------------
 # Registry & main
 # ---------------------------------------------------------------------------
 
@@ -1141,6 +1422,12 @@ BUILDERS: dict[str, MockBuilder] = {
     "macro-action-inset": _build_macro_action_inset_mock,
     # Overview / chrome
     "layer-badge-inset": _build_layer_badge_inset_mock,
+    # Strokes
+    "chip-outline-stroke": _build_chip_outline_mock,
+    "header-rule-stroke": _build_header_rule_stroke_mock,
+    "layer-indicator-stroke": _build_layer_indicator_stroke_mock,
+    "layer-connector-width": _build_layer_connector_width_mock,
+    "layer-connector-dot-spacing": _build_layer_connector_dot_spacing_mock,
     # NOTE: ``layer_indicator_endpoint_inset`` is omitted — the connector
     # path it inset-trims only renders inside the keymap overview, which
     # would dwarf the rest of these mocks. Will revisit if the value

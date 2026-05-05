@@ -14,7 +14,7 @@
 <text x="463.0" y="156.0" font-size="13.5" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="black" opacity="1.0" letter_spacing="2.25">DOUBLE-TAP</text>
 <text x="592.0" y="156.0" font-size="13.5" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="black" opacity="1.0" letter_spacing="2.25">TAP &amp; HOLD</text>
 <path d="M49.0,183.64285714285714 L121.00000000000001,183.64285714285714 A6.0,6.0,0,0,1,127.00000000000001,189.64285714285714 L127.00000000000001,210.64285714285714 A6.0,6.0,0,0,1,121.00000000000001,216.64285714285714 L49.0,216.64285714285714 A6.0,6.0,0,0,1,43.0,210.64285714285714 L43.0,189.64285714285714 A6.0,6.0,0,0,1,49.0,183.64285714285714 Z" fill="#41687F" />
-<rect x="43.0" y="183.64285714285714" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="none" stroke="#8BA5B5" stroke-width="1.8" />
+<rect x="43.0" y="183.64285714285714" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="none" stroke="#8BA5B5" stroke-width="1.7999999999999998" />
 <text x="69.0" y="200.89285714285714" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󰌏 </text>
 <text x="91.0" y="199.39285714285714" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">0</text>
 <rect x="145.0" y="183.64285714285714" width="120.0" height="33.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
@@ -30,7 +30,7 @@
 <text x="574.5" y="200.89285714285714" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0"> </text>
 <text x="595.5" y="199.89285714285714" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">²³</text>
 <path d="M49.0,230.14285714285714 L121.00000000000001,230.14285714285714 A6.0,6.0,0,0,1,127.00000000000001,236.14285714285714 L127.00000000000001,257.1428571428571 A6.0,6.0,0,0,1,121.00000000000001,263.1428571428571 L49.0,263.1428571428571 A6.0,6.0,0,0,1,43.0,257.1428571428571 L43.0,236.14285714285714 A6.0,6.0,0,0,1,49.0,230.14285714285714 Z" fill="#41687F" />
-<rect x="43.0" y="230.14285714285714" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="none" stroke="#8BA5B5" stroke-width="1.8" />
+<rect x="43.0" y="230.14285714285714" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="none" stroke="#8BA5B5" stroke-width="1.7999999999999998" />
 <text x="69.0" y="247.39285714285714" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󰌏 </text>
 <text x="91.0" y="245.89285714285714" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">1</text>
 <rect x="145.0" y="230.14285714285714" width="120.0" height="33.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
@@ -43,7 +43,7 @@
 <rect x="532.0" y="230.14285714285714" width="120.0" height="33.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <text x="584.5" y="247.39285714285714" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰘳</text>
 <path d="M49.0,276.6428571428571 L121.00000000000001,276.6428571428571 A6.0,6.0,0,0,1,127.00000000000001,282.6428571428571 L127.00000000000001,303.6428571428571 A6.0,6.0,0,0,1,121.00000000000001,309.6428571428571 L49.0,309.6428571428571 A6.0,6.0,0,0,1,43.0,303.6428571428571 L43.0,282.6428571428571 A6.0,6.0,0,0,1,49.0,276.6428571428571 Z" fill="#41687F" />
-<rect x="43.0" y="276.6428571428571" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="none" stroke="#8BA5B5" stroke-width="1.8" />
+<rect x="43.0" y="276.6428571428571" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="none" stroke="#8BA5B5" stroke-width="1.7999999999999998" />
 <text x="69.0" y="293.8928571428571" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󰌏 </text>
 <text x="91.0" y="292.3928571428571" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">2</text>
 <rect x="145.0" y="276.6428571428571" width="120.0" height="33.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
@@ -53,7 +53,7 @@
 <rect x="403.0" y="276.6428571428571" width="120.0" height="33.0" rx="6.0" ry="6.0" fill="none" stroke="black" stroke-opacity="0.08" stroke-dasharray="3 3" />
 <rect x="532.0" y="276.6428571428571" width="120.0" height="33.0" rx="6.0" ry="6.0" fill="none" stroke="black" stroke-opacity="0.08" stroke-dasharray="3 3" />
 <path d="M49.0,323.1428571428571 L121.00000000000001,323.1428571428571 A6.0,6.0,0,0,1,127.00000000000001,329.1428571428571 L127.00000000000001,350.1428571428571 A6.0,6.0,0,0,1,121.00000000000001,356.1428571428571 L49.0,356.1428571428571 A6.0,6.0,0,0,1,43.0,350.1428571428571 L43.0,329.1428571428571 A6.0,6.0,0,0,1,49.0,323.1428571428571 Z" fill="#41687F" />
-<rect x="43.0" y="323.1428571428571" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="none" stroke="#8BA5B5" stroke-width="1.8" />
+<rect x="43.0" y="323.1428571428571" width="84.00000000000001" height="33.0" rx="6.0" ry="6.0" fill="none" stroke="#8BA5B5" stroke-width="1.7999999999999998" />
 <text x="69.0" y="340.3928571428571" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󰌏 </text>
 <text x="91.0" y="338.8928571428571" font-size="18.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">3</text>
 <rect x="145.0" y="323.1428571428571" width="120.0" height="33.0" rx="6.0" ry="6.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />

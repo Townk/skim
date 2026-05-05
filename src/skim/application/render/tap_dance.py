@@ -58,6 +58,8 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 _CHIP_WIDTH_RATIO = 56.0 / 1600.0
+# Default proportion (of doc width) for ``chip_outline`` when
+# ``Strokes.chip_outline`` is left at ``None``.
 _CHIP_STROKE_WIDTH_RATIO = 1.2 / 1600.0
 _CHIP_CORNER_RADIUS_RATIO = 4.0 / 1600.0
 _CHIP_INNER_FONT_SIZE_RATIO = 12.0 / 1600.0
@@ -169,6 +171,7 @@ class TapDanceMetrics:
         """
         doc_m = ctx.document_metrics
         spacing = ctx.config.output.layout.spacing
+        strokes = ctx.config.output.style.strokes
         w = doc_m.doc_width * scale
         chip_padding = (
             resolve_spacing(
@@ -188,7 +191,12 @@ class TapDanceMetrics:
         )
         return cls(
             chip_width=w * _CHIP_WIDTH_RATIO,
-            chip_stroke_width=w * _CHIP_STROKE_WIDTH_RATIO,
+            chip_stroke_width=resolve_spacing(
+                strokes.chip_outline,
+                base=doc_m.doc_width,
+                default_proportion=_CHIP_STROKE_WIDTH_RATIO,
+            )
+            * scale,
             chip_corner_radius=w * _CHIP_CORNER_RADIUS_RATIO,
             chip_inner_font_size=w * _CHIP_INNER_FONT_SIZE_RATIO,
             chip_inner_text_baseline_offset=w * _CHIP_INNER_TEXT_BASELINE_OFFSET_RATIO,
