@@ -732,12 +732,15 @@ class LayerConnector(BaseModel):
     """Styling for the dotted connector paths in the keymap overview.
 
     The overview links each layer indicator circle to its key on the
-    miniature keymap with a dotted path. This block configures the
-    path's visual rhythm. Both fields follow the
-    :data:`SpacingValue` magnitude rule (``< 1.0`` proportion of doc
-    width, ``>= 1.0`` absolute SVG units, ``"N%"`` string shorthand).
+    miniature keymap with a dotted path. This block configures
+    visibility, stroke, and dotted cadence. The two stroke / spacing
+    fields follow the :data:`SpacingValue` magnitude rule (``< 1.0``
+    proportion of doc width, ``>= 1.0`` absolute SVG units, ``"N%"``
+    string shorthand).
 
     Attributes:
+        show: Whether to draw connector paths in the overview at all.
+            Defaults to ``True``.
         width: Stroke width of the connector path. Default:
             ``4.375 / 1600`` (~0.27%) of doc width — the legacy
             magic number tuned to read clearly on the canonical
@@ -748,7 +751,9 @@ class LayerConnector(BaseModel):
 
     Example:
         ```pycon
-        >>> connector = LayerConnector(width=5, dot_spacing="1%")
+        >>> connector = LayerConnector(show=False, width=5, dot_spacing="1%")
+        >>> connector.show
+        False
         >>> connector.width
         5.0
         >>> connector.dot_spacing
@@ -759,22 +764,65 @@ class LayerConnector(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    show: bool = True
     width: SpacingValue = Field(default=None)
     dot_spacing: SpacingValue = Field(default=None)
+
+
+class LayerIndicator(BaseModel):
+    """Styling for the layer-indicator badges painted next to
+    layer-switch keys in each cluster (and the matching badges in
+    the overview's ``LAYERS`` column).
+
+    Mirrors :class:`LayerConnector` — visibility flag plus a stroke
+    width that follows the :data:`SpacingValue` magnitude rule
+    (``< 1.0`` proportion of doc width, ``>= 1.0`` absolute SVG
+    units, ``"N%"`` string shorthand).
+
+    The gap between an outer key's edge and its indicator circle
+    lives elsewhere, on
+    ``output.layout.spacing.layer_indicator_spacing``, since it's a
+    spacing value that applies between two elements rather than a
+    property of the indicator itself.
+
+    Attributes:
+        show: Whether to draw layer-indicator badges. Defaults to
+            ``True``.
+        width: Stroke width of the indicator circle. Default:
+            ``2.0 / 1600`` (~0.125%) of doc width.
+
+    Example:
+        ```pycon
+        >>> indicator = LayerIndicator(show=True, width=3)
+        >>> indicator.show
+        True
+        >>> indicator.width
+        3.0
+
+        ```
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    show: bool = True
+    width: SpacingValue = Field(default=None)
 
 
 class Strokes(BaseModel):
     """Configurable stroke widths for the rendered chrome.
 
-    Every line the renderer paints (chip outlines, section rules,
-    layer indicator circles) goes through a stroke-width value here.
-    All fields follow the :data:`SpacingValue` magnitude rule
-    (``< 1.0`` proportion of doc width, ``>= 1.0`` absolute SVG units,
-    ``"N%"`` string shorthand).
+    Two stroke widths live here; both follow the :data:`SpacingValue`
+    magnitude rule (``< 1.0`` proportion of doc width, ``>= 1.0``
+    absolute SVG units, ``"N%"`` string shorthand).
 
-    The document border (``output.style.border.width``) is intentionally
-    NOT in this block — :class:`Border` carries radius alongside its
-    stroke width, so it stays its own configuration object.
+    Three stroke values live elsewhere because they're tied to a
+    visibility flag or other styling on the same conceptual element:
+
+    * ``output.style.border.width`` — paired with ``Border.radius``.
+    * ``output.style.layer_connector.width`` — paired with
+      ``layer_connector.show`` and ``dot_spacing``.
+    * ``output.style.layer_indicator.width`` — paired with
+      ``layer_indicator.show``.
 
     Attributes:
         chip_outline: Stroke around macro and tap-dance chips.
@@ -782,17 +830,14 @@ class Strokes(BaseModel):
         header_rule: Stroke of every header rule — the section title
             stripe rule and the named-macro hairline below the chip.
             Default: ``1.2 / 1600`` (~0.075%) of doc width.
-        layer_indicator: Stroke of the layer indicator circles in
-            both clusters and the overview's badge column. Default:
-            ``2.0 / 1600`` (~0.125%) of doc width.
 
     Example:
         ```pycon
-        >>> strokes = Strokes(chip_outline=2, layer_indicator="0.2%")
+        >>> strokes = Strokes(chip_outline=2, header_rule="0.1%")
         >>> strokes.chip_outline
         2.0
-        >>> strokes.layer_indicator
-        0.002
+        >>> strokes.header_rule
+        0.001
 
         ```
     """
@@ -801,7 +846,6 @@ class Strokes(BaseModel):
 
     chip_outline: SpacingValue = Field(default=None)
     header_rule: SpacingValue = Field(default=None)
-    layer_indicator: SpacingValue = Field(default=None)
 
 
 class LayerColor(BaseModel):
@@ -1043,6 +1087,141 @@ class SymbolLegendFlow(str, Enum):
 SymbolLegendFlowStr = Annotated[SymbolLegendFlow, BeforeValidator(lambda v: SymbolLegendFlow(v))]
 
 
+class MacrosLegend(BaseModel):
+    """Configuration for the macros legend table.
+
+    Controls visibility (whether the macros legend renders inside
+    per-layer / overview images) and the body-scale multiplier
+    applied when the macros are rendered as a standalone image.
+
+    Attributes:
+        show: Whether to embed the macros legend in per-layer and
+            overview images. Defaults to ``True``.
+        scale: Body-scale multiplier for the standalone macros image
+            (the artifact ``skim generate -l macros`` produces). Body
+            chips and pills scale by this factor; chrome (title,
+            footer, outer padding) stays at the unscaled per-image
+            size. Defaults to ``1.5``.
+
+    Example:
+        ```pycon
+        >>> macros = MacrosLegend(show=True, scale=2.0)
+        >>> macros.scale
+        2.0
+
+        ```
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    show: bool = True
+    scale: float = Field(default=1.5, gt=0)
+
+
+class TapDancesLegend(BaseModel):
+    """Configuration for the tap-dances legend table.
+
+    Mirrors :class:`MacrosLegend` — visibility plus a body-scale
+    multiplier for the standalone tap-dances image.
+
+    Attributes:
+        show: Whether to embed the tap-dances legend in per-layer and
+            overview images. Defaults to ``True``.
+        scale: Body-scale multiplier for the standalone tap-dances
+            image. Defaults to ``1.5``.
+
+    Example:
+        ```pycon
+        >>> td = TapDancesLegend(show=False)
+        >>> td.show
+        False
+        >>> td.scale
+        1.5
+
+        ```
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    show: bool = True
+    scale: float = Field(default=1.5, gt=0)
+
+
+class SymbolsLegend(BaseModel):
+    """Configuration for the symbols legend table.
+
+    Carries the same visibility / scale fields as the macros and
+    tap-dances legends, plus two layout knobs unique to the symbol
+    table (the multi-column layout's flow direction and column count).
+
+    Attributes:
+        show: Whether to embed the symbol legend in per-layer and
+            overview images. Defaults to ``True``.
+        scale: Body-scale multiplier for the standalone symbols image.
+            Defaults to ``1.5``.
+        flow: Flow direction for the multi-column layout.
+            ``COLUMN_MAJOR`` (default) fills each column top-to-bottom
+            before moving to the next. ``ROW_MAJOR`` fills each row
+            left-to-right before dropping to the next row.
+        columns: When set, force the standalone symbols image to lay
+            out at exactly this many columns and shrink the canvas to
+            fit the resulting natural width. ``None`` (default) lets
+            the table pick the largest column count that fits the
+            canvas budget — current per-layer / overview behaviour.
+
+    Example:
+        ```pycon
+        >>> symbols = SymbolsLegend(columns=3, flow="row")
+        >>> symbols.columns
+        3
+        >>> symbols.flow
+        <SymbolLegendFlow.ROW_MAJOR: 'row'>
+
+        ```
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    show: bool = True
+    scale: float = Field(default=1.5, gt=0)
+    flow: SymbolLegendFlowStr = Field(default=SymbolLegendFlow.COLUMN_MAJOR)
+    columns: int | None = Field(default=None, gt=0)
+
+
+class LegendTables(BaseModel):
+    """Container for the three legend tables Skim renders alongside
+    the keymap: macros, tap-dances, and symbols.
+
+    Each sub-block carries its own visibility flag and standalone-image
+    body-scale multiplier (plus, for symbols, a flow direction and
+    column count).
+
+    Attributes:
+        macros: Configuration for the macros legend.
+        tap_dances: Configuration for the tap-dances legend.
+        symbols: Configuration for the symbol legend.
+
+    Example:
+        ```pycon
+        >>> legends = LegendTables(
+        ...     macros=MacrosLegend(show=False),
+        ...     symbols=SymbolsLegend(scale=2.0, columns=4),
+        ... )
+        >>> legends.macros.show
+        False
+        >>> legends.symbols.columns
+        4
+
+        ```
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    macros: MacrosLegend = Field(default_factory=MacrosLegend)
+    tap_dances: TapDancesLegend = Field(default_factory=TapDancesLegend)
+    symbols: SymbolsLegend = Field(default_factory=SymbolsLegend)
+
+
 class Style(BaseModel):
     """Visual styling configuration for keymap images.
 
@@ -1057,42 +1236,27 @@ class Style(BaseModel):
         hold_symbol_position: Where to place the "hold" portion of
             hold-tap keys relative to the "tap" portion. See
             :class:`SplitSidePosition` for options. Defaults to OUTWARD.
-        border: Border styling configuration, or None to disable borders.
-            Defaults to a Border instance with default values.
-        palette: Color palette configuration for the entire keyboard.
-            Defaults to a Palette instance with default values.
+        use_system_fonts: When True, the SVG references system fonts by
+            name instead of embedding the bundled font subsets. Smaller
+            file size; viewers without those fonts installed will see a
+            fallback. Defaults to False.
         show_transparent_fallthrough: When True (default), transparent
             keycodes (KC_TRNS / _______) on layers above 0 render the
             same label as layer 0 in a faded "ghost" color. Set False to
             leave transparent keys blank.
-        show_special_keys_legend: When True (default), per-layer SVGs
-            include a legend table of macros and tap-dances used on the
-            layer, and the overview SVG includes a full legend of all
-            macros and tap-dances in the keymap. Set False to omit
-            both legends entirely.
-        show_symbol_legend: When True (default), per-layer SVGs include
-            a symbol legend describing the non-obvious glyphs used on
-            the layer. The overview includes symbols across all rendered
-            layers. Set False to omit the symbol legend entirely.
-        symbol_legend_flow: Flow direction for the symbol legend's
-            multi-column layout. ``COLUMN_MAJOR`` (default) fills each
-            column top-to-bottom before moving to the next. ``ROW_MAJOR``
-            fills each row left-to-right before dropping to the next row.
-        symbol_legend_columns: When set, force the standalone symbols
-            image to lay out at exactly this many columns and shrink the
-            canvas to fit the resulting natural width. ``None`` (default)
-            lets the table pick the largest column count that fits the
-            canvas budget — current per-layer / overview behaviour.
-        macros_scale: Body-scale multiplier for the standalone macros
-            image. Body chips and pills scale by this factor; the
-            chrome (title, footer, outer padding) stays at the unscaled
-            per-image size. Default 1.5 — matches the per-image
-            ``BODY_SCALE`` constant the composable framework uses for
-            the standalone special-keys images.
-        tap_dances_scale: Body-scale multiplier for the standalone
-            tap-dances image. Default 1.5.
-        symbols_scale: Body-scale multiplier for the standalone symbols
-            image. Default 1.5.
+        border: Document border configuration, or None to disable.
+            Defaults to a :class:`Border` with the canonical 2-unit
+            stroke and 10-unit corner radius.
+        layer_connector: Configuration for the dotted connector paths
+            in the keymap overview (visibility + stroke + dot cadence).
+        layer_indicator: Configuration for the layer-indicator badges
+            painted next to layer-switch keys (visibility + stroke).
+        legend_tables: Container for the macros / tap-dances / symbols
+            legend tables (visibility + scale per legend, plus the
+            symbol-specific flow and column count).
+        strokes: Stroke widths for chrome lines that don't have their
+            own dedicated block (chip outlines, header rules).
+        palette: Color palette configuration for the entire keyboard.
 
     Example:
         ```pycon
@@ -1110,21 +1274,14 @@ class Style(BaseModel):
 
     use_layer_colors_on_keys: bool = True
     hold_symbol_position: SplitSidePositionStr = Field(default=SplitSidePosition.OUTWARD)
+    use_system_fonts: bool = False
+    show_transparent_fallthrough: bool = True
     border: Border | None = Field(default_factory=Border)
     layer_connector: LayerConnector = Field(default_factory=LayerConnector)
+    layer_indicator: LayerIndicator = Field(default_factory=LayerIndicator)
+    legend_tables: LegendTables = Field(default_factory=LegendTables)
     strokes: Strokes = Field(default_factory=Strokes)
     palette: Palette = Field(default_factory=Palette)
-    use_system_fonts: bool = False
-    show_layer_indicators: bool = True
-    show_layer_connectors: bool = True
-    show_transparent_fallthrough: bool = True
-    show_special_keys_legend: bool = True
-    show_symbol_legend: bool = True
-    symbol_legend_flow: SymbolLegendFlowStr = Field(default=SymbolLegendFlow.COLUMN_MAJOR)
-    symbol_legend_columns: int | None = Field(default=None, gt=0)
-    macros_scale: float = Field(default=1.5, gt=0)
-    tap_dances_scale: float = Field(default=1.5, gt=0)
-    symbols_scale: float = Field(default=1.5, gt=0)
 
 
 class Output(BaseModel):

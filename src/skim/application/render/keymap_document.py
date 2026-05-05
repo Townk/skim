@@ -199,12 +199,12 @@ def KeymapLayerDocument(
 
     symbol_section = None
     if symbol_entries:
-        flow_value = config.output.style.symbol_legend_flow.value
+        flow_value = config.output.style.legend_tables.symbols.flow.value
         typed_flow: FlowDirection = "row" if flow_value == "row" else "column"
         symbol_section = SymbolSection(
             entries=symbol_entries,
             max_width=content_w,
-            column_count=config.output.style.symbol_legend_columns,
+            column_count=config.output.style.legend_tables.symbols.columns,
             flow=typed_flow,
         )
 
@@ -285,12 +285,12 @@ def KeymapOverviewDocument(
 
     symbol_section = None
     if symbol_entries:
-        flow_value = config.output.style.symbol_legend_flow.value
+        flow_value = config.output.style.legend_tables.symbols.flow.value
         typed_flow: FlowDirection = "row" if flow_value == "row" else "column"
         symbol_section = SymbolSection(
             entries=symbol_entries,
             max_width=content_w,
-            column_count=config.output.style.symbol_legend_columns,
+            column_count=config.output.style.legend_tables.symbols.columns,
             flow=typed_flow,
         )
 
@@ -521,7 +521,7 @@ def KeymapSymbolDocument(
     content_offset = metrics.margin + metrics.border_width + metrics.inset
     initial_content_w = metrics.doc_width - 2 * content_offset
     typed_flow: FlowDirection = "row" if flow == "row" else "column"
-    column_count = ctx.config.output.style.symbol_legend_columns
+    column_count = ctx.config.output.style.legend_tables.symbols.columns
 
     section = SymbolSection(
         entries=entries,

@@ -749,7 +749,7 @@ def KeymapOverview(
         "stagger_middle_fingers": False,
         "has_double_south": config.keyboard.features.double_south,
         "use_layer_colors_on_keys": config.output.style.use_layer_colors_on_keys,
-        "show_layer_indicators": config.output.style.show_layer_indicators,
+        "show_layer_indicators": config.output.style.layer_indicator.show,
         "hold_symbol_position": config.output.style.hold_symbol_position,
         # FingerHalf defaults to ``ctx.document_metrics.column_gap`` —
         # left implicit so the per-layer image and the overview share
@@ -758,7 +758,7 @@ def KeymapOverview(
     common_thumb_kwargs = {
         "width": thumb_cluster_width,
         "use_layer_colors_on_keys": config.output.style.use_layer_colors_on_keys,
-        "show_layer_indicators": config.output.style.show_layer_indicators,
+        "show_layer_indicators": config.output.style.layer_indicator.show,
         "hold_symbol_position": config.output.style.hold_symbol_position,
     }
 
@@ -993,8 +993,8 @@ def KeymapOverview(
     keymap_spacing = outer_key_size * _CONNECTOR_SPACING_RATIO
     routing: ConnectorRouting | None = None
     if (
-        config.output.style.show_layer_indicators
-        and config.output.style.show_layer_connectors
+        config.output.style.layer_indicator.show
+        and config.output.style.layer_connector.show
         and len(render_layers) > 1
     ):
         layer_to_row = {qmk_idx: ri for ri, (_pos, qmk_idx) in enumerate(render_layers)}
@@ -1014,7 +1014,7 @@ def KeymapOverview(
         )
 
         rect_offset = _INDICATOR_RECT_PADDING_MULTIPLIER * resolve_spacing(
-            config.output.style.strokes.layer_indicator,
+            config.output.style.layer_indicator.width,
             base=config.output.layout.width,
             default_proportion=_CIRCLE_STROKE_WIDTH_RATIO,
         )
@@ -1123,7 +1123,7 @@ def KeymapOverview(
     )
     indicator_stroke_half = (
         resolve_spacing(
-            config.output.style.strokes.layer_indicator,
+            config.output.style.layer_indicator.width,
             base=doc_width,
             default_proportion=_CIRCLE_STROKE_WIDTH_RATIO,
         )

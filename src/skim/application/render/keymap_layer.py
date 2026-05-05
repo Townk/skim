@@ -112,14 +112,14 @@ def KeymapLayer(
         "stagger_middle_fingers": True,
         "has_double_south": config.keyboard.features.double_south,
         "use_layer_colors_on_keys": config.output.style.use_layer_colors_on_keys,
-        "show_layer_indicators": config.output.style.show_layer_indicators,
+        "show_layer_indicators": config.output.style.layer_indicator.show,
         "hold_symbol_position": config.output.style.hold_symbol_position,
     }
     common_thumb_kwargs = {
         "width": thumb_cluster_width,
         "layer_qmk_index": qmk_index,
         "use_layer_colors_on_keys": config.output.style.use_layer_colors_on_keys,
-        "show_layer_indicators": config.output.style.show_layer_indicators,
+        "show_layer_indicators": config.output.style.layer_indicator.show,
         "hold_symbol_position": config.output.style.hold_symbol_position,
     }
 

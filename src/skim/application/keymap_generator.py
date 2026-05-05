@@ -142,22 +142,33 @@ def _get_config(
         for layer in config.output.style.palette.layers
     )
 
+    legends = config.output.style.legend_tables
+    macros_updates: dict = {"show": show_special_keys_legend}
+    if macros_scale is not None:
+        macros_updates["scale"] = macros_scale
+    tap_dances_updates: dict = {"show": show_special_keys_legend}
+    if tap_dances_scale is not None:
+        tap_dances_updates["scale"] = tap_dances_scale
+    symbols_updates: dict = {"show": show_symbol_legend}
+    if symbols_scale is not None:
+        symbols_updates["scale"] = symbols_scale
+    if symbol_legend_flow is not None:
+        symbols_updates["flow"] = SymbolLegendFlow(symbol_legend_flow)
+    if symbol_legend_columns is not None:
+        symbols_updates["columns"] = symbol_legend_columns
+    new_legends = legends.model_copy(
+        update={
+            "macros": legends.macros.model_copy(update=macros_updates),
+            "tap_dances": legends.tap_dances.model_copy(update=tap_dances_updates),
+            "symbols": legends.symbols.model_copy(update=symbols_updates),
+        }
+    )
+
     style_updates: dict = {
         "palette": config.output.style.palette.model_copy(update={"layers": new_layers}),
         "use_system_fonts": use_system_fonts,
-        "show_special_keys_legend": show_special_keys_legend,
-        "show_symbol_legend": show_symbol_legend,
+        "legend_tables": new_legends,
     }
-    if symbol_legend_flow is not None:
-        style_updates["symbol_legend_flow"] = SymbolLegendFlow(symbol_legend_flow)
-    if symbol_legend_columns is not None:
-        style_updates["symbol_legend_columns"] = symbol_legend_columns
-    if macros_scale is not None:
-        style_updates["macros_scale"] = macros_scale
-    if tap_dances_scale is not None:
-        style_updates["tap_dances_scale"] = tap_dances_scale
-    if symbols_scale is not None:
-        style_updates["symbols_scale"] = symbols_scale
 
     new_style = config.output.style.model_copy(update=style_updates)
 

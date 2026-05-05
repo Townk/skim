@@ -184,17 +184,19 @@ class TestLayerQmkIndex:
 
 
 class TestStyleShowLayerIndicators:
-    """Tests for Style.show_layer_indicators field."""
+    """Tests for Style.layer_indicator.show field."""
 
     def test_default_is_true(self):
-        """show_layer_indicators defaults to True."""
+        """layer_indicator.show defaults to True."""
         style = Style()
-        assert style.show_layer_indicators is True
+        assert style.layer_indicator.show is True
 
     def test_can_be_set_to_false(self):
-        """show_layer_indicators can be explicitly set to False."""
-        style = Style(show_layer_indicators=False)
-        assert style.show_layer_indicators is False
+        """layer_indicator.show can be explicitly set to False."""
+        from skim.data import LayerIndicator
+
+        style = Style(layer_indicator=LayerIndicator(show=False))
+        assert style.layer_indicator.show is False
 
 
 class TestKeyboardLayerSubtitle:
@@ -245,17 +247,19 @@ class TestOutputCopyright:
 
 
 class TestStyleShowLayerConnectors:
-    """Tests for Style.show_layer_connectors field."""
+    """Tests for Style.layer_connector.show field."""
 
     def test_default_is_true(self):
-        """show_layer_connectors defaults to True."""
+        """layer_connector.show defaults to True."""
         style = Style()
-        assert style.show_layer_connectors is True
+        assert style.layer_connector.show is True
 
     def test_can_set_to_false(self):
-        """show_layer_connectors can be set to False."""
-        style = Style(show_layer_connectors=False)
-        assert style.show_layer_connectors is False
+        """layer_connector.show can be set to False."""
+        from skim.data import LayerConnector
+
+        style = Style(layer_connector=LayerConnector(show=False))
+        assert style.layer_connector.show is False
 
 
 class TestStyleShowTransparentFallthrough:

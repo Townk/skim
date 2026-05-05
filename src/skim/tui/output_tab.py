@@ -764,11 +764,23 @@ class OutputTab(Widget):
                         id="use-layer-colors",
                         help_key="output-style-use-layer-colors",
                     )
+                layer_indicator = style.get("layer_indicator", {}) or {}
+                layer_connector = style.get("layer_connector", {}) or {}
+                legend_tables = style.get("legend_tables", {}) or {}
+                macros_legend = legend_tables.get("macros", {}) or {}
+                tap_dances_legend = legend_tables.get("tap_dances", {}) or {}
+                symbols_legend = legend_tables.get("symbols", {}) or {}
+                # Special-keys (macros + tap-dances) share a single TUI
+                # toggle; on disk they're independent. Show "off" only
+                # when both legacy halves are off.
+                special_keys_default = macros_legend.get("show", True) or tap_dances_legend.get(
+                    "show", True
+                )
                 with Horizontal(classes="field-row"):
                     yield Label("Show layer indicators:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
                     yield SkimSwitch(
-                        value=style.get("show_layer_indicators", True),
+                        value=layer_indicator.get("show", True),
                         id="show-layer-indicators",
                         help_key="output-style-show-layer-indicators",
                     )
@@ -776,7 +788,7 @@ class OutputTab(Widget):
                     yield Label("Show layer connectors:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
                     yield SkimSwitch(
-                        value=style.get("show_layer_connectors", True),
+                        value=layer_connector.get("show", True),
                         id="show-layer-connectors",
                         help_key="output-style-show-layer-connectors",
                     )
@@ -792,7 +804,7 @@ class OutputTab(Widget):
                     yield Label("Show special keys legend:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
                     yield SkimSwitch(
-                        value=style.get("show_special_keys_legend", True),
+                        value=special_keys_default,
                         id="show-special-keys-legend",
                         help_key="output-style-show-special-keys-legend",
                     )
@@ -800,7 +812,7 @@ class OutputTab(Widget):
                     yield Label("Show symbol legend:", classes="field-label")
                     yield Static(" ", classes="swatch-spacer")
                     yield SkimSwitch(
-                        value=style.get("show_symbol_legend", True),
+                        value=symbols_legend.get("show", True),
                         id="show-symbol-legend",
                         help_key="output-style-show-symbol-legend",
                     )
@@ -811,7 +823,7 @@ class OutputTab(Widget):
                             ("Column-major (top-to-bottom)", "column"),
                             ("Row-major (left-to-right)", "row"),
                         ],
-                        value=style.get("symbol_legend_flow", "column"),
+                        value=symbols_legend.get("flow", "column"),
                         id="symbol-legend-flow",
                         help_key="output-style-symbol-legend-flow",
                     )
@@ -1017,30 +1029,37 @@ class OutputTab(Widget):
         switch_id = event.switch.id or ""
         value = event.value
 
+        style = self.config_data["output"]["style"]
         if switch_id == "use-layer-colors":
-            self.config_data["output"]["style"]["use_layer_colors_on_keys"] = value
+            style["use_layer_colors_on_keys"] = value
         elif switch_id == "show-layer-indicators":
-            self.config_data["output"]["style"]["show_layer_indicators"] = value
+            style.setdefault("layer_indicator", {})["show"] = value
         elif switch_id == "show-layer-connectors":
-            self.config_data["output"]["style"]["show_layer_connectors"] = value
+            style.setdefault("layer_connector", {})["show"] = value
         elif switch_id == "show-transparent-fallthrough":
-            self.config_data["output"]["style"]["show_transparent_fallthrough"] = value
+            style["show_transparent_fallthrough"] = value
         elif switch_id == "show-special-keys-legend":
-            self.config_data["output"]["style"]["show_special_keys_legend"] = value
+            # Single TUI toggle writes to both halves of the split.
+            legends = style.setdefault("legend_tables", {})
+            legends.setdefault("macros", {})["show"] = value
+            legends.setdefault("tap_dances", {})["show"] = value
         elif switch_id == "show-symbol-legend":
-            self.config_data["output"]["style"]["show_symbol_legend"] = value
+            style.setdefault("legend_tables", {}).setdefault("symbols", {})["show"] = value
         elif switch_id == "use-system-fonts":
-            self.config_data["output"]["style"]["use_system_fonts"] = value
+            style["use_system_fonts"] = value
         elif switch_id == "border-enabled":
             if value:
-                current = self.config_data["output"]["style"].get("border")
+                current = style.get("border")
                 if current is None:
-                    self.config_data["output"]["style"]["border"] = {"width": 2.0, "radius": 10.0}
+                    style["border"] = {"width": 2.0, "radius": 10.0}
             else:
-                self.config_data["output"]["style"]["border"] = None
+                style["border"] = None
 
     def on_select_changed(self, event: SkimSelect.Changed) -> None:
+        style = self.config_data["output"]["style"]
         if event.select.id == "hold-symbol-position" and event.value is not SkimSelect.BLANK:
-            self.config_data["output"]["style"]["hold_symbol_position"] = str(event.value)
+            style["hold_symbol_position"] = str(event.value)
         if event.select.id == "symbol-legend-flow" and event.value is not SkimSelect.BLANK:
-            self.config_data["output"]["style"]["symbol_legend_flow"] = str(event.value)
+            style.setdefault("legend_tables", {}).setdefault("symbols", {})["flow"] = str(
+                event.value
+            )

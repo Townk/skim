@@ -140,7 +140,7 @@ def LayerIndicator(
     doc_width = ctx.config.output.layout.width
     connector_width = doc_width * _CONNECTOR_WIDTH_RATIO
     circle_stroke_width = resolve_spacing(
-        ctx.config.output.style.strokes.layer_indicator,
+        ctx.config.output.style.layer_indicator.width,
         base=doc_width,
         default_proportion=_CIRCLE_STROKE_WIDTH_RATIO,
     )

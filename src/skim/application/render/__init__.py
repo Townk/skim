@@ -153,14 +153,16 @@ def _draw_layer(
     :func:`using_render_context` and every :func:`AdjustableText`
     registers its painted characters there during construction.
     """
-    if config.output.style.show_special_keys_legend:
+    legends = config.output.style.legend_tables
+    used_macro_ids: tuple[str, ...] = ()
+    used_td_ids: tuple[str, ...] = ()
+    if legends.macros.show or legends.tap_dances.show:
         used_macro_ids, used_td_ids = collect_used_ids(layer)
-        layer_macros = resolve_macros(used_macro_ids, macros)
-        layer_tap_dances = resolve_tap_dances(used_td_ids, tap_dances)
-    else:
-        layer_macros = []
-        layer_tap_dances = []
-    if config.output.style.show_symbol_legend:
+    layer_macros = resolve_macros(used_macro_ids, macros) if legends.macros.show else []
+    layer_tap_dances = (
+        resolve_tap_dances(used_td_ids, tap_dances) if legends.tap_dances.show else []
+    )
+    if legends.symbols.show:
         symbol_entries = _layer_symbol_entries(
             config, raw_layer_keycodes, raw_keymap, keycode_mappings
         )
@@ -193,13 +195,10 @@ def draw_overview(
     sorted, plus the union of symbol entries across the rendered
     layers.
     """
-    if config.output.style.show_special_keys_legend:
-        overview_macros = all_macros(keymap.macros)
-        overview_tap_dances = all_tap_dances(keymap.tap_dances)
-    else:
-        overview_macros = []
-        overview_tap_dances = []
-    if config.output.style.show_symbol_legend:
+    legends = config.output.style.legend_tables
+    overview_macros = all_macros(keymap.macros) if legends.macros.show else []
+    overview_tap_dances = all_tap_dances(keymap.tap_dances) if legends.tap_dances.show else []
+    if legends.symbols.show:
         symbol_entries = _overview_symbol_entries(config, keymap, raw_keymap, keycode_mappings)
     else:
         symbol_entries = []
@@ -287,10 +286,11 @@ def draw_macros_image(
 ) -> draw.Drawing:
     """Render the standalone macros image.
 
-    Body-scale is read from ``config.output.style.macros_scale`` (the
-    CLI ``--macros-scale`` flag updates that field upstream). Body
-    chips and pills scale by this factor; the chrome (title, footer,
-    outer padding) stays at the unscaled per-image size.
+    Body-scale is read from
+    ``config.output.style.legend_tables.macros.scale`` (the CLI
+    ``--macros-scale`` flag updates that field upstream). Body chips
+    and pills scale by this factor; the chrome (title, footer, outer
+    padding) stays at the unscaled per-image size.
     """
     with using_render_context(RenderContext.build(config, keymap)):
         return render(
@@ -298,7 +298,7 @@ def draw_macros_image(
                 macros=all_macros(keymap.macros),
                 title=_resolve_image_title(config),
                 copyright=config.output.copyright,
-                scale=config.output.style.macros_scale,
+                scale=config.output.style.legend_tables.macros.scale,
             )
         )
 
@@ -309,8 +309,9 @@ def draw_tap_dances_image(
 ) -> draw.Drawing:
     """Render the standalone tap-dances image.
 
-    Body-scale is read from ``config.output.style.tap_dances_scale``
-    (the CLI ``--tap-dances-scale`` flag updates that field upstream).
+    Body-scale is read from
+    ``config.output.style.legend_tables.tap_dances.scale`` (the CLI
+    ``--tap-dances-scale`` flag updates that field upstream).
     """
     with using_render_context(RenderContext.build(config, keymap)):
         return render(
@@ -318,7 +319,7 @@ def draw_tap_dances_image(
                 tap_dances=all_tap_dances(keymap.tap_dances),
                 title=_resolve_image_title(config),
                 copyright=config.output.copyright,
-                scale=config.output.style.tap_dances_scale,
+                scale=config.output.style.legend_tables.tap_dances.scale,
             )
         )
 
@@ -352,10 +353,12 @@ def draw_symbols_image(
     sibling :func:`draw_keymap` orchestrator does that gating for
     the bundled-image case.
 
-    Body-scale is read from ``config.output.style.symbols_scale``
-    (the CLI ``--symbols-scale`` flag updates that field upstream).
+    Body-scale is read from
+    ``config.output.style.legend_tables.symbols.scale`` (the CLI
+    ``--symbols-scale`` flag updates that field upstream).
     """
-    flow_str = config.output.style.symbol_legend_flow
+    symbols_cfg = config.output.style.legend_tables.symbols
+    flow_str = symbols_cfg.flow
     flow: FlowDirection = "row" if flow_str == "row" else "column"
 
     with using_render_context(RenderContext.build(config, keymap)):
@@ -365,7 +368,7 @@ def draw_symbols_image(
                 title=_resolve_image_title(config),
                 copyright=config.output.copyright,
                 flow=flow,
-                scale=config.output.style.symbols_scale,
+                scale=symbols_cfg.scale,
             )
         )
 
