@@ -1054,33 +1054,41 @@ edge reads as breathing room rather than crowding the next column.
 
 ### `output.style`
 
-The largest sub-section. Every visual switch and color knob lives here.
+The largest sub-section. Every visual switch, stroke width, and color
+knob lives here. Configurable values are grouped by the conceptual
+component they configure rather than dumped as flat siblings —
+visibility flags live alongside the stroke widths and other styling
+that affect the same element.
 
 Current schema:
 
 ```yaml
 output:
   style:
+    # Standalone style switches
     hold_symbol_position: qmk | inward | outward
-    macros_scale: <float>
-    show_layer_connectors: <boolean>
-    show_layer_indicators: <boolean>
-    show_special_keys_legend: <boolean>
-    show_symbol_legend: <boolean>
-    show_transparent_fallthrough: <boolean>
-    symbol_legend_columns: <int>
-    symbol_legend_flow: row | column
-    symbols_scale: <float>
-    tap_dances_scale: <float>
     use_layer_colors_on_keys: <boolean>
     use_system_fonts: <boolean>
+    show_transparent_fallthrough: <boolean>
+
+    # Object-shaped configs
     border:
-      width: <float>
+      width: <float | "N%">
       radius: <float>
     layer_connector:
-      ...                      # see output.style.layer_connector below
+      show: <boolean>
+      width: <float | "N%" | null>
+      dot_spacing: <float | "N%" | null>
+    layer_indicator:
+      show: <boolean>
+      width: <float | "N%" | null>
+    legend_tables:
+      macros: { show, scale }
+      tap_dances: { show, scale }
+      symbols: { show, scale, flow, columns }
     strokes:
-      ...                      # see output.style.strokes below
+      chip_outline: <float | "N%" | null>
+      header_rule: <float | "N%" | null>
     palette:
       ...                      # see output.style.palette below
 ```
@@ -1106,122 +1114,6 @@ the split each portion goes on:
   mode draws hold on the left and tap on the right regardless of which
   side of the keyboard the key is on.
 
-#### `output.style.macros_scale`
-
-| Type    | Default |
-| ------- | ------- |
-| `float` | `1.5`   |
-
-Body-scale multiplier for the **standalone macros** image (the one Skim
-emits when you ask for just the macros legend on its own). Body chips and
-pills scale by this factor; the chrome (title, footer, outer padding)
-stays unscaled. Default `1.5` matches the body scale Skim uses internally
-in per-image renders.
-
-#### `output.style.show_layer_connectors`
-
-| Type      | Default |
-| --------- | ------- |
-| `boolean` | `true`  |
-
-In the **overview** image only, draws faint dashed lines from each layer
-indicator to the row representing the destination layer, making the
-layer-graph explicit. Has no effect on per-layer images. Set to `false`
-to suppress the connectors for a cleaner overview.
-
-#### `output.style.show_layer_indicators`
-
-| Type      | Default |
-| --------- | ------- |
-| `boolean` | `true`  |
-
-Enables the small colored circles drawn in the corner of keys that
-activate a layer. Each circle is tinted with the destination layer's
-color, giving an at-a-glance hint of "where does this key take me." Set
-to `false` to suppress them.
-
-#### `output.style.show_special_keys_legend`
-
-| Type      | Default |
-| --------- | ------- |
-| `boolean` | `true`  |
-
-Toggles two related legend tables:
-
-- On **per-layer images**, a table of every macro and tap-dance referenced
-  on that layer, with its `name` and `preview` from `keycodes.macros` /
-  `keycodes.tap_dances`.
-- On the **overview image**, a single combined legend covering every
-  macro and tap-dance used anywhere in the keymap.
-
-Set to `false` to omit both legends.
-
-#### `output.style.show_symbol_legend`
-
-| Type      | Default |
-| --------- | ------- |
-| `boolean` | `true`  |
-
-Toggles the symbol legend — the table that explains the non-obvious
-glyphs Skim renders on keys (modifier symbols, function indicators, etc.).
-Per-layer images carry only the symbols actually used on that layer; the
-overview carries the union across all rendered layers.
-
-#### `output.style.show_transparent_fallthrough`
-
-| Type      | Default |
-| --------- | ------- |
-| `boolean` | `true`  |
-
-When `true`, transparent keycodes (`KC_TRNS` / `_______`) on layers above
-0 render the label from layer 0 in a faded "ghost" color, so you can see
-what's underneath. Set to `false` to leave transparent keys completely
-blank.
-
-#### `output.style.symbol_legend_columns`
-
-| Type            | Default |
-| --------------- | ------- |
-| `integer \| null` | `null`  |
-
-Forces the **standalone** symbols image to lay out at exactly this many
-columns and shrinks the canvas to fit. `null` (the default) lets the
-layout pick the largest column count that fits the canvas budget — the
-behaviour used in per-layer and overview images. Has no effect on the
-embedded legends inside per-layer / overview images, only on the
-standalone symbols-only output.
-
-#### `output.style.symbol_legend_flow`
-
-| Type     | Default      | Allowed values        |
-| -------- | ------------ | --------------------- |
-| `string` | `"column"`   | `"row"`, `"column"`   |
-
-Controls how multi-column symbol-legend layouts fill themselves:
-
-- **`"column"`** — fills each column top-to-bottom before starting the
-  next column. Reads top-to-bottom first.
-- **`"row"`** — fills each row left-to-right before dropping to the next
-  row. Reads left-to-right first.
-
-#### `output.style.symbols_scale`
-
-| Type    | Default |
-| ------- | ------- |
-| `float` | `1.5`   |
-
-Body-scale multiplier for the **standalone symbols** image. Same
-semantics as `macros_scale`.
-
-#### `output.style.tap_dances_scale`
-
-| Type    | Default |
-| ------- | ------- |
-| `float` | `1.5`   |
-
-Body-scale multiplier for the **standalone tap-dances** image. Same
-semantics as `macros_scale`.
-
 #### `output.style.use_layer_colors_on_keys`
 
 | Type      | Default |
@@ -1246,6 +1138,17 @@ image looks identical on every machine. When `true`, the SVG references
 system fonts by name — the file is smaller and may pick up your system's
 preferred typefaces, but viewers without those fonts installed will see a
 fallback.
+
+#### `output.style.show_transparent_fallthrough`
+
+| Type      | Default |
+| --------- | ------- |
+| `boolean` | `true`  |
+
+When `true`, transparent keycodes (`KC_TRNS` / `_______`) on layers above
+0 render the label from layer 0 in a faded "ghost" color, so you can see
+what's underneath. Set to `false` to leave transparent keys completely
+blank.
 
 #### `output.style.border`
 
@@ -1294,12 +1197,24 @@ corresponding key on the miniature keymap.
 output:
   style:
     layer_connector:
+      show: <boolean>
       width: <float | "N%" | null>
       dot_spacing: <float | "N%" | null>
 ```
 
-Both fields accept the same magnitude rule as the spacings (`< 1`
+The two stroke / spacing fields follow the magnitude rule (`< 1`
 proportion / `≥ 1` absolute / `"N%"` shorthand / `null` default).
+
+##### `output.style.layer_connector.show`
+
+| Type      | Default |
+| --------- | ------- |
+| `boolean` | `true`  |
+
+Whether to draw connector paths in the overview at all. Set to
+`false` for a cleaner overview that lets the badge column and the
+miniature keymap stand on their own. Has no effect on per-layer
+images (which never paint connectors).
 
 ##### `output.style.layer_connector.width`
 
@@ -1333,14 +1248,181 @@ trail.
 ![Layer connector dot spacing highlighted](../_static/spacing/layer-connector-dot-spacing.svg){ width="360" loading=lazy }
 </figure>
 
+#### `output.style.layer_indicator`
+
+Configures the layer-indicator badges — the small coloured circles
+drawn next to layer-switch keys in each cluster, and the matching
+badges in the overview's `LAYERS` column.
+
+```yaml
+output:
+  style:
+    layer_indicator:
+      show: <boolean>
+      width: <float | "N%" | null>
+```
+
+The gap between an outer key's edge and its indicator circle lives
+on [`output.layout.spacing.layer_indicator_spacing`](#outputlayoutspacinglayer_indicator_spacing)
+since it's a spacing value applied between two elements rather than
+a property of the indicator itself.
+
+##### `output.style.layer_indicator.show`
+
+| Type      | Default |
+| --------- | ------- |
+| `boolean` | `true`  |
+
+Whether to draw layer-indicator badges. Each circle is tinted with
+the destination layer's colour, giving an at-a-glance hint of "where
+does this key take me." Set to `false` to suppress them entirely
+(both in clusters and in the overview's badge column).
+
+##### `output.style.layer_indicator.width`
+
+| Type                            | Default                          | Base       |
+| ------------------------------- | -------------------------------- | ---------- |
+| `float \| string \| null`       | `null` (→ `0.125%` of doc width)  | doc width  |
+
+Stroke width of the indicator circle outline.
+
+<figure markdown="1">
+<figcaption>The rose stroke traces the layer indicator circle on the north key.</figcaption>
+![Layer indicator stroke highlighted](../_static/spacing/layer-indicator-stroke.svg){ width="320" loading=lazy }
+</figure>
+
+#### `output.style.legend_tables`
+
+Configures the three legend tables Skim renders alongside the
+keymap: macros, tap-dances, and symbols. Each sub-block carries its
+own visibility flag and standalone-image body-scale multiplier; the
+symbols sub-block also carries a flow direction and column count
+unique to its multi-column layout.
+
+```yaml
+output:
+  style:
+    legend_tables:
+      macros:
+        show: <boolean>
+        scale: <float>
+      tap_dances:
+        show: <boolean>
+        scale: <float>
+      symbols:
+        show: <boolean>
+        scale: <float>
+        flow: row | column
+        columns: <int | null>
+```
+
+The `show` flags toggle whether the corresponding legend appears
+**embedded** in per-layer / overview images. The `scale` values
+apply only to the **standalone** images (`skim generate -l macros` /
+`-l tap-dances` / `-l symbols`); the chrome (title, footer, outer
+padding) stays at the unscaled per-image size.
+
+##### `output.style.legend_tables.macros.show`
+
+| Type      | Default |
+| --------- | ------- |
+| `boolean` | `true`  |
+
+Whether to embed the macros legend in per-layer images and the
+overview. The legend lists every macro referenced on the layer (or
+across all layers, in the overview), with its `name` and `preview`
+from `keycodes.macros`. Set to `false` to omit it.
+
+##### `output.style.legend_tables.macros.scale`
+
+| Type    | Default |
+| ------- | ------- |
+| `float` | `1.5`   |
+
+Body-scale multiplier for the standalone macros image. Body chips
+and pills scale by this factor; the per-image chrome stays unscaled.
+
+##### `output.style.legend_tables.tap_dances.show`
+
+| Type      | Default |
+| --------- | ------- |
+| `boolean` | `true`  |
+
+Whether to embed the tap-dances legend in per-layer images and the
+overview. Mirrors `macros.show`.
+
+##### `output.style.legend_tables.tap_dances.scale`
+
+| Type    | Default |
+| ------- | ------- |
+| `float` | `1.5`   |
+
+Body-scale multiplier for the standalone tap-dances image. Same
+semantics as `macros.scale`.
+
+##### `output.style.legend_tables.symbols.show`
+
+| Type      | Default |
+| --------- | ------- |
+| `boolean` | `true`  |
+
+Whether to embed the symbol legend in per-layer images and the
+overview. Per-layer images carry only the symbols actually used on
+that layer; the overview carries the union across all rendered
+layers.
+
+##### `output.style.legend_tables.symbols.scale`
+
+| Type    | Default |
+| ------- | ------- |
+| `float` | `1.5`   |
+
+Body-scale multiplier for the standalone symbols image. Same
+semantics as `macros.scale`.
+
+##### `output.style.legend_tables.symbols.flow`
+
+| Type     | Default      | Allowed values        |
+| -------- | ------------ | --------------------- |
+| `string` | `"column"`   | `"row"`, `"column"`   |
+
+Controls how multi-column symbol-legend layouts fill themselves:
+
+- **`"column"`** — fills each column top-to-bottom before starting
+  the next column. Reads top-to-bottom first.
+- **`"row"`** — fills each row left-to-right before dropping to the
+  next row. Reads left-to-right first.
+
+##### `output.style.legend_tables.symbols.columns`
+
+| Type            | Default |
+| --------------- | ------- |
+| `integer \| null` | `null`  |
+
+Forces the **standalone** symbols image to lay out at exactly this
+many columns and shrinks the canvas to fit. `null` (the default)
+lets the layout pick the largest column count that fits the canvas
+budget — the behaviour used in per-layer and overview images. Has
+no effect on the embedded legends inside per-layer / overview
+images, only on the standalone symbols-only output.
+
 #### `output.style.strokes`
 
-Stroke widths for every line Skim paints **other than** the document
-border (which lives on `output.style.border.width`) and the layer
-connector (which has its own block above). All three fields below
-follow the same magnitude rule as the spacings — float `< 1` is a
-proportion of the doc width, float `≥ 1` is absolute SVG units,
-`"N%"` is the proportion shorthand, `null` keeps the default.
+Stroke widths for chrome lines that don't have their own dedicated
+block:
+
+* The document border lives on
+  [`output.style.border.width`](#outputstyleborderwidth) (paired
+  with `border.radius`).
+* The layer connector path lives on
+  [`output.style.layer_connector.width`](#outputstylelayer_connectorwidth)
+  (paired with `dot_spacing`).
+* The layer indicator circle lives on
+  [`output.style.layer_indicator.width`](#outputstylelayer_indicatorwidth)
+  (paired with `show`).
+
+The two fields below follow the magnitude rule (`< 1` proportion /
+`≥ 1` absolute / `"N%"` shorthand / `null` default).
 
 ```yaml
 output:
@@ -1348,7 +1430,6 @@ output:
     strokes:
       chip_outline: <float | "N%" | null>
       header_rule: <float | "N%" | null>
-      layer_indicator: <float | "N%" | null>
 ```
 
 ##### `output.style.strokes.chip_outline`
@@ -1358,8 +1439,8 @@ output:
 | `float \| string \| null`       | `null` (→ `0.075%` of doc width)   | doc width  |
 
 Stroke around macro and tap-dance chips — the rounded rectangle that
-carries the chip's icon and id (and, for named entries, extends across
-the name area on the right).
+carries the chip's icon and id (and, for named entries, extends
+across the name area on the right).
 
 <figure markdown="1">
 <figcaption>The rose stroke replaces the chip outline at the configured width.</figcaption>
@@ -1380,21 +1461,6 @@ the rule weights stay consistent across all sections.
 <figure markdown="1">
 <figcaption>The rose stroke replaces the rule line under the section title.</figcaption>
 ![Header rule stroke highlighted](../_static/spacing/header-rule-stroke.svg){ width="380" loading=lazy }
-</figure>
-
-##### `output.style.strokes.layer_indicator`
-
-| Type                            | Default                          | Base       |
-| ------------------------------- | -------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.125%` of doc width)  | doc width  |
-
-Stroke around the layer indicator circles — the small badges painted
-next to layer-switch keys in each cluster, and the matching badges in
-the overview's `LAYERS` column.
-
-<figure markdown="1">
-<figcaption>The rose stroke traces the layer indicator circle on the north key.</figcaption>
-![Layer indicator stroke highlighted](../_static/spacing/layer-indicator-stroke.svg){ width="320" loading=lazy }
 </figure>
 
 #### `output.style.palette`

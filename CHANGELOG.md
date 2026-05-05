@@ -7,6 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`output.layout.spacing` block** with 15 configurable fields covering
+  every gap, padding, and inset the renderer paints. Each field accepts
+  one of three forms following a single magnitude rule:
+  - Float `< 1.0` — proportion of the field's base (usually doc width).
+  - Float `≥ 1.0` — absolute SVG units.
+  - String `"N%"` — shorthand for `N / 100` (proportion form).
+  - `null` — the field's built-in default proportion.
+
+  Fields: `margin`, `inset`, `column_gap`, `section_spacing`,
+  `section_title_rule_gap`, `table_header_spacing`, `table_col_spacing`,
+  `table_row_spacing`, `finger_key_gap`, `thumb_key_gap`,
+  `layer_indicator_spacing`, `chip_padding`, `tap_dance_pill_padding`,
+  `macro_action_inset`, `layer_badge_inset`. See
+  `docs/configuration/config-file.md` for per-field illustrations.
+- **`output.style.strokes` block** for stroke-width styling — fields
+  `chip_outline` (1.2/1600 default) and `header_rule` (1.2/1600
+  default). Both follow the same magnitude rule as the spacings.
+- **`output.style.layer_connector` block** with `show` (default `true`),
+  `width` (4.375/1600 default), and `dot_spacing` (12.25/1600 default)
+  for the overview's dotted connector paths.
+- **`output.style.layer_indicator` block** with `show` (default `true`)
+  and `width` (2.0/1600 default) for the layer-indicator badges.
+- **`output.style.legend_tables` block** grouping the three legend
+  sub-blocks: `macros`, `tap_dances`, `symbols`. Each sub-block carries
+  `show` (default `true`) and `scale` (default `1.5`); the `symbols`
+  sub-block also carries `flow` and `columns`.
+
+### Changed
+
+- `output.style.border.width` accepts the same magnitude rule as the
+  spacings — float `< 1` is a proportion of the doc width, float `≥ 1`
+  is absolute SVG units, `"N%"` is the proportion shorthand. Default
+  value (2 SVG units) is unchanged.
+- Section title strips top-anchor the title text (no more dangling
+  whitespace above the title); the strip's height equals
+  `title_font_size + section_title_rule_gap`.
+- The overview's layer badge splits its label into a right-aligned
+  index column and a left-aligned name column, with the index column
+  sized to fit the widest index across the rendered layers. Variant
+  labels now align under the name column (or at the leading inset for
+  auto-named `LAYER N` badges, matching the legacy single-text layout).
+- The overview's named-macro hairline rule weight is now unified with
+  the section-stripe rule weight (1.2/1600, was 1.0/1600).
+- The overview's layer-indicator gap is now uniform across finger and
+  thumb clusters (12/1600 of doc width). Previously each cluster type
+  used its own cluster-relative ratio that produced different gaps.
+
+### Removed
+
+> [!IMPORTANT]
+> The renames below are **breaking schema changes**. Existing YAML
+> configs that set any of the listed fields will fail validation
+> against the new schema. Pre-1.0 migration is by manual rewrite —
+> no deprecation aliases are shipped. Update your config to the new
+> nested paths.
+
+- `output.style.macros_scale` → `output.style.legend_tables.macros.scale`
+- `output.style.tap_dances_scale` → `output.style.legend_tables.tap_dances.scale`
+- `output.style.symbols_scale` → `output.style.legend_tables.symbols.scale`
+- `output.style.show_special_keys_legend` → splits into
+  `output.style.legend_tables.macros.show` and
+  `output.style.legend_tables.tap_dances.show`. Set both to the same
+  value to preserve the legacy combined behaviour, or set them
+  independently to selectively hide one legend.
+- `output.style.show_symbol_legend` → `output.style.legend_tables.symbols.show`
+- `output.style.symbol_legend_flow` → `output.style.legend_tables.symbols.flow`
+- `output.style.symbol_legend_columns` → `output.style.legend_tables.symbols.columns`
+- `output.style.show_layer_connectors` → `output.style.layer_connector.show`
+- `output.style.show_layer_indicators` → `output.style.layer_indicator.show`
+- (Internal): the legacy field `Style.name_gap` was renamed to
+  `chip_padding` and its default value doubled (10/1600 → 20/1600) so
+  the derived `chip_vertical_padding = chip_padding * 0.25` matches the
+  legacy chip height. Visible name-area horizontal padding inside
+  TD chip outlines therefore widens.
+
 ## [0.7.2] - 2026-05-03
 
 ### Fixed
