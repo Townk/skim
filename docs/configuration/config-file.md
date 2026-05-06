@@ -14,6 +14,14 @@ You point Skim at a config with the `--config <path>` flag (see
 [Command Line Options](cli-options.md)). If you'd rather generate or edit the
 file interactively, see the [Configurator UI](configurator-ui.md).
 
+> [!NOTE]
+> **How to read this reference.** Headings in `` `code style` `` name a literal
+> YAML field — the heading `` ### `keymap_title` `` documents the entry you
+> write as `keymap_title:` in your config. Plain-text headings (like
+> "Top-level structure" or "Key Label Resolution algorithm") name an
+> organisational subsection or describe an algorithm, not a configuration
+> field.
+
 ## Top-level structure
 
 The file has three top-level sections:
