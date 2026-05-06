@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="264.0" height="264.24" viewBox="0 0 264.0 264.24">
+<defs>
+</defs>
+<circle cx="132.0" cy="132.12" r="37.08" fill="#B8BCC3" />
+<rect x="92.64" y="12.0" width="78.72" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="92.64" y="78.912" width="78.72" height="11.808" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="173.39999999999998" y="90.72" width="78.72" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="173.39999999999998" y="90.72" width="11.808" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="92.64" y="173.51999999999998" width="78.72" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="92.64" y="173.51999999999998" width="78.72" height="11.808" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="11.88000000000001" y="90.72" width="78.72" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="78.792" y="90.72" width="11.808" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="113.46000000000001" y="90.72" width="37.08" height="4.319999999999993" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
+<rect x="113.46000000000001" y="169.2" width="37.08" height="4.319999999999993" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
+<rect x="90.60000000000001" y="113.58000000000001" width="4.319999999999993" height="37.08" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
+<rect x="169.07999999999998" y="113.58000000000001" width="4.319999999999993" height="37.08" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
+</svg>
