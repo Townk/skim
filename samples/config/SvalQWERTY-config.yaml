@@ -37,7 +37,6 @@ output:
     use_layer_colors_on_keys: false
     hold_symbol_position: outward
     palette:
-      overrides: {}
       neutral_color: '#6F768B'
       text_color: black
       key_label_color: white

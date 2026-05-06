@@ -1460,9 +1460,6 @@ output:
             - <color:string>
             - ...
         - ...
-      overrides:
-        <NAME:string>: <color:string>
-        ...
 ```
 
 A worked example:
@@ -1478,7 +1475,6 @@ output:
       border_color: "#000000"
       macro_color: "#89511C"
       tap_dance_color: "#41687F"
-      overrides: {}
       layers:
         - base_color: "#3366CC"
         - base_color: "#CC6633"
@@ -1615,23 +1611,3 @@ output:
             - "#442200"
             - "#221100"
 ```
-
-##### `overrides` { #outputstylepaletteoverrides }
-| Type | Default |
-| ---- | ------- |
-| `{name: color}` | `{}` |
-
-Lets you **redefine** the W3C named colors that SVG renderers ship with
-(147 of them). Useful when you want a name like `"crimson"` to refer to
-your brand red instead of the W3C-spec value, and you've referenced
-`"crimson"` in several places in your config.
-
-```yaml
-output:
-  style:
-    palette:
-      overrides:
-        crimson: "#B11226"
-```
-
-Empty by default, so the standard W3C names apply unmodified.

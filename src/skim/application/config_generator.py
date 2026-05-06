@@ -176,19 +176,16 @@ class ConfigGenerator:
     def generate_from_keybard(
         self,
         keybard_content: str,
-        qmk_header_content: str | None = None,
         adjust_lightness: float | None = None,
         adjust_saturation: float | None = None,
     ) -> str:
         """Generate config YAML by extracting metadata from a Keybard file.
 
         Parses the .kbi JSON to extract layer colors, layer names, and
-        custom keycode definitions. Optionally applies color adjustments
-        and merges QMK named colors from a color.h header.
+        custom keycode definitions. Optionally applies color adjustments.
 
         Args:
             keybard_content: JSON string from a .kbi file.
-            qmk_header_content: Optional C header content with color defines.
             adjust_lightness: Target lightness (0.0-1.0) for extracted colors.
             adjust_saturation: Max saturation (0.0-1.0) for extracted colors.
 
@@ -232,15 +229,10 @@ class ConfigGenerator:
         )
         keycode_overrides = self._build_keycode_overrides(custom_keycodes)
 
-        palette_overrides: dict[str, str] = {}
-        if qmk_header_content:
-            palette_overrides = self._parse_qmk_colors(qmk_header_content, apply_adjustment)
-
         config_dict: dict[str, Any] = SkimConfig().model_dump(mode="json")
         config_dict["keyboard"]["layers"] = keyboard_layers
         config_dict["keycodes"]["overrides"] = keycode_overrides
         config_dict["output"]["style"]["palette"]["layers"] = palette_layers
-        config_dict["output"]["style"]["palette"]["overrides"] = palette_overrides
 
         # Populate macros and tap_dances from the parsed keymap.
         from skim.application.loaders.keycode_mappings_loader import (
@@ -525,38 +517,3 @@ class ConfigGenerator:
         ]
 
         return yaml.dump(config_dict, sort_keys=False, default_flow_style=False)
-
-    def _parse_qmk_colors(
-        self, header_content: str, apply_adjustment: Callable[[str], str]
-    ) -> dict[str, str]:
-        """Parse QMK color.h defines into name->hex mapping.
-
-        Supports:
-            #define HSV_MYCOLOR h, s, v
-            #define RGB_MYCOLOR r, g, b
-        """
-        colors: dict[str, str] = {}
-        for line in header_content.splitlines():
-            line = line.strip()
-            if not line.startswith("#define"):
-                continue
-
-            hsv_match = re.match(r"#define\s+HSV_(\w+)\s+(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", line)
-            if hsv_match:
-                name = hsv_match.group(1).lower()
-                h = int(hsv_match.group(2)) / 255.0
-                s = int(hsv_match.group(3)) / 255.0
-                v = int(hsv_match.group(4)) / 255.0
-                r, g, b = colorsys.hsv_to_rgb(h, s, v)
-                colors[name] = apply_adjustment(hex_str(r, g, b))
-                continue
-
-            rgb_match = re.match(r"#define\s+RGB_(\w+)\s+(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", line)
-            if rgb_match:
-                name = rgb_match.group(1).lower()
-                r = int(rgb_match.group(2)) / 255.0
-                g = int(rgb_match.group(3)) / 255.0
-                b = int(rgb_match.group(4)) / 255.0
-                colors[name] = apply_adjustment(hex_str(r, g, b))
-
-        return colors

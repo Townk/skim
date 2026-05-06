@@ -976,10 +976,6 @@ class Palette(BaseModel):
     including background colors, text colors, and per-layer key colors.
 
     Attributes:
-        overrides: Dictionary mapping color names to colors values.
-            Used to change the color defined by W3C on the 147 supported named
-            colors on SVG files. Defaults to an empty dictionary so the
-            standard definitions should be used.
         neutral_color: Color for keys that don't have layer-specific
             coloring (e.g., some thumb cluster keys). Defaults to "#6F768B"
             (gray).
@@ -1016,7 +1012,6 @@ class Palette(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    overrides: dict[str, str] = Field(default_factory=dict)
     neutral_color: str = "#6F768B"
     text_color: str = "black"
     key_label_color: str = "white"

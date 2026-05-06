@@ -83,6 +83,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the derived `chip_vertical_padding = chip_padding * 0.25` matches the
   legacy chip height. Visible name-area horizontal padding inside
   TD chip outlines therefore widens.
+- **`output.style.palette.overrides`** field removed entirely. The
+  feature was added before CSS-named-color support (`"crimson"`,
+  `"steelblue"`, etc.) was wired through `webcolors.name_to_rgb`,
+  intended to let users redefine the W3C named colors. In practice
+  the resolved override dict was never consumed by the rendering
+  pipeline — `parse_color` always reached straight for the W3C
+  values — so the feature has been a no-op since 0.5.0. Existing
+  YAML configs that include `palette.overrides` will fail validation;
+  delete the block.
+- **`skim configure --qmk-color-header` / `-C`** flag removed. The
+  flag parsed `HSV_*` / `RGB_*` `#define`s out of a QMK `color.h`
+  file and dumped them into `palette.overrides`. With that field
+  gone, the import has no destination.
+- Internal: `ConfigGenerator._parse_qmk_colors` and the
+  `qmk_header_content` parameter on `generate_from_keybard` removed
+  alongside the CLI flag.
 
 ## [0.7.2] - 2026-05-03
 

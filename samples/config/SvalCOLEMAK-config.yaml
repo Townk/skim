@@ -34,7 +34,6 @@ output:
       width: 2.0
       radius: 10.0
     palette:
-      overrides: {}
       neutral_color: '#6F768B'
       text_color: black
       key_label_color: white

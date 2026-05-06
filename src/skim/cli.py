@@ -437,12 +437,6 @@ def generate(
 )
 @click.option("--force", is_flag=True, help="Overwrite existing file.")
 @click.option(
-    "--qmk-color-header",
-    "-C",
-    type=click.Path(exists=True, path_type=Path),
-    help="Path to QMK color.h file (non-interactive).",
-)
-@click.option(
     "--adjust-lightness",
     "-L",
     type=float,
@@ -484,7 +478,6 @@ def configure(
     keymap: Path | None,
     output: Path | None,
     force: bool,
-    qmk_color_header: Path | None,
     adjust_lightness: float | None,
     adjust_saturation: float | None,
     title: str | None,
@@ -501,7 +494,7 @@ def configure(
     Optionally pass -c/--config to load an existing config file into the editor.
 
     Use -k to extract metadata (layer colors, names, custom keycodes) from a
-    Keybard file. Optionally imports QMK named colors from a color.h file.
+    Keybard file.
 
     Color adjustments (--adjust-lightness, --adjust-saturation) are applied
     to all extracted colors to ensure readable contrast in generated images.
@@ -558,9 +551,8 @@ def configure(
             detected = _detect_format_from_path(keymap)
 
             if detected == KeymapType.KEYBARD:
-                qmk_content = qmk_color_header.read_text() if qmk_color_header else None
                 content = generator.generate_from_keybard(
-                    raw_content, qmk_content, adjust_lightness, adjust_saturation
+                    raw_content, adjust_lightness, adjust_saturation
                 )
             else:
                 content = generator.generate_from_keymap(raw_content)

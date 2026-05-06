@@ -140,26 +140,6 @@ output:
       width: 2.0
       radius: 10.0
     palette:
-      overrides:
-        azure: '#276e76'
-        black: '#4f4f4f'
-        blue: '#272776'
-        chartreuse: '#4f7627'
-        coral: '#763c27'
-        cyan: '#277676'
-        gold: '#766a27'
-        goldenrod: '#766027'
-        green: '#277627'
-        magenta: '#762776'
-        orange: '#764f27'
-        pink: '#76274e'
-        purple: '#4d2776'
-        red: '#762727'
-        springgreen: '#27764f'
-        teal: '#277676'
-        turquoise: '#3e605c'
-        white: '#4f4f4f'
-        yellow: '#767627'
       neutral_color: '#70768B'
       text_color: '#1b1b1b'
       key_label_color: '#FFF'
