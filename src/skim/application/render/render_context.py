@@ -429,7 +429,11 @@ _render_ctx: ContextVar[RenderContext] = ContextVar("skim_render_ctx")
 
 
 @contextmanager
-def using_render_context(ctx: RenderContext) -> Iterator[RenderContext]:
+def using_render_context(
+    ctx: RenderContext,
+    *,
+    font_usage_collector: "FontUsageCollector | None" = None,
+) -> Iterator[RenderContext]:
     """Push ``ctx`` as the active render context for the duration of the block.
 
     Composables decorated with ``@CtxComposable`` read the context
@@ -442,11 +446,14 @@ def using_render_context(ctx: RenderContext) -> Iterator[RenderContext]:
     a new value and restores the previous one on exit) so a child
     render can shadow the parent's context if needed.
 
-    Also activates a fresh :class:`FontUsageCollector` for the same
-    scope so :func:`AdjustableText` can register painted characters
+    Activates a :class:`FontUsageCollector` for the same scope so
+    :func:`AdjustableText` can register painted characters
     automatically and :func:`render` can subset embedded fonts to
-    just what the document actually paints — no manual keymap walk
-    required from each image entry point.
+    just what the document actually paints. By default a fresh
+    collector is created per block; pass ``font_usage_collector`` to
+    share one collector across several blocks (useful when an entry
+    point composes panels under different ``ctx`` instances and
+    wants the union of their character usage when embedding fonts).
     """
     # Local import — :mod:`text` doesn't import from this module, but
     # importing it eagerly at top-of-file would create a cycle through
@@ -456,7 +463,7 @@ def using_render_context(ctx: RenderContext) -> Iterator[RenderContext]:
 
     token = _render_ctx.set(ctx)
     try:
-        with using_font_usage_collector():
+        with using_font_usage_collector(font_usage_collector):
             yield ctx
     finally:
         _render_ctx.reset(token)

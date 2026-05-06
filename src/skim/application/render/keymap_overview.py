@@ -1033,9 +1033,17 @@ def KeymapOverview(
             has_double_south=config.keyboard.features.double_south,
         )
 
-        def _compute_rects() -> dict[int, tuple[float, float, float, float]]:
+        def _compute_rects() -> dict[str, tuple[float, float, float, float]]:
             """Walk every cluster's indicators, project their circles to
-            canvas-absolute coords, and return ``id(key) -> rect``.
+            canvas-absolute coords, and return a position-keyed rect map.
+
+            Keys match :func:`step_indicator_key`'s format
+            (``"finger.<cluster_attr>.<slot>"`` /
+            ``"thumb.<side>.<slot>"``) so the routing pass can look up
+            each step's rect by its structural location instead of
+            ``id(key)`` — fixes the silent collision a user hits when
+            the same ``SvalboardTargetKey`` instance is bound to
+            multiple cluster slots.
 
             Called twice by :func:`route_overview_connectors` (pass 1
             and pass 2). Both invocations read from the mutable
@@ -1043,7 +1051,7 @@ def KeymapOverview(
             second call automatically reflects the post-shift state
             after pass 1's row shifts.
             """
-            rects: dict[int, tuple[float, float, float, float]] = {}
+            rects: dict[str, tuple[float, float, float, float]] = {}
             # Per-layer finger cluster indicators.
             for row_idx, (_pos, qmk_idx) in enumerate(render_layers):
                 row_y = mutable_row_ys[row_idx]
@@ -1053,9 +1061,9 @@ def KeymapOverview(
                 # (``index_origin``, ``middle_origin``, …) and
                 # FingerClusterMetrics + FingerClusterData
                 # (``index``, ``middle``, …).
-                for half_x, half, side_data in (
-                    (left_half_x, lfh, layer_data.left),
-                    (right_half_x, rfh, layer_data.right),
+                for side_name, half_x, half, side_data in (
+                    ("left", left_half_x, lfh, layer_data.left),
+                    ("right", right_half_x, rfh, layer_data.right),
                 ):
                     finger_idx_to_attr = (
                         ("index", "index_origin"),
@@ -1078,16 +1086,16 @@ def KeymapOverview(
                             abs_cy = (
                                 row_y + cluster_origin.y + key_origin.y + indicator.circle_center.y
                             )
-                            key = getattr(cluster_data, slot)
-                            rects[id(key)] = _indicator_rect(
+                            rect_key = f"finger.{qmk_idx}.{side_name}.{cluster_attr}.{slot}"
+                            rects[rect_key] = _indicator_rect(
                                 abs_cx, abs_cy, indicator.circle_radius, rect_offset
                             )
             # Thumb cluster indicators — first layer only, matching
             # what the body actually paints.
             current_thumb_y = mutable_thumb_y[0]
-            for thumb_x, thumb, side_data in (
-                (left_thumb_x, left_thumb, thumb_layer_data.left.thumb),
-                (right_thumb_x, right_thumb, thumb_layer_data.right.thumb),
+            for side_name, thumb_x, thumb, side_data in (
+                ("left", left_thumb_x, left_thumb, thumb_layer_data.left.thumb),
+                ("right", right_thumb_x, right_thumb, thumb_layer_data.right.thumb),
             ):
                 for slot in _THUMB_SLOTS:
                     indicator = getattr(thumb.metrics.indicators, slot)
@@ -1096,8 +1104,8 @@ def KeymapOverview(
                     key_origin = getattr(thumb.metrics.key_origins, slot)
                     abs_cx = thumb_x + key_origin.x + indicator.circle_center.x
                     abs_cy = current_thumb_y + key_origin.y + indicator.circle_center.y
-                    key = getattr(side_data, slot)
-                    rects[id(key)] = _indicator_rect(
+                    rect_key = f"thumb.{base_qmk_idx}.{side_name}.{slot}"
+                    rects[rect_key] = _indicator_rect(
                         abs_cx, abs_cy, indicator.circle_radius, rect_offset
                     )
             return rects
@@ -1353,6 +1361,15 @@ class ConnectorStep:
             ``"right.pinky"``). Empty for thumb steps. Used by
             ``phase1_redirect_right_to_down`` to scope the S+DS partner search
             to the same finger cluster.
+        source_side: The half this step's source key sits on
+            (``"left"`` or ``"right"``). Populated for thumb steps —
+            their ``source_cluster_attr`` is empty, so this is the
+            only side discriminator they carry. Empty for finger
+            steps (``source_cluster_attr`` already encodes the side).
+        source_layer: The QMK layer index whose key originates this
+            path. Combined with the position-derived suffix to form
+            the step's indicator-rect key, so two value-equal keys
+            on different layers don't collapse onto one rect.
         path: Accumulating SVG path; appended to during routing.
     """
 
@@ -1365,7 +1382,40 @@ class ConnectorStep:
     indicator_rect: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
     key_origin_attr: str = ""
     source_cluster_attr: str = ""
+    source_side: str = ""
+    source_layer: int = 0
     path: draw.Path = field(default_factory=lambda: draw.Path(fill="none"))
+
+
+def step_indicator_key(step: "ConnectorStep") -> str:
+    """Position-based identifier for a step's indicator rect.
+
+    Avoids the ``id(key)`` collision a user hits when the same
+    ``SvalboardTargetKey`` instance is bound to more than one
+    cluster slot (e.g. ``LT(NAV)`` shared between both thumb pads):
+    Python re-uses the object so two slots map to one ``id()`` and
+    only one connector ever paints — from whichever slot wrote
+    the rect last.
+
+    Returns a string composed of the step's structural location:
+
+    - Finger step →
+      ``"finger.<source_layer>.<cluster_attr>.<key_origin_attr>"``
+      (e.g. ``"finger.0.left.index.south_key"``).
+    - Thumb step →
+      ``"thumb.<source_layer>.<source_side>.<key_origin_attr>"``
+      (e.g. ``"thumb.0.left.pad_key"``).
+
+    Both the rect-building loop and the routing lookup compute the
+    key the same way, so each source slot has its own indicator
+    regardless of the underlying key's Python identity. The source
+    layer is part of the key so two value-equal keys on different
+    layers (a common QMK pattern, e.g. ``TO(2)`` painted on both
+    layer 0 and layer 1) don't share a rect.
+    """
+    if step.source_cluster_attr:
+        return f"finger.{step.source_layer}.{step.source_cluster_attr}.{step.key_origin_attr}"
+    return f"thumb.{step.source_layer}.{step.source_side}.{step.key_origin_attr}"
 
 
 @dataclass
@@ -1552,6 +1602,8 @@ def build_thumb_path_list(
                 target_point=target,
                 target_layer=key.layer_switch,
                 key_origin_attr=attr,
+                source_side=side.value,
+                source_layer=source_layer,
             )
         )
 
@@ -1575,6 +1627,8 @@ def build_thumb_path_list(
                     target_point=target,
                     target_layer=left.up_key.layer_switch,
                     key_origin_attr="up_key",
+                    source_side=KeyboardSide.LEFT.value,
+                    source_layer=source_layer,
                 )
             )
 
@@ -1642,6 +1696,7 @@ def build_finger_path_list_for_cluster(
                 target_layer=key.layer_switch,
                 key_origin_attr=attr,
                 source_cluster_attr=cluster_attr,
+                source_layer=source_layer,
             )
         )
 
@@ -1912,7 +1967,7 @@ def route_overview_connectors(
     layers: Sequence[OverviewLayerSource],
     thumb: ThumbSource,
     layout: RoutingLayout,
-    compute_indicator_rects: Callable[[], Mapping[int, tuple[float, float, float, float]]],
+    compute_indicator_rects: Callable[[], Mapping[str, tuple[float, float, float, float]]],
     keymap_spacing: float,
 ) -> ConnectorRouting:
     """Top-level orchestrator for overview connector routing.
@@ -1979,7 +2034,7 @@ def _pass1_discover_and_shift(
     layers: Sequence[OverviewLayerSource],
     thumb: ThumbSource,
     layout: RoutingLayout,
-    indicator_rects: Mapping[int, tuple[float, float, float, float]],
+    indicator_rects: Mapping[str, tuple[float, float, float, float]],
     keymap_spacing: float,
 ) -> float:
     """Pass 1: route each source, discover paddings, apply gap-aware shifts.
@@ -2086,7 +2141,7 @@ def _pass1_discover_and_shift(
 def _route_finger_layer_phase1(
     layer: OverviewLayerSource,
     layout: RoutingLayout,
-    indicator_rects: Mapping[int, tuple[float, float, float, float]],
+    indicator_rects: Mapping[str, tuple[float, float, float, float]],
     initial_layer_bounds: Mapping[int, tuple[float, float]],
     keymap_spacing: float,
 ) -> tuple[int, int, float, float]:
@@ -2117,7 +2172,7 @@ def _route_finger_layer_phase1(
 def _route_thumb_phase1(
     thumb: ThumbSource,
     layout: RoutingLayout,
-    indicator_rects: Mapping[int, tuple[float, float, float, float]],
+    indicator_rects: Mapping[str, tuple[float, float, float, float]],
     initial_top: float,
     initial_bottom: float,
     keymap_spacing: float,
@@ -2174,7 +2229,7 @@ def _pass2_build_paths(
     layers: Sequence[OverviewLayerSource],
     thumb: ThumbSource,
     layout: RoutingLayout,
-    indicator_rects: Mapping[int, tuple[float, float, float, float]],
+    indicator_rects: Mapping[str, tuple[float, float, float, float]],
     keymap_spacing: float,
 ) -> list[ConnectorStep]:
     """Pass 2: rebuild paths against the post-shift layout for final geometry."""
@@ -2213,7 +2268,7 @@ def _pass2_build_paths(
 
 def _attach_rects_and_set_initial_moveto(
     paths: list[ConnectorStep],
-    indicator_rects: Mapping[int, tuple[float, float, float, float]],
+    indicator_rects: Mapping[str, tuple[float, float, float, float]],
 ) -> None:
     """Populate each step's indicator_rect from the map and set its initial moveTo.
 
@@ -2224,12 +2279,12 @@ def _attach_rects_and_set_initial_moveto(
     for step in paths:
         if step.key is None:
             continue
+        rect_key = step_indicator_key(step)
         try:
-            step.indicator_rect = indicator_rects[id(step.key)]
+            step.indicator_rect = indicator_rects[rect_key]
         except KeyError as e:
             raise ValueError(
-                f"indicator_rects missing entry for key "
-                f"{step.key_origin_attr!r} in cluster {step.source_cluster_attr!r} "
+                f"indicator_rects missing entry for {rect_key!r} "
                 f"(target_layer={step.target_layer}); caller must populate every "
                 f"key whose layer_switch enters the priority list"
             ) from e

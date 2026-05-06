@@ -38,6 +38,7 @@ from skim.application.render.composable import Component
 from skim.application.render.font import (
     Font,
     FontSubsetter,
+    FontUsageCollector,
     current_font_usage_collector,
     register_font_usage,
 )
@@ -2289,19 +2290,34 @@ def _build_layer_connector_show_mock() -> draw.Drawing:
     connector lines drawn (``show: true``) and one without
     (``show: false``).
 
-    A 3-layer keymap with two layer-switch keys on the base layer is
-    used so the ``true`` panel actually has connectors to draw —
-    same data on both panels means the only visible difference is
-    the lines themselves.
+    A 2-layer keymap with both thumb-cluster pad keys (left + right)
+    bound to ``LT(1)`` so the ``true`` panel paints two connectors
+    fanning into layer 1's badge — same data on both panels means
+    the only visible difference is the lines themselves. The
+    ``layer_connector.width`` and ``dot_spacing`` are bumped well
+    past their defaults so the connectors read as the dominant
+    feature of the figure (the docs use this image to explain what
+    the connectors *are*; legibility wins over realistic styling).
     """
     from skim.data.keyboard import SplitSide
 
     blank = SvalboardTargetKey(label="")
-    mo1 = SvalboardTargetKey(label="LT(1)", layer_switch=1)
-    mo2 = SvalboardTargetKey(label="LT(2)", layer_switch=2)
+    pad_to_layer1 = SvalboardTargetKey(
+        label="%%nf-md-layers_outline; 1", layer_switch=1
+    )
 
     def _empty_finger() -> FingerClusterData[SvalboardTargetKey]:
         return FingerClusterData(blank)
+
+    def _layer0_thumb() -> ThumbClusterData[SvalboardTargetKey]:
+        return ThumbClusterData(
+            down_key=blank,
+            pad_key=pad_to_layer1,
+            up_key=blank,
+            nail_key=blank,
+            knuckle_key=blank,
+            double_down_key=blank,
+        )
 
     def _empty_thumb() -> ThumbClusterData[SvalboardTargetKey]:
         return ThumbClusterData(
@@ -2313,29 +2329,26 @@ def _build_layer_connector_show_mock() -> draw.Drawing:
             double_down_key=blank,
         )
 
-    # Layer 0 places the layer-switch keys on the index-finger north
-    # key and the middle-finger north key, both on the LEFT half.
-    # The overview's connector router will draw paths from those keys
-    # to the layer-1 / layer-2 rows in the badge column.
-    layer0_left_index = FingerClusterData(blank, north_key=mo1)
-    layer0_left_middle = FingerClusterData(blank, north_key=mo2)
+    # Layer 0 places ``LT(1)`` on both pad keys (one per thumb
+    # cluster). Both connectors run to layer 1's row in the badge
+    # column — two paths fanning into the same destination.
     layer0_left = SplitSide(
-        index=layer0_left_index,
-        middle=layer0_left_middle,
+        index=_empty_finger(),
+        middle=_empty_finger(),
         ring=_empty_finger(),
         pinky=_empty_finger(),
-        thumb=_empty_thumb(),
+        thumb=_layer0_thumb(),
     )
     layer0_right = SplitSide(
         index=_empty_finger(),
         middle=_empty_finger(),
         ring=_empty_finger(),
         pinky=_empty_finger(),
-        thumb=_empty_thumb(),
+        thumb=_layer0_thumb(),
     )
 
-    # Layers 1 and 2 are blank — the connectors only need source keys
-    # on the destination's neighbouring layers, not destinations.
+    # Layer 1 is blank — the connectors only need source keys on
+    # the destination's neighbouring layers, not destinations.
     def _blank_side() -> SplitSide[SvalboardTargetKey]:
         return SplitSide(
             index=_empty_finger(),
@@ -2349,26 +2362,53 @@ def _build_layer_connector_show_mock() -> draw.Drawing:
         layers={
             0: SvalboardLayout(left=layer0_left, right=layer0_right),
             1: SvalboardLayout(left=_blank_side(), right=_blank_side()),
-            2: SvalboardLayout(left=_blank_side(), right=_blank_side()),
         }
     )
 
     # Use a smaller doc width so the overview fits side-by-side on
     # the page; the Svalboard palette so badges and indicators read
-    # cleanly.
-    base = _svalboard_config(num_layers=3)
+    # cleanly. ``num_layers=2`` matches the keymap above.
+    # ``use_system_fonts=False`` so painted text references the
+    # bundled font families that :func:`_embed_used_fonts` writes
+    # into the SVG (otherwise the layer-trigger key's
+    # ``%%nf-md-layers_outline;`` glyph renders as a tofu box).
+    base = _svalboard_config(num_layers=2)
+    style = base.output.style.model_copy(update={"use_system_fonts": False})
     layout = base.output.layout.model_copy(update={"width": 800.0})
-    output = base.output.model_copy(update={"layout": layout})
+    output = base.output.model_copy(update={"layout": layout, "style": style})
     base_with_smaller_width = base.model_copy(update={"output": output})
 
     from skim.application.render.keymap_overview import KeymapOverview
 
+    # Bump connector ``width`` and ``dot_spacing`` to absolute values
+    # (≥ 1.0 = SVG units, not a doc-width proportion) above the
+    # natural defaults so the dotted path reads as the figure's main
+    # subject. Default at doc_width=800 is roughly width=2.2 / dot
+    # spacing=6.1. The visible dot diameter equals ``width`` (the
+    # path uses ``stroke-linecap="round"`` so each painted segment
+    # caps as a circle of that diameter); ``dot_spacing`` controls
+    # the gap between consecutive dots.
+    chunky_width = 7.5
+    chunky_dot_spacing = 18.0
+
+    # Shared font-usage collector — each panel's
+    # ``using_render_context`` block writes its painted-glyph chars
+    # into this same collector instead of a fresh per-block one,
+    # so :func:`_embed_used_fonts` (called after the loop) sees the
+    # union of every character the panels actually paint.
+    shared_collector = FontUsageCollector()
+
     panels: list[tuple[Component, str]] = []
+    last_ctx: RenderContext | None = None
     for show, caption in ((True, "show: true"), (False, "show: false")):
         style = base_with_smaller_width.output.style.model_copy(
             update={
                 "layer_connector": base_with_smaller_width.output.style.layer_connector.model_copy(
-                    update={"show": show}
+                    update={
+                        "show": show,
+                        "width": chunky_width,
+                        "dot_spacing": chunky_dot_spacing,
+                    }
                 )
             }
         )
@@ -2378,7 +2418,8 @@ def _build_layer_connector_show_mock() -> draw.Drawing:
             }
         )
         ctx = RenderContext.build(config=config_for_panel, keymap=keymap)
-        with using_render_context(ctx):
+        last_ctx = ctx
+        with using_render_context(ctx, font_usage_collector=shared_collector):
             overview = KeymapOverview(keymap=keymap)
             panels.append((overview, caption))
 
@@ -2428,6 +2469,13 @@ def _build_layer_connector_show_mock() -> draw.Drawing:
             )
         )
         cursor_y += label_height + panel_gap
+
+    # Activate one of the panel ctxes so the shared collector becomes
+    # the active one for ``_embed_used_fonts``, then write the
+    # subsetted @font-face rules into the SVG.
+    assert last_ctx is not None
+    with using_render_context(last_ctx, font_usage_collector=shared_collector):
+        _embed_used_fonts(d)
 
     return d
 

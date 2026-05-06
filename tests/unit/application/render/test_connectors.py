@@ -1079,7 +1079,7 @@ class TestRouteOverviewConnectors:
         # Right-pinky north_key on layer 0 targets layer 1.
         rp_n = _key(layer_switch=1)
         right = _side(pinky=_finger(north_key=rp_n))
-        rects = {id(rp_n): (700.0, 110.0, 6.0, 6.0)}
+        rects = {"finger.0.right.pinky.north_key": (700.0, 110.0, 6.0, 6.0)}
         result = route_overview_connectors(
             layers=[OverviewLayerSource(source_layer=0, left=_side(), right=right)],
             thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
@@ -1098,7 +1098,7 @@ class TestRouteOverviewConnectors:
         layout = self._layout()
         l1_n = _key(layer_switch=1)  # left.index north_key
         left = _side(index=_finger(north_key=l1_n))
-        rects = {id(l1_n): (300.0, 110.0, 6.0, 6.0)}
+        rects = {"finger.0.left.index.north_key": (300.0, 110.0, 6.0, 6.0)}
         route_overview_connectors(
             layers=[OverviewLayerSource(source_layer=0, left=left, right=_side())],
             thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
@@ -1114,7 +1114,7 @@ class TestRouteOverviewConnectors:
         layout = self._layout()
         rt_knuckle = _key(layer_switch=1)
         right_thumb = _thumb(knuckle_key=rt_knuckle)
-        rects = {id(rt_knuckle): (700.0, 450.0, 6.0, 6.0)}
+        rects = {"thumb.0.right.knuckle_key": (700.0, 450.0, 6.0, 6.0)}
         result = route_overview_connectors(
             layers=[],
             thumb=ThumbSource(source_layer=0, left=_thumb(), right=right_thumb),
@@ -1131,7 +1131,7 @@ class TestRouteOverviewConnectors:
         layout = self._layout()
         rp_n = _key(layer_switch=1)
         right = _side(pinky=_finger(north_key=rp_n))
-        rects = {id(rp_n): (700.0, 110.0, 6.0, 6.0)}
+        rects = {"finger.0.right.pinky.north_key": (700.0, 110.0, 6.0, 6.0)}
         compute_calls = [0]
 
         def compute_rects():
@@ -1152,7 +1152,7 @@ class TestRouteOverviewConnectors:
         layout = self._layout()
         rp_n = _key(layer_switch=1)
         right = _side(pinky=_finger(north_key=rp_n))
-        rects = {id(rp_n): (700.0, 110.0, 6.0, 6.0)}
+        rects = {"finger.0.right.pinky.north_key": (700.0, 110.0, 6.0, 6.0)}
         result = route_overview_connectors(
             layers=[OverviewLayerSource(source_layer=0, left=_side(), right=right)],
             thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
@@ -1170,7 +1170,7 @@ class TestRouteOverviewConnectors:
         layout = self._layout()
         l0_n = _key(layer_switch=2)
         layer0_left = _side(index=_finger(north_key=l0_n))
-        rects = {id(l0_n): (300.0, 110.0, 6.0, 6.0)}
+        rects = {"finger.0.left.index.north_key": (300.0, 110.0, 6.0, 6.0)}
         route_overview_connectors(
             layers=[OverviewLayerSource(source_layer=0, left=layer0_left, right=_side())],
             thumb=ThumbSource(source_layer=0, left=_thumb(), right=_thumb()),
@@ -1200,9 +1200,9 @@ class TestRouteOverviewConnectors:
         # Rects sit inside the upper cluster bounds (100..150) and below the
         # lower cluster top (200) so neither layer contributes overhang.
         rects = {
-            id(upper_c): (300.0, 130.0, 6.0, 6.0),
-            id(upper_s): (300.0, 140.0, 6.0, 6.0),
-            id(lower_n): (300.0, 210.0, 6.0, 6.0),
+            "finger.0.left.middle.center_key": (300.0, 130.0, 6.0, 6.0),
+            "finger.0.left.middle.south_key": (300.0, 140.0, 6.0, 6.0),
+            "finger.1.left.index.north_key": (300.0, 210.0, 6.0, 6.0),
         }
         route_overview_connectors(
             layers=[
@@ -1229,8 +1229,8 @@ class TestRouteOverviewConnectors:
         l1_e = _key(layer_switch=0)
         lower_left = _side(index=_finger(north_key=l1_n, east_key=l1_e))
         rects = {
-            id(l1_n): (300.0, 210.0, 6.0, 6.0),
-            id(l1_e): (320.0, 220.0, 6.0, 6.0),
+            "finger.1.left.index.north_key": (300.0, 210.0, 6.0, 6.0),
+            "finger.1.left.index.east_key": (320.0, 220.0, 6.0, 6.0),
         }
         route_overview_connectors(
             layers=[
@@ -1274,9 +1274,9 @@ class TestRouteOverviewConnectors:
         thumb_n = _key(layer_switch=2)
         right_thumb = _thumb(nail_key=thumb_n)
         rects = {
-            id(layer_c): (300.0, 130.0, 6.0, 6.0),
+            "finger.0.left.middle.center_key": (300.0, 130.0, 6.0, 6.0),
             # Thumb cluster spans 400..500; rect inside avoids overhang.
-            id(thumb_n): (700.0, 410.0, 6.0, 6.0),
+            "thumb.0.right.nail_key": (700.0, 410.0, 6.0, 6.0),
         }
         route_overview_connectors(
             layers=[OverviewLayerSource(source_layer=0, left=layer_left, right=_side())],
@@ -1294,9 +1294,11 @@ class TestRouteOverviewConnectors:
         # Two physical keys on different layers can produce equal-valued
         # SvalboardTargetKey instances (e.g. ``TO(2)`` on both layers
         # resolves to ``SvalboardTargetKey(label='X', layer_switch=2)``).
-        # The router must look those up by identity, not value, so each
-        # path picks up the rect of its own physical key — not a
-        # cross-layer twin's rect.
+        # The router keys indicator rects by ``(source_layer, position)``,
+        # so each path picks up the rect of its own physical slot — not
+        # a cross-layer twin's rect, and not a same-slot reuse on
+        # another half (the same instance can also legitimately be bound
+        # to multiple cluster slots).
         layout = self._layout()
         # Both layers' left.index north_key targets layer 2 with the same
         # label, producing dataclass-equal but distinct instances.
@@ -1306,12 +1308,15 @@ class TestRouteOverviewConnectors:
         assert l0_n is not l1_n  # but distinct instances
         layer0_left = _side(index=_finger(north_key=l0_n))
         layer1_left = _side(index=_finger(north_key=l1_n))
-        # Distinct rects, keyed by identity. If the router collapsed them
-        # under value equality, one rect would silently win and the other
-        # path would inherit the wrong coordinates.
+        # Distinct rects keyed by (source_layer, position). If the
+        # router collapsed them, one rect would silently win and the
+        # other path would inherit the wrong coordinates.
         rect0 = (300.0, 110.0, 6.0, 6.0)
         rect1 = (300.0, 210.0, 6.0, 6.0)
-        rects = {id(l0_n): rect0, id(l1_n): rect1}
+        rects = {
+            "finger.0.left.index.north_key": rect0,
+            "finger.1.left.index.north_key": rect1,
+        }
         result = route_overview_connectors(
             layers=[
                 OverviewLayerSource(source_layer=0, left=layer0_left, right=_side()),
