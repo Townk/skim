@@ -51,13 +51,9 @@ Current schema:
 ```yaml
 keyboard:
   features:
-    double_south: <boolean>
+    ...                      # see keyboard.features below
   layers:
-    - index: <integer>
-      id: <string>
-      name: <string>
-      variant: <string>
-    ...
+    ...                      # see keyboard.layers below
 ```
 
 ### `features` { #keyboard-features }
@@ -1067,30 +1063,15 @@ output:
 
     # Object-shaped configs
     border:
-      width: <float | "N%">
-      radius: <float>
+      ...                      # see output.style.border below
     layer_connector:
-      show: <boolean>
-      width: <float | "N%" | null>
-      dot_spacing: <float | "N%" | null>
+      ...                      # see output.style.layer_connector below
     layer_indicator:
-      show: <boolean>
-      width: <float | "N%" | null>
+      ...                      # see output.style.layer_indicator below
     legend_tables:
-      macros:
-        show: <boolean>
-        scale: <float>
-      tap_dances:
-        show: <boolean>
-        scale: <float>
-      symbols:
-        show: <boolean>
-        scale: <float>
-        flow: <"row" | "column">
-        columns: <integer | null>
+      ...                      # see output.style.legend_tables below
     strokes:
-      chip_outline: <float | "N%" | null>
-      header_rule: <float | "N%" | null>
+      ...                      # see output.style.strokes below
     palette:
       ...                      # see output.style.palette below
 ```
@@ -1486,12 +1467,7 @@ output:
       macro_color: <string>
       tap_dance_color: <string>
       layers:
-        - base_color: <string>
-          color_index: <integer>
-          gradient:
-            - <string>
-            - ...
-        - ...
+        ...                    # see output.style.palette.layers below
 ```
 
 A worked example:
