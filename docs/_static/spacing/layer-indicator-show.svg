@@ -3,28 +3,28 @@
      width="500.0" height="323.908" viewBox="0 0 500.0 323.908">
 <defs>
 </defs>
-<circle cx="126.0" cy="177.798" r="33.99" fill="#6F768B" />
-<rect x="89.92" y="67.688" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="89.92" y="129.024" width="72.16" height="10.824" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="163.95000000000002" y="139.848" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="163.95000000000002" y="139.848" width="10.824" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="89.92" y="215.748" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="89.92" y="215.748" width="72.16" height="10.824" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="15.89" y="139.848" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="77.226" y="139.848" width="10.824" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
-<path d="M126.0,55.688 L126.0,71.688" stroke="#606060" stroke-width="2.0" />
-<circle cx="126.0" cy="71.688" r="2.0" fill="#606060" />
-<circle cx="126.0" cy="35.844" r="19.844" fill="#808080" stroke="#606060" stroke-width="2.0" />
+<circle cx="126.0" cy="177.798" r="33.99" fill="#053F3A" />
+<rect x="89.92" y="67.688" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#86BE81" />
+<rect x="89.92" y="129.024" width="72.16" height="10.824" rx="5.412" ry="5.412" fill="#079E7C" />
+<rect x="163.95000000000002" y="139.848" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#079E7C" />
+<rect x="163.95000000000002" y="139.848" width="10.824" height="72.16" rx="5.412" ry="5.412" fill="#037065" />
+<rect x="89.92" y="215.748" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#037065" />
+<rect x="89.92" y="215.748" width="72.16" height="10.824" rx="5.412" ry="5.412" fill="#053F3A" />
+<rect x="15.89" y="139.848" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#BDDCA7" />
+<rect x="77.226" y="139.848" width="10.824" height="72.16" rx="5.412" ry="5.412" fill="#86BE81" />
+<path d="M126.0,55.688 L126.0,71.688" stroke="#A69DC6" stroke-width="2.0" />
+<circle cx="126.0" cy="71.688" r="2.0" fill="#A69DC6" />
+<circle cx="126.0" cy="35.844" r="19.844" fill="#8673B5" stroke="#A69DC6" stroke-width="2.0" />
 <text x="119.55069999999999" y="35.844" font-size="23.8128" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">2</text>
 <text x="126.0" y="295.908" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">show: true</text>
-<circle cx="374.0" cy="126.10999999999999" r="33.99" fill="#6F768B" />
-<rect x="337.92" y="16.0" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="337.92" y="77.336" width="72.16" height="10.824" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="411.95000000000005" y="88.16" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="411.95000000000005" y="88.16" width="10.824" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="337.92" y="164.06" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="337.92" y="164.06" width="72.16" height="10.824" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="263.89" y="88.16" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
-<rect x="325.22599999999994" y="88.16" width="10.824" height="72.16" rx="5.412" ry="5.412" fill="#6F768B" />
+<circle cx="374.0" cy="177.798" r="33.99" fill="#053F3A" />
+<rect x="337.92" y="67.688" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#86BE81" />
+<rect x="337.92" y="129.024" width="72.16" height="10.824" rx="5.412" ry="5.412" fill="#079E7C" />
+<rect x="411.95000000000005" y="139.848" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#079E7C" />
+<rect x="411.95000000000005" y="139.848" width="10.824" height="72.16" rx="5.412" ry="5.412" fill="#037065" />
+<rect x="337.92" y="215.748" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#037065" />
+<rect x="337.92" y="215.748" width="72.16" height="10.824" rx="5.412" ry="5.412" fill="#053F3A" />
+<rect x="263.89" y="139.848" width="72.16" height="72.16" rx="5.412" ry="5.412" fill="#BDDCA7" />
+<rect x="325.22599999999994" y="139.848" width="10.824" height="72.16" rx="5.412" ry="5.412" fill="#86BE81" />
 <text x="374.0" y="295.908" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">show: false</text>
 </svg>

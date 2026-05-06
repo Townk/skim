@@ -124,6 +124,40 @@ def _empty_keymap(*, layer_index: int = 0) -> SvalboardKeymap[SvalboardTargetKey
     return SvalboardKeymap(layers={layer_index: SvalboardLayout.from_sequence([blank] * 60)})
 
 
+def _svalboard_config(*, num_layers: int = 4) -> SkimConfig:
+    """SkimConfig wired to the curated Svalboard palette from
+    ``samples/config/SvalCOLEMAK-config.yaml`` so colour mocks read
+    like a real Svalboard render rather than a generic palette.
+    """
+    import yaml
+
+    sample_path = ROOT / "samples" / "config" / "SvalCOLEMAK-config.yaml"
+    with open(sample_path) as f:
+        data = yaml.safe_load(f)
+    sample_config = SkimConfig.model_validate(data)
+    palette_layers = sample_config.output.style.palette.layers[:num_layers]
+
+    config = SkimConfig()
+    keyboard = config.keyboard.model_copy(
+        update={
+            "layers": tuple(
+                KeyboardLayer(index=i, name=f"Layer {i}") for i in range(num_layers)
+            )
+        }
+    )
+    palette = config.output.style.palette.model_copy(
+        update={
+            "neutral_color": sample_config.output.style.palette.neutral_color,
+            "layers": palette_layers,
+        }
+    )
+    style = config.output.style.model_copy(
+        update={"use_system_fonts": True, "palette": palette}
+    )
+    output = config.output.model_copy(update={"style": style})
+    return config.model_copy(update={"keyboard": keyboard, "output": output})
+
+
 # ---------------------------------------------------------------------------
 # Highlight helpers — draw rose-red overlays on top of a base render.
 # ---------------------------------------------------------------------------
@@ -1461,34 +1495,52 @@ def _build_side_by_side(
 ) -> draw.Drawing:
     """Render N components horizontally with a caption under each.
 
-    Each panel is laid out using its **overflow** extents when
-    available, so chrome that protrudes past the keys-only bbox
-    (layer-indicator badges, thumb double-down indicators) lands on
-    canvas instead of getting clipped at the panel edge.
+    All panels' **keys-only** origins align on a shared horizontal
+    line — the canvas reserves enough headroom at the top to fit the
+    worst-case overflow above any panel, so chrome (layer indicators,
+    thumb double-down badges) that protrudes past the keys-only bbox
+    lands on canvas without dragging the keys themselves out of
+    alignment with the panels that don't have such chrome.
     """
     label_gap = 8.0
     label_height = label_font_size + label_gap
     extents = [_panel_extents(c) for c, _ in panels]
-    panel_h = max(size.height for size, _ in extents)
+
+    # Shared headroom = the largest amount any panel's overflow
+    # extends ABOVE its keys-only origin. Translates every panel's
+    # keys-only origin down by this amount so they line up.
+    headroom = max(max(0.0, -offset.y) for _, offset in extents)
+    # Shared footroom = the largest amount any panel's overflow
+    # extends BELOW its keys-only bottom edge.
+    footroom = max(
+        max(
+            0.0,
+            (overflow_size.height + offset.y) - component.size.height,
+        )
+        for (component, _), (overflow_size, offset) in zip(panels, extents, strict=True)
+    )
+    keys_origin_y = outer_padding + headroom
+    keys_max_h = max(c.size.height for c, _ in panels)
+    canvas_h = keys_origin_y + keys_max_h + footroom + label_height + outer_padding
+
     total_w = sum(size.width for size, _ in extents) + panel_gap * (len(panels) - 1)
     canvas_w = total_w + 2 * outer_padding
-    canvas_h = panel_h + label_height + 2 * outer_padding
     d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
 
     cursor_x = outer_padding
     for (component, caption), (overflow_size, overflow_offset) in zip(panels, extents, strict=True):
-        # Translate the keys-only origin so the overflow bbox's
-        # top-left corner lands at (cursor_x, outer_padding).
+        # Each panel's keys-only origin lands at the same y; the
+        # overflow chrome fills upward / leftward as needed.
         keys_origin = Point(
             cursor_x - overflow_offset.x,
-            outer_padding - overflow_offset.y,
+            keys_origin_y,
         )
         component.draw_at(d, keys_origin)
         d.append(
             draw.Text(
                 caption,
                 x=cursor_x + overflow_size.width / 2,
-                y=outer_padding + panel_h + label_gap,
+                y=keys_origin_y + keys_max_h + footroom + label_gap,
                 font_size=label_font_size,
                 text_anchor="middle",
                 dominant_baseline="text-before-edge",
@@ -1510,28 +1562,9 @@ def _build_hold_symbol_position_mock() -> draw.Drawing:
     than greyscale so the modifier glyphs and the down-key fill
     contrast cleanly.
     """
-    # Use the default Skim palette (colourful) rather than the
-    # spacings-mock greyscale one so the cluster reads as a real
-    # rendered keyboard chunk.
-    config = SkimConfig()
-    config = config.model_copy(
-        update={
-            "keyboard": config.keyboard.model_copy(
-                update={
-                    "layers": tuple(
-                        KeyboardLayer(index=i, name=f"Layer {i}") for i in range(4)
-                    )
-                }
-            ),
-            "output": config.output.model_copy(
-                update={
-                    "style": config.output.style.model_copy(
-                        update={"use_system_fonts": True}
-                    )
-                }
-            ),
-        }
-    )
+    # Use the curated Svalboard palette so the cluster reads like a
+    # real Svalboard render, not a generic Skim default.
+    config = _svalboard_config(num_layers=4)
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
@@ -1576,29 +1609,10 @@ def _build_layer_indicator_show_mock() -> draw.Drawing:
     """Finger cluster with a layer-switching north key, rendered with
     and without the layer-indicator badge.
 
-    Uses the default Skim palette so layer 2's colour gives the
-    indicator badge enough contrast against the cluster's neutral
-    keys to read.
+    Uses the curated Svalboard palette so layer 2's purple gives the
+    indicator badge clear contrast against the cluster's neutral keys.
     """
-    config = SkimConfig()
-    config = config.model_copy(
-        update={
-            "keyboard": config.keyboard.model_copy(
-                update={
-                    "layers": tuple(
-                        KeyboardLayer(index=i, name=f"Layer {i}") for i in range(4)
-                    )
-                }
-            ),
-            "output": config.output.model_copy(
-                update={
-                    "style": config.output.style.model_copy(
-                        update={"use_system_fonts": True}
-                    )
-                }
-            ),
-        }
-    )
+    config = _svalboard_config(num_layers=4)
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
@@ -1629,28 +1643,10 @@ def _build_use_layer_colors_on_keys_mock() -> draw.Drawing:
     once with the destination layer's colour painting the key and
     once with the neutral fall-back.
 
-    Uses the default Skim palette so layer 2's colour comes through
-    naturally on the ``true`` panel.
+    Uses the curated Svalboard palette so layer 2's purple comes
+    through vividly on the ``true`` panel.
     """
-    config = SkimConfig()
-    config = config.model_copy(
-        update={
-            "keyboard": config.keyboard.model_copy(
-                update={
-                    "layers": tuple(
-                        KeyboardLayer(index=i, name=f"Layer {i}") for i in range(4)
-                    )
-                }
-            ),
-            "output": config.output.model_copy(
-                update={
-                    "style": config.output.style.model_copy(
-                        update={"use_system_fonts": True}
-                    )
-                }
-            ),
-        }
-    )
+    config = _svalboard_config(num_layers=4)
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
