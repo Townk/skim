@@ -57,7 +57,14 @@ from skim.application.render.tap_dance import (
     TapDanceRow,
     TapDanceTable,
 )
-from skim.data.config import KeyboardLayer, LayerColor, Palette, SkimConfig, SplitSidePosition
+from skim.data.config import (
+    KeyboardLayer,
+    LayerColor,
+    Palette,
+    SkimConfig,
+    Spacing,
+    SplitSidePosition,
+)
 from skim.data.keyboard import (
     FingerCluster as FingerClusterData,
     SvalboardKeymap,
@@ -1709,11 +1716,20 @@ def _build_thumb_key_gap_mock() -> draw.Drawing:
 def _build_chip_outline_mock() -> draw.Drawing:
     """Highlight the ``Strokes.chip_outline`` value as a rose stroke
     overlaid on a TapDance chip outline.
+
+    ``use_system_fonts=False`` so the chip's Nerd-Font glyph
+    references the bundled ``Key-Symbols`` family that
+    :func:`_embed_used_fonts` writes into the SVG; otherwise the
+    glyph renders as a tofu box on browsers without
+    ``Symbols Nerd Font`` installed.
     """
     from skim.application.render.adjustable_text import measure_text_width
-    from skim.application.render.font import Font
 
     config = _grey_config()
+    style = config.output.style.model_copy(update={"use_system_fonts": False})
+    config = config.model_copy(
+        update={"output": config.output.model_copy(update={"style": style})}
+    )
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
@@ -1754,45 +1770,44 @@ def _build_chip_outline_mock() -> draw.Drawing:
             )
         )
 
+        _embed_used_fonts(d)
+
     return d
 
 
 def _build_header_rule_stroke_mock() -> draw.Drawing:
     """Highlight ``Strokes.header_rule`` as a rose-coloured rule line
     underneath a SectionStripe title.
+
+    Shares the stripe + TapDance body stage with
+    :func:`_build_section_title_rule_gap_mock` so the two
+    illustrations sit on the same canvas shape; only the
+    highlight differs.
     """
-    config = _grey_config()
-    keymap = _empty_keymap()
-    ctx = RenderContext.build(config=config, keymap=keymap)
+    ctx = _section_stage_ctx()
 
     with using_render_context(ctx):
-        metrics = SectionStripeMetrics.from_ctx(ctx)
-        stripe = SectionStripe(
-            title="MACROS", count=3, width=320.0, accent_line=_GREY_BORDER
-        )
-        pad = 24.0
-        canvas_w = stripe.size.width + 2 * pad
-        canvas_h = stripe.size.height + 2 * pad
-        d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
-
-        x = pad
-        y = pad
-        stripe.draw_at(d, Point(x, y))
+        stage = _build_section_stage(ctx)
 
         # Rose overlay on the rule line at the same y position the
-        # stripe paints its own rule.
-        d.append(
+        # stripe paints its own rule (=
+        # ``stage.y + stage.stripe.size.height``). The overlay's
+        # stroke width matches the painted rule so the rose
+        # exactly covers the underlying stroke.
+        rule_y = stage.y + stage.stripe.size.height
+        stage.drawing.append(
             draw.Line(
-                sx=x,
-                sy=y + metrics.rule_offset,
-                ex=x + stripe.size.width,
-                ey=y + metrics.rule_offset,
+                sx=stage.x,
+                sy=rule_y,
+                ex=stage.x + stage.stripe.size.width,
+                ey=rule_y,
                 stroke=_HIGHLIGHT,
-                stroke_width=metrics.rule_stroke,
+                stroke_width=stage.stripe_metrics.rule_stroke,
             )
         )
+        _embed_used_fonts(stage.drawing)
 
-    return d
+    return stage.drawing
 
 
 def _build_layer_indicator_stroke_mock() -> draw.Drawing:
@@ -2229,7 +2244,7 @@ def _build_symbols_flow_mock() -> draw.Drawing:
     entries = [
         SymbolLegendEntry(
             display_label="%%nf-md-apple_keyboard_command;",
-            description="Command (GUI / Meta)",
+            description="Command",
             sort_key="MOD_LCMD",
             category="Modifiers",
         ),
@@ -2241,7 +2256,7 @@ def _build_symbols_flow_mock() -> draw.Drawing:
         ),
         SymbolLegendEntry(
             display_label="%%nf-md-apple_keyboard_option;",
-            description="Option (Alt)",
+            description="Option",
             sort_key="MOD_LOPT",
             category="Modifiers",
         ),
@@ -2265,7 +2280,20 @@ def _build_symbols_flow_mock() -> draw.Drawing:
         ),
     ]
 
+    # ``use_system_fonts=False`` so painted Nerd-Font glyphs use the
+    # bundled ``Key-Symbols`` family that :func:`_embed_used_fonts`
+    # writes into the SVG. ``Spacing.table_col_spacing=24`` (absolute
+    # SVG units) bumps the inter-column gap past the in-cell
+    # glyph→description gap (default 12 px), so the two columns read
+    # as distinct rather than blending into one another — same
+    # treatment the ``symbol-descriptions`` mock uses.
     config = _svalboard_config(num_layers=4)
+    style = config.output.style.model_copy(update={"use_system_fonts": False})
+    layout = config.output.layout.model_copy(
+        update={"spacing": Spacing(table_col_spacing=24.0)}
+    )
+    output = config.output.model_copy(update={"style": style, "layout": layout})
+    config = config.model_copy(update={"output": output})
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
@@ -2277,12 +2305,22 @@ def _build_symbols_flow_mock() -> draw.Drawing:
             section = SymbolSection(
                 entries=entries,
                 max_width=section_width,
+                # ``wrap_content=True`` so the section snugs to the
+                # natural entry width and the title-strip rule lines
+                # up with the table's right edge instead of stopping
+                # short at ``max_width`` when the entries overflow.
+                wrap_content=True,
                 column_count=2,
                 flow=flow,
                 scale=1.5,
             )
             panels.append((section, caption))
-        return _build_side_by_side(panels=panels)
+        # Per-panel gap wider than ``table_col_spacing`` so the two
+        # comparison panels read as separate units instead of looking
+        # like a four-column extension of either legend.
+        d = _build_side_by_side(panels=panels, panel_gap=72.0)
+        _embed_used_fonts(d)
+        return d
 
 
 def _build_layer_connector_show_mock() -> draw.Drawing:

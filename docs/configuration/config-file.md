@@ -1362,6 +1362,13 @@ padding) stays at the unscaled per-image size.
 ##### `macros` { #output-style-legend-tables-macros }
 Visibility and standalone-image scale for the macros legend.
 
+<div class="option-comparison" markdown="1">
+  <figure markdown="1">
+  <figcaption>Macros legend with mixed named and unnamed entries</figcaption>
+  ![Sample macros legend](../_static/options/legend-tables/macros.svg){ width="600" loading=lazy }
+  </figure>
+</div>
+
 ###### `show` { #output-style-legend-tables-macros-show }
 
 | Type      | Default |
@@ -1385,6 +1392,13 @@ and pills scale by this factor; the per-image chrome stays unscaled.
 ##### `tap_dances` { #output-style-legend-tables-tap-dances }
 Visibility and standalone-image scale for the tap-dances legend.
 
+<div class="option-comparison" markdown="1">
+  <figure markdown="1">
+  <figcaption>Tap-dances legend with mixed named and unnamed entries</figcaption>
+  ![Sample tap-dances legend](../_static/options/legend-tables/tap-dances.svg){ width="600" loading=lazy }
+  </figure>
+</div>
+
 ###### `show` { #output-style-legend-tables-tap-dances-show }
 
 | Type      | Default |
@@ -1406,6 +1420,13 @@ semantics as `macros.scale`.
 ##### `symbols` { #output-style-legend-tables-symbols }
 Visibility, standalone-image scale, and multi-column flow for the
 symbol legend.
+
+<div class="option-comparison" markdown="1">
+  <figure markdown="1">
+  <figcaption>Symbols legend laid out as a 4-column grid</figcaption>
+  ![Sample symbols legend](../_static/options/legend-tables/symbols.svg){ width="600" loading=lazy }
+  </figure>
+</div>
 
 ###### `show` { #output-style-legend-tables-symbols-show }
 

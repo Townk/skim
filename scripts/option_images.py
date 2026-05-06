@@ -699,10 +699,223 @@ def _build_keycodes() -> Iterator[tuple[str, draw.Drawing]]:
         )
 
 
+def _build_legend_tables() -> Iterator[tuple[str, draw.Drawing]]:
+    """Three full-section samples, one per ``legend_tables`` sub-block.
+
+    Each variant renders the corresponding section composable
+    (``MacroSection`` / ``TapDanceSection`` / ``SymbolSection``)
+    against the curated COLEMAK palette, so the docs land a
+    realistic preview of what each legend looks like in a generated
+    keymap. The macros and tap-dances variants mix named and
+    unnamed entries so the docs show the named-vs-unnamed
+    layout split inside one image.
+    """
+    palette_layers = _load_palette_layers("SvalCOLEMAK-config.yaml", count=1)
+    config = _build_palette_config(
+        num_layers=1,
+        palette_layers=palette_layers,
+        use_system_fonts=False,
+    )
+    keymap = _empty_keymap(layer_index=0)
+    ctx = RenderContext.build(config=config, keymap=keymap)
+
+    macros_mixed = [
+        SvalboardMacro(
+            id="0",
+            name="Greeting",
+            actions=(
+                SvalboardMacroAction(
+                    kind=SvalboardMacroActionKind.DOWN,
+                    keys=(SvalboardTargetKey(label="%%nf-md-apple_keyboard_shift;"),),
+                ),
+                SvalboardMacroAction(
+                    kind=SvalboardMacroActionKind.TAP,
+                    keys=(SvalboardTargetKey(label="H"),),
+                ),
+                SvalboardMacroAction(
+                    kind=SvalboardMacroActionKind.UP,
+                    keys=(SvalboardTargetKey(label="%%nf-md-apple_keyboard_shift;"),),
+                ),
+                SvalboardMacroAction(
+                    kind=SvalboardMacroActionKind.TEXT,
+                    text="ello world",
+                ),
+                SvalboardMacroAction(
+                    kind=SvalboardMacroActionKind.DELAY,
+                    duration_ms=100,
+                ),
+                SvalboardMacroAction(
+                    kind=SvalboardMacroActionKind.TAP,
+                    keys=(SvalboardTargetKey(label="%%nf-md-keyboard_return;"),),
+                ),
+            ),
+        ),
+        SvalboardMacro(
+            id="5",
+            name=None,
+            actions=(
+                SvalboardMacroAction(
+                    kind=SvalboardMacroActionKind.TAP,
+                    keys=(SvalboardTargetKey(label="%%nf-md-apple_keyboard_command;"),),
+                ),
+                SvalboardMacroAction(
+                    kind=SvalboardMacroActionKind.TAP,
+                    keys=(SvalboardTargetKey(label="K"),),
+                ),
+            ),
+        ),
+    ]
+
+    tap_dances_mixed = [
+        SvalboardTapDance(
+            id="6",
+            name="Modifier dance",
+            tap=SvalboardTargetKey(label="%%nf-md-apple_keyboard_shift;"),
+            hold=SvalboardTargetKey(label="%%nf-md-apple_keyboard_caps;"),
+            double_tap=SvalboardTargetKey(label="%%nf-md-apple_keyboard_option;"),
+            tap_then_hold=SvalboardTargetKey(label="%%nf-md-apple_keyboard_control;"),
+        ),
+        SvalboardTapDance(
+            id="2",
+            name=None,
+            tap=SvalboardTargetKey(label="A"),
+            hold=SvalboardTargetKey(label="B"),
+            double_tap=SvalboardTargetKey(label="C"),
+            tap_then_hold=SvalboardTargetKey(label="D"),
+        ),
+    ]
+
+    symbol_entries = [
+        SymbolLegendEntry(
+            display_label="%%nf-md-apple_keyboard_control;",
+            description="Control",
+            sort_key="0",
+            category="Modifiers",
+        ),
+        SymbolLegendEntry(
+            display_label="%%nf-md-apple_keyboard_option;",
+            description="Option",
+            sort_key="1",
+            category="Modifiers",
+        ),
+        SymbolLegendEntry(
+            display_label="%%nf-md-apple_keyboard_command;",
+            description="Command",
+            sort_key="2",
+            category="Modifiers",
+        ),
+        SymbolLegendEntry(
+            display_label="%%nf-md-apple_keyboard_shift;",
+            description="Shift",
+            sort_key="3",
+            category="Modifiers",
+        ),
+        SymbolLegendEntry(
+            display_label="%%nf-md-keyboard_return;",
+            description="Return",
+            sort_key="4",
+            category="Edit",
+        ),
+        SymbolLegendEntry(
+            display_label="%%nf-md-backspace;",
+            description="Backspace",
+            sort_key="5",
+            category="Edit",
+        ),
+        SymbolLegendEntry(
+            display_label="%%nf-md-backspace_reverse;",
+            description="Delete",
+            sort_key="6",
+            category="Edit",
+        ),
+        SymbolLegendEntry(
+            display_label="%%nf-md-keyboard_space;",
+            description="Space",
+            sort_key="7",
+            category="Edit",
+        ),
+    ]
+
+    section_scale = 2.0
+    section_max_width = 760.0
+    card_padding = 40.0
+    # Symbols spread four columns horizontally — same canvas-width
+    # mismatch the tap-dance / symbol-descriptions snippets had
+    # against the macros one. Tune so each card lands ~800 px wide.
+    # ``symbol_scale=1.78`` and ``td_scale=1.4`` match the values
+    # used by the ``keycodes`` builder for parity with those snippets.
+    symbol_scale = 1.78
+    td_scale = 1.4
+    # Symbols snippet bumps ``table_col_spacing`` (24 px absolute) so
+    # the inter-column gap is wider than the in-cell glyph→description
+    # gap — same override the ``symbol-descriptions`` mock uses.
+    symbols_config = config.model_copy(
+        update={
+            "output": config.output.model_copy(
+                update={
+                    "layout": config.output.layout.model_copy(
+                        update={"spacing": Spacing(table_col_spacing=24.0)}
+                    )
+                }
+            )
+        }
+    )
+    symbols_ctx = RenderContext.build(config=symbols_config, keymap=keymap)
+
+    with using_render_context(ctx):
+        macros_section = MacroSection(
+            macros=macros_mixed,
+            max_width=section_max_width,
+            wrap_content=True,
+            scale=section_scale,
+        )
+        macros_card = Size(
+            macros_section.size.width + card_padding,
+            macros_section.size.height + card_padding,
+        )
+        yield (
+            "macros",
+            _render_in_card(macros_section, canvas=macros_card, embed_fonts=True),
+        )
+
+        tap_dances_section = TapDanceSection(
+            tap_dances=tap_dances_mixed,
+            wrap_content=True,
+            scale=td_scale,
+        )
+        tap_dances_card = Size(
+            tap_dances_section.size.width + card_padding,
+            tap_dances_section.size.height + card_padding,
+        )
+        yield (
+            "tap-dances",
+            _render_in_card(tap_dances_section, canvas=tap_dances_card, embed_fonts=True),
+        )
+
+    with using_render_context(symbols_ctx):
+        symbols_section = SymbolSection(
+            entries=symbol_entries,
+            max_width=section_max_width,
+            wrap_content=True,
+            column_count=4,
+            flow="row",
+            scale=symbol_scale,
+        )
+        symbols_card = Size(
+            symbols_section.size.width + card_padding,
+            symbols_section.size.height + card_padding,
+        )
+        yield (
+            "symbols",
+            _render_in_card(symbols_section, canvas=symbols_card, embed_fonts=True),
+        )
+
+
 BUILDERS: dict[str, OptionBuilder] = {
     "double-south": _build_double_south,
     "keyboard-layers": _build_keyboard_layers,
     "keycodes": _build_keycodes,
+    "legend-tables": _build_legend_tables,
 }
 
 
