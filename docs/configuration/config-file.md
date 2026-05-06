@@ -46,17 +46,18 @@ in the repository.
 Describes the hardware variant you're rendering and gives each layer in the
 keymap a human-readable identity.
 
+Current schema:
+
 ```yaml
 keyboard:
   features:
-    double_south: false
+    double_south: <boolean>
   layers:
-    - index: 0
-      id: "base"
-      name: "Letters"
-      variant: "QWERTY"
-    - index: 1
-      name: "Numbers / Navigation"
+    - index: <integer>
+      id: <string>
+      name: <string>
+      variant: <string>
+    ...
 ```
 
 ### `features` { #keyboard-features }
@@ -122,7 +123,7 @@ Current schema:
 ```yaml
 keyboard:
   layers:
-    - index: <int>
+    - index: <integer>
       id: <string>
       name: <string>
       variant: <string>
@@ -133,9 +134,9 @@ Each entry has these fields:
 
 #### `index`
 
-| Type      | Required | Range |
-| --------- | -------- | ----- |
-| `integer` | yes      | `0`–`31` |
+| Type      | Default | Range    |
+| --------- | ------- | -------- |
+| `integer` | —       | `0`–`31` |
 
 The QMK firmware layer index — what the binary firmware ends up with after `qmk
 compile`, and what `LT(...)` / `MO(...)` / `TG(...)` keycodes target. If this
@@ -166,9 +167,9 @@ represent the layers defined in your keymap.
 
 #### `name`
 
-| Type     | Required |
-| -------- | -------- |
-| `string` | yes      |
+| Type     | Default |
+| -------- | ------- |
+| `string` | —       |
 
 The full descriptive name shown as the title of the per-layer image and as
 the layer's row label in the overview. Long names are fine — the overview
@@ -260,18 +261,18 @@ keycodes:
     - ...
 
   symbol_legend_aliases:
-    <KEY_CODE:string>: <TARGET_KEY_CODE:string>,
+    <KEY_CODE>: <TARGET_KEY_CODE>,
     ...
 
   symbol_descriptions:
-    <CATEGORY:string>:
-      <KEY_CODE:string>: <DESCRIPTION:string>,
+    <CATEGORY>:
+      <KEY_CODE>: <DESCRIPTION>,
       ...
     ...
 
   function_descriptions:
-    <CATEGORY:string>:
-      <FUNCTION_NAME:string>: <DESCRIPTION:string>,
+    <CATEGORY>:
+      <FUNCTION_NAME>: <DESCRIPTION>,
       ...,
     ...
 ```
@@ -353,6 +354,10 @@ name that Skim uses in the macros legend table on generated images.
 
 #### `id`
 
+| Type     | Default |
+| -------- | ------- |
+| `string` | —       |
+
 The string used to reference this macro in your keymap. For Vial and Keybard
 keymaps that's one of the standard slot names (`M0`, `M1`, …, `M49`); for
 QMK `keymap.c` keymaps it's the name you used in your `#define` (e.g.
@@ -360,11 +365,19 @@ QMK `keymap.c` keymaps it's the name you used in your `#define` (e.g.
 
 #### `name`
 
+| Type             | Default |
+| ---------------- | ------- |
+| `string \| null` | `null`  |
+
 A short human-readable label shown in the macros legend. This field is
 Skim-only — it has no equivalent in Vial or Keybard, so changes here
-don't round-trip back to your keyboard's firmware. Defaults to `null`.
+don't round-trip back to your keyboard's firmware.
 
 #### `preview`
+
+| Type             | Default |
+| ---------------- | ------- |
+| `string \| null` | `null`  |
 
 A read-only single-line text representation of the macro, displayed below
 the macro's name in the legend. Although saved in the configuration file,
@@ -391,6 +404,10 @@ uses in the tap-dance legend table on generated images.
 
 #### `id`
 
+| Type     | Default |
+| -------- | ------- |
+| `string` | —       |
+
 Must match the tap-dance index supplied to QMK's `TD(...)` macro: one of
 `TD(0)`, `TD(1)`, `TD(2)`, …, `TD(49)`.
 
@@ -401,12 +418,19 @@ styles that reference the tap-dance by an unwrapped name.
 
 #### `name`
 
+| Type             | Default |
+| ---------------- | ------- |
+| `string \| null` | `null`  |
+
 A short human-readable label shown in the tap-dance legend. Like
 `macros.name`, this field is Skim-only — it has no equivalent in Vial or
-Keybard, and changes don't round-trip back to your firmware. Defaults to
-`null`.
+Keybard, and changes don't round-trip back to your firmware.
 
 #### `preview`
+
+| Type             | Default |
+| ---------------- | ------- |
+| `string \| null` | `null`  |
 
 A read-only single-line text representation of the tap-dance, displayed
 below its name in the legend. Although saved in the configuration file,
@@ -1036,7 +1060,7 @@ Current schema:
 output:
   style:
     # Standalone style switches
-    hold_symbol_position: qmk | inward | outward
+    hold_symbol_position: <"qmk" | "inward" | "outward">
     use_layer_colors_on_keys: <boolean>
     use_system_fonts: <boolean>
     show_transparent_fallthrough: <boolean>
@@ -1053,9 +1077,17 @@ output:
       show: <boolean>
       width: <float | "N%" | null>
     legend_tables:
-      macros: { show, scale }
-      tap_dances: { show, scale }
-      symbols: { show, scale, flow, columns }
+      macros:
+        show: <boolean>
+        scale: <float>
+      tap_dances:
+        show: <boolean>
+        scale: <float>
+      symbols:
+        show: <boolean>
+        scale: <float>
+        flow: <"row" | "column">
+        columns: <integer | null>
     strokes:
       chip_outline: <float | "N%" | null>
       header_rule: <float | "N%" | null>
@@ -1139,8 +1171,8 @@ Set the whole `border` object to `null` to suppress the border.
 output:
   style:
     border:
-      width: 2
-      radius: 10
+      width: <float | "N%">
+      radius: <float>
 ```
 
 ##### `width` { #output-style-border-width }
@@ -1292,8 +1324,8 @@ output:
       symbols:
         show: <boolean>
         scale: <float>
-        flow: row | column
-        columns: <int | null>
+        flow: <"row" | "column">
+        columns: <integer | null>
 ```
 
 The `show` flags toggle whether the corresponding legend appears
@@ -1446,18 +1478,18 @@ Current schema:
 output:
   style:
     palette:
-      neutral_color: <color:string>
-      text_color: <color:string>
-      key_label_color: <color:string>
-      background_color: <color:string>
-      border_color: <color:string>
-      macro_color: <color:string>
-      tap_dance_color: <color:string>
+      neutral_color: <string>
+      text_color: <string>
+      key_label_color: <string>
+      background_color: <string>
+      border_color: <string>
+      macro_color: <string>
+      tap_dance_color: <string>
       layers:
-        - base_color: <color:string>
-          color_index: <int>
+        - base_color: <string>
+          color_index: <integer>
           gradient:
-            - <color:string>
+            - <string>
             - ...
         - ...
 ```
@@ -1516,10 +1548,10 @@ output:
   style:
     palette:
       layers:
-        - base_color: <color:string>
-          color_index: <int>
+        - base_color: <string>
+          color_index: <integer>
           gradient:
-            - <color:string>
+            - <string>
             - ...
         - ...
 ```
@@ -1560,9 +1592,9 @@ the muted profile of the curated sample palettes shipped with Skim.
 
 ###### `base_color`
 
-| Type     | Required |
-| -------- | -------- |
-| `string` | yes      |
+| Type     | Default |
+| -------- | ------- |
+| `string` | —       |
 
 The primary CSS color for the layer. In single-color mode (no `gradient`),
 every key on the layer uses this color. In gradient mode, this is the
