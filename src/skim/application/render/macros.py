@@ -644,9 +644,13 @@ def MacroRow(
         height = metrics.chip_height + metrics.table_header_spacing + pill_row.size.height
         # Pre-build the name as :func:`AdjustableText` so a long name
         # would shrink to fit before overflowing the rule's right edge.
-        # The text slot starts at ``chip_width + chip_padding`` from
-        # the row's left and ends at ``content_width``.
-        name_max_width = max(0.0, content_width - metrics.chip_width - metrics.chip_padding)
+        # The text slot starts at ``chip_width + table_header_spacing``
+        # from the row's left and ends at ``content_width`` — the
+        # same gap value the row uses to separate every other
+        # "row-header → row-content" boundary in the table-shaped
+        # composables (column header → first row, row chip → first
+        # cell, etc.).
+        name_max_width = max(0.0, content_width - metrics.chip_width - metrics.table_header_spacing)
         name_el = AdjustableText(
             text=macro.name,
             style=TextStyle(font=Font.FINGER_KEY, size=metrics.name_font_size, color=text_color),
@@ -669,7 +673,7 @@ def MacroRow(
             # the header strip.
             assert name_el is not None
             name_origin = Point(
-                x + metrics.chip_width + metrics.chip_padding,
+                x + metrics.chip_width + metrics.table_header_spacing,
                 y
                 + metrics.chip_height / 2
                 + metrics.chip_inner_text_baseline_offset

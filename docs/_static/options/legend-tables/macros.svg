@@ -22,7 +22,7 @@
 <rect x="20.0" y="64.0" width="112.00000000000001" height="44.0" rx="8.0" ry="8.0" fill="#89511C" stroke="#CF9155" stroke-width="2.4" />
 <text x="55.0" y="87.0" font-size="24.0" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="84.0" y="85.5" font-size="24.0" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="#FFF" opacity="1.0">0</text>
-<text x="172.0" y="87.0" font-size="26.0" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0">Greeting</text>
+<text x="156.0" y="87.0" font-size="26.0" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0">Greeting</text>
 <path d="M132.0,106.8 L780.0,106.8" stroke="#000" stroke-opacity="0.08" stroke-width="2.4" />
 <rect x="156.0" y="136.0" width="89.0" height="36.0" rx="8.0" ry="8.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <path d="M176.0,148.0 L188.0,148.0 L182.0,160.0 Z" fill="black" />
