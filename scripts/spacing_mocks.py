@@ -1672,6 +1672,217 @@ def _build_use_layer_colors_on_keys_mock() -> draw.Drawing:
         return _build_side_by_side(panels=panels)
 
 
+def _build_symbols_flow_mock() -> draw.Drawing:
+    """Two SymbolSection layouts side by side, one column-major and
+    one row-major, fed the same six entries. The column-major panel
+    fills top-to-bottom before starting the next column; the
+    row-major panel fills left-to-right before dropping to the next
+    row. Demonstrates the difference at a glance.
+    """
+    from skim.application.render.section_data import SymbolLegendEntry
+    from skim.application.render.symbols import SymbolSection
+
+    # Six entries split across two categories so the two flow modes
+    # produce clearly different orderings.
+    entries = [
+        SymbolLegendEntry(
+            display_label="⌘",
+            description="Command (GUI / Meta)",
+            sort_key="MOD_LCMD",
+            category="Modifiers",
+        ),
+        SymbolLegendEntry(
+            display_label="⌃",
+            description="Control",
+            sort_key="MOD_LCTL",
+            category="Modifiers",
+        ),
+        SymbolLegendEntry(
+            display_label="⌥",
+            description="Option (Alt)",
+            sort_key="MOD_LOPT",
+            category="Modifiers",
+        ),
+        SymbolLegendEntry(
+            display_label="0",
+            description="Base layer",
+            sort_key="0",
+            category="Layers",
+        ),
+        SymbolLegendEntry(
+            display_label="1",
+            description="Numbers / Symbols",
+            sort_key="1",
+            category="Layers",
+        ),
+        SymbolLegendEntry(
+            display_label="2",
+            description="Function / Navigation",
+            sort_key="2",
+            category="Layers",
+        ),
+    ]
+
+    config = _svalboard_config(num_layers=4)
+    keymap = _empty_keymap()
+    ctx = RenderContext.build(config=config, keymap=keymap)
+
+    section_width = 360.0
+
+    with using_render_context(ctx):
+        panels: list[tuple[Component, str]] = []
+        for flow, caption in (("column", '"column"'), ("row", '"row"')):
+            section = SymbolSection(
+                entries=entries,
+                max_width=section_width,
+                column_count=2,
+                flow=flow,
+                scale=1.5,
+            )
+            panels.append((section, caption))
+        return _build_side_by_side(panels=panels)
+
+
+def _build_layer_connector_show_mock() -> draw.Drawing:
+    """Two miniature overviews side by side, one with the dotted
+    connector lines drawn (``show: true``) and one without
+    (``show: false``).
+
+    A 3-layer keymap with two layer-switch keys on the base layer is
+    used so the ``true`` panel actually has connectors to draw —
+    same data on both panels means the only visible difference is
+    the lines themselves.
+    """
+    from skim.data.keyboard import SplitSide
+
+    blank = SvalboardTargetKey(label="")
+    mo1 = SvalboardTargetKey(label="LT(1)", layer_switch=1)
+    mo2 = SvalboardTargetKey(label="LT(2)", layer_switch=2)
+
+    def _empty_finger() -> FingerClusterData[SvalboardTargetKey]:
+        return FingerClusterData(blank)
+
+    def _empty_thumb() -> ThumbClusterData[SvalboardTargetKey]:
+        return ThumbClusterData(
+            down_key=blank,
+            pad_key=blank,
+            up_key=blank,
+            nail_key=blank,
+            knuckle_key=blank,
+            double_down_key=blank,
+        )
+
+    # Layer 0 places the layer-switch keys on the index-finger north
+    # key and the middle-finger north key, both on the LEFT half.
+    # The overview's connector router will draw paths from those keys
+    # to the layer-1 / layer-2 rows in the badge column.
+    layer0_left_index = FingerClusterData(blank, north_key=mo1)
+    layer0_left_middle = FingerClusterData(blank, north_key=mo2)
+    layer0_left = SplitSide(
+        index=layer0_left_index,
+        middle=layer0_left_middle,
+        ring=_empty_finger(),
+        pinky=_empty_finger(),
+        thumb=_empty_thumb(),
+    )
+    layer0_right = SplitSide(
+        index=_empty_finger(),
+        middle=_empty_finger(),
+        ring=_empty_finger(),
+        pinky=_empty_finger(),
+        thumb=_empty_thumb(),
+    )
+
+    # Layers 1 and 2 are blank — the connectors only need source keys
+    # on the destination's neighbouring layers, not destinations.
+    def _blank_side() -> SplitSide[SvalboardTargetKey]:
+        return SplitSide(
+            index=_empty_finger(),
+            middle=_empty_finger(),
+            ring=_empty_finger(),
+            pinky=_empty_finger(),
+            thumb=_empty_thumb(),
+        )
+
+    keymap = SvalboardKeymap(
+        layers={
+            0: SvalboardLayout(left=layer0_left, right=layer0_right),
+            1: SvalboardLayout(left=_blank_side(), right=_blank_side()),
+            2: SvalboardLayout(left=_blank_side(), right=_blank_side()),
+        }
+    )
+
+    # Use a smaller doc width so the overview fits side-by-side on
+    # the page; the Svalboard palette so badges and indicators read
+    # cleanly.
+    base = _svalboard_config(num_layers=3)
+    layout = base.output.layout.model_copy(update={"width": 800.0})
+    output = base.output.model_copy(update={"layout": layout})
+    base_with_smaller_width = base.model_copy(update={"output": output})
+
+    from skim.application.render.keymap_overview import KeymapOverview
+
+    panels: list[tuple[Component, str]] = []
+    for show, caption in ((True, "show: true"), (False, "show: false")):
+        style = base_with_smaller_width.output.style.model_copy(
+            update={
+                "layer_connector": base_with_smaller_width.output.style.layer_connector.model_copy(
+                    update={"show": show}
+                )
+            }
+        )
+        config_for_panel = base_with_smaller_width.model_copy(
+            update={
+                "output": base_with_smaller_width.output.model_copy(update={"style": style})
+            }
+        )
+        ctx = RenderContext.build(config=config_for_panel, keymap=keymap)
+        with using_render_context(ctx):
+            overview = KeymapOverview(keymap=keymap)
+            panels.append((overview, caption))
+
+    # Each panel needs its own render context; build outside the helper
+    # by drawing each overview into the master Drawing manually.
+    label_font_size = 12.0
+    label_gap = 8.0
+    label_height = label_font_size + label_gap
+    panel_gap = 28.0
+    outer_padding = 16.0
+
+    extents = [_panel_extents(c) for c, _ in panels]
+    headroom = max(max(0.0, -offset.y) for _, offset in extents)
+    keys_max_h = max(c.size.height for c, _ in panels)
+    keys_origin_y = outer_padding + headroom
+    canvas_h = keys_origin_y + keys_max_h + label_height + outer_padding
+    total_w = sum(o.width for o, _ in extents) + panel_gap * (len(panels) - 1)
+    canvas_w = total_w + 2 * outer_padding
+
+    d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+    cursor_x = outer_padding
+    for (component, caption), (overflow_size, overflow_offset) in zip(panels, extents, strict=True):
+        # Each component was built under its own render context, but
+        # ``draw_at`` doesn't need the context — the closures captured
+        # everything they need at build time.
+        component.draw_at(
+            d, Point(cursor_x - overflow_offset.x, keys_origin_y)
+        )
+        d.append(
+            draw.Text(
+                caption,
+                x=cursor_x + overflow_size.width / 2,
+                y=keys_origin_y + keys_max_h + label_gap,
+                font_size=label_font_size,
+                text_anchor="middle",
+                dominant_baseline="text-before-edge",
+                font_family="Roboto, sans-serif",
+                fill=_GREY_TEXT,
+            )
+        )
+        cursor_x += overflow_size.width + panel_gap
+
+    return d
+
+
 def _build_show_transparent_fallthrough_mock() -> draw.Drawing:
     """Two single layer-tinted keys side-by-side: one carrying a
     "ghost" version of the layer-0 label (the ``true`` /
@@ -1774,8 +1985,10 @@ BUILDERS: dict[str, MockBuilder] = {
     # Flag options (before / after comparisons)
     "hold-symbol-position": _build_hold_symbol_position_mock,
     "layer-indicator-show": _build_layer_indicator_show_mock,
+    "layer-connector-show": _build_layer_connector_show_mock,
     "use-layer-colors-on-keys": _build_use_layer_colors_on_keys_mock,
     "show-transparent-fallthrough": _build_show_transparent_fallthrough_mock,
+    "symbols-flow": _build_symbols_flow_mock,
     # NOTE: ``layer_indicator_endpoint_inset`` is omitted — the connector
     # path it inset-trims only renders inside the keymap overview, which
     # would dwarf the rest of these mocks. Will revisit if the value
