@@ -1580,13 +1580,13 @@ keys that don't get a layer-specific tint.
 
 | Field              | Default     | What it tints |
 | ------------------ | ----------- | ------------- |
-| `background_color` | `"white"`   | The image background. |
-| `text_color`       | `"black"`   | Body text outside of keys (titles, legends, footer). |
-| `key_label_color`  | `"white"`   | Text on key faces (chosen for contrast against typically dark key backgrounds). |
-| `neutral_color`    | `"#6F768B"` | Keys without a layer-specific color (most thumb cluster keys, transparent fall-throughs). |
-| `border_color`     | `"black"`   | Keyboard outer border and cluster outlines. |
-| `macro_color`      | `"#89511C"` | Macro badges on keys and the title bar of the macros legend. |
-| `tap_dance_color`  | `"#41687F"` | Tap-dance badges on keys and the title bar of the tap-dances legend. |
+| `background_color` | <span style="display:inline-block;width:.85em;height:.85em;vertical-align:middle;margin-right:.25em;border:1px solid #888;background:white"></span>`"white"`   | The image background. |
+| `text_color`       | <span style="display:inline-block;width:.85em;height:.85em;vertical-align:middle;margin-right:.25em;border:1px solid #888;background:black"></span>`"black"`   | Body text outside of keys (titles, legends, footer). |
+| `key_label_color`  | <span style="display:inline-block;width:.85em;height:.85em;vertical-align:middle;margin-right:.25em;border:1px solid #888;background:white"></span>`"white"`   | Text on key faces (chosen for contrast against typically dark key backgrounds). |
+| `neutral_color`    | <span style="display:inline-block;width:.85em;height:.85em;vertical-align:middle;margin-right:.25em;border:1px solid #888;background:#6F768B"></span>`"#6F768B"` | Keys without a layer-specific color (most thumb cluster keys, transparent fall-throughs). |
+| `border_color`     | <span style="display:inline-block;width:.85em;height:.85em;vertical-align:middle;margin-right:.25em;border:1px solid #888;background:black"></span>`"black"`   | Keyboard outer border and cluster outlines. |
+| `macro_color`      | <span style="display:inline-block;width:.85em;height:.85em;vertical-align:middle;margin-right:.25em;border:1px solid #888;background:#89511C"></span>`"#89511C"` | Macro badges on keys and the title bar of the macros legend. |
+| `tap_dance_color`  | <span style="display:inline-block;width:.85em;height:.85em;vertical-align:middle;margin-right:.25em;border:1px solid #888;background:#41687F"></span>`"#41687F"` | Tap-dance badges on keys and the title bar of the tap-dances legend. |
 
 All accept any CSS color string (`"red"`, `"#3366CC"`, `"rgb(51,102,204)"`,
 `"hsl(218 60% 50%)"`).
