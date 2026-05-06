@@ -35,6 +35,12 @@ from pathlib import Path
 import drawsvg as draw
 
 from skim.application.render.composable import Component
+from skim.application.render.font import (
+    Font,
+    FontSubsetter,
+    current_font_usage_collector,
+    register_font_usage,
+)
 from skim.application.render.macros import MacroMetrics, MacroPill
 from skim.application.render.primitives import BaseComponent, Point, Size
 from skim.application.render.render_context import (
@@ -230,6 +236,29 @@ def _render_grey_canvas(
     offset = padding / 2
     component.draw_at(d, Point(offset, offset))
     return d
+
+
+def _embed_used_fonts(d: draw.Drawing) -> None:
+    """Embed @font-face rules for fonts referenced by the rendered
+    component, subsetted to the glyphs actually painted when a usage
+    collector is active.
+
+    Mirrors the option-images embed path: under
+    :func:`using_render_context` the collector is automatically active,
+    so a ``FontSubsetter`` produces a tiny SVG payload covering only
+    the glyphs the component asked for. Outside that context (no
+    collector active) we fall back to embedding every bundled font in
+    full — needed by mocks that paint Nerd-Font glyphs whose fonts may
+    not be installed system-wide.
+    """
+    collector = current_font_usage_collector()
+    if collector is None:
+        for font in Font:
+            d.append_css(font.css_style)
+        return
+    subsetter = FontSubsetter(collector)
+    css = subsetter.generate_subsetted_css()
+    d.append_css(css if css else subsetter.generate_full_fonts_css())
 
 
 # ---------------------------------------------------------------------------
@@ -693,15 +722,26 @@ def _build_inset_mock() -> draw.Drawing:
 # ---------------------------------------------------------------------------
 
 
-def _grey_td(*, idx: str = "0", name: str | None = None) -> SvalboardTapDance[SvalboardTargetKey]:
-    """Tap-dance with all four variants populated so cells render."""
-    blank = SvalboardTargetKey(label="—")
+def _grey_td(
+    *,
+    idx: str = "0",
+    name: str | None = None,
+    variants: tuple[str, str, str, str] | None = None,
+) -> SvalboardTapDance[SvalboardTargetKey]:
+    """Tap-dance with all four variants populated so cells render.
+
+    ``variants`` overrides the per-cell labels (TAP / HOLD /
+    DOUBLE-TAP / TAP & HOLD). When ``None`` every cell renders as
+    an em-dash placeholder.
+    """
+    if variants is None:
+        variants = ("—", "—", "—", "—")
     return SvalboardTapDance(
         id=idx,
-        tap=blank,
-        hold=blank,
-        double_tap=blank,
-        tap_then_hold=blank,
+        tap=SvalboardTargetKey(label=variants[0]),
+        hold=SvalboardTargetKey(label=variants[1]),
+        double_tap=SvalboardTargetKey(label=variants[2]),
+        tap_then_hold=SvalboardTargetKey(label=variants[3]),
         name=name,
     )
 
@@ -725,7 +765,32 @@ class _SectionStage:
     num_rows: int
 
 
-def _build_section_stage(ctx: RenderContext, *, num_rows: int = 1) -> _SectionStage:
+def _section_stage_ctx() -> RenderContext:
+    """Build a render context for the section / table spacing mocks
+    with the embedded-font setup wired in.
+
+    ``use_system_fonts=False`` so the painted glyphs reference the
+    bundled font families (``Key-Symbols``, ``Finger-Key-Label``)
+    that :func:`_embed_used_fonts` writes into the SVG — rather than
+    system fallbacks like ``'Symbols Nerd Font'`` that won't exist
+    on every viewer's machine.
+    """
+    config = _grey_config()
+    style = config.output.style.model_copy(update={"use_system_fonts": False})
+    config = config.model_copy(
+        update={"output": config.output.model_copy(update={"style": style})}
+    )
+    keymap = _empty_keymap()
+    return RenderContext.build(config=config, keymap=keymap)
+
+
+def _build_section_stage(
+    ctx: RenderContext,
+    *,
+    num_rows: int = 1,
+    variants: tuple[str, str, str, str] | None = None,
+    cell_width: float | None = None,
+) -> _SectionStage:
     """Lay out the shared stripe + TapDance body the section / table
     spacing mocks paint on top of, so all six illustrations share the
     same canvas shape and the docs render them at matching font sizes.
@@ -734,6 +799,12 @@ def _build_section_stage(ctx: RenderContext, *, num_rows: int = 1) -> _SectionSt
     (separated by ``table_row_spacing``). Defaults to 1 — enough for
     every mock except ``table-row-spacing``, which needs at least
     two rows to expose the inter-row gap.
+
+    ``variants`` overrides each row's per-cell labels (TAP / HOLD /
+    DOUBLE-TAP / TAP & HOLD). When ``None`` cells render as
+    em-dash placeholders; pass real labels when the mock needs the
+    cells to read like a real keymap (e.g. for the pill-padding
+    illustration).
     """
     if num_rows < 1:
         raise ValueError("num_rows must be >= 1")
@@ -749,7 +820,7 @@ def _build_section_stage(ctx: RenderContext, *, num_rows: int = 1) -> _SectionSt
     # Hides the name column (``name_column_width=0``) and shrinks
     # the variant cells to a width that keeps the four cells +
     # column spacings within budget.
-    td_cell_width = 56.0
+    td_cell_width = cell_width if cell_width is not None else 56.0
     td_name_column_width = 0.0
     header = TapDanceColumnHeader(
         text_color=_GREY_TEXT,
@@ -758,7 +829,7 @@ def _build_section_stage(ctx: RenderContext, *, num_rows: int = 1) -> _SectionSt
     )
     rows = [
         TapDanceRow(
-            td=_grey_td(idx=str(i)),
+            td=_grey_td(idx=str(i), variants=variants),
             accent_fill=_GREY_NEUTRAL,
             accent_line=_GREY_BORDER,
             text_color=_GREY_TEXT,
@@ -812,9 +883,7 @@ def _build_section_spacing_mock() -> draw.Drawing:
     sub-blocks. The mock paints the stripe + a single TD row and
     highlights the gap between them.
     """
-    config = _grey_config()
-    keymap = _empty_keymap()
-    ctx = RenderContext.build(config=config, keymap=keymap)
+    ctx = _section_stage_ctx()
 
     with using_render_context(ctx):
         stage = _build_section_stage(ctx)
@@ -836,6 +905,7 @@ def _build_section_spacing_mock() -> draw.Drawing:
             width=band_w,
             height=stage.body_y - band_y,
         )
+        _embed_used_fonts(stage.drawing)
 
     return stage.drawing
 
@@ -858,9 +928,7 @@ def _build_table_header_spacing_mock() -> draw.Drawing:
     Shares the stripe + body stage with
     :func:`_build_section_spacing_mock` so the canvas matches.
     """
-    config = _grey_config()
-    keymap = _empty_keymap()
-    ctx = RenderContext.build(config=config, keymap=keymap)
+    ctx = _section_stage_ctx()
 
     with using_render_context(ctx):
         stage = _build_section_stage(ctx)
@@ -894,6 +962,7 @@ def _build_table_header_spacing_mock() -> draw.Drawing:
             width=header_spacing,
             height=gap_band_h,
         )
+        _embed_used_fonts(stage.drawing)
 
     return stage.drawing
 
@@ -906,9 +975,7 @@ def _build_table_col_spacing_mock() -> draw.Drawing:
     between the four variant cells, vertically aligned with the
     first row.
     """
-    config = _grey_config()
-    keymap = _empty_keymap()
-    ctx = RenderContext.build(config=config, keymap=keymap)
+    ctx = _section_stage_ctx()
 
     with using_render_context(ctx):
         stage = _build_section_stage(ctx)
@@ -937,6 +1004,7 @@ def _build_table_col_spacing_mock() -> draw.Drawing:
                 width=col_spacing,
                 height=band_h,
             )
+        _embed_used_fonts(stage.drawing)
 
     return stage.drawing
 
@@ -949,9 +1017,7 @@ def _build_table_row_spacing_mock() -> draw.Drawing:
     canvas geometry otherwise — the only delta is the extra row plus
     its preceding ``table_row_spacing``.
     """
-    config = _grey_config()
-    keymap = _empty_keymap()
-    ctx = RenderContext.build(config=config, keymap=keymap)
+    ctx = _section_stage_ctx()
 
     with using_render_context(ctx):
         stage = _build_section_stage(ctx, num_rows=2)
@@ -968,6 +1034,7 @@ def _build_table_row_spacing_mock() -> draw.Drawing:
             width=band_w,
             height=row_spacing,
         )
+        _embed_used_fonts(stage.drawing)
 
     return stage.drawing
 
@@ -989,9 +1056,7 @@ def _build_section_title_rule_gap_mock() -> draw.Drawing:
     :func:`_build_section_spacing_mock` so the two illustrations
     sit on the same canvas shape; only the highlight band differs.
     """
-    config = _grey_config()
-    keymap = _empty_keymap()
-    ctx = RenderContext.build(config=config, keymap=keymap)
+    ctx = _section_stage_ctx()
 
     with using_render_context(ctx):
         stage = _build_section_stage(ctx)
@@ -1010,130 +1075,309 @@ def _build_section_title_rule_gap_mock() -> draw.Drawing:
             width=band_w,
             height=stage.stripe_metrics.title_rule_gap,
         )
+        _embed_used_fonts(stage.drawing)
 
     return stage.drawing
 
 
 def _build_chip_padding_mock() -> draw.Drawing:
-    """Highlight ``chip_padding`` inside the TD chip outline name area.
+    """Highlight every gap that ``chip_padding`` controls inside a chip.
 
-    Symmetric horizontal inset: leading (chip body → name text) and
-    trailing (name text → outline's right edge). The mock snugs the
-    name column to ``chip_padding + name_text + chip_padding`` so the
-    trailing highlight lands at the outline's actual right edge — no
-    extra column slack leaking past the band.
+    ``chip_padding`` lands in two pairs of positions:
 
-    Same ``chip_padding`` value will eventually govern the chip body's
-    internal padding around the centered glyph (currently implicit —
-    chip body is fixed-width — so the visible inner padding varies
-    with id length until auto-sizing lands).
+    1. Inside the chip body — leading (chip's left edge → glyph) and
+       trailing (glyph → chip's right edge).
+    2. Inside the chip's name area — leading (chip body → name text)
+       and trailing (name text → outline's right edge).
+
+    The :func:`TapDanceRow` composable paints with a fixed
+    ``chip_width`` today (auto-sizing the chip to its glyph is a
+    pending refactor), so this mock paints a custom chip whose body
+    is sized to the actual glyph plus 2 × ``chip_padding``. That way
+    the chip-internal bands land at the conceptually-correct
+    positions instead of overlapping the glyph the fixed-width chip
+    would otherwise centre.
+
+    Each band's vertical extent is half the row height, centred on
+    the row, so the band reads as a marker rather than a full-height
+    fill. Bands are inset by half the chip-outline stroke so the
+    highlights never paint over the chip border.
+
+    ``use_system_fonts=False`` so the painted glyph + name use the
+    bundled font families that match :func:`_embed_used_fonts`'s
+    @font-face rules — otherwise the Nerd-Font glyph renders as a
+    tofu box on browsers without ``Symbols Nerd Font`` installed,
+    and PIL-measured text widths drift from the browser's actual
+    rendering, causing the trailing band to overlap the name.
     """
-    from skim.application.render.adjustable_text import measure_text_width
-    from skim.application.render.font import Font
+    from skim.application.render.adjustable_text import AdjustableText, measure_text_width
+    from skim.application.render.render_context import TextStyle
+    from skim.application.render.rich_text import RichText
+    from skim.application.render.tap_dance import _filled_chip_path
 
     config = _grey_config()
+    style = config.output.style.model_copy(update={"use_system_fonts": False})
+    config = config.model_copy(update={"output": config.output.model_copy(update={"style": style})})
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
     with using_render_context(ctx):
         metrics = TapDanceMetrics.from_ctx(ctx)
         name_text = "MY-TD"
+        chip_padding = metrics.chip_padding
+        row_height = metrics.row_height
+        stroke_inset = metrics.chip_stroke_width / 2.0
+
+        # Measure the chip glyph (Nerd-Font icon + id) and the name
+        # text via the same PIL-based helper the renderer uses, so
+        # widths land where the painted text actually starts and ends.
+        chip_glyph_style = TextStyle(
+            font=Font.FINGER_KEY,
+            size=metrics.chip_inner_font_size,
+            color="#FFF",
+        )
+        chip_glyph_el = RichText(
+            text="%%nf-md-keyboard_close; 0",
+            style=chip_glyph_style,
+            text_anchor="start",
+            dominant_baseline="central",
+        )
+        glyph_w = chip_glyph_el.size.width
+        glyph_h = chip_glyph_el.size.height
+
+        # Auto-size the chip body so glyph + 2 × chip_padding fits
+        # exactly. Mirrors the layout auto-sizing will produce once
+        # :func:`TapDanceRow` is refactored to size its chip from
+        # the glyph instead of a fixed ratio.
+        chip_w = glyph_w + 2 * chip_padding
+
         natural_name_w = measure_text_width(name_text, Font.FINGER_KEY, metrics.name_font_size)
-        name_column_width = 2 * metrics.chip_padding + natural_name_w
-        outline_width = metrics.chip_width + name_column_width
+        name_column_w = 2 * chip_padding + natural_name_w
+        outline_w = chip_w + name_column_w
 
-        row = TapDanceRow(
-            td=_grey_td(idx="0", name=name_text),
-            accent_fill=_GREY_NEUTRAL,
-            accent_line=_GREY_BORDER,
-            text_color=_GREY_TEXT,
-            name_column_width=name_column_width,
-        )
-
-        # Canvas crops to the outline's right edge — the cells the row
-        # paints further right land outside the viewBox and clip during
-        # render, so the mock reads as a chip in isolation.
         offset = 12.0
-        canvas_w = outline_width + 2 * offset
-        canvas_h = row.size.height + 2 * offset
+        canvas_w = outline_w + 2 * offset
+        canvas_h = row_height + 2 * offset
         d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
-        row.draw_at(d, Point(offset, offset))
 
-        # Leading chip_padding (chip body → name).
-        _highlight_rect(
-            d,
-            x=offset + metrics.chip_width,
-            y=offset,
-            width=metrics.chip_padding,
-            height=metrics.row_height,
+        chip_x = offset
+        chip_y = offset
+        # Filled chip body — rounded left corners only since the
+        # outline extends rightward across the name area.
+        d.append(
+            _filled_chip_path(
+                x=chip_x,
+                y=chip_y,
+                width=chip_w,
+                height=row_height,
+                radius=metrics.chip_corner_radius,
+                round_right=False,
+                fill=_GREY_NEUTRAL,
+            )
         )
-        # Trailing chip_padding (name → outline's right edge).
+        # Outline rectangle around chip + name area.
+        d.append(
+            draw.Rectangle(
+                x=chip_x,
+                y=chip_y,
+                width=outline_w,
+                height=row_height,
+                rx=metrics.chip_corner_radius,
+                ry=metrics.chip_corner_radius,
+                fill="none",
+                stroke=_GREY_BORDER,
+                stroke_width=metrics.chip_stroke_width,
+            )
+        )
+        # Chip glyph centred in the chip body.
+        chip_glyph_el.draw_at(
+            d,
+            Point(
+                chip_x + (chip_w - glyph_w) / 2.0,
+                chip_y + row_height / 2.0
+                + metrics.chip_inner_text_baseline_offset
+                - glyph_h / 2.0,
+            ),
+        )
+        # Name text inside the name area, ``chip_padding`` past the
+        # chip body's right edge.
+        name_el = AdjustableText(
+            text=name_text,
+            style=TextStyle(
+                font=Font.FINGER_KEY,
+                size=metrics.name_font_size,
+                color=_GREY_TEXT,
+            ),
+            text_anchor="start",
+            dominant_baseline="central",
+        )
+        name_el.draw_at(
+            d,
+            Point(
+                chip_x + chip_w + chip_padding,
+                chip_y + row_height / 2.0
+                + metrics.chip_inner_text_baseline_offset
+                - name_el.size.height / 2.0,
+            ),
+        )
+
+        # Embed the bundled fonts so the painted glyph + text render
+        # without depending on the user's system fonts.
+        _embed_used_fonts(d)
+
+        # Cross-axis (vertical) is the row height; halve it and
+        # centre the band on the row.
+        band_h = row_height / 2.0
+        band_y = offset + (row_height - band_h) / 2.0
+        # Outer (chip-outline-edge-touching) bands lose a half-stroke
+        # so they don't paint over the outline; inner bands (away
+        # from any stroke) keep the full ``chip_padding`` width.
+        outer_band_w = chip_padding - stroke_inset
+
+        # (1a) Inside chip body — leading edge to glyph.
         _highlight_rect(
             d,
-            x=offset + outline_width - metrics.chip_padding,
-            y=offset,
-            width=metrics.chip_padding,
-            height=metrics.row_height,
+            x=chip_x + stroke_inset,
+            y=band_y,
+            width=outer_band_w,
+            height=band_h,
+        )
+        # (1b) Inside chip body — glyph to right edge.
+        _highlight_rect(
+            d,
+            x=chip_x + chip_w - chip_padding,
+            y=band_y,
+            width=chip_padding,
+            height=band_h,
+        )
+        # (2a) Name area — chip body's right edge to the name text.
+        _highlight_rect(
+            d,
+            x=chip_x + chip_w,
+            y=band_y,
+            width=chip_padding,
+            height=band_h,
+        )
+        # (2b) Name area — name text end to outline's right edge.
+        _highlight_rect(
+            d,
+            x=chip_x + outline_w - chip_padding,
+            y=band_y,
+            width=outer_band_w,
+            height=band_h,
         )
 
     return d
 
 
 def _build_tap_dance_pill_padding_mock() -> draw.Drawing:
-    """Highlight the symmetric inset inside a TD pill (cell).
+    """Highlight the symmetric inset inside each TD pill (cell).
 
     Today the cell width is fixed; this band shows the configurable
     ``tap_dance_pill_padding`` value that an auto-sized cell will use
-    once the refactor lands. Two bands: leading and trailing.
+    once the refactor lands. Two bands per cell — leading and
+    trailing — across all four variant cells in the row, since the
+    same value drives every cell's internal padding.
+
+    Shares the stripe + body stage with
+    :func:`_build_table_col_spacing_mock` so the canvas matches the
+    rest of the section / table mocks.
     """
-    config = _grey_config()
-    keymap = _empty_keymap()
-    ctx = RenderContext.build(config=config, keymap=keymap)
+    from skim.application.render.render_context import TextStyle
+    from skim.application.render.rich_text import RichText
+
+    ctx = _section_stage_ctx()
 
     with using_render_context(ctx):
-        metrics = TapDanceMetrics.from_ctx(ctx)
-        # Build a TD row to get a representative pill (cell) painted.
-        row = TapDanceRow(
-            td=_grey_td(idx="0"),
-            accent_fill=_GREY_NEUTRAL,
-            accent_line=_GREY_BORDER,
-            text_color=_GREY_TEXT,
+        td_metrics_pre = TapDanceMetrics.from_ctx(ctx)
+        pill_padding = td_metrics_pre.tap_dance_pill_padding
+        # Same Nerd-Font glyph in all four cells so a single
+        # ``cell_width`` fits each one with exactly ``pill_padding``
+        # of visible space on either side. Different glyphs would
+        # mean different widths, and ``TapDanceRow`` only accepts a
+        # single ``cell_width`` for all cells.
+        glyph_token = "%%nf-md-apple_keyboard_shift;"
+        glyph_el = RichText(
+            text=glyph_token,
+            style=TextStyle(
+                font=Font.FINGER_KEY,
+                size=td_metrics_pre.cell_label_font_size,
+                color=_GREY_TEXT,
+            ),
+            text_anchor="start",
+            dominant_baseline="central",
         )
-        d = _render_grey_canvas(row)
-        offset = 12.0
-
-        # Cell start x — same math TapDanceRow uses internally.
-        name_column_width = metrics.name_w - metrics.chip_width  # default for unnamed
+        # Auto-size cells so visible padding == ``pill_padding``,
+        # making the highlight bands fill the actual gap from cell
+        # border to glyph edge — what ``pill_padding`` will
+        # represent once the auto-sizing refactor lands.
+        cell_w = glyph_el.size.width + 2 * pill_padding
+        stage = _build_section_stage(
+            ctx,
+            variants=(glyph_token, glyph_token, glyph_token, glyph_token),
+            cell_width=cell_w,
+        )
+        col_spacing = stage.td_metrics.table_col_spacing
+        header_spacing = stage.td_metrics.table_header_spacing
+        # Cells start after the chip + name column + header_spacing
+        # gap (matches :func:`TapDanceRow`'s ``cells_start_x``).
         cells_start_x = (
-            metrics.chip_width + name_column_width + metrics.table_header_spacing
+            stage.x
+            + stage.td_metrics.chip_width
+            + stage.name_column_width
+            + header_spacing
         )
+        row_top = stage.body_y + stage.header_height
+        # Half-cross-axis (vertical) treatment: halve the band's
+        # height and centre it on the row.
+        band_h = stage.row_height / 2.0
+        band_y = row_top + (stage.row_height - band_h) / 2.0
+        for i in range(4):
+            cell_x = cells_start_x + i * (stage.cell_width + col_spacing)
+            # Leading inset — cell left edge to glyph.
+            _highlight_rect(
+                stage.drawing,
+                x=cell_x,
+                y=band_y,
+                width=pill_padding,
+                height=band_h,
+            )
+            # Trailing inset — glyph to cell right edge.
+            _highlight_rect(
+                stage.drawing,
+                x=cell_x + stage.cell_width - pill_padding,
+                y=band_y,
+                width=pill_padding,
+                height=band_h,
+            )
+        _embed_used_fonts(stage.drawing)
 
-        # Highlight the first cell's leading + trailing padding.
-        _highlight_rect(
-            d,
-            x=offset + cells_start_x,
-            y=offset,
-            width=metrics.tap_dance_pill_padding,
-            height=metrics.row_height,
-        )
-        _highlight_rect(
-            d,
-            x=offset + cells_start_x + metrics.cell_w - metrics.tap_dance_pill_padding,
-            y=offset,
-            width=metrics.tap_dance_pill_padding,
-            height=metrics.row_height,
-        )
-
-    return d
+    return stage.drawing
 
 
 def _build_macro_action_inset_mock() -> draw.Drawing:
-    """Highlight the three positions ``macro_action_inset`` paints inside
-    a :func:`MacroPill`: pill edge → icon centre, icon → text, and text
-    end → pill edge. A single configurable value drives all three so
-    the pill's internal rhythm stays consistent.
+    """Highlight the three visible-padding regions inside a
+    :func:`MacroPill`: pill edge → icon left edge, icon right edge →
+    text left edge, and text right edge → pill edge.
+
+    A single ``macro_action_inset`` value drives all three regions —
+    :func:`MacroPill` positions the icon's left edge at ``inset``
+    from the pill border and snugs the text to the icon-to-text and
+    trailing inset gaps, so each visible padding equals ``inset``.
+
+    Each band's vertical extent is half the pill height, centred on
+    the pill, so the band reads as a marker rather than a full-pill
+    fill. ``use_system_fonts=False`` so the painted text uses the
+    bundled :func:`_embed_used_fonts` family (``Finger-Key-Label``)
+    that PIL also measures against — keeps the trailing band
+    aligned with the actual end of the label rather than drifting
+    when the browser falls back to a different system font.
     """
     config = _grey_config()
+    style = config.output.style.model_copy(update={"use_system_fonts": False})
+    config = config.model_copy(
+        update={"output": config.output.model_copy(update={"style": style})}
+    )
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
@@ -1147,35 +1391,57 @@ def _build_macro_action_inset_mock() -> draw.Drawing:
         d = _render_grey_canvas(pill)
         offset = 12.0
 
-        pill_top = offset + (metrics.pill_row_height - metrics.pill_height) / 2
         inset = metrics.macro_action_inset
+        icon_w = metrics.pill_icon_width
+        pill_w = pill.size.width
+        pill_left = offset
+        pill_right = pill_left + pill_w
+        icon_left = pill_left + inset
+        icon_right = icon_left + icon_w
+        text_right = pill_right - inset
 
-        # Leading inset — pill edge to icon centre.
-        _highlight_rect(
-            d,
-            x=offset,
-            y=pill_top,
-            width=inset,
-            height=metrics.pill_height,
-        )
-        # Icon → text — from icon's right edge (icon_centre +
-        # icon_w/2) to text start.
-        gap_start = offset + inset + metrics.pill_icon_width / 2
-        _highlight_rect(
-            d,
-            x=gap_start,
-            y=pill_top,
-            width=inset,
-            height=metrics.pill_height,
-        )
-        # Trailing inset — pill's right edge inward.
-        _highlight_rect(
-            d,
-            x=offset + pill.size.width - inset,
-            y=pill_top,
-            width=inset,
-            height=metrics.pill_height,
-        )
+        # The highlight rectangle's stroke is centred on its path —
+        # half the stroke pokes outside the nominal rect on each side.
+        # If we positioned a band flush with the pill border or with
+        # the icon, that half-stroke would paint over the pill stroke
+        # (visible as a doubled-up edge) or eat into the icon (the
+        # circle visually shrinks by ~1 px on each side). Inset each
+        # band's nominal edge by the half-stroke values below so both
+        # the fill and the stroke stop short of the touched element.
+        pad_half = _HIGHLIGHT_STROKE_WIDTH / 2.0  # half the pad's own stroke
+        pill_half = 0.5  # half the pill background's stroke (default 1.0)
+
+        # Half-cross-axis (vertical) treatment: halve the band's
+        # height and centre it on the pill rectangle.
+        pill_top = offset + (metrics.pill_row_height - metrics.pill_height) / 2
+        band_h = metrics.pill_height / 2.0
+        band_y = pill_top + (metrics.pill_height - band_h) / 2.0
+
+        # The pill stroke takes ``pill_half`` out of the leading and
+        # trailing inset regions (the pill border's outer half sits
+        # outside the configured ``inset`` region but its inner half
+        # eats into the visible whitespace). To keep the three bands
+        # visually identical, size every band to the most-constrained
+        # one (pad1 / pad3) and centre pad2 inside its larger region.
+        band_w = inset - pill_half - 2 * pad_half
+
+        # (1) Leading visible padding — between pill border (inner
+        # stroke edge) and the icon's left edge.
+        pad1_x = pill_left + pill_half + pad_half
+        _highlight_rect(d, x=pad1_x, y=band_y, width=band_w, height=band_h)
+        # (2) Icon-to-text visible gap, centred between icon right
+        # edge and text left edge so its visible extent matches the
+        # other two bands.
+        text_left = icon_right + inset
+        pad2_centre = (icon_right + text_left) / 2.0
+        pad2_x = pad2_centre - band_w / 2.0
+        _highlight_rect(d, x=pad2_x, y=band_y, width=band_w, height=band_h)
+        # (3) Trailing visible padding — text end to pill border.
+        pad3_right = pill_right - pill_half - pad_half
+        pad3_x = pad3_right - band_w
+        _highlight_rect(d, x=pad3_x, y=band_y, width=band_w, height=band_h)
+
+        _embed_used_fonts(d)
 
     return d
 
@@ -1196,14 +1462,17 @@ def _build_layer_badge_inset_mock() -> draw.Drawing:
        with double-digit ones.
     3. Inter-column inset (``inset``) — index → name.
     4. Name column — left-aligned label.
-    5. Trailing inset (``inset * 2``) — name end → badge edge.
+    5. Trailing inset (``inset * 2``) — name end → badge edge,
+       painted as two adjacent ``inset``-wide bands so the doubled
+       value reads as ``inset + inset`` rather than a single
+       differently-sized region.
 
     Two stacked badges show the right-alignment in action: index ``0``
     sits with leading whitespace inside the index column and ``12``
-    fills it. The leading and inter-column insets are highlighted at
-    full opacity (both are the same configurable value); the trailing
-    ``inset * 2`` is dashed at half opacity so the derived 1:2 ratio
-    reads visually without competing with the canonical highlight.
+    fills it. Painted text uses the bundled ``Finger-Key-Label``
+    family that PIL measures against, so the trailing band aligns
+    with the actual end of the label rather than drifting when the
+    browser falls back to a different system font.
     """
     from skim.application.render.keymap_overview import (
         _badge_inset,
@@ -1239,9 +1508,34 @@ def _build_layer_badge_inset_mock() -> draw.Drawing:
         index_right_x = index_col_x + index_col_width
         name_x = index_right_x + inset
 
+        # Half-cross-axis (vertical) treatment: halve the band height
+        # and centre it on each badge.
+        band_h = badge_height / 2.0
+        band_dy = (badge_height - band_h) / 2.0
+
+        # The highlight rectangle's stroke is centred on its path, so
+        # half the stroke pokes outside the nominal rect on each
+        # side. Inset every band's nominal edge by ``pad_half`` so
+        # the visible stroke stops exactly at the touched element
+        # (badge edge, index column, name text, or the boundary
+        # between pad3a / pad3b) instead of poking 1 px past it.
+        pad_half = _HIGHLIGHT_STROKE_WIDTH / 2.0
+        # Each band's nominal width is the configured ``inset`` minus
+        # both stroke clearances. With ``pad_half`` of clearance on
+        # each side, the visible stroke spans exactly ``inset`` —
+        # the configured value reads correctly across all four bands.
+        band_w = inset - 2 * pad_half
+
+        # Bundled Roboto family — same one ``_measure_badge_text_width``
+        # measures against. Painting with this family keeps the
+        # trailing band's left edge flush with the actual end of the
+        # rendered label.
+        text_family = Font.FINGER_KEY.value
+
         for row, idx_text in enumerate(rows):
             badge_y = offset + row * (badge_height + badge_gap)
             cy = badge_y + badge_height / 2
+            band_y = badge_y + band_dy
 
             d.append(
                 draw.Rectangle(
@@ -1263,7 +1557,7 @@ def _build_layer_badge_inset_mock() -> draw.Drawing:
                     y=cy,
                     text_anchor="end",
                     dominant_baseline="central",
-                    font_family="Roboto, sans-serif",
+                    font_family=text_family,
                     fill="#FFFFFF",
                 )
             )
@@ -1276,32 +1570,58 @@ def _build_layer_badge_inset_mock() -> draw.Drawing:
                     y=cy,
                     text_anchor="start",
                     dominant_baseline="central",
-                    font_family="Roboto, sans-serif",
+                    font_family=text_family,
                     fill="#FFFFFF",
                 )
             )
 
-            # Leading inset.
-            _highlight_rect(d, x=offset, y=badge_y, width=inset, height=badge_height)
-            # Inter-column inset (index → name).
+            # (1) Leading inset — badge edge → index column.
             _highlight_rect(
-                d, x=index_right_x, y=badge_y, width=inset, height=badge_height
+                d, x=offset + pad_half, y=band_y, width=band_w, height=band_h
             )
-            # Trailing inset (2 × inset) — dashed half-opacity so the
-            # derived value doesn't compete with the canonical paint.
-            d.append(
-                draw.Rectangle(
-                    x=offset + badge_width - inset * 2,
-                    y=badge_y,
-                    width=inset * 2,
-                    height=badge_height,
-                    fill=_HIGHLIGHT,
-                    fill_opacity=_HIGHLIGHT_FILL_OPACITY * 0.5,
-                    stroke=_HIGHLIGHT,
-                    stroke_width=_HIGHLIGHT_STROKE_WIDTH,
-                    stroke_dasharray="4 3",
-                )
+            # (2) Inter-column inset — index → name.
+            _highlight_rect(
+                d,
+                x=index_right_x + pad_half,
+                y=band_y,
+                width=band_w,
+                height=band_h,
             )
+            # (3a) + (3b) Trailing inset — painted as two adjacent
+            # ``inset``-wide bands so the configured ``inset * 2``
+            # trailing gap reads as two stacked values rather than a
+            # single differently-sized region. pad3a sits flush with
+            # the name's right edge; pad3b's right stroke ends at the
+            # badge's right edge; the two visible extents meet at
+            # ``trailing_midpoint`` without overlap.
+            trailing_left_x = offset + badge_width - inset * 2
+            trailing_midpoint = trailing_left_x + inset
+            _highlight_rect(
+                d,
+                x=trailing_left_x + pad_half,
+                y=band_y,
+                width=band_w,
+                height=band_h,
+            )
+            _highlight_rect(
+                d,
+                x=trailing_midpoint + pad_half,
+                y=band_y,
+                width=band_w,
+                height=band_h,
+            )
+
+        # The badge text is painted via raw ``draw.Text`` (not the
+        # composable ``AdjustableText`` / ``RichText``), so the active
+        # font-usage collector never sees these characters. Register
+        # them explicitly so :func:`_embed_used_fonts` produces a
+        # subsetted SVG instead of falling back to the full bundled
+        # fonts (~4 MB payload).
+        for idx_text in rows:
+            register_font_usage(Font.FINGER_KEY, idx_text)
+        register_font_usage(Font.FINGER_KEY, name_text)
+
+        _embed_used_fonts(d)
 
     return d
 
@@ -1763,8 +2083,17 @@ def _build_hold_symbol_position_mock() -> draw.Drawing:
     contrast cleanly.
     """
     # Use the curated Svalboard palette so the cluster reads like a
-    # real Svalboard render, not a generic Skim default.
+    # real Svalboard render, not a generic Skim default. Override
+    # ``use_system_fonts`` off so the painted Nerd-Font glyphs
+    # reference the bundled ``Key-Symbols`` family that
+    # :func:`_embed_used_fonts` writes into the SVG, instead of the
+    # system ``'Symbols Nerd Font'`` fallback that won't exist on
+    # every viewer's machine.
     config = _svalboard_config(num_layers=4)
+    style = config.output.style.model_copy(update={"use_system_fonts": False})
+    config = config.model_copy(
+        update={"output": config.output.model_copy(update={"style": style})}
+    )
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
@@ -1812,7 +2141,9 @@ def _build_hold_symbol_position_mock() -> draw.Drawing:
                 hold_symbol_position=pos,
             )
             panels.append((cluster, caption))
-        return _build_side_by_side(panels=panels)
+        d = _build_side_by_side(panels=panels)
+        _embed_used_fonts(d)
+        return d
 
 
 def _build_layer_indicator_show_mock() -> draw.Drawing:
@@ -2102,32 +2433,37 @@ def _build_layer_connector_show_mock() -> draw.Drawing:
 
 
 def _build_show_transparent_fallthrough_mock() -> draw.Drawing:
-    """Two single layer-tinted keys side-by-side: one carrying a
-    "ghost" version of the layer-0 label (the ``true`` /
-    fall-through behaviour) and one blank (``false``).
+    """Two single layer-tinted keys side-by-side, illustrating what
+    a transparent key on a non-base layer renders as under each
+    setting:
+
+    * ``true`` (default) — the key carries a ghost version of the
+      layer-0 label it falls through to.
+    * ``false`` — :func:`KeymapTargetAdapter` stamps the Vial-style
+      ⛛ glyph on the transparent position so it stays visible
+      instead of rendering as a blank key.
 
     The key fill mirrors what a transparent key on a layer above 0
     actually renders as in production — the activating layer's
-    colour. The ghost label is painted in a lightness-shifted
-    variant of that colour, matching the legacy ghost-rendering
-    contrast (rather than fighting against a white-on-grey
-    background).
+    colour. Both labels paint in a lightness-shifted variant of
+    that colour, matching the legacy ghost contrast.
     """
     panel_w = 120.0
     panel_h = 120.0
     key_w = 96.0
     key_h = 96.0
     radius = 6.0
-    label_text = "K"
+    ghost_label_text = "K"
+    transparent_glyph = "⛛"  # ⛛ — same glyph the adapter stamps
     label_font = 32.0
     # Colour mirrors a typical layer accent (a dusty blue from the
-    # default skim palette). The ghost label is painted as a
+    # default skim palette). Both labels paint as a
     # lightness-shifted version of that colour — the legacy
     # production behaviour.
     key_fill = "#3F7BB6"
     ghost_fill = "#9CBEDD"  # = key_fill with HSL lightness +0.18
 
-    def _key_panel(*, ghost: bool) -> Component:
+    def _key_panel(*, label: str | None) -> Component:
         size = Size(panel_w, panel_h)
 
         def draw_at(d, origin):
@@ -2144,14 +2480,14 @@ def _build_show_transparent_fallthrough_mock() -> draw.Drawing:
                     fill=key_fill,
                 )
             )
-            if ghost:
+            if label is not None:
                 d.append(
                     draw.Text(
-                        label_text,
+                        label,
                         x=kx + key_w / 2,
                         y=ky + key_h / 2,
                         font_size=label_font,
-                        font_family="Roboto, sans-serif",
+                        font_family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif",
                         text_anchor="middle",
                         dominant_baseline="central",
                         fill=ghost_fill,
@@ -2162,8 +2498,8 @@ def _build_show_transparent_fallthrough_mock() -> draw.Drawing:
 
     return _build_side_by_side(
         panels=[
-            (_key_panel(ghost=True), "true (ghost label)"),
-            (_key_panel(ghost=False), "false (blank)"),
+            (_key_panel(label=ghost_label_text), "true (ghost label)"),
+            (_key_panel(label=transparent_glyph), "false (⛛ glyph)"),
         ]
     )
 

@@ -513,23 +513,26 @@ def MacroPill(
                 stroke_opacity=0.18,
             )
         )
-        # Action glyph — icon centred at ``x + macro_action_inset`` so
-        # the leading inset (pill edge → icon centre) equals the same
-        # configurable value the icon → text gap and trailing pad use.
+        # Action glyph — icon's LEFT EDGE sits at ``x +
+        # macro_action_inset`` so the visible whitespace before the
+        # icon equals the same configurable value the icon → text
+        # gap and trailing pad use. Painted at the centre point
+        # ``inset + icon_width/2`` because :func:`build_action_glyph`
+        # is centre-anchored.
         d.append(
             build_action_glyph(
                 kind,
-                cx=x + metrics.macro_action_inset,
+                cx=x + metrics.macro_action_inset + metrics.pill_icon_width / 2,
                 cy=y + metrics.pill_row_height / 2,
                 color=text_color,
                 doc_width=doc_width,
             )
         )
         # Label — centred in the available text region:
-        #   left  = x + macro_action_inset + icon_width/2 + macro_action_inset
+        #   left  = x + macro_action_inset + icon_width + macro_action_inset
         #   right = x + pill_w - macro_action_inset
-        #   centre = x + (icon_width/2 + macro_action_inset + pill_w) / 2
-        text_centre_x = x + (metrics.pill_icon_width / 2 + metrics.macro_action_inset + pill_w) / 2
+        #   centre = x + (icon_width + macro_action_inset + pill_w) / 2
+        text_centre_x = x + (metrics.pill_icon_width + metrics.macro_action_inset + pill_w) / 2
         cy = y + metrics.pill_row_height / 2 + metrics.chip_inner_text_baseline_offset
         label_el.draw_at(
             d,

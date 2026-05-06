@@ -1172,11 +1172,12 @@ fallback.
 
 When `true`, transparent keycodes (`KC_TRNS` / `_______`) on layers above
 0 render the label from layer 0 in a faded "ghost" color, so you can see
-what's underneath. Set to `false` to leave transparent keys completely
-blank.
+what's underneath. Set to `false` to stamp the Vial-style `⛛` glyph on
+each transparent position instead, so transparent keys stay visible
+without revealing the underlying layer-0 label.
 
 <figure markdown="1">
-<figcaption>A transparent key on a layer above 0. With <code>true</code>, the layer-0 label paints in a lightness-shifted variant of the key's colour; with <code>false</code>, the key is blank.</figcaption>
+<figcaption>A transparent key on a layer above 0. With <code>true</code>, the layer-0 label paints in a lightness-shifted variant of the key's colour; with <code>false</code>, the key carries the <code>⛛</code> transparent-key glyph in the same ghost colour.</figcaption>
 ![show_transparent_fallthrough true vs false comparison](../_static/spacing/show-transparent-fallthrough.svg){ width="320" loading=lazy }
 </figure>
 
