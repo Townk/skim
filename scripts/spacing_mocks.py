@@ -1841,36 +1841,44 @@ def _build_layer_connector_show_mock() -> draw.Drawing:
             overview = KeymapOverview(keymap=keymap)
             panels.append((overview, caption))
 
-    # Each panel needs its own render context; build outside the helper
-    # by drawing each overview into the master Drawing manually.
+    # Each panel was built under its own render context. Stack them
+    # vertically — overview images are very wide, so a vertical stack
+    # keeps the figure narrow enough to read on the doc page.
     label_font_size = 12.0
     label_gap = 8.0
     label_height = label_font_size + label_gap
-    panel_gap = 28.0
+    panel_gap = 36.0
     outer_padding = 16.0
 
     extents = [_panel_extents(c) for c, _ in panels]
-    headroom = max(max(0.0, -offset.y) for _, offset in extents)
-    keys_max_h = max(c.size.height for c, _ in panels)
-    keys_origin_y = outer_padding + headroom
-    canvas_h = keys_origin_y + keys_max_h + label_height + outer_padding
-    total_w = sum(o.width for o, _ in extents) + panel_gap * (len(panels) - 1)
-    canvas_w = total_w + 2 * outer_padding
+    panel_width = max(size.width for size, _ in extents)
+    panel_heights = [size.height for size, _ in extents]
+    canvas_w = panel_width + 2 * outer_padding
+    canvas_h = (
+        sum(panel_heights)
+        + label_height * len(panels)
+        + panel_gap * (len(panels) - 1)
+        + 2 * outer_padding
+    )
 
     d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
-    cursor_x = outer_padding
+    cursor_y = outer_padding
     for (component, caption), (overflow_size, overflow_offset) in zip(panels, extents, strict=True):
-        # Each component was built under its own render context, but
-        # ``draw_at`` doesn't need the context — the closures captured
-        # everything they need at build time.
-        component.draw_at(
-            d, Point(cursor_x - overflow_offset.x, keys_origin_y)
+        # Centre each panel horizontally inside the canvas; offset the
+        # keys-only origin by ``-overflow_offset`` so any chrome above
+        # / left of the keys-only bbox lands on canvas.
+        panel_x = outer_padding + (panel_width - overflow_size.width) / 2
+        keys_origin = Point(
+            panel_x - overflow_offset.x,
+            cursor_y - overflow_offset.y,
         )
+        component.draw_at(d, keys_origin)
+        cursor_y += overflow_size.height
         d.append(
             draw.Text(
                 caption,
-                x=cursor_x + overflow_size.width / 2,
-                y=keys_origin_y + keys_max_h + label_gap,
+                x=panel_x + overflow_size.width / 2,
+                y=cursor_y + label_gap,
                 font_size=label_font_size,
                 text_anchor="middle",
                 dominant_baseline="text-before-edge",
@@ -1878,7 +1886,7 @@ def _build_layer_connector_show_mock() -> draw.Drawing:
                 fill=_GREY_TEXT,
             )
         )
-        cursor_x += overflow_size.width + panel_gap
+        cursor_y += label_height + panel_gap
 
     return d
 

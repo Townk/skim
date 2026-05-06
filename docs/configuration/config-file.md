@@ -1193,8 +1193,8 @@ miniature keymap stand on their own. Has no effect on per-layer
 images (which never paint connectors).
 
 <figure markdown="1">
-<figcaption>Two miniature 3-layer overviews built from the same keymap (two layer-switch keys on the LEFT half). The dotted connectors only paint in the <code>true</code> panel.</figcaption>
-![layer_connector.show true vs false comparison](../_static/spacing/layer-connector-show.svg){ width="900" loading=lazy }
+<figcaption>Two miniature 3-layer overviews built from the same keymap (two layer-switch keys on the LEFT half), stacked top to bottom. The dotted connectors only paint in the <code>true</code> panel.</figcaption>
+![layer_connector.show true vs false comparison](../_static/spacing/layer-connector-show.svg){ width="540" loading=lazy }
 </figure>
 
 ##### `width` { #outputstylelayer_connectorwidth }
