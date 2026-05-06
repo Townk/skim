@@ -27,7 +27,9 @@ Style choices
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 import drawsvg as draw
@@ -274,21 +276,29 @@ def _build_finger_key_gap_mock() -> draw.Drawing:
         center_left = slots.center_origin.x
         center_right = center_left + slots.center_width
 
+        # Each band's cross-axis spans half the central key's width
+        # and is centred on it — short markers rather than full-edge
+        # spans, matching the half-cross-axis treatment used by the
+        # margin / inset / table-spacing mocks.
+        half = slots.center_width / 2.0
+        center_x = center_left + slots.center_width / 2.0
+        center_y = center_top + slots.center_width / 2.0
+
         # Top gap (between north and centre)
         _highlight_rect(
             d,
-            x=offset + center_left,
+            x=offset + center_x - half / 2.0,
             y=offset + north_bottom,
-            width=slots.center_width,
+            width=half,
             height=center_top - north_bottom,
         )
         # Bottom gap (between centre and south)
         south_top = slots.south_origin.y
         _highlight_rect(
             d,
-            x=offset + center_left,
+            x=offset + center_x - half / 2.0,
             y=offset + center_bottom,
-            width=slots.center_width,
+            width=half,
             height=south_top - center_bottom,
         )
         # Left gap (between west's right edge and centre's left edge)
@@ -296,18 +306,18 @@ def _build_finger_key_gap_mock() -> draw.Drawing:
         _highlight_rect(
             d,
             x=offset + west_right,
-            y=offset + center_top,
+            y=offset + center_y - half / 2.0,
             width=center_left - west_right,
-            height=slots.center_width,
+            height=half,
         )
         # Right gap (between centre's right edge and east's left edge)
         east_left = slots.east_origin.x
         _highlight_rect(
             d,
             x=offset + center_right,
-            y=offset + center_top,
+            y=offset + center_y - half / 2.0,
             width=east_left - center_right,
-            height=slots.center_width,
+            height=half,
         )
 
     return d
@@ -450,9 +460,13 @@ def _doc_chrome_mock(*, highlight: str) -> draw.Drawing:
     * ``border`` — rose stroke overlaid on the border path itself
       (the value is a stroke width, not a band).
 
-    Showing a real keymap inside makes each value's role legible at a
-    glance. The mock uses an exaggerated ``border_width = 4`` so the
-    stroke reads cleanly even on the small canvas.
+    The canvas paints with an explicit white background so the file's
+    boundaries read distinctly from the light-grey keymap interior, and
+    a thin square stroke around the canvas edge marks the SVG file's
+    boundary. Showing a real keymap inside makes each value's role
+    legible at a glance. The mock uses an exaggerated
+    ``border_width = 4`` so the stroke reads cleanly even on the small
+    canvas.
     """
     from skim.application.render.keymap_document import KeymapDocument
     from skim.application.render.keymap_layer import KeymapLayer
@@ -471,10 +485,18 @@ def _doc_chrome_mock(*, highlight: str) -> draw.Drawing:
             "spacing": Spacing(margin=margin, inset=inset),
         }
     )
+    # Light-grey keymap interior — contrasts the white canvas behind it
+    # so the document's boundary is visible without depending on the
+    # docs page's own background colour.
+    keymap_bg = "#F3F4F6"
+    palette = config.output.style.palette.model_copy(
+        update={"background_color": keymap_bg}
+    )
     style = config.output.style.model_copy(
         update={
             "border": Border(width=border_width, radius=border_radius),
             "show_layer_indicators": False,
+            "palette": palette,
         }
     )
     output = config.output.model_copy(update={"layout": layout, "style": style})
@@ -497,61 +519,122 @@ def _doc_chrome_mock(*, highlight: str) -> draw.Drawing:
         canvas_w = document.size.width
         canvas_h = document.size.height
         d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+        # Paint the canvas white before the document so the bands and
+        # border stroke read against an explicit background rather than
+        # the SVG's default transparent fill.
+        d.append(
+            draw.Rectangle(
+                x=0.0,
+                y=0.0,
+                width=canvas_w,
+                height=canvas_h,
+                fill="#FFFFFF",
+                stroke="none",
+            )
+        )
         document.draw_at(d, Point(0.0, 0.0))
 
         if highlight == "margin":
-            # Bands between canvas edge and border path. The border
-            # stroke is centred on a path at ``margin`` from each edge,
-            # so the band's width equals the resolved margin value
-            # exactly (with half the stroke peeking inside the band).
-            _highlight_rect(d, x=0.0, y=0.0, width=canvas_w, height=margin)
+            # Bands sit between canvas edge and the border stroke's
+            # outer edge. The border path is centred at ``margin`` from
+            # each edge with stroke ``border_width``, so its outer edge
+            # sits at ``margin - border_width/2`` — the band's
+            # thickness fills exactly that strip so it visually
+            # represents the full margin value.
+            #
+            # The cross-axis length is half the available straight
+            # edge between the rounded corners, centred along it. That
+            # keeps each band as a short marker rather than spanning
+            # corner-to-corner — easier to read against the keymap
+            # without crowding the corner regions or overlapping the
+            # adjacent bands.
+            available = margin - border_width / 2.0
+            corner_offset = margin + border_radius
+            straight_w = canvas_w - 2 * corner_offset
+            straight_h = canvas_h - 2 * corner_offset
+            band_w = straight_w / 2.0
+            band_h = straight_h / 2.0
+            center_x = canvas_w / 2.0
+            center_y = canvas_h / 2.0
             _highlight_rect(
-                d, x=0.0, y=canvas_h - margin, width=canvas_w, height=margin
-            )
-            _highlight_rect(
-                d, x=0.0, y=margin, width=margin, height=canvas_h - 2 * margin
+                d,
+                x=center_x - band_w / 2.0,
+                y=0.0,
+                width=band_w,
+                height=available,
             )
             _highlight_rect(
                 d,
-                x=canvas_w - margin,
-                y=margin,
-                width=margin,
-                height=canvas_h - 2 * margin,
+                x=center_x - band_w / 2.0,
+                y=canvas_h - available,
+                width=band_w,
+                height=available,
+            )
+            _highlight_rect(
+                d,
+                x=0.0,
+                y=center_y - band_h / 2.0,
+                width=available,
+                height=band_h,
+            )
+            _highlight_rect(
+                d,
+                x=canvas_w - available,
+                y=center_y - band_h / 2.0,
+                width=available,
+                height=band_h,
             )
         elif highlight == "inset":
             # Bands between the border path's inner edge and the
             # content. ``content_offset = margin + border_width + inset``
-            # so a band of width ``inset`` starts at ``margin +
-            # border_width`` (inner edge of the stroke) and ends at the
-            # content origin.
-            inner = margin + border_width
+            # so the band fills the gap from the border stroke's
+            # inner edge (``margin + border_width/2``) to the content
+            # origin (``margin + border_width + inset``). Thickness is
+            # therefore ``border_width/2 + inset`` — the full visible
+            # inset region — so the band touches both the border and
+            # the content without painting over either. Mirrors the
+            # ``margin`` highlight, which fills the canvas-edge → outer
+            # stroke gap.
+            #
+            # The cross-axis length is half the available straight
+            # extent between the rounded corners, centred along that
+            # extent — short markers rather than corner-to-corner spans.
+            inner_edge = margin + border_width / 2.0
+            band_thickness = border_width / 2.0 + inset
+            content_origin = margin + border_width + inset
+            straight_w = canvas_w - 2 * content_origin
+            straight_h = canvas_h - 2 * content_origin
+            band_w = straight_w / 2.0
+            band_h = straight_h / 2.0
+            center_x = canvas_w / 2.0
+            center_y = canvas_h / 2.0
             _highlight_rect(
                 d,
-                x=inner,
-                y=inner,
-                width=canvas_w - 2 * inner,
-                height=inset,
+                x=center_x - band_w / 2.0,
+                y=inner_edge,
+                width=band_w,
+                height=band_thickness,
             )
             _highlight_rect(
                 d,
-                x=inner,
-                y=canvas_h - inner - inset,
-                width=canvas_w - 2 * inner,
-                height=inset,
+                x=center_x - band_w / 2.0,
+                y=canvas_h - inner_edge - band_thickness,
+                width=band_w,
+                height=band_thickness,
             )
             _highlight_rect(
                 d,
-                x=inner,
-                y=inner + inset,
-                width=inset,
-                height=canvas_h - 2 * (inner + inset),
+                x=inner_edge,
+                y=center_y - band_h / 2.0,
+                width=band_thickness,
+                height=band_h,
             )
             _highlight_rect(
                 d,
-                x=canvas_w - inner - inset,
-                y=inner + inset,
-                width=inset,
-                height=canvas_h - 2 * (inner + inset),
+                x=canvas_w - inner_edge - band_thickness,
+                y=center_y - band_h / 2.0,
+                width=band_thickness,
+                height=band_h,
             )
         elif highlight == "border":
             # Rose overlay on the border path. The path is centred at
@@ -573,6 +656,22 @@ def _doc_chrome_mock(*, highlight: str) -> draw.Drawing:
             )
         else:
             raise ValueError(f"unknown highlight {highlight!r}")
+
+        # File-boundary outline — thin square stroke flush with the
+        # canvas edge so the SVG's own bounds read distinctly from the
+        # keymap's rounded border. Drawn last so highlights and the
+        # rounded border don't paint over it.
+        d.append(
+            draw.Rectangle(
+                x=0.5,
+                y=0.5,
+                width=canvas_w - 1.0,
+                height=canvas_h - 1.0,
+                fill="none",
+                stroke="#9CA3AF",
+                stroke_width=1.0,
+            )
+        )
 
     return d
 
@@ -607,6 +706,103 @@ def _grey_td(*, idx: str = "0", name: str | None = None) -> SvalboardTapDance[Sv
     )
 
 
+@dataclass(frozen=True)
+class _SectionStage:
+    """Computed geometry of the shared stripe + TapDance body stage."""
+
+    drawing: draw.Drawing
+    stripe: Component
+    stripe_metrics: SectionStripeMetrics
+    td_metrics: TapDanceMetrics
+    x: float
+    y: float
+    body_w: float
+    body_y: float
+    header_height: float
+    row_height: float
+    cell_width: float
+    name_column_width: float
+    num_rows: int
+
+
+def _build_section_stage(ctx: RenderContext, *, num_rows: int = 1) -> _SectionStage:
+    """Lay out the shared stripe + TapDance body the section / table
+    spacing mocks paint on top of, so all six illustrations share the
+    same canvas shape and the docs render them at matching font sizes.
+
+    ``num_rows`` controls how many tap-dance rows the body stacks
+    (separated by ``table_row_spacing``). Defaults to 1 — enough for
+    every mock except ``table-row-spacing``, which needs at least
+    two rows to expose the inter-row gap.
+    """
+    if num_rows < 1:
+        raise ValueError("num_rows must be >= 1")
+    section_spacing = ctx.document_metrics.section_spacing
+    stripe_metrics = SectionStripeMetrics.from_ctx(ctx)
+    td_metrics = TapDanceMetrics.from_ctx(ctx)
+    stripe_width = 320.0
+    stripe = SectionStripe(
+        title="TAP-DANCE", count=num_rows, width=stripe_width, accent_line=_GREY_BORDER
+    )
+    # Pin the TapDance body's column geometry so the row + header
+    # fit inside ``stripe_width`` rather than expanding past it.
+    # Hides the name column (``name_column_width=0``) and shrinks
+    # the variant cells to a width that keeps the four cells +
+    # column spacings within budget.
+    td_cell_width = 56.0
+    td_name_column_width = 0.0
+    header = TapDanceColumnHeader(
+        text_color=_GREY_TEXT,
+        name_column_width=td_name_column_width,
+        cell_width=td_cell_width,
+    )
+    rows = [
+        TapDanceRow(
+            td=_grey_td(idx=str(i)),
+            accent_fill=_GREY_NEUTRAL,
+            accent_line=_GREY_BORDER,
+            text_color=_GREY_TEXT,
+            name_column_width=td_name_column_width,
+            cell_width=td_cell_width,
+        )
+        for i in range(num_rows)
+    ]
+    row_height = rows[0].size.height
+    row_spacing = td_metrics.table_row_spacing
+    body_w = max(header.size.width, *(r.size.width for r in rows))
+    body_h = header.size.height + num_rows * row_height + (num_rows - 1) * row_spacing
+    canvas_w = max(stripe.size.width, body_w) + 24.0
+    canvas_h = stripe.size.height + section_spacing + body_h + 24.0
+    d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+
+    x = 12.0
+    y = 12.0
+    stripe.draw_at(d, Point(x, y))
+    body_y = y + stripe.size.height + section_spacing
+    header.draw_at(d, Point(x, body_y))
+    for i, row in enumerate(rows):
+        row.draw_at(
+            d,
+            Point(x, body_y + header.size.height + i * (row_height + row_spacing)),
+        )
+
+    return _SectionStage(
+        drawing=d,
+        stripe=stripe,
+        stripe_metrics=stripe_metrics,
+        td_metrics=td_metrics,
+        x=x,
+        y=y,
+        body_w=body_w,
+        body_y=body_y,
+        header_height=header.size.height,
+        row_height=row_height,
+        cell_width=td_cell_width,
+        name_column_width=td_name_column_width,
+        num_rows=num_rows,
+    )
+
+
 def _build_section_spacing_mock() -> draw.Drawing:
     """Highlight the gap between a section's stripe and the first body row.
 
@@ -621,155 +817,159 @@ def _build_section_spacing_mock() -> draw.Drawing:
     ctx = RenderContext.build(config=config, keymap=keymap)
 
     with using_render_context(ctx):
-        section_spacing = ctx.document_metrics.section_spacing
-        stripe = SectionStripe(
-            title="TAP-DANCE", count=1, width=320.0, accent_line=_GREY_BORDER
-        )
-        header = TapDanceColumnHeader(text_color=_GREY_TEXT)
-        row = TapDanceRow(
-            td=_grey_td(),
-            accent_fill=_GREY_NEUTRAL,
-            accent_line=_GREY_BORDER,
-            text_color=_GREY_TEXT,
-        )
-        body_w = max(header.size.width, row.size.width)
-        canvas_w = max(stripe.size.width, body_w) + 24.0
-        canvas_h = stripe.size.height + section_spacing + header.size.height + row.size.height + 24.0
-        d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+        stage = _build_section_stage(ctx)
 
-        x = 12.0
-        y = 12.0
-        stripe.draw_at(d, Point(x, y))
-        body_y = y + stripe.size.height + section_spacing
-        header.draw_at(d, Point(x, body_y))
-        row.draw_at(d, Point(x, body_y + header.size.height))
-
-        # Highlight the section_spacing band between the stripe's
-        # bottom and the body's top.
+        # Highlight the section_spacing band between the stripe rule's
+        # bottom edge and the body's top. The rule line is centred at
+        # ``y + stripe.size.height`` with stroke ``rule_stroke``, so
+        # half the stroke extends into the gap; the band starts past
+        # that half-stroke (snapped up to a whole pixel so the visual
+        # gap is consistent) and ends flush with the body, never
+        # painting over the rule.
+        rule_y = stage.y + stage.stripe.size.height
+        band_y = math.ceil(rule_y + stage.stripe_metrics.rule_stroke / 2.0)
+        band_w = stage.body_w / 2.0
         _highlight_rect(
-            d,
-            x=x,
-            y=y + stripe.size.height,
-            width=body_w,
-            height=section_spacing,
+            stage.drawing,
+            x=stage.x + (stage.body_w - band_w) / 2.0,
+            y=band_y,
+            width=band_w,
+            height=stage.body_y - band_y,
         )
 
-    return d
+    return stage.drawing
 
 
 def _build_table_header_spacing_mock() -> draw.Drawing:
-    """Highlight the gap between a TapDanceColumnHeader and the first row."""
+    """Highlight every gap that ``table_header_spacing`` controls.
+
+    The value lands in two places inside a table-shaped section:
+
+    1. Between the column header text and the first variant row —
+       baked into the header's reported height (the gap sits at the
+       bottom of the header's bbox; the text is top-anchored).
+    2. Between a row's chip-and-name block and the first variant
+       cell (or, in a :func:`MacroRow`, between the chip and the
+       first pill).
+
+    Both bands paint here so the docs make clear that the same value
+    drives both axes.
+
+    Shares the stripe + body stage with
+    :func:`_build_section_spacing_mock` so the canvas matches.
+    """
     config = _grey_config()
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
     with using_render_context(ctx):
-        metrics = TapDanceMetrics.from_ctx(ctx)
-        header = TapDanceColumnHeader(text_color=_GREY_TEXT)
-        row = TapDanceRow(
-            td=_grey_td(),
-            accent_fill=_GREY_NEUTRAL,
-            accent_line=_GREY_BORDER,
-            text_color=_GREY_TEXT,
-        )
-        # The header's ``table_header_spacing`` of empty space is
-        # baked into its reported height (text_height +
-        # table_header_spacing); the band we want sits at the bottom
-        # of the header's bbox.
-        canvas_w = max(header.size.width, row.size.width) + 24.0
-        canvas_h = header.size.height + row.size.height + 24.0
-        d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
+        stage = _build_section_stage(ctx)
+        header_spacing = stage.td_metrics.table_header_spacing
 
-        x = 12.0
-        y = 12.0
-        header.draw_at(d, Point(x, y))
-        row.draw_at(d, Point(x, y + header.size.height))
-
-        # Highlight the band — the bottom slice of the header's bbox
-        # (text sits flush with the top, gap is at the bottom).
+        # (1) Header text → first row gap. Halve the band's
+        # horizontal extent and centre it across the body — matches
+        # the half-cross-axis treatment of the other section / table
+        # mocks.
+        band_w = stage.body_w / 2.0
         _highlight_rect(
-            d,
-            x=x,
-            y=y + header.size.height - metrics.table_header_spacing,
-            width=row.size.width,
-            height=metrics.table_header_spacing,
+            stage.drawing,
+            x=stage.x + (stage.body_w - band_w) / 2.0,
+            y=stage.body_y + stage.header_height - header_spacing,
+            width=band_w,
+            height=header_spacing,
         )
 
-    return d
+        # (2) Row chip → first cell gap. Same value drives the
+        # horizontal indent inside :func:`TapDanceRow` (and the
+        # equivalent chip-to-first-pill gap inside :func:`MacroRow`).
+        # Cross-axis here is the row height, so halve that and centre
+        # the band on the row.
+        row_top = stage.body_y + stage.header_height
+        gap_band_h = stage.row_height / 2.0
+        gap_band_y = row_top + (stage.row_height - gap_band_h) / 2.0
+        _highlight_rect(
+            stage.drawing,
+            x=stage.x + stage.td_metrics.chip_width + stage.name_column_width,
+            y=gap_band_y,
+            width=header_spacing,
+            height=gap_band_h,
+        )
+
+    return stage.drawing
 
 
 def _build_table_col_spacing_mock() -> draw.Drawing:
-    """Highlight the gaps between adjacent variant cells in a TD row."""
+    """Highlight the gaps between adjacent variant cells in a TD row.
+
+    Shares the stripe + body stage with
+    :func:`_build_section_spacing_mock`; the bands span each gap
+    between the four variant cells, vertically aligned with the
+    first row.
+    """
     config = _grey_config()
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
     with using_render_context(ctx):
-        metrics = TapDanceMetrics.from_ctx(ctx)
-        row = TapDanceRow(
-            td=_grey_td(),
-            accent_fill=_GREY_NEUTRAL,
-            accent_line=_GREY_BORDER,
-            text_color=_GREY_TEXT,
+        stage = _build_section_stage(ctx)
+        col_spacing = stage.td_metrics.table_col_spacing
+        header_spacing = stage.td_metrics.table_header_spacing
+        # Cells start after the chip + name column + header_spacing
+        # gap (matches :func:`TapDanceRow`'s ``cells_start_x``).
+        cells_start_x = (
+            stage.x
+            + stage.td_metrics.chip_width
+            + stage.name_column_width
+            + header_spacing
         )
-        d = _render_grey_canvas(row)
-        offset = 12.0
-
-        cells_start_x = metrics.chip_width + (metrics.name_w - metrics.chip_width) + metrics.table_header_spacing
-        cell_w = metrics.cell_w
-        col_spacing = metrics.table_col_spacing
-
+        row_top = stage.body_y + stage.header_height
+        # Halve the band's vertical extent (the cross-axis here) and
+        # centre it on the row — matches the half-cross-axis
+        # treatment of the other mocks.
+        band_h = stage.row_height / 2.0
+        band_y = row_top + (stage.row_height - band_h) / 2.0
         for i in range(3):
-            gap_x = cells_start_x + (i + 1) * cell_w + i * col_spacing
+            gap_x = cells_start_x + (i + 1) * stage.cell_width + i * col_spacing
             _highlight_rect(
-                d,
-                x=offset + gap_x,
-                y=offset,
+                stage.drawing,
+                x=gap_x,
+                y=band_y,
                 width=col_spacing,
-                height=metrics.row_height,
+                height=band_h,
             )
 
-    return d
+    return stage.drawing
 
 
 def _build_table_row_spacing_mock() -> draw.Drawing:
-    """Highlight the gaps between adjacent rows in a tap-dance table."""
+    """Highlight the gaps between adjacent rows in a tap-dance table.
+
+    Stages the same stripe + body as the other section / table mocks
+    but stacks two rows so the inter-row gap exists at all. Same
+    canvas geometry otherwise — the only delta is the extra row plus
+    its preceding ``table_row_spacing``.
+    """
     config = _grey_config()
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
     with using_render_context(ctx):
-        metrics = TapDanceMetrics.from_ctx(ctx)
-        tds = [_grey_td(idx=str(i)) for i in range(3)]
-        table = TapDanceTable(
-            tap_dances=tds,
-            accent_fill=_GREY_NEUTRAL,
-            accent_line=_GREY_BORDER,
-            text_color=_GREY_TEXT,
+        stage = _build_section_stage(ctx, num_rows=2)
+        row_spacing = stage.td_metrics.table_row_spacing
+        # Gap sits between the two rows: from row1's bottom edge to
+        # row2's top edge. Halve horizontally and centre across the
+        # body — matches the cross-axis half treatment.
+        gap_y = stage.body_y + stage.header_height + stage.row_height
+        band_w = stage.body_w / 2.0
+        _highlight_rect(
+            stage.drawing,
+            x=stage.x + (stage.body_w - band_w) / 2.0,
+            y=gap_y,
+            width=band_w,
+            height=row_spacing,
         )
-        d = _render_grey_canvas(table)
-        offset = 12.0
 
-        # Highlight the gaps BETWEEN rows. The trailing post-last-row
-        # spacing exists (it's baked into the table's reported height)
-        # but reads as padding rather than rhythm, so we leave it
-        # un-highlighted.
-        header_height = TapDanceColumnHeader(text_color=_GREY_TEXT).size.height
-        for i in range(2):
-            gap_y = (
-                header_height
-                + (i + 1) * metrics.row_height
-                + i * metrics.table_row_spacing
-            )
-            _highlight_rect(
-                d,
-                x=offset,
-                y=offset + gap_y,
-                width=table.size.width,
-                height=metrics.table_row_spacing,
-            )
-
-    return d
+    return stage.drawing
 
 
 # ---------------------------------------------------------------------------
@@ -784,39 +984,34 @@ def _build_section_title_rule_gap_mock() -> draw.Drawing:
     strip's top edge, with no dangling space above. The rule line
     sits ``title_rule_gap`` below the title's em-box bottom — the
     only configurable vertical value inside the strip.
+
+    Shares the stripe + TapDance body staging with
+    :func:`_build_section_spacing_mock` so the two illustrations
+    sit on the same canvas shape; only the highlight band differs.
     """
     config = _grey_config()
     keymap = _empty_keymap()
     ctx = RenderContext.build(config=config, keymap=keymap)
 
     with using_render_context(ctx):
-        metrics = SectionStripeMetrics.for_doc_width(ctx.config.output.layout.width)
-        stripe = SectionStripe(
-            title="MACROS", count=2, width=320.0, accent_line=_GREY_BORDER
-        )
-        # Pad above and below so the strip reads as a discrete region;
-        # the highlight band sits inside the strip and the surrounding
-        # whitespace makes its boundaries legible.
-        pad = 24.0
-        canvas_w = stripe.size.width + 2 * pad
-        canvas_h = stripe.size.height + 2 * pad
-        d = draw.Drawing(canvas_w, canvas_h, viewBox=f"0 0 {canvas_w} {canvas_h}")
-
-        x = pad
-        y = pad
-        stripe.draw_at(d, Point(x, y))
+        stage = _build_section_stage(ctx)
 
         # Highlight the gap from the title's em-box bottom (=
         # title_font_size below the strip top) down to the rule line.
+        # Halve the band's horizontal extent and centre it under the
+        # title text so the band reads as a marker rather than a full
+        # stripe-width fill — matches the half-width treatment used
+        # for the section_spacing / margin / inset mocks.
+        band_w = stage.stripe.size.width / 2.0
         _highlight_rect(
-            d,
-            x=x,
-            y=y + metrics.title_font_size,
-            width=stripe.size.width,
-            height=metrics.title_rule_gap,
+            stage.drawing,
+            x=stage.x + (stage.stripe.size.width - band_w) / 2.0,
+            y=stage.y + stage.stripe_metrics.title_font_size,
+            width=band_w,
+            height=stage.stripe_metrics.title_rule_gap,
         )
 
-    return d
+    return stage.drawing
 
 
 def _build_chip_padding_mock() -> draw.Drawing:
@@ -1160,17 +1355,22 @@ def _build_thumb_key_gap_mock() -> draw.Drawing:
         slots = _compute_thumb_slots(cluster_width=cluster_width, side=KeyboardSide.LEFT)
         inset = slots.pad_origin.y  # = cluster_width * _THUMB_INSET_PROPORTION
 
+        # Each band's cross-axis (its width) spans half the key it
+        # sits above, centred on the key — short markers rather than
+        # full-edge spans, matching the half-cross-axis treatment used
+        # by the margin / inset / table-spacing / finger-key-gap mocks.
         for key_origin, key_width in (
             (slots.pad_origin, slots.pad_width),
             (slots.nail_origin, slots.nail_width),
             (slots.up_origin, slots.up_width),
             (slots.knuckle_origin, slots.knuckle_width),
         ):
+            band_w = key_width / 2.0
             _highlight_rect(
                 d,
-                x=offset + key_origin.x,
+                x=offset + key_origin.x + (key_width - band_w) / 2.0,
                 y=offset + key_origin.y - inset,
-                width=key_width,
+                width=band_w,
                 height=inset,
             )
 
