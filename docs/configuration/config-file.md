@@ -195,7 +195,7 @@ When no name is provided, Skim simply uses the word _LAYER_ followed by the QMK 
 
 | Type     | Default |
 | -------- | ------- |
-| `string \| null` | `null` |
+| `string` \| `null` | `null` |
 
 An optional alphanumeric handle for this layer, used when your keymap
 references layers by C `#define` macros (the form `qmk c2json` produces). If
@@ -211,7 +211,7 @@ can resolve them back to the firmware index.
 
 | Type     | Default |
 | -------- | ------- |
-| `string \| null` | `null` |
+| `string` \| `null` | `null` |
 
 A short secondary label rendered below the layer name in the overview
 image — typically used to tag the keymap variant (`"QWERTY"`, `"COLEMAK"`,
@@ -367,7 +367,7 @@ QMK `keymap.c` keymaps it's the name you used in your `#define` (e.g.
 
 | Type             | Default |
 | ---------------- | ------- |
-| `string \| null` | `null`  |
+| `string` \| `null` | `null`  |
 
 A short human-readable label shown in the macros legend. This field is
 Skim-only — it has no equivalent in Vial or Keybard, so changes here
@@ -377,7 +377,7 @@ don't round-trip back to your keyboard's firmware.
 
 | Type             | Default |
 | ---------------- | ------- |
-| `string \| null` | `null`  |
+| `string` \| `null` | `null`  |
 
 A read-only single-line text representation of the macro, displayed below
 the macro's name in the legend. Although saved in the configuration file,
@@ -420,7 +420,7 @@ styles that reference the tap-dance by an unwrapped name.
 
 | Type             | Default |
 | ---------------- | ------- |
-| `string \| null` | `null`  |
+| `string` \| `null` | `null`  |
 
 A short human-readable label shown in the tap-dance legend. Like
 `macros.name`, this field is Skim-only — it has no equivalent in Vial or
@@ -430,7 +430,7 @@ Keybard, and changes don't round-trip back to your firmware.
 
 | Type             | Default |
 | ---------------- | ------- |
-| `string \| null` | `null`  |
+| `string` \| `null` | `null`  |
 
 A read-only single-line text representation of the tap-dance, displayed
 below its name in the legend. Although saved in the configuration file,
@@ -700,7 +700,7 @@ of your keymap.
 ### `keymap_title` { #output-keymap-title }
 | Type             | Default |
 | ---------------- | ------- |
-| `string \| null` | `null`  |
+| `string` \| `null` | `null`  |
 
 Your keymap layout title. This name will be used as the title of each keymap
 image created by Skim. If you don't set this property (or set it to `null`), an
@@ -710,7 +710,7 @@ file name used to create the images.
 ### `copyright` { #output-copyright }
 | Type             | Default |
 | ---------------- | ------- |
-| `string \| null` | `null`  |
+| `string` \| `null` | `null`  |
 
 An optional copyright notice rendered in the footer area of the keymap images.
 Leave `null` to omit it. Standard conventions apply (`"© 2026 Your Name"`);
@@ -814,7 +814,7 @@ at a glance.
 ###### `margin` { #output-layout-spacing-margin }
 | Type                            | Default        | Base       |
 | ------------------------------- | -------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0`) | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0`) | doc width  |
 
 The **outer** margin between the image edge and the rounded keyboard
 border. `null` and `0` are equivalent — the keyboard sits flush
@@ -828,7 +828,7 @@ against the image edge.
 ###### `inset` { #output-layout-spacing-inset }
 | Type                            | Default                       | Base       |
 | ------------------------------- | ----------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `2.5%` of doc width) | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `2.5%` of doc width) | doc width  |
 
 The **inner** padding inside the keyboard border. Used both as the gap
 between the border line and the first content row, and as the inter-element
@@ -843,7 +843,7 @@ document column.
 ###### `column_gap` { #output-layout-spacing-column-gap }
 | Type                            | Default                        | Base       |
 | ------------------------------- | ------------------------------ | ---------- |
-| `float \| string \| null`       | `null` (→ `2.5%` of doc width)  | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `2.5%` of doc width)  | doc width  |
 
 Horizontal gap between side-by-side columns of content — between the
 two halves of the keyboard, and between the macros and tap-dance
@@ -859,7 +859,7 @@ sections when both are rendered.
 ###### `section_spacing` { #output-layout-spacing-section-spacing }
 | Type                            | Default                         | Base       |
 | ------------------------------- | ------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `1.5%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `1.5%` of doc width)   | doc width  |
 
 Vertical gap between a section's title strip (the `MACROS` / `TAP-DANCE`
 header rule) and the section body that follows it.
@@ -872,7 +872,7 @@ header rule) and the section body that follows it.
 ###### `section_title_rule_gap` { #output-layout-spacing-section-title-rule-gap }
 | Type                            | Default                         | Base       |
 | ------------------------------- | ------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.56%` of doc width)  | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.56%` of doc width)  | doc width  |
 
 Vertical breathing room between the title text and the rule line below
 it inside a section title strip. The strip is top-anchored: the title
@@ -888,7 +888,7 @@ total height.
 ###### `table_header_spacing` { #output-layout-spacing-table-header-spacing }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.75%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.75%` of doc width)   | doc width  |
 
 The "header to content" gap inside any table-shaped composable. Used
 in three places that all share the same rhythm:
@@ -907,7 +907,7 @@ in three places that all share the same rhythm:
 ###### `table_col_spacing` { #output-layout-spacing-table-col-spacing }
 | Type                            | Default                           | Base       |
 | ------------------------------- | --------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.375%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.375%` of doc width)   | doc width  |
 
 Horizontal gap between adjacent columns inside a table — the four
 tap-dance variant cells in a row, and the action pills inside a macro
@@ -921,7 +921,7 @@ pill row.
 ###### `table_row_spacing` { #output-layout-spacing-table-row-spacing }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.56%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.56%` of doc width)   | doc width  |
 
 Vertical gap between adjacent rows inside a table.
 
@@ -935,7 +935,7 @@ Vertical gap between adjacent rows inside a table.
 ###### `finger_key_gap` { #output-layout-spacing-finger-key-gap }
 | Type                            | Default                | Base                  |
 | ------------------------------- | ---------------------- | --------------------- |
-| `float \| string \| null`       | `null` (→ `1.8%`)      | finger cluster width  |
+| `float` \| `string` \| `null`       | `null` (→ `1.8%`)      | finger cluster width  |
 
 Gap between the **center** key and the four **outer** keys (N / E / S / W)
 inside a finger cluster. This is the visible space that surrounds the
@@ -950,7 +950,7 @@ so the geometry stays proportional however the cluster gets sized.
 ###### `thumb_key_gap` { #output-layout-spacing-thumb-key-gap }
 | Type                            | Default                | Base                 |
 | ------------------------------- | ---------------------- | -------------------- |
-| `float \| string \| null`       | `null` (→ `3.8%`)      | thumb cluster width  |
+| `float` \| `string` \| `null`       | `null` (→ `3.8%`)      | thumb cluster width  |
 
 Vertical breathing room above each of the four outer thumb keys (pad,
 nail, up, knuckle). Thumb clusters tessellate rather than gap — the
@@ -967,7 +967,7 @@ width.
 ###### `layer_indicator_spacing` { #output-layout-spacing-layer-indicator-spacing }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.75%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.75%` of doc width)   | doc width  |
 
 Distance between an outer key's edge and its layer-indicator badge —
 the small coloured circle showing the layer this key switches to.
@@ -985,7 +985,7 @@ cluster sizing.
 ###### `chip_padding` { #output-layout-spacing-chip-padding }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `1.25%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `1.25%` of doc width)   | doc width  |
 
 Symmetric horizontal inset inside any chip-shaped element: the
 named-macro / tap-dance chip outline. Acts as the leading and trailing
@@ -1001,7 +1001,7 @@ in step with horizontal changes.
 ###### `tap_dance_pill_padding` { #output-layout-spacing-tap-dance-pill-padding }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `1.25%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `1.25%` of doc width)   | doc width  |
 
 Symmetric horizontal inset inside a tap-dance variant cell (the small
 pill that carries one of `TAP` / `HOLD` / `DOUBLE-TAP` / `TAP & HOLD`).
@@ -1015,7 +1015,7 @@ Vertical padding is `tap_dance_pill_padding * 0.25`.
 ###### `macro_action_inset` { #output-layout-spacing-macro-action-inset }
 | Type                            | Default                           | Base       |
 | ------------------------------- | --------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.625%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.625%` of doc width)   | doc width  |
 
 Uniform inset for all three positions inside a macro action pill:
 
@@ -1034,7 +1034,7 @@ consistent.
 ###### `layer_badge_inset` { #output-layout-spacing-layer-badge-inset }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.94%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.94%` of doc width)   | doc width  |
 
 Leading horizontal inset inside the overview's layer badge — the gap
 between the badge edge and the start of the layer index. The trailing
@@ -1178,7 +1178,7 @@ output:
 ##### `width` { #output-style-border-width }
 | Type    | Default | Base       |
 | ------- | ------- | ---------- |
-| `float \| string` | `2` | doc width |
+| `float` \| `string` | `2` | doc width |
 
 Stroke width of the border line. Accepts the same magnitude rule as
 the spacings — a float `< 1` is a proportion of the doc width, a
@@ -1232,7 +1232,7 @@ images (which never paint connectors).
 ##### `width` { #output-style-layer-connector-width }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.27%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.27%` of doc width)   | doc width  |
 
 Stroke width of the connector path. The default value is tuned to
 read clearly on the canonical 1600-unit overview image; bump it for
@@ -1247,7 +1247,7 @@ overview's chrome more.
 ##### `dot_spacing` { #output-style-layer-connector-dot-spacing }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.77%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.77%` of doc width)   | doc width  |
 
 Gap between adjacent dots along the connector path. Controls the
 visible cadence of the dotted line — smaller values pack the dots
@@ -1295,7 +1295,7 @@ does this key take me." Set to `false` to suppress them entirely
 ##### `width` { #output-style-layer-indicator-width }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.125%` of doc width)  | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.125%` of doc width)  | doc width  |
 
 Stroke width of the indicator circle outline.
 
@@ -1406,7 +1406,7 @@ Controls how multi-column symbol-legend layouts fill themselves:
 ##### `columns` { #output-style-legend-tables-symbols-columns }
 | Type            | Default |
 | --------------- | ------- |
-| `integer \| null` | `null`  |
+| `integer` \| `null` | `null`  |
 
 Forces the **standalone** symbols image to lay out at exactly this
 many columns and shrinks the canvas to fit. `null` (the default)
@@ -1443,7 +1443,7 @@ output:
 ##### `chip_outline` { #output-style-strokes-chip-outline }
 | Type                            | Default                           | Base       |
 | ------------------------------- | --------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.075%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.075%` of doc width)   | doc width  |
 
 Stroke around macro and tap-dance chips — the rounded rectangle that
 carries the chip's icon and id (and, for named entries, extends
@@ -1457,7 +1457,7 @@ across the name area on the right).
 ##### `header_rule` { #output-style-strokes-header-rule }
 | Type                            | Default                           | Base       |
 | ------------------------------- | --------------------------------- | ---------- |
-| `float \| string \| null`       | `null` (→ `0.075%` of doc width)   | doc width  |
+| `float` \| `string` \| `null`       | `null` (→ `0.075%` of doc width)   | doc width  |
 
 Stroke of every header rule — the line under each section title
 strip (`MACROS`, `TAP-DANCE`, `SYMBOLS`) and the hairline below a
