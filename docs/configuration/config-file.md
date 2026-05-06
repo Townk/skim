@@ -1658,10 +1658,10 @@ the muted profile of the curated sample palettes shipped with Skim.
 | -------- | ------- |
 | `string` | —       |
 
-The primary CSS color for the layer. In single-color mode (no `gradient`),
-every key on the layer uses this color. In gradient mode, this is the
-"anchor" color used to derive the gradient automatically when one isn't
-provided explicitly.
+The primary CSS color for the layer. Doubles as the "anchor" Skim
+plants in the auto-derived gradient when `gradient` is `null` (the
+default), and as the layer's single-colour reference everywhere a
+gradient stop isn't appropriate (e.g. the auto-mouse-layer accent).
 
 ###### `color_index`
 
@@ -1669,10 +1669,16 @@ provided explicitly.
 | --------- | ------- |
 | `integer` | `2`     |
 
-Which gradient stop (`0`–`5`) is the "primary" color for this layer.
-Cluster keys use this index to pick their fill, and adjacent positions
-get progressively darker/lighter shades of the gradient. Only meaningful
-when `gradient` is set or auto-generated.
+Position (`0`–`5`) where `base_color` lands inside the gradient. Used
+in two places:
+
+1. **When `gradient` is `null`** — Skim auto-derives a 6-stop gradient
+   anchoring `base_color` at this index. Stops below get progressively
+   darker, stops above get progressively lighter.
+2. **When `gradient` is set explicitly** — Skim keeps the user-supplied
+   tuple verbatim, but the renderer reads `gradient[color_index]` as
+   the layer's "primary" colour for indicator circles, layer badges,
+   and the layer-trigger highlight on a source key.
 
 ###### `gradient`
 
@@ -1691,10 +1697,14 @@ output:
   style:
     palette:
       layers:
-        # Layer 0: single red, no gradient — every key the same shade.
+        # Layer 0: auto-derived gradient. Skim builds a 6-stop
+        # tuple from "#FF0000" anchored at color_index=2 (default),
+        # stepping darker / lighter to fill the surrounding stops.
         - base_color: "#FF0000"
 
-        # Layer 1: explicit 6-stop gradient for cluster depth.
+        # Layer 1: explicit 6-stop gradient. Skim uses this tuple
+        # verbatim; ``color_index`` still picks which stop counts as
+        # the layer's "primary" colour for indicators / badges.
         - base_color: "#CC6633"
           color_index: 2
           gradient:
@@ -1705,3 +1715,17 @@ output:
             - "#442200"
             - "#221100"
 ```
+
+<div class="option-comparison" markdown="1">
+
+<figure markdown="1">
+<figcaption>Layer 0 — auto-derived gradient</figcaption>
+![Auto-derived gradient cluster](../_static/options/palette-gradient/auto-derived.svg){ width="200" loading=lazy }
+</figure>
+
+<figure markdown="1">
+<figcaption>Layer 1 — explicit 6-stop gradient</figcaption>
+![Explicit gradient cluster](../_static/options/palette-gradient/explicit.svg){ width="200" loading=lazy }
+</figure>
+
+</div>

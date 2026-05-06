@@ -851,33 +851,53 @@ class Strokes(BaseModel):
 class LayerColor(BaseModel):
     """Color configuration for a keyboard layer.
 
-    Defines the color scheme used for keys on a specific layer. Supports
-    both single-color and gradient modes. In gradient mode, different
-    keys within a cluster can have different shades for visual depth.
+    Defines the colour scheme used for keys on a specific layer. Each
+    cluster position (centre, north, east, south, west, double-south)
+    pulls its fill from a 6-stop gradient — adjacent keys land on
+    adjacent stops, so a cluster reads with visual depth.
 
-    The gradient tuple contains 6 colors corresponding to the 6 positions
-    in a cluster (e.g., center, north, east, south, west, double-south
-    for finger clusters).
+    Two ways to populate the gradient:
+
+    * Provide ``base_color`` (and optionally ``color_index``) and
+      leave ``gradient`` at ``None``.
+      :func:`skim.application.keymap_generator.draw_keymap`
+      auto-derives a 6-stop gradient via
+      :func:`skim.application.render.styling.make_gradient`, anchoring
+      ``base_color`` at ``color_index`` and stepping darker / lighter
+      to fill the surrounding stops.
+    * Set ``gradient`` explicitly to a 6-tuple of CSS colour strings.
+      In that case ``draw_keymap`` keeps the user-supplied tuple
+      verbatim. ``color_index`` still matters: it picks which stop
+      the rest of the render path treats as the layer's "primary"
+      colour (indicator circles, layer badges, the layer-trigger
+      highlight on a source key).
 
     Attributes:
-        base_color: The primary color for this layer as a CSS color string
-            (e.g., "#FF0000", "red", "rgb(255,0,0)"). Used when gradient
-            is None or as a fallback.
-        color_index: Index into the gradient for the primary key color.
-            Only used when gradient is set. Defaults to 2.
-        gradient: Optional tuple of 6 CSS color strings for position-based
-            coloring within clusters. When None, the tool will generate the
-            gradient tuple based on the base_color and the index position it
-            should be in.
+        base_color: The primary CSS colour for the layer
+            (e.g. ``"#FF0000"``, ``"red"``, ``"rgb(255,0,0)"``). Used
+            both as the gradient anchor when ``gradient`` is ``None``
+            and as the layer's "primary" colour everywhere a single
+            colour is needed (e.g. the auto-mouse-layer accent).
+        color_index: Position (0–5) where ``base_color`` lands in the
+            gradient. Defaults to 2 (the third stop). Used by
+            :func:`make_gradient` when auto-deriving the gradient and
+            by the renderer to pick the layer's "primary" stop when
+            ``gradient`` is set explicitly.
+        gradient: Optional 6-tuple of CSS colour strings — one per
+            cluster position. When ``None`` the gradient is
+            auto-derived from ``base_color`` and ``color_index`` at
+            keymap-generation time, so the rendered output always
+            sees a fully-populated gradient regardless of which form
+            the user wrote.
 
     Example:
         ```pycon
-        >>> # Single color mode
+        >>> # Auto-derived gradient — base_color anchors index 2.
         >>> layer = LayerColor(base_color="#FF0000")
-        >>> layer[0]
-        '#FF0000'
+        >>> layer.gradient is None
+        True
 
-        >>> # Gradient mode
+        >>> # Explicit 6-stop gradient.
         >>> layer = LayerColor(
         ...     base_color="#FF0000",
         ...     gradient=("#FF0000", "#CC0000", "#990000", "#660000", "#330000", "#000000"),
@@ -904,8 +924,14 @@ class LayerColor(BaseModel):
                 key positions.
 
         Returns:
-            The CSS color string for the specified position. Returns
-            base_color if gradient is not set.
+            The CSS colour string for the gradient stop at ``index``.
+            When ``gradient`` is ``None`` (the user-facing schema's
+            "let Skim derive it" case), falls back to ``base_color``
+            for every position so the lookup never fails. The
+            keymap-generation pipeline replaces ``None`` gradients
+            with auto-derived 6-stop tuples before rendering, so the
+            fallback only kicks in for callers that bypass that
+            pipeline (tests, introspection, the TUI's pre-fill path).
 
         Raises:
             IndexError: If index is outside the valid range (0-5).

@@ -46,7 +46,7 @@ from skim.application.render.render_context import (
     RenderContext,
     using_render_context,
 )
-from skim.application.render.styling import default_layer_color
+from skim.application.render.styling import default_layer_color, make_gradient
 from skim.application.render.svalboard_clusters import FingerCluster, ThumbCluster
 from skim.application.render.symbols import SymbolSection
 from skim.application.render.tap_dance import TapDanceSection
@@ -911,11 +911,69 @@ def _build_legend_tables() -> Iterator[tuple[str, draw.Drawing]]:
         )
 
 
+def _build_palette_gradient() -> Iterator[tuple[str, draw.Drawing]]:
+    """Two double-south finger clusters illustrating the two ways
+    to populate a layer's gradient.
+
+    * ``auto-derived``: ``base_color="#FF0000"`` with no explicit
+      gradient. ``draw_keymap`` invokes
+      :func:`make_gradient` to derive the 6 stops, anchoring
+      ``base_color`` at ``color_index=2``. The mock pre-computes
+      the same call so the rendered cluster shows the auto-derived
+      shades the user would actually see.
+    * ``explicit``: a hand-written 6-stop gradient. Each cluster
+      position reads its colour straight from the tuple.
+
+    Both clusters use ``has_double_south=True`` so all six positions
+    paint, surfacing every gradient stop. Mirrors the YAML example
+    immediately above the figure in the docs.
+    """
+    auto_layer = LayerColor(
+        base_color="#FF0000",
+        color_index=2,
+        gradient=make_gradient("#FF0000", base_index=2),
+    )
+    explicit_layer = LayerColor(
+        base_color="#CC6633",
+        color_index=2,
+        gradient=(
+            "#CC6633",
+            "#AA5522",
+            "#884411",
+            "#663300",
+            "#442200",
+            "#221100",
+        ),
+    )
+
+    cluster_data = _empty_finger_cluster()
+    cluster_width = FINGER_CLUSTER_WIDTH
+
+    for variant, layer in (("auto-derived", auto_layer), ("explicit", explicit_layer)):
+        config = _build_palette_config(num_layers=1, palette_layers=(layer,))
+        keymap = _empty_keymap(layer_index=0)
+        ctx = RenderContext.build(config=config, keymap=keymap)
+        with using_render_context(ctx):
+            cluster = FingerCluster(
+                cluster=cluster_data,
+                side=KeyboardSide.LEFT,
+                width=cluster_width,
+                layer_qmk_index=0,
+                has_double_south=True,
+                use_layer_colors_on_keys=True,
+                show_layer_indicators=False,
+            )
+            yield variant, _render_in_card(
+                cluster, canvas=DOUBLE_SOUTH_CARD, vertical_align="top"
+            )
+
+
 BUILDERS: dict[str, OptionBuilder] = {
     "double-south": _build_double_south,
     "keyboard-layers": _build_keyboard_layers,
     "keycodes": _build_keycodes,
     "legend-tables": _build_legend_tables,
+    "palette-gradient": _build_palette_gradient,
 }
 
 
