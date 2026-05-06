@@ -946,13 +946,26 @@ def _build_table_header_spacing_mock() -> draw.Drawing:
         # horizontal extent and centre it across the body — matches
         # the half-cross-axis treatment of the other section / table
         # mocks.
+        #
+        # The header's reported height comes from the column labels'
+        # PIL bbox (capital height ≈ 70% of font size), but the
+        # painted glyphs occupy the full em-box (= font size) under
+        # ``dominant-baseline="text-before-edge"``. Using bbox-based
+        # ``header_height - header_spacing`` would land the band's
+        # top under the visible glyph descenders and paint over the
+        # last 1–2 px of "TAP" / "HOLD" / etc. Anchor the band off
+        # the column label's font size instead so it starts past the
+        # visible text bottom and ends flush with the row top.
+        column_label_h = stage.td_metrics.column_label_font_size
+        header_band_y = stage.body_y + column_label_h
+        header_band_h = stage.body_y + stage.header_height - header_band_y
         band_w = stage.body_w / 2.0
         _highlight_rect(
             stage.drawing,
             x=stage.x + (stage.body_w - band_w) / 2.0,
-            y=stage.body_y + stage.header_height - header_spacing,
+            y=header_band_y,
             width=band_w,
-            height=header_spacing,
+            height=header_band_h,
         )
 
         # (2) Row chip → first cell gap. Same value drives the

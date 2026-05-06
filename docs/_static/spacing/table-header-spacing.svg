@@ -34,6 +34,6 @@
 <text x="227.5" y="86.5" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="#4B5563" opacity="1.0">—</text>
 <rect x="266.0" y="75.0" width="56.0" height="22.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="#4B5563" stroke-opacity="0.18" />
 <text x="289.5" y="86.5" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="#4B5563" opacity="1.0">—</text>
-<rect x="89.5" y="63.0" width="155.0" height="12.0" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
+<rect x="89.5" y="65.0" width="155.0" height="10.0" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
 <rect x="68.0" y="80.5" width="12.0" height="11.0" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
 </svg>
