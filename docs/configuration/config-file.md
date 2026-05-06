@@ -59,7 +59,7 @@ keyboard:
       name: "Numbers / Navigation"
 ```
 
-### `features` { #keyboardfeatures }
+### `features` { #keyboard-features }
 A bag of hardware-feature toggles. Today there's only one knob, but the
 sub-section exists to keep room for future hardware variants without
 breaking the schema.
@@ -98,7 +98,7 @@ hidden in the output.
 
 </div>
 
-### `layers` { #keyboardlayers }
+### `layers` { #keyboard-layers }
 A list of layer descriptors. The list does two unrelated jobs at once, and
 it helps to keep them separate when reading the rest of this section:
 
@@ -289,7 +289,7 @@ The pipeline that produces a key's label runs in this order:
 3. **`overrides`** has the final word: it can replace the resolved label with
    anything you like, and entries here win against the bundled table.
 
-### `pre_process` { #keycodespre_process }
+### `pre_process` { #keycodes-pre-process }
 | Type | Default |
 | ---- | ------- |
 | list of `{keycode, target}` | `[]` |
@@ -314,7 +314,7 @@ render.
 > resolution, so they should not rely on alias-resolution features in keycode
 > strings. Use plain canonical QMK syntax in the `target`.
 
-### `overrides` { #keycodesoverrides }
+### `overrides` { #keycodes-overrides }
 | Type | Default |
 | ---- | ------- |
 | list of `{keycode, target}` | `[]` |
@@ -336,7 +336,7 @@ The `target` field is always processed by the [Key Label Resolution
 algorithm](#key-label-resolution-algorithm), which allows you to create a rich
 graphic set of key code symbols without repeating yourself.
 
-### `macros` { #keycodesmacros }
+### `macros` { #keycodes-macros }
 | Type | Default |
 | ---- | ------- |
 | list of `{id, name, preview}` | `[]` |
@@ -373,7 +373,7 @@ Configurator UI with the `-k` / `--keymap` option pointed at your keymap
 file — Skim will read the macro definition from the keymap and refresh the
 preview.
 
-### `tap_dances` { #keycodestap_dances }
+### `tap_dances` { #keycodes-tap-dances }
 | Type | Default |
 | ---- | ------- |
 | list of `{id, name, preview}` | `[]` |
@@ -414,7 +414,7 @@ this field is **not** intended for hand-editing. To regenerate it, run the
 Configurator UI with the `-k` / `--keymap` option pointed at your keymap
 file — Skim will read the tap-dance definition and refresh the preview.
 
-### `symbol_descriptions` { #keycodessymbol_descriptions }
+### `symbol_descriptions` { #keycodes-symbol-descriptions }
 | Type | Default |
 | ---- | ------- |
 | `{category: {keycode: description}}` | `{}` |
@@ -436,7 +436,7 @@ User keys in an existing bundled category take precedence over the bundled
 description for the same keycode. Brand-new categories are appended after
 the bundled ones in the legend.
 
-### `function_descriptions` { #keycodesfunction_descriptions }
+### `function_descriptions` { #keycodes-function-descriptions }
 | Type | Default |
 | ---- | ------- |
 | `{category: {keycode: description}}` | `{}` |
@@ -507,7 +507,7 @@ its "literal #" meaning inside each per-instance row.
 > single legend entry. Override the bundled entry with `@N;` if you'd
 > rather see one row per unique layer destination.
 
-### `symbol_legend_aliases` { #keycodessymbol_legend_aliases }
+### `symbol_legend_aliases` { #keycodes-symbol-legend-aliases }
 | Type | Default |
 | ---- | ------- |
 | `{keycode: canonical_keycode}` | `{}` |
@@ -673,7 +673,7 @@ you're free to override these decisions.
 The next sub-sections will explain in details how each field affect the output
 of your keymap.
 
-### `keymap_title` { #outputkeymap_title }
+### `keymap_title` { #output-keymap-title }
 | Type             | Default |
 | ---------------- | ------- |
 | `string \| null` | `null`  |
@@ -683,7 +683,7 @@ image created by Skim. If you don't set this property (or set it to `null`), an
 auto-generated name will be used instead. The name is derived from the keymap
 file name used to create the images.
 
-### `copyright` { #outputcopyright }
+### `copyright` { #output-copyright }
 | Type             | Default |
 | ---------------- | ------- |
 | `string \| null` | `null`  |
@@ -692,7 +692,7 @@ An optional copyright notice rendered in the footer area of the keymap images.
 Leave `null` to omit it. Standard conventions apply (`"© 2026 Your Name"`);
 Skim does not enforce a format.
 
-### `layout` { #outputlayout }
+### `layout` { #output-layout }
 Image dimensions and whitespace.
 
 Current schema:
@@ -705,7 +705,7 @@ output:
       ...                      # see output.layout.spacing below
 ```
 
-#### `width` { #outputlayoutwidth }
+#### `width` { #output-layout-width }
 | Type    | Default |
 | ------- | ------- |
 | `float` | `1600`  |
@@ -732,7 +732,7 @@ for thumbnails or sharing on width-constrained platforms.
 > (e.g. pinning a 2-pixel border on every render size) but means you
 > own the consequences on smaller / larger canvases.
 
-#### `spacing` { #outputlayoutspacing }
+#### `spacing` { #output-layout-spacing }
 Every gap, padding, and inset Skim paints is configurable here. Skim
 ships with sensible defaults — every field accepts `null` to keep the
 default — but each one can be overridden in three forms that all
@@ -787,7 +787,7 @@ at a glance.
 
 ##### Document chrome
 
-###### `margin` { #outputlayoutspacingmargin }
+###### `margin` { #output-layout-spacing-margin }
 | Type                            | Default        | Base       |
 | ------------------------------- | -------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0`) | doc width  |
@@ -801,7 +801,7 @@ against the image edge.
 ![Margin highlighted around a small keymap document](../_static/spacing/margin.svg){ width="520" loading=lazy }
 </figure>
 
-###### `inset` { #outputlayoutspacinginset }
+###### `inset` { #output-layout-spacing-inset }
 | Type                            | Default                       | Base       |
 | ------------------------------- | ----------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `2.5%` of doc width) | doc width  |
@@ -816,7 +816,7 @@ document column.
 ![Inset highlighted between border and content](../_static/spacing/inset.svg){ width="520" loading=lazy }
 </figure>
 
-###### `column_gap` { #outputlayoutspacingcolumn_gap }
+###### `column_gap` { #output-layout-spacing-column-gap }
 | Type                            | Default                        | Base       |
 | ------------------------------- | ------------------------------ | ---------- |
 | `float \| string \| null`       | `null` (→ `2.5%` of doc width)  | doc width  |
@@ -832,7 +832,7 @@ sections when both are rendered.
 
 ##### Section and table rhythm
 
-###### `section_spacing` { #outputlayoutspacingsection_spacing }
+###### `section_spacing` { #output-layout-spacing-section-spacing }
 | Type                            | Default                         | Base       |
 | ------------------------------- | ------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `1.5%` of doc width)   | doc width  |
@@ -845,7 +845,7 @@ header rule) and the section body that follows it.
 ![Section spacing highlighted between stripe and body](../_static/spacing/section-spacing.svg){ width="360" loading=lazy }
 </figure>
 
-###### `section_title_rule_gap` { #outputlayoutspacingsection_title_rule_gap }
+###### `section_title_rule_gap` { #output-layout-spacing-section-title-rule-gap }
 | Type                            | Default                         | Base       |
 | ------------------------------- | ------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.56%` of doc width)  | doc width  |
@@ -861,7 +861,7 @@ total height.
 ![Section title rule gap highlighted](../_static/spacing/section-title-rule-gap.svg){ width="380" loading=lazy }
 </figure>
 
-###### `table_header_spacing` { #outputlayoutspacingtable_header_spacing }
+###### `table_header_spacing` { #output-layout-spacing-table-header-spacing }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.75%` of doc width)   | doc width  |
@@ -880,7 +880,7 @@ in three places that all share the same rhythm:
 ![Table header spacing highlighted](../_static/spacing/table-header-spacing.svg){ width="460" loading=lazy }
 </figure>
 
-###### `table_col_spacing` { #outputlayoutspacingtable_col_spacing }
+###### `table_col_spacing` { #output-layout-spacing-table-col-spacing }
 | Type                            | Default                           | Base       |
 | ------------------------------- | --------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.375%` of doc width)   | doc width  |
@@ -894,7 +894,7 @@ pill row.
 ![Table column spacing highlighted](../_static/spacing/table-col-spacing.svg){ width="460" loading=lazy }
 </figure>
 
-###### `table_row_spacing` { #outputlayoutspacingtable_row_spacing }
+###### `table_row_spacing` { #output-layout-spacing-table-row-spacing }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.56%` of doc width)   | doc width  |
@@ -908,7 +908,7 @@ Vertical gap between adjacent rows inside a table.
 
 ##### Cluster geometry
 
-###### `finger_key_gap` { #outputlayoutspacingfinger_key_gap }
+###### `finger_key_gap` { #output-layout-spacing-finger-key-gap }
 | Type                            | Default                | Base                  |
 | ------------------------------- | ---------------------- | --------------------- |
 | `float \| string \| null`       | `null` (→ `1.8%`)      | finger cluster width  |
@@ -923,7 +923,7 @@ so the geometry stays proportional however the cluster gets sized.
 ![Finger key gap highlighted](../_static/spacing/finger-key-gap.svg){ width="320" loading=lazy }
 </figure>
 
-###### `thumb_key_gap` { #outputlayoutspacingthumb_key_gap }
+###### `thumb_key_gap` { #output-layout-spacing-thumb-key-gap }
 | Type                            | Default                | Base                 |
 | ------------------------------- | ---------------------- | -------------------- |
 | `float \| string \| null`       | `null` (→ `3.8%`)      | thumb cluster width  |
@@ -940,7 +940,7 @@ width.
 ![Thumb key gap highlighted](../_static/spacing/thumb-key-gap.svg){ width="420" loading=lazy }
 </figure>
 
-###### `layer_indicator_spacing` { #outputlayoutspacinglayer_indicator_spacing }
+###### `layer_indicator_spacing` { #output-layout-spacing-layer-indicator-spacing }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.75%` of doc width)   | doc width  |
@@ -958,7 +958,7 @@ cluster sizing.
 
 ##### Chip / pill / badge internals
 
-###### `chip_padding` { #outputlayoutspacingchip_padding }
+###### `chip_padding` { #output-layout-spacing-chip-padding }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `1.25%` of doc width)   | doc width  |
@@ -974,7 +974,7 @@ in step with horizontal changes.
 ![Chip padding highlighted](../_static/spacing/chip-padding.svg){ width="320" loading=lazy }
 </figure>
 
-###### `tap_dance_pill_padding` { #outputlayoutspacingtap_dance_pill_padding }
+###### `tap_dance_pill_padding` { #output-layout-spacing-tap-dance-pill-padding }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `1.25%` of doc width)   | doc width  |
@@ -988,7 +988,7 @@ Vertical padding is `tap_dance_pill_padding * 0.25`.
 ![Tap-dance pill padding highlighted](../_static/spacing/tap-dance-pill-padding.svg){ width="460" loading=lazy }
 </figure>
 
-###### `macro_action_inset` { #outputlayoutspacingmacro_action_inset }
+###### `macro_action_inset` { #output-layout-spacing-macro-action-inset }
 | Type                            | Default                           | Base       |
 | ------------------------------- | --------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.625%` of doc width)   | doc width  |
@@ -1007,7 +1007,7 @@ consistent.
 ![Macro action inset highlighted](../_static/spacing/macro-action-inset.svg){ width="320" loading=lazy }
 </figure>
 
-###### `layer_badge_inset` { #outputlayoutspacinglayer_badge_inset }
+###### `layer_badge_inset` { #output-layout-spacing-layer-badge-inset }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.94%` of doc width)   | doc width  |
@@ -1023,7 +1023,7 @@ edge reads as breathing room rather than crowding the next column.
 ![Layer badge inset highlighted](../_static/spacing/layer-badge-inset.svg){ width="380" loading=lazy }
 </figure>
 
-### `style` { #outputstyle }
+### `style` { #output-style }
 The largest sub-section. Every visual switch, stroke width, and color
 knob lives here. Configurable values are grouped by the conceptual
 component they configure rather than dumped as flat siblings —
@@ -1063,7 +1063,7 @@ output:
       ...                      # see output.style.palette below
 ```
 
-#### `hold_symbol_position` { #outputstylehold_symbol_position }
+#### `hold_symbol_position` { #output-style-hold-symbol-position }
 | Type     | Default     | Allowed values                |
 | -------- | ----------- | ----------------------------- |
 | `string` | `"outward"` | `"qmk"`, `"inward"`, `"outward"` |
@@ -1088,7 +1088,7 @@ the split each portion goes on:
 ![Three thumb clusters illustrating hold_symbol_position modes](../_static/spacing/hold-symbol-position.svg){ width="640" loading=lazy }
 </figure>
 
-#### `use_layer_colors_on_keys` { #outputstyleuse_layer_colors_on_keys }
+#### `use_layer_colors_on_keys` { #output-style-use-layer-colors-on-keys }
 | Type      | Default |
 | --------- | ------- |
 | `boolean` | `true`  |
@@ -1105,7 +1105,7 @@ overview.
 ![use_layer_colors_on_keys true vs false comparison](../_static/spacing/use-layer-colors-on-keys.svg){ width="500" loading=lazy }
 </figure>
 
-#### `use_system_fonts` { #outputstyleuse_system_fonts }
+#### `use_system_fonts` { #output-style-use-system-fonts }
 | Type      | Default |
 | --------- | ------- |
 | `boolean` | `false` |
@@ -1116,7 +1116,7 @@ system fonts by name — the file is smaller and may pick up your system's
 preferred typefaces, but viewers without those fonts installed will see a
 fallback.
 
-#### `show_transparent_fallthrough` { #outputstyleshow_transparent_fallthrough }
+#### `show_transparent_fallthrough` { #output-style-show-transparent-fallthrough }
 | Type      | Default |
 | --------- | ------- |
 | `boolean` | `true`  |
@@ -1131,7 +1131,7 @@ blank.
 ![show_transparent_fallthrough true vs false comparison](../_static/spacing/show-transparent-fallthrough.svg){ width="320" loading=lazy }
 </figure>
 
-#### `border` { #outputstyleborder }
+#### `border` { #output-style-border }
 Configures the rounded rectangle border drawn around the entire keyboard.
 Set the whole `border` object to `null` to suppress the border.
 
@@ -1143,7 +1143,7 @@ output:
       radius: 10
 ```
 
-##### `width` { #outputstyleborderwidth }
+##### `width` { #output-style-border-width }
 | Type    | Default | Base       |
 | ------- | ------- | ---------- |
 | `float \| string` | `2` | doc width |
@@ -1158,14 +1158,14 @@ proportion shorthand.
 ![Border width highlighted](../_static/spacing/border-width.svg){ width="520" loading=lazy }
 </figure>
 
-##### `radius` { #outputstyleborderradius }
+##### `radius` { #output-style-border-radius }
 | Type    | Default |
 | ------- | ------- |
 | `float` | `10`    |
 
 Corner radius for the rounded rectangle. Set to `0` for square corners.
 
-#### `layer_connector` { #outputstylelayer_connector }
+#### `layer_connector` { #output-style-layer-connector }
 Configures the dotted connector paths painted in the keymap overview
 image — the lines linking each layer indicator circle to its
 corresponding key on the miniature keymap.
@@ -1182,7 +1182,7 @@ output:
 The two stroke / spacing fields follow the magnitude rule (`< 1`
 proportion / `≥ 1` absolute / `"N%"` shorthand / `null` default).
 
-##### `show` { #outputstylelayer_connectorshow }
+##### `show` { #output-style-layer-connector-show }
 | Type      | Default |
 | --------- | ------- |
 | `boolean` | `true`  |
@@ -1197,7 +1197,7 @@ images (which never paint connectors).
 ![layer_connector.show true vs false comparison](../_static/spacing/layer-connector-show.svg){ width="540" loading=lazy }
 </figure>
 
-##### `width` { #outputstylelayer_connectorwidth }
+##### `width` { #output-style-layer-connector-width }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.27%` of doc width)   | doc width  |
@@ -1212,7 +1212,7 @@ overview's chrome more.
 ![Layer connector width highlighted](../_static/spacing/layer-connector-width.svg){ width="360" loading=lazy }
 </figure>
 
-##### `dot_spacing` { #outputstylelayer_connectordot_spacing }
+##### `dot_spacing` { #output-style-layer-connector-dot-spacing }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.77%` of doc width)   | doc width  |
@@ -1227,7 +1227,7 @@ trail.
 ![Layer connector dot spacing highlighted](../_static/spacing/layer-connector-dot-spacing.svg){ width="360" loading=lazy }
 </figure>
 
-#### `layer_indicator` { #outputstylelayer_indicator }
+#### `layer_indicator` { #output-style-layer-indicator }
 Configures the layer-indicator badges — the small coloured circles
 drawn next to layer-switch keys in each cluster, and the matching
 badges in the overview's `LAYERS` column.
@@ -1241,11 +1241,11 @@ output:
 ```
 
 The gap between an outer key's edge and its indicator circle lives
-on [`output.layout.spacing.layer_indicator_spacing`](#outputlayoutspacinglayer_indicator_spacing)
+on [`output.layout.spacing.layer_indicator_spacing`](#output-layout-spacing-layer-indicator-spacing)
 since it's a spacing value applied between two elements rather than
 a property of the indicator itself.
 
-##### `show` { #outputstylelayer_indicatorshow }
+##### `show` { #output-style-layer-indicator-show }
 | Type      | Default |
 | --------- | ------- |
 | `boolean` | `true`  |
@@ -1260,7 +1260,7 @@ does this key take me." Set to `false` to suppress them entirely
 ![layer_indicator.show true vs false comparison](../_static/spacing/layer-indicator-show.svg){ width="500" loading=lazy }
 </figure>
 
-##### `width` { #outputstylelayer_indicatorwidth }
+##### `width` { #output-style-layer-indicator-width }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.125%` of doc width)  | doc width  |
@@ -1272,7 +1272,7 @@ Stroke width of the indicator circle outline.
 ![Layer indicator stroke highlighted](../_static/spacing/layer-indicator-stroke.svg){ width="320" loading=lazy }
 </figure>
 
-#### `legend_tables` { #outputstylelegend_tables }
+#### `legend_tables` { #output-style-legend-tables }
 Configures the three legend tables Skim renders alongside the
 keymap: macros, tap-dances, and symbols. Each sub-block carries its
 own visibility flag and standalone-image body-scale multiplier; the
@@ -1302,7 +1302,7 @@ apply only to the **standalone** images (`skim generate -l macros` /
 `-l tap-dances` / `-l symbols`); the chrome (title, footer, outer
 padding) stays at the unscaled per-image size.
 
-##### `show` { #outputstylelegend_tablesmacrosshow }
+##### `show` { #output-style-legend-tables-macros-show }
 | Type      | Default |
 | --------- | ------- |
 | `boolean` | `true`  |
@@ -1312,7 +1312,7 @@ overview. The legend lists every macro referenced on the layer (or
 across all layers, in the overview), with its `name` and `preview`
 from `keycodes.macros`. Set to `false` to omit it.
 
-##### `scale` { #outputstylelegend_tablesmacrosscale }
+##### `scale` { #output-style-legend-tables-macros-scale }
 | Type    | Default |
 | ------- | ------- |
 | `float` | `1.5`   |
@@ -1320,7 +1320,7 @@ from `keycodes.macros`. Set to `false` to omit it.
 Body-scale multiplier for the standalone macros image. Body chips
 and pills scale by this factor; the per-image chrome stays unscaled.
 
-##### `show` { #outputstylelegend_tablestap_dancesshow }
+##### `show` { #output-style-legend-tables-tap-dances-show }
 | Type      | Default |
 | --------- | ------- |
 | `boolean` | `true`  |
@@ -1328,7 +1328,7 @@ and pills scale by this factor; the per-image chrome stays unscaled.
 Whether to embed the tap-dances legend in per-layer images and the
 overview. Mirrors `macros.show`.
 
-##### `scale` { #outputstylelegend_tablestap_dancesscale }
+##### `scale` { #output-style-legend-tables-tap-dances-scale }
 | Type    | Default |
 | ------- | ------- |
 | `float` | `1.5`   |
@@ -1336,7 +1336,7 @@ overview. Mirrors `macros.show`.
 Body-scale multiplier for the standalone tap-dances image. Same
 semantics as `macros.scale`.
 
-##### `show` { #outputstylelegend_tablessymbolsshow }
+##### `show` { #output-style-legend-tables-symbols-show }
 | Type      | Default |
 | --------- | ------- |
 | `boolean` | `true`  |
@@ -1346,7 +1346,7 @@ overview. Per-layer images carry only the symbols actually used on
 that layer; the overview carries the union across all rendered
 layers.
 
-##### `scale` { #outputstylelegend_tablessymbolsscale }
+##### `scale` { #output-style-legend-tables-symbols-scale }
 | Type    | Default |
 | ------- | ------- |
 | `float` | `1.5`   |
@@ -1354,7 +1354,7 @@ layers.
 Body-scale multiplier for the standalone symbols image. Same
 semantics as `macros.scale`.
 
-##### `flow` { #outputstylelegend_tablessymbolsflow }
+##### `flow` { #output-style-legend-tables-symbols-flow }
 | Type     | Default      | Allowed values        |
 | -------- | ------------ | --------------------- |
 | `string` | `"column"`   | `"row"`, `"column"`   |
@@ -1371,7 +1371,7 @@ Controls how multi-column symbol-legend layouts fill themselves:
 ![symbols.flow column vs row comparison](../_static/spacing/symbols-flow.svg){ width="800" loading=lazy }
 </figure>
 
-##### `columns` { #outputstylelegend_tablessymbolscolumns }
+##### `columns` { #output-style-legend-tables-symbols-columns }
 | Type            | Default |
 | --------------- | ------- |
 | `integer \| null` | `null`  |
@@ -1383,18 +1383,18 @@ budget — the behaviour used in per-layer and overview images. Has
 no effect on the embedded legends inside per-layer / overview
 images, only on the standalone symbols-only output.
 
-#### `strokes` { #outputstylestrokes }
+#### `strokes` { #output-style-strokes }
 Stroke widths for chrome lines that don't have their own dedicated
 block:
 
 * The document border lives on
-  [`output.style.border.width`](#outputstyleborderwidth) (paired
+  [`output.style.border.width`](#output-style-border-width) (paired
   with `border.radius`).
 * The layer connector path lives on
-  [`output.style.layer_connector.width`](#outputstylelayer_connectorwidth)
+  [`output.style.layer_connector.width`](#output-style-layer-connector-width)
   (paired with `dot_spacing`).
 * The layer indicator circle lives on
-  [`output.style.layer_indicator.width`](#outputstylelayer_indicatorwidth)
+  [`output.style.layer_indicator.width`](#output-style-layer-indicator-width)
   (paired with `show`).
 
 The two fields below follow the magnitude rule (`< 1` proportion /
@@ -1408,7 +1408,7 @@ output:
       header_rule: <float | "N%" | null>
 ```
 
-##### `chip_outline` { #outputstylestrokeschip_outline }
+##### `chip_outline` { #output-style-strokes-chip-outline }
 | Type                            | Default                           | Base       |
 | ------------------------------- | --------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.075%` of doc width)   | doc width  |
@@ -1422,7 +1422,7 @@ across the name area on the right).
 ![Chip outline stroke highlighted](../_static/spacing/chip-outline-stroke.svg){ width="320" loading=lazy }
 </figure>
 
-##### `header_rule` { #outputstylestrokesheader_rule }
+##### `header_rule` { #output-style-strokes-header-rule }
 | Type                            | Default                           | Base       |
 | ------------------------------- | --------------------------------- | ---------- |
 | `float \| string \| null`       | `null` (→ `0.075%` of doc width)   | doc width  |
@@ -1437,7 +1437,7 @@ the rule weights stay consistent across all sections.
 ![Header rule stroke highlighted](../_static/spacing/header-rule-stroke.svg){ width="380" loading=lazy }
 </figure>
 
-#### `palette` { #outputstylepalette }
+#### `palette` { #output-style-palette }
 Color tokens used throughout the rendered image.
 
 Current schema:
@@ -1498,7 +1498,7 @@ keys that don't get a layer-specific tint.
 All accept any CSS color string (`"red"`, `"#3366CC"`, `"rgb(51,102,204)"`,
 `"hsl(218 60% 50%)"`).
 
-##### `layers` { #outputstylepalettelayers }
+##### `layers` { #output-style-palette-layers }
 | Type | Default |
 | ---- | ------- |
 | list of `LayerColor` | `[]` |
