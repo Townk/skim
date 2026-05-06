@@ -1083,6 +1083,11 @@ the split each portion goes on:
   mode draws hold on the left and tap on the right regardless of which
   side of the keyboard the key is on.
 
+<figure markdown="1">
+<figcaption>Three LEFT thumb clusters, each rendered with one of the three modes — same hold-tap labels in every panel; only the swap behaviour differs.</figcaption>
+![Three thumb clusters illustrating hold_symbol_position modes](../_static/spacing/hold-symbol-position.svg){ width="640" loading=lazy }
+</figure>
+
 #### `use_layer_colors_on_keys` { #outputstyleuse_layer_colors_on_keys }
 | Type      | Default |
 | --------- | ------- |
@@ -1094,6 +1099,11 @@ get tinted using the activating layer's color from `palette.layers`. When
 layer it activates. Useful when you want a more uniform look or when you
 prefer to encode layer membership only in the badge column of the
 overview.
+
+<figure markdown="1">
+<figcaption>The cluster's north key activates layer 2. With <code>true</code>, layer 2's colour paints the key; with <code>false</code>, the key falls back to neutral.</figcaption>
+![use_layer_colors_on_keys true vs false comparison](../_static/spacing/use-layer-colors-on-keys.svg){ width="500" loading=lazy }
+</figure>
 
 #### `use_system_fonts` { #outputstyleuse_system_fonts }
 | Type      | Default |
@@ -1115,6 +1125,11 @@ When `true`, transparent keycodes (`KC_TRNS` / `_______`) on layers above
 0 render the label from layer 0 in a faded "ghost" color, so you can see
 what's underneath. Set to `false` to leave transparent keys completely
 blank.
+
+<figure markdown="1">
+<figcaption>A transparent key on a layer above 0. With <code>true</code>, the layer-0 label paints in a lightness-shifted variant of the key's colour; with <code>false</code>, the key is blank.</figcaption>
+![show_transparent_fallthrough true vs false comparison](../_static/spacing/show-transparent-fallthrough.svg){ width="320" loading=lazy }
+</figure>
 
 #### `border` { #outputstyleborder }
 Configures the rounded rectangle border drawn around the entire keyboard.
@@ -1177,6 +1192,11 @@ Whether to draw connector paths in the overview at all. Set to
 miniature keymap stand on their own. Has no effect on per-layer
 images (which never paint connectors).
 
+<figure markdown="1">
+<figcaption>Two miniature 3-layer overviews built from the same keymap (two layer-switch keys on the LEFT half). The dotted connectors only paint in the <code>true</code> panel.</figcaption>
+![layer_connector.show true vs false comparison](../_static/spacing/layer-connector-show.svg){ width="900" loading=lazy }
+</figure>
+
 ##### `width` { #outputstylelayer_connectorwidth }
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
@@ -1234,6 +1254,11 @@ Whether to draw layer-indicator badges. Each circle is tinted with
 the destination layer's colour, giving an at-a-glance hint of "where
 does this key take me." Set to `false` to suppress them entirely
 (both in clusters and in the overview's badge column).
+
+<figure markdown="1">
+<figcaption>The cluster's north key activates layer 2. With <code>true</code>, a layer-tinted indicator badge sits above the key; with <code>false</code>, the badge is suppressed.</figcaption>
+![layer_indicator.show true vs false comparison](../_static/spacing/layer-indicator-show.svg){ width="500" loading=lazy }
+</figure>
 
 ##### `width` { #outputstylelayer_indicatorwidth }
 | Type                            | Default                          | Base       |
@@ -1340,6 +1365,11 @@ Controls how multi-column symbol-legend layouts fill themselves:
   the next column. Reads top-to-bottom first.
 - **`"row"`** — fills each row left-to-right before dropping to the
   next row. Reads left-to-right first.
+
+<figure markdown="1">
+<figcaption>Same six entries (three modifiers + three layer indices) laid out at two columns; the cell ordering reveals the difference between top-to-bottom and left-to-right fill.</figcaption>
+![symbols.flow column vs row comparison](../_static/spacing/symbols-flow.svg){ width="800" loading=lazy }
+</figure>
 
 ##### `columns` { #outputstylelegend_tablessymbolscolumns }
 | Type            | Default |
