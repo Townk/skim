@@ -1570,15 +1570,25 @@ def _build_hold_symbol_position_mock() -> draw.Drawing:
 
     # Real hold-tap labels: modifier glyph on hold, key name on tap.
     # The box-drawing pipe (│) is the SEPARATOR_CHAR the hold-symbol
-    # logic splits on. Modifier glyphs are Unicode (no Nerd Font
-    # required) so the labels render even under ``use_system_fonts``.
+    # logic splits on. Modifier glyphs are Nerd Font tokens
+    # (``%%nf-md-apple_keyboard_*;``) so the labels stay visually
+    # consistent with the macros / tap-dance / symbols snippets that
+    # use the same glyph set.
     blank = SvalboardTargetKey(label="")
     cluster_data = ThumbClusterData(
-        down_key=SvalboardTargetKey(label="SPC"),
-        pad_key=SvalboardTargetKey(label="⌘│TAB"),
-        up_key=SvalboardTargetKey(label="⌃│ESC"),
-        nail_key=SvalboardTargetKey(label="⌥│ENT"),
-        knuckle_key=SvalboardTargetKey(label="⇧│DEL"),
+        down_key=SvalboardTargetKey(label="%%nf-md-keyboard_space;"),
+        pad_key=SvalboardTargetKey(
+            label="%%nf-md-apple_keyboard_command;│%%nf-md-keyboard_tab;"
+        ),
+        up_key=SvalboardTargetKey(
+            label="%%nf-md-apple_keyboard_control;│%%nf-md-keyboard_esc;"
+        ),
+        nail_key=SvalboardTargetKey(
+            label="%%nf-md-apple_keyboard_option;│%%nf-md-keyboard_return;"
+        ),
+        knuckle_key=SvalboardTargetKey(
+            label="%%nf-md-apple_keyboard_shift;│%%nf-md-backspace_reverse;"
+        ),
         double_down_key=blank,
     )
     cluster_width = 240.0
@@ -1686,19 +1696,19 @@ def _build_symbols_flow_mock() -> draw.Drawing:
     # produce clearly different orderings.
     entries = [
         SymbolLegendEntry(
-            display_label="⌘",
+            display_label="%%nf-md-apple_keyboard_command;",
             description="Command (GUI / Meta)",
             sort_key="MOD_LCMD",
             category="Modifiers",
         ),
         SymbolLegendEntry(
-            display_label="⌃",
+            display_label="%%nf-md-apple_keyboard_control;",
             description="Control",
             sort_key="MOD_LCTL",
             category="Modifiers",
         ),
         SymbolLegendEntry(
-            display_label="⌥",
+            display_label="%%nf-md-apple_keyboard_option;",
             description="Option (Alt)",
             sort_key="MOD_LOPT",
             category="Modifiers",

@@ -456,6 +456,13 @@ Per-keycode description overrides for the symbol legend. The legend ships
 with a curated default table; entries here either override an existing
 keycode within a bundled category or add brand-new categories.
 
+<div class="option-comparison" markdown="1">
+  <figure markdown="1">
+  <figcaption>Symbol legend with eight description entries</figcaption>
+  ![Symbol descriptions sample](../_static/options/keycodes/symbol-descriptions.svg){ width="600" loading=lazy }
+  </figure>
+</div>
+
 ```yaml
 keycodes:
   symbol_descriptions:

@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from pathlib import Path
+from typing import Literal
 
 import drawsvg as draw
 import yaml
@@ -38,19 +39,22 @@ from skim.application.render.keymap_overview import (
     _badge_label,
     _measure_badge_text_width,
 )
-from skim.application.render.macros import MacroRow
-from skim.application.render.primitives import Column, Point, Size
+from skim.application.render.macros import MacroSection
+from skim.application.render.primitives import Point, Size
+from skim.application.render.section_data import SymbolLegendEntry
 from skim.application.render.render_context import (
     RenderContext,
     using_render_context,
 )
-from skim.application.render.styling import default_layer_color, derive_accent_line
+from skim.application.render.styling import default_layer_color
 from skim.application.render.svalboard_clusters import FingerCluster, ThumbCluster
-from skim.application.render.tap_dance import TapDanceColumnHeader, TapDanceRow
+from skim.application.render.symbols import SymbolSection
+from skim.application.render.tap_dance import TapDanceSection
 from skim.data.config import (
     KeyboardLayer,
     LayerColor,
     SkimConfig,
+    Spacing,
 )
 from skim.data.keyboard import (
     FingerCluster as FingerClusterData,
@@ -244,6 +248,7 @@ def _render_in_card(
     stroke_width: float = 1.0,
     fill: str = "#FFFFFF",
     embed_fonts: bool = False,
+    vertical_align: Literal["center", "top"] = "center",
 ) -> draw.Drawing:
     """Render a component centred inside a fixed-size rounded-rect "card".
 
@@ -295,7 +300,10 @@ def _render_in_card(
         )
     )
     offset_x = (canvas_w - component.size.width) / 2.0
-    offset_y = (canvas_h - component.size.height) / 2.0
+    if vertical_align == "top":
+        offset_y = _CARD_PADDING / 2.0
+    else:
+        offset_y = (canvas_h - component.size.height) / 2.0
     component.draw_at(d, Point(offset_x, offset_y))
     return d
 
@@ -327,7 +335,9 @@ def _build_double_south() -> Iterator[tuple[str, draw.Drawing]]:
                 use_layer_colors_on_keys=False,
                 show_layer_indicators=False,
             )
-            yield variant, _render_in_card(component, canvas=DOUBLE_SOUTH_CARD)
+            yield variant, _render_in_card(
+                component, canvas=DOUBLE_SOUTH_CARD, vertical_align="top"
+            )
 
 
 def _build_keyboard_layers() -> Iterator[tuple[str, draw.Drawing]]:
@@ -483,12 +493,8 @@ def _build_keycodes() -> Iterator[tuple[str, draw.Drawing]]:
     keymap = _empty_keymap(layer_index=0)
     ctx = RenderContext.build(config=config, keymap=keymap)
 
-    palette = config.output.style.palette
-    macro_fill = palette.macro_color
-    macro_line = derive_accent_line(macro_fill)
-    td_fill = palette.tap_dance_color
-    td_line = derive_accent_line(td_fill)
-    text_color = palette.text_color
+    # Section composables read accent colours and text colour off
+    # ``ctx.theme.palette`` — no need to thread them through manually.
 
     # Build a named macro that exercises every SvalboardMacroActionKind.
     # The resulting pill row reads as a single human-friendly sequence:
@@ -499,7 +505,7 @@ def _build_keycodes() -> Iterator[tuple[str, draw.Drawing]]:
         actions=(
             SvalboardMacroAction(
                 kind=SvalboardMacroActionKind.DOWN,
-                keys=(SvalboardTargetKey(label="⇧"),),
+                keys=(SvalboardTargetKey(label="%%nf-md-apple_keyboard_shift;"),),
             ),
             SvalboardMacroAction(
                 kind=SvalboardMacroActionKind.TAP,
@@ -507,7 +513,7 @@ def _build_keycodes() -> Iterator[tuple[str, draw.Drawing]]:
             ),
             SvalboardMacroAction(
                 kind=SvalboardMacroActionKind.UP,
-                keys=(SvalboardTargetKey(label="⇧"),),
+                keys=(SvalboardTargetKey(label="%%nf-md-apple_keyboard_shift;"),),
             ),
             SvalboardMacroAction(
                 kind=SvalboardMacroActionKind.TEXT,
@@ -519,7 +525,7 @@ def _build_keycodes() -> Iterator[tuple[str, draw.Drawing]]:
             ),
             SvalboardMacroAction(
                 kind=SvalboardMacroActionKind.TAP,
-                keys=(SvalboardTargetKey(label="↵"),),
+                keys=(SvalboardTargetKey(label="%%nf-md-keyboard_return;"),),
             ),
         ),
     )
@@ -531,16 +537,28 @@ def _build_keycodes() -> Iterator[tuple[str, draw.Drawing]]:
     td = SvalboardTapDance(
         id="6",
         name="Modifier dance",
-        tap=SvalboardTargetKey(label="⇧"),
-        hold=SvalboardTargetKey(label="⇪"),
-        double_tap=SvalboardTargetKey(label="⌥"),
-        tap_then_hold=SvalboardTargetKey(label="⌃"),
+        tap=SvalboardTargetKey(label="%%nf-md-apple_keyboard_shift;"),
+        hold=SvalboardTargetKey(label="%%nf-md-apple_keyboard_caps;"),
+        double_tap=SvalboardTargetKey(label="%%nf-md-apple_keyboard_option;"),
+        tap_then_hold=SvalboardTargetKey(label="%%nf-md-apple_keyboard_control;"),
     )
 
-    # 2× scale doubles the natural row size — chips and pills end up
-    # readable at the small physical dimensions a docs page reserves
-    # for an option image.
-    keycode_scale = 2.0
+    # 2× scale doubles the macro row's natural size — chips and pills
+    # end up readable at the small physical dimensions a docs page
+    # reserves for an option image. The tap-dance section gets a smaller
+    # scale because it spreads four variant columns horizontally and
+    # would otherwise produce a much wider canvas than the macro one;
+    # the docs render both at the same display width, so a wider canvas
+    # there means smaller on-screen text. ``td_scale`` is tuned so the
+    # tap-dance card's natural width matches the macro card's, which
+    # keeps title and chip text legible at parity.
+    macro_scale = 2.0
+    td_scale = 1.4
+    # Symbols spread four columns horizontally — same canvas-width
+    # mismatch the tap-dance section had against the macro one. Tune
+    # ``symbol_scale`` so the symbols card ends up ~800 px wide too,
+    # keeping title and glyph text legible at parity.
+    symbol_scale = 1.78
     macro_content_width = 760.0
     # The macro and tap-dance rows are short-stature composables — bump
     # the frame to 40 px total (20 each side) so the rows have room to
@@ -548,48 +566,136 @@ def _build_keycodes() -> Iterator[tuple[str, draw.Drawing]]:
     keycode_card_padding = 40.0
 
     with using_render_context(ctx):
-        macro_row = MacroRow(
-            macro=macro,
-            accent_fill=macro_fill,
-            accent_line=macro_line,
-            text_color=text_color,
-            content_width=macro_content_width,
-            scale=keycode_scale,
+        # Render through ``MacroSection`` (not the bare ``MacroRow``) so
+        # the snippet picks up the ``MACROS`` title strip and accent rule
+        # on top — same chrome a real macros legend table carries in a
+        # full keymap render.
+        macro_section = MacroSection(
+            macros=[macro],
+            max_width=macro_content_width,
+            wrap_content=True,
+            scale=macro_scale,
         )
         macro_card = Size(
-            macro_row.size.width + keycode_card_padding,
-            macro_row.size.height + keycode_card_padding,
+            macro_section.size.width + keycode_card_padding,
+            macro_section.size.height + keycode_card_padding,
         )
         yield (
             "named-macro",
-            _render_in_card(macro_row, canvas=macro_card, embed_fonts=True),
+            _render_in_card(macro_section, canvas=macro_card, embed_fonts=True),
         )
 
-        td_header = TapDanceColumnHeader(
-            text_color=text_color,
-            scale=keycode_scale,
+        # Render through ``TapDanceSection`` (not the bare row + column
+        # header) so the snippet picks up the ``TAP-DANCE`` title strip
+        # and accent rule on top — same chrome a real tap-dance legend
+        # table carries in a full keymap render.
+        td_section = TapDanceSection(
+            tap_dances=[td],
+            wrap_content=True,
+            scale=td_scale,
         )
-        td_row = TapDanceRow(
-            td=td,
-            accent_fill=td_fill,
-            accent_line=td_line,
-            text_color=text_color,
-            scale=keycode_scale,
-        )
-        # Stack the column header above the row so the snippet shows
-        # the four variant labels (TAP / HOLD / DOUBLE-TAP / TAP & HOLD)
-        # the way the tap-dance legend table does in a real keymap.
-        # ``gap=0`` because the header strip already carries
-        # ``table_header_spacing`` of empty space below its text — see
-        # ``TapDanceColumnHeader``.
-        td_stack = Column([td_header, td_row], gap=0)
         td_card = Size(
-            td_stack.size.width + keycode_card_padding,
-            td_stack.size.height + keycode_card_padding,
+            td_section.size.width + keycode_card_padding,
+            td_section.size.height + keycode_card_padding,
         )
         yield (
             "named-tap-dance",
-            _render_in_card(td_stack, canvas=td_card, embed_fonts=True),
+            _render_in_card(td_section, canvas=td_card, embed_fonts=True),
+        )
+
+        # Eight symbol-description entries — common modifiers + edit
+        # keys — laid out as a 4-column / 2-row grid via ``flow="row"``.
+        # Mirrors the macros / tap-dance snippets so the three keycodes
+        # docs sections share the same visual chrome (title strip,
+        # accent rule, white card).
+        symbol_entries = [
+            SymbolLegendEntry(
+                display_label="%%nf-md-apple_keyboard_control;",
+                description="Control",
+                sort_key="0",
+                category="Modifiers",
+            ),
+            SymbolLegendEntry(
+                display_label="%%nf-md-apple_keyboard_option;",
+                description="Option",
+                sort_key="1",
+                category="Modifiers",
+            ),
+            SymbolLegendEntry(
+                display_label="%%nf-md-apple_keyboard_command;",
+                description="Command",
+                sort_key="2",
+                category="Modifiers",
+            ),
+            SymbolLegendEntry(
+                display_label="%%nf-md-apple_keyboard_shift;",
+                description="Shift",
+                sort_key="3",
+                category="Modifiers",
+            ),
+            SymbolLegendEntry(
+                display_label="%%nf-md-keyboard_return;",
+                description="Return",
+                sort_key="4",
+                category="Edit",
+            ),
+            SymbolLegendEntry(
+                display_label="%%nf-md-backspace;",
+                description="Backspace",
+                sort_key="5",
+                category="Edit",
+            ),
+            SymbolLegendEntry(
+                display_label="%%nf-md-backspace_reverse;",
+                description="Delete",
+                sort_key="6",
+                category="Edit",
+            ),
+            SymbolLegendEntry(
+                display_label="%%nf-md-keyboard_space;",
+                description="Space",
+                sort_key="7",
+                category="Edit",
+            ),
+        ]
+    # Bump ``table_col_spacing`` for the symbols snippet only so the
+    # inter-column gap reads larger than the in-cell glyph→description
+    # gap (``table_header_spacing``). With the default 6/1600 ratio,
+    # the inter-column gap (~10 px at scale=1.55) is narrower than the
+    # in-cell gap (~19 px), making symbols on the right edge of one
+    # column look attached to the description on its left. Using an
+    # absolute SVG-unit value keeps the override independent of the doc
+    # width.
+    symbol_config = config.model_copy(
+        update={
+            "output": config.output.model_copy(
+                update={
+                    "layout": config.output.layout.model_copy(
+                        update={
+                            "spacing": Spacing(table_col_spacing=24.0),
+                        }
+                    )
+                }
+            )
+        }
+    )
+    symbol_ctx = RenderContext.build(config=symbol_config, keymap=keymap)
+    with using_render_context(symbol_ctx):
+        symbol_section = SymbolSection(
+            entries=symbol_entries,
+            max_width=macro_content_width,
+            wrap_content=True,
+            column_count=4,
+            flow="row",
+            scale=symbol_scale,
+        )
+        symbol_card = Size(
+            symbol_section.size.width + keycode_card_padding,
+            symbol_section.size.height + keycode_card_padding,
+        )
+        yield (
+            "symbol-descriptions",
+            _render_in_card(symbol_section, canvas=symbol_card, embed_fonts=True),
         )
 
 
