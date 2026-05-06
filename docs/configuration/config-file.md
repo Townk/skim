@@ -1351,7 +1351,10 @@ apply only to the **standalone** images (`skim generate -l macros` /
 `-l tap-dances` / `-l symbols`); the chrome (title, footer, outer
 padding) stays at the unscaled per-image size.
 
-##### `show` { #output-style-legend-tables-macros-show }
+##### `macros` { #output-style-legend-tables-macros }
+Visibility and standalone-image scale for the macros legend.
+
+###### `show` { #output-style-legend-tables-macros-show }
 
 | Type      | Default |
 | --------- | ------- |
@@ -1362,7 +1365,7 @@ overview. The legend lists every macro referenced on the layer (or
 across all layers, in the overview), with its `name` and `preview`
 from `keycodes.macros`. Set to `false` to omit it.
 
-##### `scale` { #output-style-legend-tables-macros-scale }
+###### `scale` { #output-style-legend-tables-macros-scale }
 
 | Type    | Default |
 | ------- | ------- |
@@ -1371,7 +1374,10 @@ from `keycodes.macros`. Set to `false` to omit it.
 Body-scale multiplier for the standalone macros image. Body chips
 and pills scale by this factor; the per-image chrome stays unscaled.
 
-##### `show` { #output-style-legend-tables-tap-dances-show }
+##### `tap_dances` { #output-style-legend-tables-tap-dances }
+Visibility and standalone-image scale for the tap-dances legend.
+
+###### `show` { #output-style-legend-tables-tap-dances-show }
 
 | Type      | Default |
 | --------- | ------- |
@@ -1380,7 +1386,7 @@ and pills scale by this factor; the per-image chrome stays unscaled.
 Whether to embed the tap-dances legend in per-layer images and the
 overview. Mirrors `macros.show`.
 
-##### `scale` { #output-style-legend-tables-tap-dances-scale }
+###### `scale` { #output-style-legend-tables-tap-dances-scale }
 
 | Type    | Default |
 | ------- | ------- |
@@ -1389,7 +1395,11 @@ overview. Mirrors `macros.show`.
 Body-scale multiplier for the standalone tap-dances image. Same
 semantics as `macros.scale`.
 
-##### `show` { #output-style-legend-tables-symbols-show }
+##### `symbols` { #output-style-legend-tables-symbols }
+Visibility, standalone-image scale, and multi-column flow for the
+symbol legend.
+
+###### `show` { #output-style-legend-tables-symbols-show }
 
 | Type      | Default |
 | --------- | ------- |
@@ -1400,7 +1410,7 @@ overview. Per-layer images carry only the symbols actually used on
 that layer; the overview carries the union across all rendered
 layers.
 
-##### `scale` { #output-style-legend-tables-symbols-scale }
+###### `scale` { #output-style-legend-tables-symbols-scale }
 
 | Type    | Default |
 | ------- | ------- |
@@ -1409,7 +1419,7 @@ layers.
 Body-scale multiplier for the standalone symbols image. Same
 semantics as `macros.scale`.
 
-##### `flow` { #output-style-legend-tables-symbols-flow }
+###### `flow` { #output-style-legend-tables-symbols-flow }
 
 | Type     | Default      | Allowed values        |
 | -------- | ------------ | --------------------- |
@@ -1427,7 +1437,7 @@ Controls how multi-column symbol-legend layouts fill themselves:
 ![symbols.flow column vs row comparison](../_static/spacing/symbols-flow.svg){ width="800" loading=lazy }
 </figure>
 
-##### `columns` { #output-style-legend-tables-symbols-columns }
+###### `columns` { #output-style-legend-tables-symbols-columns }
 
 | Type            | Default |
 | --------------- | ------- |
