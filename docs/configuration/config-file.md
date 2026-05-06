@@ -823,9 +823,7 @@ In every illustration below, the rose-red highlight marks the value
 the field controls; everything else is greyed out so the value reads
 at a glance.
 
-##### Document chrome
-
-###### `margin` { #output-layout-spacing-margin }
+##### `margin` { #output-layout-spacing-margin }
 
 | Type                            | Default        | Base       |
 | ------------------------------- | -------------- | ---------- |
@@ -840,7 +838,7 @@ against the image edge.
 ![Margin highlighted around a small keymap document](../_static/spacing/margin.svg){ width="520" loading=lazy }
 </figure>
 
-###### `inset` { #output-layout-spacing-inset }
+##### `inset` { #output-layout-spacing-inset }
 
 | Type                            | Default                       | Base       |
 | ------------------------------- | ----------------------------- | ---------- |
@@ -856,7 +854,7 @@ document column.
 ![Inset highlighted between border and content](../_static/spacing/inset.svg){ width="520" loading=lazy }
 </figure>
 
-###### `column_gap` { #output-layout-spacing-column-gap }
+##### `column_gap` { #output-layout-spacing-column-gap }
 
 | Type                            | Default                        | Base       |
 | ------------------------------- | ------------------------------ | ---------- |
@@ -871,9 +869,7 @@ sections when both are rendered.
 ![Column gap highlighted between clusters](../_static/spacing/column-gap.svg){ width="520" loading=lazy }
 </figure>
 
-##### Section and table rhythm
-
-###### `section_spacing` { #output-layout-spacing-section-spacing }
+##### `section_spacing` { #output-layout-spacing-section-spacing }
 
 | Type                            | Default                         | Base       |
 | ------------------------------- | ------------------------------- | ---------- |
@@ -887,7 +883,7 @@ header rule) and the section body that follows it.
 ![Section spacing highlighted between stripe and body](../_static/spacing/section-spacing.svg){ width="360" loading=lazy }
 </figure>
 
-###### `section_title_rule_gap` { #output-layout-spacing-section-title-rule-gap }
+##### `section_title_rule_gap` { #output-layout-spacing-section-title-rule-gap }
 
 | Type                            | Default                         | Base       |
 | ------------------------------- | ------------------------------- | ---------- |
@@ -904,7 +900,7 @@ total height.
 ![Section title rule gap highlighted](../_static/spacing/section-title-rule-gap.svg){ width="380" loading=lazy }
 </figure>
 
-###### `table_header_spacing` { #output-layout-spacing-table-header-spacing }
+##### `table_header_spacing` { #output-layout-spacing-table-header-spacing }
 
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
@@ -924,7 +920,7 @@ in three places that all share the same rhythm:
 ![Table header spacing highlighted](../_static/spacing/table-header-spacing.svg){ width="460" loading=lazy }
 </figure>
 
-###### `table_col_spacing` { #output-layout-spacing-table-col-spacing }
+##### `table_col_spacing` { #output-layout-spacing-table-col-spacing }
 
 | Type                            | Default                           | Base       |
 | ------------------------------- | --------------------------------- | ---------- |
@@ -939,7 +935,7 @@ pill row.
 ![Table column spacing highlighted](../_static/spacing/table-col-spacing.svg){ width="460" loading=lazy }
 </figure>
 
-###### `table_row_spacing` { #output-layout-spacing-table-row-spacing }
+##### `table_row_spacing` { #output-layout-spacing-table-row-spacing }
 
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
@@ -952,9 +948,7 @@ Vertical gap between adjacent rows inside a table.
 ![Table row spacing highlighted](../_static/spacing/table-row-spacing.svg){ width="500" loading=lazy }
 </figure>
 
-##### Cluster geometry
-
-###### `finger_key_gap` { #output-layout-spacing-finger-key-gap }
+##### `finger_key_gap` { #output-layout-spacing-finger-key-gap }
 
 | Type                            | Default                | Base                  |
 | ------------------------------- | ---------------------- | --------------------- |
@@ -970,7 +964,7 @@ so the geometry stays proportional however the cluster gets sized.
 ![Finger key gap highlighted](../_static/spacing/finger-key-gap.svg){ width="320" loading=lazy }
 </figure>
 
-###### `thumb_key_gap` { #output-layout-spacing-thumb-key-gap }
+##### `thumb_key_gap` { #output-layout-spacing-thumb-key-gap }
 
 | Type                            | Default                | Base                 |
 | ------------------------------- | ---------------------- | -------------------- |
@@ -988,7 +982,7 @@ width.
 ![Thumb key gap highlighted](../_static/spacing/thumb-key-gap.svg){ width="420" loading=lazy }
 </figure>
 
-###### `layer_indicator_spacing` { #output-layout-spacing-layer-indicator-spacing }
+##### `layer_indicator_spacing` { #output-layout-spacing-layer-indicator-spacing }
 
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
@@ -1005,9 +999,7 @@ cluster sizing.
 ![Layer indicator spacing highlighted](../_static/spacing/layer-indicator-spacing.svg){ width="320" loading=lazy }
 </figure>
 
-##### Chip / pill / badge internals
-
-###### `chip_padding` { #output-layout-spacing-chip-padding }
+##### `chip_padding` { #output-layout-spacing-chip-padding }
 
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
@@ -1024,7 +1016,7 @@ in step with horizontal changes.
 ![Chip padding highlighted](../_static/spacing/chip-padding.svg){ width="320" loading=lazy }
 </figure>
 
-###### `tap_dance_pill_padding` { #output-layout-spacing-tap-dance-pill-padding }
+##### `tap_dance_pill_padding` { #output-layout-spacing-tap-dance-pill-padding }
 
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
@@ -1039,7 +1031,7 @@ Vertical padding is `tap_dance_pill_padding * 0.25`.
 ![Tap-dance pill padding highlighted](../_static/spacing/tap-dance-pill-padding.svg){ width="460" loading=lazy }
 </figure>
 
-###### `macro_action_inset` { #output-layout-spacing-macro-action-inset }
+##### `macro_action_inset` { #output-layout-spacing-macro-action-inset }
 
 | Type                            | Default                           | Base       |
 | ------------------------------- | --------------------------------- | ---------- |
@@ -1059,7 +1051,7 @@ consistent.
 ![Macro action inset highlighted](../_static/spacing/macro-action-inset.svg){ width="320" loading=lazy }
 </figure>
 
-###### `layer_badge_inset` { #output-layout-spacing-layer-badge-inset }
+##### `layer_badge_inset` { #output-layout-spacing-layer-badge-inset }
 
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
