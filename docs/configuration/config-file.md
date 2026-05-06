@@ -77,7 +77,7 @@ keyboard:
     double_south: <boolean>
 ```
 
-#### `double_south`
+#### `double_south` { #keyboard-features-double-south }
 
 | Type      | Default |
 | --------- | ------- |

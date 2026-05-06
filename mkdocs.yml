@@ -16,6 +16,7 @@ docs_dir: docs
 
 exclude_docs: |
   superpowers/
+  internal/
 
 watch:
   - src

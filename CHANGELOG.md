@@ -55,6 +55,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The overview's layer-indicator gap is now uniform across finger and
   thumb clusters (12/1600 of doc width). Previously each cluster type
   used its own cluster-relative ratio that produced different gaps.
+- `MacroPill` now positions the action icon's *left edge* at
+  `macro_action_inset` from the pill border (centre at `inset +
+  icon_w/2`) instead of its centre. Result: the visible whitespace
+  before the icon, between icon and text, and between text and pill
+  border are all uniformly `macro_action_inset` wide, and the
+  text-centring math no longer leaves `icon_w/4` of slack on each
+  side of the label.
+- `MacroRow` named-header chip→name gap switched from `chip_padding`
+  to `table_header_spacing`. The chip→name gap is conceptually a
+  "row-header → row-content" boundary — the same role
+  `table_header_spacing` already plays for column-header→first-row
+  and chip→first-cell. `chip_padding` is the symmetric inset *inside*
+  a chip (border ↔ glyph / name text), not a between-elements gap.
+- `using_render_context` accepts an optional
+  `font_usage_collector` parameter so callers that compose multiple
+  panels under different `ctx` instances can share one collector and
+  get the union of every panel's character usage when embedding
+  fonts. Default behaviour (a fresh per-block collector) is
+  unchanged.
+
+### Fixed
+
+- Connector-router source rects in `KeymapOverview` were keyed by
+  `id(key)`. Reusing the same `SvalboardTargetKey` instance across
+  multiple cluster slots (e.g. binding `LT(NAV) =
+  SvalboardTargetKey(label="LT(NAV)", layer_switch=1)` to both thumb
+  pads) collapsed every reuse onto a single dict slot — only one
+  connector ever painted, from whichever slot wrote the rect last.
+  Each `ConnectorStep` now carries its `source_layer` and
+  `source_side`, and the rect dict is keyed by structural position
+  (`finger.<source_layer>.<cluster_attr>.<slot>` /
+  `thumb.<source_layer>.<source_side>.<slot>`), so every source slot
+  gets its own indicator regardless of the underlying key's Python
+  identity.
+
+### Documentation
+
+- `output.style.palette.layers` reference now accurately describes
+  the gradient auto-derivation behaviour (the keymap-generation
+  pipeline replaces `gradient: null` with
+  `make_gradient(base_color, color_index)` before rendering, so the
+  rendered output always sees a 6-stop tuple). `color_index`'s
+  dual role as gradient anchor and primary-stop selector is
+  explicit. Two double-south finger-cluster images illustrate the
+  auto-derived and explicit gradient YAML forms side by side.
+- Added fully-coloured sample images under each
+  `output.style.legend_tables` sub-block (`macros`, `tap_dances`,
+  `symbols`) — the macros and tap-dances samples mix named and
+  unnamed entries so the named-vs-unnamed layout split reads at
+  a glance.
+- Chrome-colour table now carries inline colour swatches next to
+  each default value.
+- Tables now keep all columns single-line except the description
+  column, which absorbs the wrapping. Stops the renderer from
+  choosing a Type / Default column to wrap when the description
+  column is long.
+- Spacing-mock illustrations refined: every band aligns precisely
+  with the option it represents (no overlap with borders, glyphs,
+  or labels), Nerd-Font glyphs render across all viewers (bundled
+  fonts subset and embedded), and several sets of related mocks
+  (section-spacing / section-title-rule-gap / table-*-spacing /
+  header-rule-stroke) share a single canvas shape so the docs
+  render them at matching font sizes.
+- `docs/configuration/cli-options.md` is now a full reference for
+  every `skim` subcommand — `generate`, `configure`, `doctor` —
+  plus the global `--version`, `--verbosity`, and `--quiet` flags.
+  Each flag carries the canonical type table, an explicit anchor
+  ID, and (where the flag drives a config field) a link to the
+  matching field in `config-file.md`. Added the missing
+  `keyboard.features.double_south` anchor in `config-file.md` so
+  the cross-reference resolves.
 
 ### Removed
 
