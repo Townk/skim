@@ -95,7 +95,7 @@ cells) so labels and fields line up across rows in the same section.
 
 #### Text input { #anatomy-components-text-input }
 
-![Text-input field row showing the "Keymap Title:" label and a single-line text editor](../_static/tui/field-text-input.svg){ width="494" loading=lazy }
+![Text-input field row showing the "Keymap Title:" label and a single-line text editor](../_static/tui/field-keyboard-info-title.svg){ width="494" loading=lazy }
 
 A single-line text editor. Each keystroke updates the underlying
 config field immediately — there is no per-field commit step. Empty
@@ -108,7 +108,7 @@ edit lifecycle wraps every field it contains.
 
 #### Numeric input { #anatomy-components-numeric-input }
 
-![Numeric-input field row showing the "Width:" label and a numeric text editor](../_static/tui/field-numeric-input.svg){ width="494" loading=lazy }
+![Numeric-input field row showing the "Width:" label and a numeric text editor](../_static/tui/field-output-page-width.svg){ width="494" loading=lazy }
 
 Visually identical to the text input. Numeric fields are plain text
 boxes with no input filtering — you can type any character. The
@@ -120,7 +120,7 @@ confirm the value took.
 
 #### Switch { #anatomy-components-switch }
 
-![Switch field row showing the "Double South:" label and a two-state toggle in the on position](../_static/tui/field-switch.svg){ width="356" loading=lazy }
+![Switch field row showing the "Double South:" label and a two-state toggle in the on position](../_static/tui/field-keyboard-feature-double-south.svg){ width="356" loading=lazy }
 
 A two-state toggle. Click the switch or press `Space` / `Enter` while
 focused to flip it. The change commits immediately; there is no
@@ -128,7 +128,7 @@ edit / cancel cycle.
 
 #### Select { #anatomy-components-select }
 
-![Select field row showing the "Hold symbol position:" label, the closed-state select on the same row, and the open dropdown panel listing the available options below it](../_static/tui/field-select.svg){ width="585" loading=lazy }
+![Select field row showing the "Hold symbol position:" label, the closed-state select on the same row, and the open dropdown panel listing the available options below it](../_static/tui/field-output-style-hold-symbol-position.svg){ width="585" loading=lazy }
 
 A drop-down. `Enter` or `Space` opens the list; arrow keys move the
 highlight; `Enter` commits the highlighted entry; `Escape` closes the
@@ -136,7 +136,7 @@ list without changing the field.
 
 #### Colour input { #anatomy-components-colour-input }
 
-![Colour-input field row showing the "Background color:" label, a colour swatch, and a hex/CSS-name text editor with the autocomplete suggestion popup open below it after typing "cyan"](../_static/tui/field-color-input.svg){ width="603" loading=lazy }
+![Colour-input field row showing the "Background color:" label, a colour swatch, and a hex/CSS-name text editor with the autocomplete suggestion popup open below it after typing "cyan"](../_static/tui/anatomy-color-input.svg){ width="604" loading=lazy }
 
 A text input paired with a live colour swatch in the same row. The
 input accepts any CSS colour value the schema allows (named colours,
@@ -145,7 +145,7 @@ An autocomplete list suggests CSS colour names while you're typing.
 
 #### List/detail pane { #anatomy-components-list-detail }
 
-![List/detail pane on the Keyboard tab — left column lists the layers with Add/Delete buttons; right column shows the selected layer's editable fields](../_static/tui/field-list-detail.svg){ width="905" loading=lazy }
+![List/detail pane on the Keyboard tab — left column lists the layers with Add/Delete buttons; right column shows the selected layer's editable fields](../_static/tui/field-keyboard-layer-list.svg){ width="905" loading=lazy }
 
 A two-column widget: a scrolling list of entries on the left, a
 form for the selected entry on the right. The list side is fixed at
@@ -170,3 +170,744 @@ Two buttons at the top of the list manage the list itself:
 To reorder entries, focus the list and press `m`. The selected row gets
 a `↕` move indicator; use the arrow keys to slide it up or down and
 `Enter` to commit the new position (or `Escape` to cancel).
+
+## Keyboard tab { #fields-keyboard }
+
+Hardware metadata, image titling, and the layer roster.
+
+### Info { #fields-keyboard-info }
+
+#### Keymap Title { #keyboard-info-title }
+
+![Keymap Title field row](../_static/tui/field-keyboard-info-title.svg){ width="494" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keyboard-info-title.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.keymap_title`](config-file.md#output-keymap-title)
+
+---
+
+#### Copyright { #keyboard-info-copyright }
+
+![Copyright field row](../_static/tui/field-keyboard-info-copyright.svg){ width="494" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keyboard-info-copyright.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.copyright`](config-file.md#output-copyright)
+
+---
+
+### Features { #fields-keyboard-features }
+
+#### Double South { #keyboard-feature-double-south }
+
+![Double South field row](../_static/tui/field-keyboard-feature-double-south.svg){ width="357" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keyboard-feature-double-south.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keyboard.features.double_south`](config-file.md#keyboard-features-double-south)
+
+---
+
+### Layers { #fields-keyboard-layers }
+
+#### Layers { #keyboard-layer-list }
+
+![Layers field row](../_static/tui/field-keyboard-layer-list.svg){ width="906" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keyboard-layer-list.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keyboard.layers`](config-file.md#keyboard-layers)
+
+---
+
+#### Layer Index { #keyboard-layer-index }
+
+![Layer Index field row](../_static/tui/field-keyboard-layer-index.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keyboard-layer-index.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keyboard.layers[*].index`](config-file.md#keyboard-layers)
+
+---
+
+#### Layer ID { #keyboard-layer-id }
+
+![Layer ID field row](../_static/tui/field-keyboard-layer-id.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keyboard-layer-id.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keyboard.layers[*].id`](config-file.md#keyboard-layers)
+
+---
+
+#### Layer Name { #keyboard-layer-name }
+
+![Layer Name field row](../_static/tui/field-keyboard-layer-name.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keyboard-layer-name.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keyboard.layers[*].name`](config-file.md#keyboard-layers)
+
+---
+
+#### Layer Variant { #keyboard-layer-variant }
+
+![Layer Variant field row](../_static/tui/field-keyboard-layer-variant.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keyboard-layer-variant.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keyboard.layers[*].variant`](config-file.md#keyboard-layers)
+
+---
+
+## Keycodes tab { #fields-keycodes }
+
+Keycode rewriting, label overrides, and metadata for macros and tap-dances.
+
+### Pre-process { #fields-keycodes-pre-process }
+
+#### Pre-process Keycodes { #keycodes-pre-proc-list }
+
+![Pre-process Keycodes field row](../_static/tui/field-keycodes-pre-proc-list.svg){ width="906" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-pre-proc-list.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.pre_process`](config-file.md#keycodes-pre-process)
+
+---
+
+#### Pre-process — Keycode { #keycodes-pre-proc-keycode }
+
+![Pre-process — Keycode field row](../_static/tui/field-keycodes-pre-proc-keycode.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-pre-proc-keycode.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.pre_process[*].keycode`](config-file.md#keycodes-pre-process)
+
+---
+
+#### Pre-process — Target { #keycodes-pre-proc-target }
+
+![Pre-process — Target field row](../_static/tui/field-keycodes-pre-proc-target.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-pre-proc-target.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.pre_process[*].target`](config-file.md#keycodes-pre-process)
+
+---
+
+### Overrides { #fields-keycodes-overrides }
+
+#### Keycode Overrides { #keycodes-override-list }
+
+![Keycode Overrides field row](../_static/tui/field-keycodes-override-list.svg){ width="906" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-override-list.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.overrides`](config-file.md#keycodes-overrides)
+
+---
+
+#### Override — Keycode { #keycodes-override-keycode }
+
+![Override — Keycode field row](../_static/tui/field-keycodes-override-keycode.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-override-keycode.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.overrides[*].keycode`](config-file.md#keycodes-overrides)
+
+---
+
+#### Override — Target { #keycodes-override-target }
+
+![Override — Target field row](../_static/tui/field-keycodes-override-target.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-override-target.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.overrides[*].target`](config-file.md#keycodes-overrides)
+
+---
+
+### Macros { #fields-keycodes-macros }
+
+#### Macros { #keycodes-macro-list }
+
+![Macros field row](../_static/tui/field-keycodes-macro-list.svg){ width="906" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-macro-list.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.macros`](config-file.md#keycodes-macros)
+
+---
+
+#### Macro — ID { #keycodes-macro-id }
+
+![Macro — ID field row](../_static/tui/field-keycodes-macro-id.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-macro-id.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.macros[*].id`](config-file.md#keycodes-macros)
+
+---
+
+#### Macro — Name { #keycodes-macro-name }
+
+![Macro — Name field row](../_static/tui/field-keycodes-macro-name.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-macro-name.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.macros[*].name`](config-file.md#keycodes-macros)
+
+---
+
+### Tap-dances { #fields-keycodes-tap-dances }
+
+#### Tap Dances { #keycodes-tap-dance-list }
+
+![Tap Dances field row](../_static/tui/field-keycodes-tap-dance-list.svg){ width="906" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-tap-dance-list.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.tap_dances`](config-file.md#keycodes-tap-dances)
+
+---
+
+#### Tap Dance — ID { #keycodes-tap-dance-id }
+
+![Tap Dance — ID field row](../_static/tui/field-keycodes-tap-dance-id.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-tap-dance-id.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.tap_dances[*].id`](config-file.md#keycodes-tap-dances)
+
+---
+
+#### Tap Dance — Name { #keycodes-tap-dance-name }
+
+![Tap Dance — Name field row](../_static/tui/field-keycodes-tap-dance-name.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/keycodes-tap-dance-name.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`keycodes.tap_dances[*].name`](config-file.md#keycodes-tap-dances)
+
+---
+
+## Output tab { #fields-output }
+
+Layout dimensions, colours, and styling for the rendered images.
+
+### Page { #fields-output-page }
+
+#### Layout Width { #output-page-width }
+
+![Layout Width field row](../_static/tui/field-output-page-width.svg){ width="494" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-page-width.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.layout.width`](config-file.md#output-layout-width)
+
+---
+
+#### Layout Margin { #output-page-margin }
+
+![Layout Margin field row](../_static/tui/field-output-page-margin.svg){ width="494" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-page-margin.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.layout.spacing.margin`](config-file.md#output-layout-spacing-margin)
+
+---
+
+#### Layout Inset { #output-page-inset }
+
+![Layout Inset field row](../_static/tui/field-output-page-inset.svg){ width="494" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-page-inset.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.layout.spacing.inset`](config-file.md#output-layout-spacing-inset)
+
+---
+
+#### Border Enabled { #output-page-border-enabled }
+
+![Border Enabled field row](../_static/tui/field-output-page-border-enabled.svg){ width="357" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-page-border-enabled.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.border`](config-file.md#output-style-border)
+
+---
+
+#### Border Width { #output-page-border-width }
+
+![Border Width field row](../_static/tui/field-output-page-border-width.svg){ width="494" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-page-border-width.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.border.width`](config-file.md#output-style-border-width)
+
+---
+
+#### Border Radius { #output-page-border-radius }
+
+![Border Radius field row](../_static/tui/field-output-page-border-radius.svg){ width="494" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-page-border-radius.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.border.radius`](config-file.md#output-style-border-radius)
+
+---
+
+### Style { #fields-output-style }
+
+#### Hold Symbol Position { #output-style-hold-symbol-position }
+
+![Hold Symbol Position field row](../_static/tui/field-output-style-hold-symbol-position.svg){ width="586" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-style-hold-symbol-position.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.hold_symbol_position`](config-file.md#output-style-hold-symbol-position)
+
+---
+
+#### Use System Fonts { #output-style-use-system-fonts }
+
+![Use System Fonts field row](../_static/tui/field-output-style-use-system-fonts.svg){ width="403" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-style-use-system-fonts.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.use_system_fonts`](config-file.md#output-style-use-system-fonts)
+
+---
+
+#### Use Layer Colors on Keys { #output-style-use-layer-colors }
+
+![Use Layer Colors on Keys field row](../_static/tui/field-output-style-use-layer-colors.svg){ width="448" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-style-use-layer-colors.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.use_layer_colors_on_keys`](config-file.md#output-style-use-layer-colors-on-keys)
+
+---
+
+#### Show Layer Indicators { #output-style-show-layer-indicators }
+
+![Show Layer Indicators field row](../_static/tui/field-output-style-show-layer-indicators.svg){ width="448" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-style-show-layer-indicators.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.layer_indicator.show`](config-file.md#output-style-layer-indicator-show)
+
+---
+
+#### Show Layer Connectors { #output-style-show-layer-connectors }
+
+![Show Layer Connectors field row](../_static/tui/field-output-style-show-layer-connectors.svg){ width="448" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-style-show-layer-connectors.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.layer_connector.show`](config-file.md#output-style-layer-connector-show)
+
+---
+
+#### Show Transparent Fall-through { #output-style-show-transparent-fallthrough }
+
+![Show Transparent Fall-through field row](../_static/tui/field-output-style-show-transparent-fallthrough.svg){ width="494" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-style-show-transparent-fallthrough.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.show_transparent_fallthrough`](config-file.md#output-style-show-transparent-fallthrough)
+
+---
+
+#### Show special keys legend { #output-style-show-special-keys-legend }
+
+![Show special keys legend field row](../_static/tui/field-output-style-show-special-keys-legend.svg){ width="494" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-style-show-special-keys-legend.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.legend_tables.macros.show`](config-file.md#output-style-legend-tables-macros-show) and [`output.style.legend_tables.tap_dances.show`](config-file.md#output-style-legend-tables-tap-dances-show)
+
+---
+
+#### Show symbol legend { #output-style-show-symbol-legend }
+
+![Show symbol legend field row](../_static/tui/field-output-style-show-symbol-legend.svg){ width="448" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-style-show-symbol-legend.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.legend_tables.symbols.show`](config-file.md#output-style-legend-tables-symbols-show)
+
+---
+
+#### Symbol legend flow { #output-style-symbol-legend-flow }
+
+![Symbol legend flow field row](../_static/tui/field-output-style-symbol-legend-flow.svg){ width="540" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-style-symbol-legend-flow.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.legend_tables.symbols.flow`](config-file.md#output-style-legend-tables-symbols-flow)
+
+---
+
+### Palette { #fields-output-palette }
+
+The chrome colours that frame every rendered image. Each takes any CSS colour value the schema allows; see the chrome colours table on the [`output.style.palette`](config-file.md#output-style-palette) field for the full list of defaults and visual swatches.
+
+#### Background Color { #output-palette-background-color }
+
+![Background Color field row](../_static/tui/field-output-palette-background-color.svg){ width="586" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-palette-background-color.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.palette.background_color`](config-file.md#output-style-palette)
+
+---
+
+#### Text Color { #output-palette-text-color }
+
+![Text Color field row](../_static/tui/field-output-palette-text-color.svg){ width="586" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-palette-text-color.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.palette.text_color`](config-file.md#output-style-palette)
+
+---
+
+#### Border Color { #output-palette-border-color }
+
+![Border Color field row](../_static/tui/field-output-palette-border-color.svg){ width="586" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-palette-border-color.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.palette.border_color`](config-file.md#output-style-palette)
+
+---
+
+#### Neutral Color { #output-palette-neutral-color }
+
+![Neutral Color field row](../_static/tui/field-output-palette-neutral-color.svg){ width="586" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-palette-neutral-color.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.palette.neutral_color`](config-file.md#output-style-palette)
+
+---
+
+#### Key Label Color { #output-palette-key-label-color }
+
+![Key Label Color field row](../_static/tui/field-output-palette-key-label-color.svg){ width="586" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-palette-key-label-color.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.palette.key_label_color`](config-file.md#output-style-palette)
+
+---
+
+#### Macro Color { #output-palette-macro-color }
+
+![Macro Color field row](../_static/tui/field-output-palette-macro-color.svg){ width="586" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-palette-macro-color.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.palette.macro_color`](config-file.md#output-style-palette)
+
+---
+
+#### Tap-Dance Color { #output-palette-tap-dance-color }
+
+![Tap-Dance Color field row](../_static/tui/field-output-palette-tap-dance-color.svg){ width="586" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-palette-tap-dance-color.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.palette.tap_dance_color`](config-file.md#output-style-palette)
+
+---
+
+### Layer Colors { #fields-output-layer-colors }
+
+#### Layer Colors { #output-layer-color-list }
+
+![Layer Colors field row](../_static/tui/field-output-layer-color-list.svg){ width="906" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-layer-color-list.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.palette.layers`](config-file.md#output-style-palette-layers)
+
+---
+
+#### Gradient Type { #output-layer-color-gradient-type }
+
+![Gradient Type field row](../_static/tui/field-output-layer-color-gradient-type.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-layer-color-gradient-type.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.palette.layers[*].gradient`](config-file.md#output-style-palette-layers)
+
+---
+
+#### Main Gradient Step Index { #output-layer-color-color-index }
+
+![Main Gradient Step Index field row](../_static/tui/field-output-layer-color-color-index.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-layer-color-color-index.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.palette.layers[*].color_index`](config-file.md#output-style-palette-layers)
+
+---
+
+#### Main Gradient Step Color { #output-layer-color-base-color }
+
+![Main Gradient Step Color field row](../_static/tui/field-output-layer-color-list.svg){ width="906" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-layer-color-base-color.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** [`output.style.palette.layers[*].base_color`](config-file.md#output-style-palette-layers)
+
+---
+
+#### Manual Gradient Step Color { #output-layer-color-step }
+
+![Manual Gradient Step Color field row](../_static/tui/field-output-layer-color-step.svg){ width="485" loading=lazy }
+
+{%
+   include-markdown "../../src/skim/assets/help/output-layer-color-step.md"
+   comments=false
+   start="\n\n"
+   heading-offset=3
+%}
+
+**Configures:** entries of [`output.style.palette.layers[*].gradient`](config-file.md#output-style-palette-layers) (one per manual gradient step; the configurator surfaces all six positions side-by-side as `Step 0` … `Step 5`)
+
+---

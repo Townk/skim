@@ -74,6 +74,8 @@ from skim.tui.widgets import SkimFooter, SkimVerticalScroll
 
 ROOT = Path(__file__).resolve().parent.parent
 SAMPLE_CONFIG = ROOT / "samples" / "config" / "SvalCOLEMAK-config.yaml"
+SKIM_SAMPLE_CONFIG = ROOT / "samples" / "config" / "skim-config.yaml"
+VIAL_SAMPLE_KEYMAP = ROOT / "samples" / "keymaps" / "vial-sample.vil"
 OUTPUT_DIR = ROOT / "docs" / "_static" / "tui"
 
 WIDTH = 120
@@ -125,6 +127,17 @@ class Shot:
             ``widget.focus()`` and waits for layout to settle, so the
             screenshot reflects the focused state (e.g. a focus-coloured
             border on inputs).
+        config: Optional path to a YAML configuration to load for this
+            shot. ``None`` (the default) uses the module-level
+            ``SAMPLE_CONFIG``. Override per-shot when a different config
+            is needed — e.g. one with populated keycodes lists so the
+            detail-side editor renders real entries.
+        keymap: Optional path to a keymap file (``.vil`` / ``.kbi`` /
+            ``.json``) to derive the config from — same flow as
+            ``skim configure -i -k <path>``. Takes precedence over
+            ``config`` when both are set, since keymap-driven configs
+            populate keycodes.macros / keycodes.tap_dances lists from
+            the keymap's own metadata.
     """
 
     name: str
@@ -134,11 +147,40 @@ class Shot:
     clip: ClipTarget | None = None
     clip_padding: tuple[int, int, int, int] = (0, 0, 0, 0)
     focus: ClipTarget | None = None
+    config: Path | None = None
+    keymap: Path | None = None
 
 
 def _load_config(path: Path) -> dict[str, Any]:
-    with open(path) as f:
-        return yaml.safe_load(f)
+    """Load a YAML config and route it through ``SkimConfig`` so the result
+    carries every default the TUI's compose step expects (e.g.
+    ``output.layout`` is required at runtime even if the YAML omits it).
+    """
+    from skim.data.config import SkimConfig
+
+    raw = yaml.safe_load(path.read_text()) or {}
+    return SkimConfig.model_validate(raw).model_dump(mode="json")
+
+
+def _load_config_from_keymap(keymap_path: Path) -> dict[str, Any]:
+    """Mirror ``cli.configure -i -k <keymap>``: derive a SkimConfig from a
+    keymap file so the TUI launches with macros / tap-dances / overrides
+    populated from the keymap's own metadata.
+    """
+    from skim.application.config_generator import ConfigGenerator
+    from skim.application.loaders.keymap_loader import _detect_format_from_path
+    from skim.data.config import SkimConfig
+    from skim.domain import KeymapType
+
+    generator = ConfigGenerator()
+    raw = keymap_path.read_text()
+    detected = _detect_format_from_path(keymap_path)
+    if detected == KeymapType.KEYBARD:
+        yaml_str = generator.generate_from_keybard(raw)
+    else:
+        yaml_str = generator.generate_from_keymap(raw)
+    raw_dict = yaml.safe_load(yaml_str) or {}
+    return SkimConfig.model_validate(raw_dict).model_dump(mode="json")
 
 
 TERMINAL_BACKGROUND = "#121212"
@@ -549,20 +591,77 @@ async def _initial_double_south_on(pilot: Any) -> None:
     pilot.app.query_one("#double-south").value = True
 
 
-async def _switch_to_output_with_select_open(pilot: Any) -> None:
-    """Switch to Output, focus the Hold-symbol-position select, and expand it.
+def _make_select_with_overlay_setup(input_id: str) -> PilotSetup:
+    """Setup that switches to the Output tab, focuses the select with the
+    given id, and expands its dropdown overlay.
 
-    Setting ``Select.expanded = True`` mounts the dropdown overlay below
-    the select widget. Subsequent ``pilot.pause()`` calls let layout settle
-    so ``SelectOverlay.region`` returns a meaningful rect for clipping.
+    Setting ``Select.expanded = True`` mounts the dropdown below the
+    select. Subsequent ``pilot.pause()`` calls let layout settle so
+    ``SelectOverlay.region`` returns a meaningful rect for clipping.
     """
-    pilot.app.query_one(TabbedContent).active = "output-tab"
-    await pilot.pause()
-    select = pilot.app.query_one("#hold-symbol-position")
-    select.focus()
-    await pilot.pause()
-    select.expanded = True
-    await pilot.pause()
+
+    async def _setup(pilot: Any) -> None:
+        pilot.app.query_one(TabbedContent).active = "output-tab"
+        await pilot.pause()
+        select = pilot.app.query_one(f"#{input_id}")
+        select.focus()
+        await pilot.pause()
+        select.expanded = True
+        await pilot.pause()
+
+    return _setup
+
+
+def _make_list_detail_field_setup(
+    tab_setup: PilotSetup,
+    pane_class: str,
+    input_id: str,
+) -> PilotSetup:
+    """Setup that enters edit mode on a list-detail pane and focuses one field.
+
+    Used for the detail-side fields of list-detail panes whose lists are
+    pre-populated in the sample config (Layer roster, Layer Colours). The
+    pane's ListView gets focus first, then ``Enter`` is pressed to enable
+    the detail-side inputs; the requested input is then explicitly focused.
+    """
+
+    async def _setup(pilot: Any) -> None:
+        await tab_setup(pilot)
+        pane = pilot.app.query_one(pane_class)
+        pane.query_one(".ldp-list").focus()
+        await pilot.pause()
+        await pilot.press("enter")
+        await pilot.pause()
+        widget = pilot.app.query_one(f"#{input_id}")
+        if not getattr(widget, "disabled", False):
+            widget.focus()
+            await pilot.pause()
+
+    return _setup
+
+
+def _make_keycodes_detail_field_setup(
+    pane_id: str,
+    input_id: str,
+) -> PilotSetup:
+    """Setup that adds an entry to an empty keycodes list-detail pane.
+
+    The sample config keeps the four keycodes lists empty, so there's no
+    pre-existing entry to enter edit mode for. Pressing the pane's
+    ``+ Add`` button creates a new entry with placeholder defaults and
+    auto-enters edit mode; we then focus the requested detail-side input.
+    """
+
+    async def _setup(pilot: Any) -> None:
+        await _switch_to_keycodes(pilot)
+        pilot.app.query_one(f"#{pane_id}-add").press()
+        await pilot.pause()
+        widget = pilot.app.query_one(f"#{input_id}")
+        if not getattr(widget, "disabled", False):
+            widget.focus()
+            await pilot.pause()
+
+    return _setup
 
 
 async def _setup_background_color_autocomplete(pilot: Any) -> None:
@@ -606,20 +705,21 @@ def _status_bar(app: SkimConfigApp) -> Any:
     return app.query_one(SkimFooter)
 
 
-def _select_with_overlay(app: SkimConfigApp) -> list[Any]:
-    """Return ``[field-row, SelectOverlay]`` so the clip covers both the row
-    and the open dropdown panel below it.
+def _make_select_with_overlay_clip(input_id: str) -> ClipTarget:
+    """Clip target returning ``[field-row, SelectOverlay]`` for a Select.
 
     The crop helper takes the bounding box of both regions for the viewBox;
-    the strip filter then keeps only cells/texts inside one of the two
-    regions, so the dead zone between (i.e. siblings of the field-row that
-    sit at the overlay's y-range outside the overlay's x-range) is left
-    blank rather than leaking adjacent labels / inputs.
+    the strip filter keeps only cells/texts inside one of the two regions,
+    so the dead zone between (siblings of the field-row at the overlay's
+    y-range, outside the overlay's x-range) is left blank rather than
+    leaking adjacent labels / inputs.
     """
-    select = app.query_one("#hold-symbol-position")
-    field_row = select.parent
-    overlay = select.query_one(SelectOverlay)
-    return [field_row, overlay]
+
+    def _resolver(app: SkimConfigApp) -> list[Any]:
+        select = app.query_one(f"#{input_id}")
+        return [select.parent, select.query_one(SelectOverlay)]
+
+    return _resolver
 
 
 def _background_color_with_autocomplete(app: SkimConfigApp) -> list[Any]:
@@ -674,15 +774,102 @@ bottom so the scrolling affordance reads from the screenshot alone.
 """
 
 
+def _make_simple_field_shot(
+    help_key: str,
+    tab_setup: PilotSetup,
+    input_id: str,
+    width: int,
+    *,
+    clip_padding: tuple[int, int, int, int] = (1, 3, 1, 3),
+) -> Shot:
+    """Build a Shot for a simple focused-state field row.
+
+    The setup activates the field's tab, focuses the widget (if it isn't
+    disabled), and pauses for layout to settle. Clip target is the
+    field-row containing the widget; output filename is
+    ``field-<help_key>``.
+    """
+
+    async def _setup(pilot: Any) -> None:
+        await tab_setup(pilot)
+        widget = pilot.app.query_one(f"#{input_id}")
+        if not getattr(widget, "disabled", False):
+            widget.focus()
+            await pilot.pause()
+
+    return Shot(
+        f"field-{help_key}",
+        _setup,
+        width=width,
+        clip=_field_row_for(input_id),
+        clip_padding=clip_padding,
+    )
+
+
+def _make_list_pane_shot(
+    help_key: str,
+    tab_setup: PilotSetup,
+    pane_selector: str,
+    *,
+    width: int = 95,
+) -> Shot:
+    """Build a Shot for a list-detail pane (the whole list + detail card)."""
+
+    async def _setup(pilot: Any) -> None:
+        await tab_setup(pilot)
+
+    return Shot(
+        f"field-{help_key}",
+        _setup,
+        width=width,
+        clip=_widget(pane_selector),
+        clip_padding=(1, 3, 1, 3),
+    )
+
+
+# Per-field specs for fields that follow the "switch tab → focus widget → clip
+# to field-row" pattern. Each tuple is ``(help_key, tab_setup, input_id,
+# width)``. Special-cased fields (with overlay, autocomplete, or in
+# always-disabled detail panes) are defined explicitly below.
+SIMPLE_FIELDS: list[tuple[str, PilotSetup, str, int]] = [
+    # Keyboard → Info
+    ("keyboard-info-title", _initial, "keymap-title-text", 50),
+    ("keyboard-info-copyright", _initial, "copyright-text", 50),
+    # Output → Page
+    ("output-page-width", _switch_to_output, "layout-width", 50),
+    ("output-page-margin", _switch_to_output, "layout-margin", 50),
+    ("output-page-inset", _switch_to_output, "layout-inset", 50),
+    ("output-page-border-enabled", _switch_to_output, "border-enabled", 35),
+    ("output-page-border-width", _switch_to_output, "border-width", 50),
+    ("output-page-border-radius", _switch_to_output, "border-radius", 50),
+    # Output → Style
+    ("output-style-use-system-fonts", _switch_to_output, "use-system-fonts", 40),
+    ("output-style-use-layer-colors", _switch_to_output, "use-layer-colors", 45),
+    ("output-style-show-layer-indicators", _switch_to_output, "show-layer-indicators", 45),
+    ("output-style-show-layer-connectors", _switch_to_output, "show-layer-connectors", 45),
+    ("output-style-show-transparent-fallthrough", _switch_to_output, "show-transparent-fallthrough", 50),
+    ("output-style-show-special-keys-legend", _switch_to_output, "show-special-keys-legend", 50),
+    ("output-style-show-symbol-legend", _switch_to_output, "show-symbol-legend", 45),
+    # output-style-symbol-legend-flow is a Select — defined explicitly above
+    # with the overlay open, matching the hold-symbol-position shot.
+    # Output → Palette
+    ("output-palette-background-color", _switch_to_output, "palette-background-color", 60),
+    ("output-palette-text-color", _switch_to_output, "palette-text-color", 60),
+    ("output-palette-border-color", _switch_to_output, "palette-border-color", 60),
+    ("output-palette-neutral-color", _switch_to_output, "palette-neutral-color", 60),
+    ("output-palette-key-label-color", _switch_to_output, "palette-key-label-color", 60),
+    ("output-palette-macro-color", _switch_to_output, "palette-macro-color", 60),
+    ("output-palette-tap-dance-color", _switch_to_output, "palette-tap-dance-color", 60),
+]
+
+
 SHOTS: list[Shot] = [
-    # Full Anatomy reference frame.
+    # ---- Full Anatomy reference frame ----
     Shot("keyboard-tab", _initial, **ANATOMY_FRAME),
     Shot("keycodes-tab", _switch_to_keycodes),
     Shot("output-tab", _switch_to_output),
     Shot("output-style-tab", _switch_to_output_style),
-    # Per-piece crops of the Anatomy frame, each padded by 1 row top/bottom
-    # and 3 cols left/right with the terminal background colour so the
-    # widget reads as its own card rather than a slice from the frame.
+    # ---- Anatomy crops (tab strip, scrolling area, status bar) ----
     Shot(
         "tabs",
         _initial,
@@ -704,29 +891,11 @@ SHOTS: list[Shot] = [
         clip=_status_bar,
         clip_padding=(1, 3, 1, 3),
     ),
-    # Field-component shots — each clips to a single label-plus-widget row,
-    # using a terminal width tight enough that the component sits at its
-    # natural footprint (the field label is fixed at 22 cells; the rest is
-    # the component itself). Heights auto-fit so the target row is always
-    # rendered regardless of which section it lives in.
+    # ---- Field shots with custom logic (overlay open, autocomplete shown,
+    # list-detail panes, double-south on-state, etc.) ----
     Shot(
-        "field-text-input",
-        _initial,
-        width=50,
-        clip=_field_row_for("keymap-title-text"),
-        clip_padding=(1, 3, 1, 3),
-        focus=_widget("#keymap-title-text"),
-    ),
-    Shot(
-        "field-numeric-input",
-        _switch_to_output,
-        width=50,
-        clip=_field_row_for("layout-width"),
-        clip_padding=(1, 3, 1, 3),
-        focus=_widget("#layout-width"),
-    ),
-    Shot(
-        "field-switch",
+        # Double South switch flipped to the on-state for the screenshot.
+        "field-keyboard-feature-double-south",
         _initial_double_south_on,
         width=35,
         clip=_widget("#features-row"),
@@ -734,44 +903,233 @@ SHOTS: list[Shot] = [
         focus=_widget("#double-south"),
     ),
     Shot(
-        "field-select",
-        _switch_to_output_with_select_open,
+        # Hold Symbol Position select with the dropdown overlay expanded.
+        "field-output-style-hold-symbol-position",
+        _make_select_with_overlay_setup("hold-symbol-position"),
         width=60,
-        clip=_select_with_overlay,
+        clip=_make_select_with_overlay_clip("hold-symbol-position"),
         clip_padding=(1, 3, 1, 3),
     ),
     Shot(
-        # Background-color field on the palette (the layer-colour Step 0 inputs
-        # are disabled until the LayerColorListPane enters edit mode, so they
-        # can't drive an autocomplete). Setup focuses the input, clears the
-        # pre-populated value, and types ``"cyan"`` to make the AutoComplete
-        # widget show its suggestion popup. Clip covers ``[field-row, popup]``
-        # so the dead zone shows uniform terminal-bg.
-        "field-color-input",
+        # Symbol Legend Flow select with the dropdown overlay expanded.
+        "field-output-style-symbol-legend-flow",
+        _make_select_with_overlay_setup("symbol-legend-flow"),
+        width=55,
+        clip=_make_select_with_overlay_clip("symbol-legend-flow"),
+        clip_padding=(1, 3, 1, 3),
+    ),
+    Shot(
+        # Background colour input with the autocomplete popup open after
+        # typing ``"cyan"``. Used only as the "Colour input" example in
+        # the Anatomy section — the Background-color field-reference
+        # entry uses a plain shot generated from ``SIMPLE_FIELDS`` so it
+        # matches the visual style of every other palette field.
+        "anatomy-color-input",
         _setup_background_color_autocomplete,
         width=62,
         clip=_background_color_with_autocomplete,
         clip_padding=(1, 3, 1, 3),
     ),
+    # ---- List-detail pane shots (the whole list + detail card) ----
     Shot(
-        # Focus the layer ListView so the selected entry is highlighted; the
-        # detail-side inputs stay disabled (they only enable in edit mode).
-        "field-list-detail",
+        # Layer roster. Focus the ListView so the selected entry highlights;
+        # the detail-side inputs stay disabled (they only enable in edit mode).
+        "field-keyboard-layer-list",
         _initial,
         width=95,
         clip=_widget("LayerListPane"),
         clip_padding=(1, 3, 1, 3),
         focus=_widget("LayerListPane .ldp-list"),
     ),
+    Shot(
+        # Use ``skim-config.yaml`` (populated pre_process list) so the pane
+        # renders real entries rather than the SvalCOLEMAK config's empty list.
+        f"field-keycodes-pre-proc-list",
+        _switch_to_keycodes,
+        width=95,
+        clip=_widget("PreProcessListPane"),
+        clip_padding=(1, 3, 1, 3),
+        config=SKIM_SAMPLE_CONFIG,
+    ),
+    Shot(
+        f"field-keycodes-override-list",
+        _switch_to_keycodes,
+        width=95,
+        clip=_widget("OverrideListPane"),
+        clip_padding=(1, 3, 1, 3),
+        config=SKIM_SAMPLE_CONFIG,
+    ),
+    Shot(
+        # vial-sample.vil populates ``macro`` slots so the configurator
+        # surfaces real entries instead of an empty list.
+        "field-keycodes-macro-list",
+        _switch_to_keycodes,
+        width=95,
+        clip=_widget("MacroListPane"),
+        clip_padding=(1, 3, 1, 3),
+        keymap=VIAL_SAMPLE_KEYMAP,
+    ),
+    Shot(
+        "field-keycodes-tap-dance-list",
+        _switch_to_keycodes,
+        width=95,
+        clip=_widget("TapDanceListPane"),
+        clip_padding=(1, 3, 1, 3),
+        keymap=VIAL_SAMPLE_KEYMAP,
+    ),
+    _make_list_pane_shot(
+        "output-layer-color-list", _switch_to_output, "LayerColorListPane"
+    ),
+    # ---- List-detail children: focused-state shots of the per-entry editor
+    # rows. Setup enters edit mode (or adds an entry for the empty
+    # keycodes lists) and focuses the requested input.
+    Shot(
+        "field-keyboard-layer-index",
+        _make_list_detail_field_setup(_initial, "LayerListPane", "layer-index"),
+        width=80,
+        clip=_field_row_for("layer-index"),
+        clip_padding=(1, 3, 1, 3),
+    ),
+    Shot(
+        "field-keyboard-layer-id",
+        _make_list_detail_field_setup(_initial, "LayerListPane", "layer-id"),
+        width=80,
+        clip=_field_row_for("layer-id"),
+        clip_padding=(1, 3, 1, 3),
+    ),
+    Shot(
+        "field-keyboard-layer-name",
+        _make_list_detail_field_setup(_initial, "LayerListPane", "layer-name"),
+        width=80,
+        clip=_field_row_for("layer-name"),
+        clip_padding=(1, 3, 1, 3),
+    ),
+    Shot(
+        "field-keyboard-layer-variant",
+        _make_list_detail_field_setup(_initial, "LayerListPane", "layer-variant"),
+        width=80,
+        clip=_field_row_for("layer-variant"),
+        clip_padding=(1, 3, 1, 3),
+    ),
+    # Pre-process / Overrides per-field shots use the populated
+    # ``skim-config.yaml`` so the editor can enter edit mode on an existing
+    # entry (no need to ``+ Add`` and seed defaults).
+    Shot(
+        "field-keycodes-pre-proc-keycode",
+        _make_list_detail_field_setup(_switch_to_keycodes, "PreProcessListPane", "pre-process-keycode"),
+        width=80,
+        clip=_field_row_for("pre-process-keycode"),
+        clip_padding=(1, 3, 1, 3),
+        config=SKIM_SAMPLE_CONFIG,
+    ),
+    Shot(
+        "field-keycodes-pre-proc-target",
+        _make_list_detail_field_setup(_switch_to_keycodes, "PreProcessListPane", "pre-process-target"),
+        width=80,
+        clip=_field_row_for("pre-process-target"),
+        clip_padding=(1, 3, 1, 3),
+        config=SKIM_SAMPLE_CONFIG,
+    ),
+    Shot(
+        "field-keycodes-override-keycode",
+        _make_list_detail_field_setup(_switch_to_keycodes, "OverrideListPane", "override-keycode"),
+        width=80,
+        clip=_field_row_for("override-keycode"),
+        clip_padding=(1, 3, 1, 3),
+        config=SKIM_SAMPLE_CONFIG,
+    ),
+    Shot(
+        "field-keycodes-override-target",
+        _make_list_detail_field_setup(_switch_to_keycodes, "OverrideListPane", "override-target"),
+        width=80,
+        clip=_field_row_for("override-target"),
+        clip_padding=(1, 3, 1, 3),
+        config=SKIM_SAMPLE_CONFIG,
+    ),
+    # Macros / Tap-dances per-field shots use the vial keymap so the
+    # configurator can enter edit mode on a real entry rather than seeding
+    # one with ``+ Add``.
+    Shot(
+        "field-keycodes-macro-id",
+        _make_list_detail_field_setup(_switch_to_keycodes, "MacroListPane", "macro-id"),
+        width=80,
+        clip=_field_row_for("macro-id"),
+        clip_padding=(1, 3, 1, 3),
+        keymap=VIAL_SAMPLE_KEYMAP,
+    ),
+    Shot(
+        "field-keycodes-macro-name",
+        _make_list_detail_field_setup(_switch_to_keycodes, "MacroListPane", "macro-name"),
+        width=80,
+        clip=_field_row_for("macro-name"),
+        clip_padding=(1, 3, 1, 3),
+        keymap=VIAL_SAMPLE_KEYMAP,
+    ),
+    Shot(
+        "field-keycodes-tap-dance-id",
+        _make_list_detail_field_setup(_switch_to_keycodes, "TapDanceListPane", "tap-dance-id"),
+        width=80,
+        clip=_field_row_for("tap-dance-id"),
+        clip_padding=(1, 3, 1, 3),
+        keymap=VIAL_SAMPLE_KEYMAP,
+    ),
+    Shot(
+        "field-keycodes-tap-dance-name",
+        _make_list_detail_field_setup(_switch_to_keycodes, "TapDanceListPane", "tap-dance-name"),
+        width=80,
+        clip=_field_row_for("tap-dance-name"),
+        clip_padding=(1, 3, 1, 3),
+        keymap=VIAL_SAMPLE_KEYMAP,
+    ),
+    Shot(
+        "field-output-layer-color-gradient-type",
+        _make_list_detail_field_setup(_switch_to_output, "LayerColorListPane", "lc-gradient-type"),
+        width=80,
+        clip=_field_row_for("lc-gradient-type"),
+        clip_padding=(1, 3, 1, 3),
+    ),
+    Shot(
+        "field-output-layer-color-color-index",
+        _make_list_detail_field_setup(_switch_to_output, "LayerColorListPane", "lc-color-index"),
+        width=80,
+        clip=_field_row_for("lc-color-index"),
+        clip_padding=(1, 3, 1, 3),
+    ),
+    Shot(
+        # The lc-step-* rows only render when the LayerColorListPane is in
+        # ``manual-mode`` — every layer in the sample config has an explicit
+        # gradient list, so the pane initialises in manual-mode and the six
+        # step inputs are visible. Clip to step 0 (the help text covers all
+        # six side-by-side step inputs uniformly).
+        "field-output-layer-color-step",
+        _make_list_detail_field_setup(_switch_to_output, "LayerColorListPane", "lc-step-0"),
+        width=80,
+        clip=_field_row_for("lc-step-0"),
+        clip_padding=(1, 3, 1, 3),
+    ),
+    # ---- Simple field shots (label + widget, focused state) ----
+    *(_make_simple_field_shot(*spec) for spec in SIMPLE_FIELDS),
 ]
 
 
 async def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    config = _load_config(SAMPLE_CONFIG)
+    config_cache: dict[Any, dict[str, Any]] = {}
+
+    def _config_for(shot: Shot) -> dict[str, Any]:
+        if shot.keymap is not None:
+            key = ("keymap", shot.keymap)
+            if key not in config_cache:
+                config_cache[key] = _load_config_from_keymap(shot.keymap)
+            return config_cache[key]
+        path = shot.config or SAMPLE_CONFIG
+        if path not in config_cache:
+            config_cache[path] = _load_config(path)
+        return config_cache[path]
+
     print(f"Generating {len(SHOTS)} screenshot(s); width and height per shot")
     for shot in SHOTS:
-        target, height = await _capture(shot, config)
+        target, height = await _capture(shot, _config_for(shot))
         size = target.stat().st_size
         print(f"  {target.relative_to(ROOT)} ({shot.width}x{height}, {size // 1024} KB)")
 
