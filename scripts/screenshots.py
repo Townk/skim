@@ -42,6 +42,9 @@ optional ``width``, ``height`` and ``clip`` overrides.
   viewBox expands by that many cells on each side, and a background rect
   is injected so the padding area shows the terminal background colour
   instead of the chrome / footer that sits outside the widget's region.
+- Set ``focus`` to a callable that returns a widget to focus before the
+  screenshot is saved. Useful for showing the focused state of a field
+  (e.g. accent-coloured input border).
 
 To add a new shot, append an entry to ``SHOTS`` below. The setup callable
 receives the running ``Pilot`` and may press keys, click selectors, or assign
@@ -51,7 +54,9 @@ to widget state — Textual will re-render synchronously after a ``pilot.pause()
 from __future__ import annotations
 
 import asyncio
-import os
+import base64
+import html
+import io
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -61,6 +66,7 @@ from typing import Any
 import yaml
 from textual.widgets import TabbedContent
 
+from skim.assets import ASSETS
 from skim.tui.app import SkimConfigApp
 from skim.tui.widgets import SkimFooter, SkimVerticalScroll
 
@@ -71,16 +77,17 @@ OUTPUT_DIR = ROOT / "docs" / "_static" / "tui"
 WIDTH = 120
 PROBE_HEIGHT = 500
 
-# Nerd Font injection. Override either via env var or by editing the constants.
-# The SVG that Textual produces hard-codes plain "Fira Code" (no Nerd glyphs);
-# we inject a new @font-face and prepend the Nerd Font to the family stack so
-# Private-Use-Area glyphs render in the docs site.
-NERD_FONT_NAME = os.environ.get("SCREENSHOT_NERD_FONT_NAME", "JetBrainsMono Nerd Font")
-NERD_FONT_URL = os.environ.get(
-    "SCREENSHOT_NERD_FONT_URL",
-    "https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.2.1/patched-fonts/JetBrainsMono/Ligatures/Regular/JetBrainsMonoNerdFont-Regular.ttf",
-)
-NERD_FONT_FORMAT = os.environ.get("SCREENSHOT_NERD_FONT_FORMAT", "truetype")
+NERD_FONT_FAMILY = "JetBrainsMono Nerd Font Mono"
+"""Font family the screenshot pipeline embeds and writes into the SVG stack.
+
+Rich's SVG export hard-codes ``font-family: Fira Code, monospace`` on every
+text run. Fira Code lacks the Nerd-Font PUA glyphs Skim's TUI paints (chip
+caps ``\\ue0b6``/``\\ue0b4``, scrollbar arrows, etc.), so the rendered PUA
+codepoints would fall through to tofu. We replace the family with the
+Nerd-Font-patched Mono variant of JetBrains Mono, embed a subset of that
+font as a base64 data URL, and end up with a self-contained SVG where text,
+box-drawing, and PUA glyphs all render from the same cell-aligned font.
+"""
 
 PilotSetup = Callable[[Any], Awaitable[None]]
 
@@ -111,6 +118,11 @@ class Shot:
             rect matching the terminal background colour is injected so
             the padding area doesn't expose adjacent widgets or Rich's
             chrome. Ignored when ``clip`` is ``None``.
+        focus: Optional callable that returns a widget to focus before
+            the screenshot is saved. The capture pass calls
+            ``widget.focus()`` and waits for layout to settle, so the
+            screenshot reflects the focused state (e.g. a focus-coloured
+            border on inputs).
     """
 
     name: str
@@ -119,6 +131,7 @@ class Shot:
     height: int | None = None
     clip: ClipTarget | None = None
     clip_padding: tuple[int, int, int, int] = (0, 0, 0, 0)
+    focus: ClipTarget | None = None
 
 
 def _load_config(path: Path) -> dict[str, Any]:
@@ -127,6 +140,114 @@ def _load_config(path: Path) -> dict[str, Any]:
 
 
 TERMINAL_BACKGROUND = "#121212"
+
+
+def _strip_outside_region(
+    text: str, region: Any, cell_w: float, cell_h: float
+) -> str:
+    """Drop SVG elements that don't intersect the widget rect.
+
+    Removes Rich's terminal-window chrome (outer rounded rect, title text,
+    traffic-light circles), every matrix cell rect whose bbox falls entirely
+    outside the widget, and every text whose row sits outside the widget's
+    row range or whose textLength sits outside the widget's x-range. Cell
+    rects that partially overlap the widget are clamped to the widget
+    bounds so they can't bleed into the padding ring. Per-line clip-path
+    defs that no remaining text references are also dropped.
+    """
+    wx0 = region.x * cell_w
+    wy0 = region.y * cell_h
+    wx1 = (region.x + region.width) * cell_w
+    wy1 = (region.y + region.height) * cell_h
+
+    def _filter_rect(match: re.Match) -> str:
+        attrs_pre = match.group(1)
+        x = float(match.group(2))
+        y = float(match.group(3))
+        w = float(match.group(4))
+        h = float(match.group(5))
+        attrs_post = match.group(6)
+        nx = max(x, wx0)
+        ny = max(y, wy0)
+        nx_end = min(x + w, wx1)
+        ny_end = min(y + h, wy1)
+        nw = nx_end - nx
+        nh = ny_end - ny
+        if nw <= 0 or nh <= 0:
+            return ""
+        return (
+            f'<rect{attrs_pre}x="{nx:g}" y="{ny:g}" '
+            f'width="{nw:g}" height="{nh:g}"{attrs_post}/>'
+        )
+
+    # Cell rects: tagged with shape-rendering="crispEdges". Order of x/y/w/h
+    # in Rich's output is consistent, so the stricter regex is safe.
+    text = re.sub(
+        r'<rect( [^>]*?)x="([\d.-]+)" y="([\d.-]+)" '
+        r'width="([\d.]+)" height="([\d.]+)"'
+        r'( [^>]*shape-rendering="crispEdges"[^>]*)/>',
+        _filter_rect,
+        text,
+    )
+
+    rows_inside = set(range(region.y, region.y + region.height))
+    referenced_lines: set[int] = set()
+
+    def _filter_text(match: re.Match) -> str:
+        full = match.group(0)
+        line_match = re.search(r"#terminal-\d+-line-(\d+)\)", full)
+        if not line_match:
+            return full
+        line_n = int(line_match.group(1))
+        if line_n not in rows_inside:
+            return ""
+        x_match = re.search(r'\bx="([\d.-]+)"', full)
+        len_match = re.search(r'textLength="([\d.]+)"', full)
+        if x_match and len_match:
+            tx = float(x_match.group(1))
+            tlen = float(len_match.group(1))
+            if tx + tlen <= wx0 or tx >= wx1:
+                return ""
+        referenced_lines.add(line_n)
+        return full
+
+    # Cell texts carry class "terminal-N-rM" (the title uses class
+    # "terminal-N-title" and is dropped by the chrome step).
+    text = re.sub(
+        r'<text class="terminal-\d+-r\d+"[^>]*>[^<]*</text>',
+        _filter_text,
+        text,
+    )
+
+    # Per-line clip-paths whose line is no longer referenced.
+    text = re.sub(
+        r'<clipPath id="terminal-\d+-line-(\d+)">\s*<rect[^/]*/>\s*</clipPath>\s*',
+        lambda m: "" if int(m.group(1)) not in referenced_lines else m.group(0),
+        text,
+    )
+
+    # Rich chrome: outer rounded rect, title text, traffic-light group.
+    text = re.sub(
+        r'<rect[^/]*rx="8"/>',
+        "",
+        text,
+        count=1,
+    )
+    text = re.sub(
+        r'<text class="terminal-\d+-title"[^>]*>[^<]*</text>',
+        "",
+        text,
+        count=1,
+    )
+    text = re.sub(
+        r'<g transform="translate\(26,22\)">.*?</g>',
+        "",
+        text,
+        count=1,
+        flags=re.DOTALL,
+    )
+
+    return text
 
 
 def _crop_svg_to_region(
@@ -179,6 +300,8 @@ def _crop_svg_to_region(
     w_px = (region.width + pad_left + pad_right) * cell_w
     h_px = (region.height + pad_top + pad_bottom) * cell_h
 
+    text = _strip_outside_region(text, region, cell_w, cell_h)
+
     if any(side > 0 for side in padding):
         # Tighten the matrix's clip-path to the widget region (in matrix-local
         # coordinates) so cells outside the widget — tab strip, footer, etc. —
@@ -215,28 +338,72 @@ def _crop_svg_to_region(
     svg_path.write_text(text, encoding="utf-8")
 
 
-def _inject_nerd_font(svg_path: Path) -> None:
-    """Patch an SVG so its glyphs render in the configured Nerd Font.
+def _used_codepoints(svg_text: str) -> set[int]:
+    """Return every Unicode codepoint painted inside an SVG ``<text>`` element.
 
-    The Rich-generated SVG ships with @font-face blocks for plain "Fira Code"
-    and uses ``font-family: Fira Code, monospace`` on every text run. We add
-    one more @font-face for the Nerd Font and prepend it to the family stack;
-    Fira Code stays as a fallback, so non-Nerd glyphs are unaffected.
+    Walks every ``<text>...</text>`` block, decodes HTML entities (Rich emits
+    ``&#160;`` for non-breaking spaces, ``&lt;`` etc.), and collects the
+    resulting characters. fontTools silently ignores any codepoint the font
+    doesn't carry, so passing the union here is safe — we use the Mono
+    variant of Symbols Nerd Font, which carries PUA glyphs plus the
+    box-drawing / monospace-spacing characters Rich emits, all sized to a
+    single cell width.
     """
-    if not NERD_FONT_URL:
-        return
+    codepoints: set[int] = set()
+    for match in re.finditer(r"<text [^>]*>([^<]*)</text>", svg_text):
+        for ch in html.unescape(match.group(1)):
+            codepoints.add(ord(ch))
+    return codepoints
+
+
+def _embed_nerd_font(svg_path: Path) -> None:
+    """Embed a subset of ``JetBrainsMonoNerdFontMono-Regular.ttf`` into the SVG.
+
+    Subsets the bundled Nerd-Font-patched JetBrains Mono down to the
+    codepoints painted in this SVG, encodes the subset as a base64 data
+    URL, injects an ``@font-face`` rule just after the SVG's opening
+    ``<style>`` tag, and replaces every ``Fira Code, monospace`` stack
+    with ``"<NERD_FONT_FAMILY>", monospace`` so every glyph — text,
+    box-drawing, Nerd-Font symbols — resolves against the embedded font's
+    cell-aligned metrics. The rendered SVG is self-contained with no
+    external font load.
+
+    Subsetting matters here — the full font is ~2.4 MB, while a subset
+    for a typical shot is in the low-tens of KB.
+    """
+    from fontTools.subset import Options, Subsetter, load_font
+
     text = svg_path.read_text(encoding="utf-8")
+    codepoints = _used_codepoints(text)
+    if not codepoints:
+        return
+
+    options = Options()
+    options.notdef_glyph = True
+    options.notdef_outline = True
+    options.recommended_glyphs = True
+    # FontForge build-time tables fontTools doesn't know how to subset.
+    options.drop_tables = ["PfEd", "FFTM"]
+
+    tt_font = load_font(str(ASSETS.font_jetbrains_mono_nerd), options)
+    subsetter = Subsetter(options=options)
+    subsetter.populate(unicodes=codepoints)
+    subsetter.subset(tt_font)
+
+    buf = io.BytesIO()
+    tt_font.save(buf)
+    encoded = base64.b64encode(buf.getvalue()).decode("ascii")
+
     new_face = (
-        f'    @font-face {{\n'
-        f'        font-family: "{NERD_FONT_NAME}";\n'
-        f'        src: local("{NERD_FONT_NAME}"),\n'
-        f'             url("{NERD_FONT_URL}") format("{NERD_FONT_FORMAT}");\n'
-        f'    }}\n'
+        f"    @font-face {{\n"
+        f'        font-family: "{NERD_FONT_FAMILY}";\n'
+        f'        src: url("data:font/ttf;base64,{encoded}") format("truetype");\n'
+        f"    }}\n"
     )
     text = text.replace("<style>\n", f"<style>\n{new_face}", 1)
     text = re.sub(
         r"font-family:\s*Fira Code,\s*monospace",
-        f'font-family: "{NERD_FONT_NAME}", Fira Code, monospace',
+        f'font-family: "{NERD_FONT_FAMILY}", monospace',
         text,
     )
     svg_path.write_text(text, encoding="utf-8")
@@ -312,13 +479,16 @@ async def _capture(shot: Shot, config: dict[str, Any]) -> tuple[Path, int]:
     clip_region = None
     async with capture_app.run_test(size=(shot.width, height)) as pilot:
         await _settle(pilot, shot.setup, expand=shot.height is None)
+        if shot.focus is not None:
+            shot.focus(capture_app).focus()
+            await pilot.pause()
         capture_app.save_screenshot(filename=target.name, path=str(OUTPUT_DIR))
         if shot.clip is not None:
             clip_region = shot.clip(capture_app).region
 
     if clip_region is not None:
         _crop_svg_to_region(target, clip_region, padding=shot.clip_padding)
-    _inject_nerd_font(target)
+    _embed_nerd_font(target)
     return target, height
 
 
@@ -340,6 +510,17 @@ async def _switch_to_output_style(pilot: Any) -> None:
     pilot.app.query_one("#output-style-section").scroll_visible(top=True, animate=False)
 
 
+async def _initial_double_south_on(pilot: Any) -> None:
+    """Initial state but with the Double South switch set to ``True``.
+
+    The sample config keeps ``keyboard.features.double_south = false`` so the
+    default setup renders the switch in its off state. For documentation we
+    want the on state — flip the value reactively so the screenshot shows
+    the active styling.
+    """
+    pilot.app.query_one("#double-south").value = True
+
+
 def _active_pane_scrollable(app: SkimConfigApp) -> SkimVerticalScroll:
     """Return the outer ``SkimVerticalScroll`` of whichever tab is active."""
     tabbed = app.query_one(TabbedContent)
@@ -347,21 +528,138 @@ def _active_pane_scrollable(app: SkimConfigApp) -> SkimVerticalScroll:
     return pane.query_one(SkimVerticalScroll)
 
 
+def _tabs_strip(app: SkimConfigApp) -> Any:
+    """Return the ``Tabs`` widget rendered at the top of ``TabbedContent``."""
+    return app.query_one(TabbedContent).query_one("Tabs")
+
+
+def _status_bar(app: SkimConfigApp) -> Any:
+    """Return the ``SkimFooter`` widget at the bottom of the app."""
+    return app.query_one(SkimFooter)
+
+
+def _field_row_for(descendant_id: str) -> ClipTarget:
+    """Return a clip target resolving to the field-row that contains ``descendant_id``.
+
+    The keyboard / output tabs build each editable row as a ``Horizontal``
+    that wraps a left-aligned label and the editing widget. Looking up the
+    editing widget by id and walking up to its parent gives us the full
+    label + component bounding box.
+    """
+
+    def _resolver(app: SkimConfigApp) -> Any:
+        return app.query_one(f"#{descendant_id}").parent
+
+    return _resolver
+
+
+def _widget(selector: str) -> ClipTarget:
+    """Return a clip target resolving to the first widget matching ``selector``."""
+
+    def _resolver(app: SkimConfigApp) -> Any:
+        return app.query_one(selector)
+
+    return _resolver
+
+
+ANATOMY_FRAME = {"width": 107, "height": 29}
+"""Shared 107x29 base frame for every Anatomy-section illustration.
+
+Width 107 fits the seven status-bar bindings on one row exactly; height 29
+leaves the keyboard tab's list-view buttons partially clipped at the
+bottom so the scrolling affordance reads from the screenshot alone.
+"""
+
+
 SHOTS: list[Shot] = [
-    Shot("keyboard-tab", _initial),
+    # Full Anatomy reference frame.
+    Shot("keyboard-tab", _initial, **ANATOMY_FRAME),
     Shot("keycodes-tab", _switch_to_keycodes),
     Shot("output-tab", _switch_to_output),
     Shot("output-style-tab", _switch_to_output_style),
-    # Fixed-height shot showing the Output tab in its natural scrolling
-    # state (content clipped, scrollbar visible). The viewBox is then
-    # cropped to the SkimVerticalScroll's region so the rendered SVG
-    # contains only the scrolling component (no tab strip, no footer).
+    # Per-piece crops of the Anatomy frame, each padded by 1 row top/bottom
+    # and 3 cols left/right with the terminal background colour so the
+    # widget reads as its own card rather than a slice from the frame.
+    Shot(
+        "tabs",
+        _initial,
+        **ANATOMY_FRAME,
+        clip=_tabs_strip,
+        clip_padding=(1, 3, 1, 3),
+    ),
     Shot(
         "scrolling-area",
-        _switch_to_output,
-        height=30,
+        _initial,
+        **ANATOMY_FRAME,
         clip=_active_pane_scrollable,
         clip_padding=(1, 3, 1, 3),
+    ),
+    Shot(
+        "status-bar",
+        _initial,
+        **ANATOMY_FRAME,
+        clip=_status_bar,
+        clip_padding=(1, 3, 1, 3),
+    ),
+    # Field-component shots — each clips to a single label-plus-widget row,
+    # using a terminal width tight enough that the component sits at its
+    # natural footprint (the field label is fixed at 22 cells; the rest is
+    # the component itself). Heights auto-fit so the target row is always
+    # rendered regardless of which section it lives in.
+    Shot(
+        "field-text-input",
+        _initial,
+        width=50,
+        clip=_field_row_for("keymap-title-text"),
+        clip_padding=(1, 3, 1, 3),
+        focus=_widget("#keymap-title-text"),
+    ),
+    Shot(
+        "field-numeric-input",
+        _switch_to_output,
+        width=50,
+        clip=_field_row_for("layout-width"),
+        clip_padding=(1, 3, 1, 3),
+        focus=_widget("#layout-width"),
+    ),
+    Shot(
+        "field-switch",
+        _initial_double_south_on,
+        width=35,
+        clip=_widget("#features-row"),
+        clip_padding=(1, 3, 1, 3),
+        focus=_widget("#double-south"),
+    ),
+    Shot(
+        "field-select",
+        _switch_to_output,
+        width=60,
+        clip=_field_row_for("hold-symbol-position"),
+        clip_padding=(1, 3, 1, 3),
+        focus=_widget("#hold-symbol-position"),
+    ),
+    Shot(
+        # The sample config gives every layer an explicit gradient list, so the
+        # LayerColorListPane initialises in ``manual-mode`` — that hides
+        # ``#lc-dynamic-color`` via CSS and reveals the ``lc-manual-step-N``
+        # rows. Clip to step 0 (label + swatch + colour input + autocomplete).
+        # The step input is disabled until the pane enters edit mode, so we
+        # don't focus it here — the screenshot shows the read-only state.
+        "field-color-input",
+        _switch_to_output,
+        width=70,
+        clip=_widget("#lc-manual-step-0"),
+        clip_padding=(1, 3, 1, 3),
+    ),
+    Shot(
+        # Focus the layer ListView so the selected entry is highlighted; the
+        # detail-side inputs stay disabled (they only enable in edit mode).
+        "field-list-detail",
+        _initial,
+        width=95,
+        clip=_widget("LayerListPane"),
+        clip_padding=(1, 3, 1, 3),
+        focus=_widget("LayerListPane .ldp-list"),
     ),
 ]
 

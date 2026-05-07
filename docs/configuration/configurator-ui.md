@@ -37,6 +37,8 @@ persist.
 
 The tab bar lists the three top-level configuration groups:
 
+![Tab strip with Keyboard, Keycodes, and Output entries; the Keyboard tab is highlighted as the active one](../_static/tui/tabs.svg){ loading=lazy }
+
 | Tab        | Schema target                                          | What you edit                                                   |
 | ---------- | ------------------------------------------------------ | --------------------------------------------------------------- |
 | Keyboard   | [`keyboard`](config-file.md#keyboard) + a few `output` knobs | Hardware features, layer roster, image title, copyright.   |
@@ -61,13 +63,17 @@ explicitly with `Ctrl+E` (down) and `Ctrl+Y` (up); the wheel and
 `PageUp` / `PageDown` work too. A scrollbar on the right of the
 scrolling area indicates how much of the tab is currently visible:
 
-![Scrolling area on the Output tab — content clipped, scrollbar visible on the right](../_static/tui/scrolling-area.svg){ loading=lazy }
+![Scrolling area of the Keyboard tab — content clipped at the bottom with a scrollbar visible on the right](../_static/tui/scrolling-area.svg){ loading=lazy }
 
 ### Status bar { #anatomy-status-bar }
 
 The status bar at the bottom of the window lists the key bindings that
-apply right now. The bindings are global — they work from any tab and
-regardless of which field is focused. The set is:
+apply right now:
+
+![Status bar with all seven global bindings on one row](../_static/tui/status-bar.svg){ loading=lazy }
+
+The bindings are global — they work from any tab and regardless of
+which field is focused. The set is:
 
 | Binding   | Action          |
 | --------- | --------------- |
@@ -91,6 +97,8 @@ cells) so labels and fields line up across rows in the same section.
 
 #### Text input { #anatomy-components-text-input }
 
+![Text-input field row showing the "Keymap Title:" label and a single-line text editor](../_static/tui/field-text-input.svg){ width="330" loading=lazy }
+
 | Used for       | Schema target examples                                          |
 | -------------- | --------------------------------------------------------------- |
 | Free-form text | [`output.keymap_title`](config-file.md#output-keymap-title), [`output.copyright`](config-file.md#output-copyright), layer `name` / `id` / `variant`. |
@@ -106,6 +114,8 @@ edit lifecycle wraps every field it contains.
 
 #### Numeric input { #anatomy-components-numeric-input }
 
+![Numeric-input field row showing the "Width:" label and a numeric text editor](../_static/tui/field-numeric-input.svg){ width="330" loading=lazy }
+
 | Used for             | Schema target examples                                          |
 | -------------------- | --------------------------------------------------------------- |
 | Integer / float fields | [`output.layout.width`](config-file.md#output-layout-width), spacing values, layer `index`. |
@@ -120,6 +130,8 @@ confirm the value took.
 
 #### Switch { #anatomy-components-switch }
 
+![Switch field row showing the "Double South:" label and a two-state toggle in the on position](../_static/tui/field-switch.svg){ width="240" loading=lazy }
+
 | Used for       | Schema target examples                                          |
 | -------------- | --------------------------------------------------------------- |
 | Boolean fields | [`keyboard.features.double_south`](config-file.md#keyboard-features-double-south), every `legend_tables.*.show`. |
@@ -129,6 +141,8 @@ focused to flip it. The change commits immediately; there is no
 edit / cancel cycle.
 
 #### Select { #anatomy-components-select }
+
+![Select field row showing the "Hold symbol position:" label and a drop-down](../_static/tui/field-select.svg){ loading=lazy }
 
 | Used for     | Schema target examples                                          |
 | ------------ | --------------------------------------------------------------- |
@@ -140,6 +154,8 @@ list without changing the field.
 
 #### Colour input { #anatomy-components-colour-input }
 
+![Colour-input field row showing the "Step 0:" label, a colour swatch, and a hex/CSS-name text editor](../_static/tui/field-color-input.svg){ loading=lazy }
+
 | Used for     | Schema target examples                                          |
 | ------------ | --------------------------------------------------------------- |
 | Colour values | Per-layer `base_color`, gradient steps, chrome colour fields.   |
@@ -150,6 +166,8 @@ input accepts any CSS colour value the schema allows (named colours,
 An autocomplete list suggests CSS colour names while you're typing.
 
 #### List/detail pane { #anatomy-components-list-detail }
+
+![List/detail pane on the Keyboard tab — left column lists the layers with Add/Delete buttons; right column shows the selected layer's editable fields](../_static/tui/field-list-detail.svg){ loading=lazy }
 
 | Used for | Schema target examples                                          |
 | -------- | --------------------------------------------------------------- |

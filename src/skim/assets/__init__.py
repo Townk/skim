@@ -114,6 +114,27 @@ class BundleAssets:
         return self._get_cached("font_symbols_nerd", "fonts", "SymbolsNerdFont-Regular.ttf")
 
     @property
+    def font_jetbrains_mono_nerd(self) -> Path:
+        """Path to the JetBrainsMonoNerdFontMono-Regular.ttf font file.
+
+        The Nerd-Font-patched Mono variant of JetBrains Mono — carries
+        both the JetBrains Mono text glyphs and every Nerd-Font PUA glyph,
+        all sized to a single monospace cell. Used by the screenshot
+        pipeline as the only embedded font: text, box-drawing, and Nerd
+        symbols all render with consistent cell-aligned metrics, with no
+        font-stack juggling needed.
+
+        Returns:
+            Path to the bundled JetBrainsMono Nerd Font Mono.
+
+        Raises:
+            FileNotFoundError: If the file is missing from the installation.
+        """
+        return self._get_cached(
+            "font_jetbrains_mono_nerd", "fonts", "JetBrainsMonoNerdFontMono-Regular.ttf"
+        )
+
+    @property
     def font_dejavu_sans_condensed(self) -> Path:
         """Path to the DejaVuSansCondensed.ttf font file.
 
