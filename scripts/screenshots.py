@@ -64,7 +64,9 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from textual.geometry import Region
 from textual.widgets import TabbedContent
+from textual.widgets._select import SelectOverlay
 
 from skim.assets import ASSETS
 from skim.tui.app import SkimConfigApp
@@ -142,23 +144,33 @@ def _load_config(path: Path) -> dict[str, Any]:
 TERMINAL_BACKGROUND = "#121212"
 
 
-def _strip_outside_region(
-    text: str, region: Any, cell_w: float, cell_h: float
+def _strip_outside_regions(
+    text: str, regions: list[Region], cell_w: float, cell_h: float
 ) -> str:
-    """Drop SVG elements that don't intersect the widget rect.
+    """Drop SVG elements that don't intersect any of the widget regions.
 
     Removes Rich's terminal-window chrome (outer rounded rect, title text,
     traffic-light circles), every matrix cell rect whose bbox falls entirely
-    outside the widget, and every text whose row sits outside the widget's
-    row range or whose textLength sits outside the widget's x-range. Cell
-    rects that partially overlap the widget are clamped to the widget
-    bounds so they can't bleed into the padding ring. Per-line clip-path
-    defs that no remaining text references are also dropped.
+    outside every region, and every text whose row + x-range matches no
+    region. Cell rects that partially overlap a region are clamped to the
+    region with which they have the largest overlap, so they can't bleed
+    into the dead zone between regions or into the padding ring. Per-line
+    clip-path defs that no remaining text references are also dropped.
+
+    With more than one region, the dead zone between regions is left empty
+    (the padding-bg rect, when injected, fills it with the terminal-bg
+    colour); cells from intervening widgets that happened to sit there get
+    cleanly removed.
     """
-    wx0 = region.x * cell_w
-    wy0 = region.y * cell_h
-    wx1 = (region.x + region.width) * cell_w
-    wy1 = (region.y + region.height) * cell_h
+    boxes = [
+        (
+            r.x * cell_w,
+            r.y * cell_h,
+            (r.x + r.width) * cell_w,
+            (r.y + r.height) * cell_h,
+        )
+        for r in regions
+    ]
 
     def _filter_rect(match: re.Match) -> str:
         attrs_pre = match.group(1)
@@ -167,21 +179,28 @@ def _strip_outside_region(
         w = float(match.group(4))
         h = float(match.group(5))
         attrs_post = match.group(6)
-        nx = max(x, wx0)
-        ny = max(y, wy0)
-        nx_end = min(x + w, wx1)
-        ny_end = min(y + h, wy1)
-        nw = nx_end - nx
-        nh = ny_end - ny
-        if nw <= 0 or nh <= 0:
+        best: tuple[float, float, float, float] | None = None
+        best_area = 0.0
+        for bx0, by0, bx1, by1 in boxes:
+            nx = max(x, bx0)
+            ny = max(y, by0)
+            nx_end = min(x + w, bx1)
+            ny_end = min(y + h, by1)
+            nw = nx_end - nx
+            nh = ny_end - ny
+            if nw > 0 and nh > 0:
+                area = nw * nh
+                if area > best_area:
+                    best_area = area
+                    best = (nx, ny, nw, nh)
+        if best is None:
             return ""
+        nx, ny, nw, nh = best
         return (
             f'<rect{attrs_pre}x="{nx:g}" y="{ny:g}" '
             f'width="{nw:g}" height="{nh:g}"{attrs_post}/>'
         )
 
-    # Cell rects: tagged with shape-rendering="crispEdges". Order of x/y/w/h
-    # in Rich's output is consistent, so the stricter regex is safe.
     text = re.sub(
         r'<rect( [^>]*?)x="([\d.-]+)" y="([\d.-]+)" '
         r'width="([\d.]+)" height="([\d.]+)"'
@@ -190,7 +209,6 @@ def _strip_outside_region(
         text,
     )
 
-    rows_inside = set(range(region.y, region.y + region.height))
     referenced_lines: set[int] = set()
 
     def _filter_text(match: re.Match) -> str:
@@ -199,40 +217,35 @@ def _strip_outside_region(
         if not line_match:
             return full
         line_n = int(line_match.group(1))
-        if line_n not in rows_inside:
-            return ""
         x_match = re.search(r'\bx="([\d.-]+)"', full)
         len_match = re.search(r'textLength="([\d.]+)"', full)
-        if x_match and len_match:
-            tx = float(x_match.group(1))
-            tlen = float(len_match.group(1))
-            if tx + tlen <= wx0 or tx >= wx1:
-                return ""
-        referenced_lines.add(line_n)
-        return full
+        tx = float(x_match.group(1)) if x_match else None
+        tlen = float(len_match.group(1)) if len_match else None
+        for r in regions:
+            if not (r.y <= line_n < r.y + r.height):
+                continue
+            if tx is not None and tlen is not None:
+                rx0 = r.x * cell_w
+                rx1 = (r.x + r.width) * cell_w
+                if tx + tlen <= rx0 or tx >= rx1:
+                    continue
+            referenced_lines.add(line_n)
+            return full
+        return ""
 
-    # Cell texts carry class "terminal-N-rM" (the title uses class
-    # "terminal-N-title" and is dropped by the chrome step).
     text = re.sub(
         r'<text class="terminal-\d+-r\d+"[^>]*>[^<]*</text>',
         _filter_text,
         text,
     )
 
-    # Per-line clip-paths whose line is no longer referenced.
     text = re.sub(
         r'<clipPath id="terminal-\d+-line-(\d+)">\s*<rect[^/]*/>\s*</clipPath>\s*',
         lambda m: "" if int(m.group(1)) not in referenced_lines else m.group(0),
         text,
     )
 
-    # Rich chrome: outer rounded rect, title text, traffic-light group.
-    text = re.sub(
-        r'<rect[^/]*rx="8"/>',
-        "",
-        text,
-        count=1,
-    )
+    text = re.sub(r'<rect[^/]*rx="8"/>', "", text, count=1)
     text = re.sub(
         r'<text class="terminal-\d+-title"[^>]*>[^<]*</text>',
         "",
@@ -250,24 +263,40 @@ def _strip_outside_region(
     return text
 
 
+def _bounding_region(regions: list[Region]) -> Region:
+    """Smallest Region containing every region in ``regions``."""
+    min_x = min(r.x for r in regions)
+    min_y = min(r.y for r in regions)
+    max_x = max(r.x + r.width for r in regions)
+    max_y = max(r.y + r.height for r in regions)
+    return Region(min_x, min_y, max_x - min_x, max_y - min_y)
+
+
 def _crop_svg_to_region(
     svg_path: Path,
-    region: Any,
+    regions: list[Region],
     padding: tuple[int, int, int, int] = (0, 0, 0, 0),
 ) -> None:
-    """Rewrite the SVG's ``viewBox`` to expose only the cells inside ``region``.
+    """Rewrite the SVG's ``viewBox`` to expose only the cells inside ``regions``.
+
+    A single region produces the obvious crop. Multiple regions produce a
+    viewBox covering their bounding box, with strip-filtering removing any
+    matrix content that doesn't intersect at least one of the regions —
+    useful when a shot spans two non-contiguous widgets (e.g. a Select
+    closed-state row plus its open dropdown overlay) and we want the dead
+    zone between them blank rather than leaking adjacent widgets.
 
     Reads the matrix-group's ``translate(x, y)`` and the matrix style's
     ``font-size`` / ``line-height`` to derive grid offsets and per-cell
     pixel dimensions, then rewrites the root ``viewBox``. Other elements
-    (Rich's outer chrome, the tab strip, the footer) stay in the file but
-    render outside the new viewBox so they're invisible.
+    (Rich's outer chrome, the tab strip, the footer) are stripped from
+    the file outright via :func:`_strip_outside_regions`.
 
     ``padding`` is a ``(top, right, bottom, left)`` tuple of cell counts
-    added on each side of ``region``. When any side is non-zero, the
-    function also injects a background rect just before the matrix group
-    so the padded area shows ``TERMINAL_BACKGROUND`` instead of leaking
-    the surrounding tab strip / footer / chrome.
+    added on each side of the bounding box. When any side is non-zero,
+    the function also tightens the matrix clip-path to the bounding box
+    and injects a background rect so the padding ring shows
+    ``TERMINAL_BACKGROUND`` instead of leaking adjacent content.
 
     The cell-width ratio (font-size × 0.61) matches Rich's monospace cell
     width for the default JetBrains Mono / Fira Code metrics; if Rich
@@ -294,22 +323,20 @@ def _crop_svg_to_region(
     cell_h = float(metrics.group(2))
     cell_w = font_size_px * 0.61
 
+    bbox = _bounding_region(regions)
     pad_top, pad_right, pad_bottom, pad_left = padding
-    x_px = matrix_x + region.x * cell_w - pad_left * cell_w
-    y_px = matrix_y + region.y * cell_h - pad_top * cell_h
-    w_px = (region.width + pad_left + pad_right) * cell_w
-    h_px = (region.height + pad_top + pad_bottom) * cell_h
+    x_px = matrix_x + bbox.x * cell_w - pad_left * cell_w
+    y_px = matrix_y + bbox.y * cell_h - pad_top * cell_h
+    w_px = (bbox.width + pad_left + pad_right) * cell_w
+    h_px = (bbox.height + pad_top + pad_bottom) * cell_h
 
-    text = _strip_outside_region(text, region, cell_w, cell_h)
+    text = _strip_outside_regions(text, regions, cell_w, cell_h)
 
     if any(side > 0 for side in padding):
-        # Tighten the matrix's clip-path to the widget region (in matrix-local
-        # coordinates) so cells outside the widget — tab strip, footer, etc. —
-        # don't render on top of the background rect we're about to inject.
-        clip_x = region.x * cell_w
-        clip_y = region.y * cell_h
-        clip_w = region.width * cell_w
-        clip_h = region.height * cell_h
+        clip_x = bbox.x * cell_w
+        clip_y = bbox.y * cell_h
+        clip_w = bbox.width * cell_w
+        clip_h = bbox.height * cell_h
         text = re.sub(
             r'(<clipPath id="terminal-\d+-clip-terminal">\s*)<rect[^/]*/>',
             rf'\1<rect x="{clip_x:g}" y="{clip_y:g}" '
@@ -318,9 +345,6 @@ def _crop_svg_to_region(
             count=1,
         )
 
-        # Inject a background rect spanning the padded viewBox just before
-        # the matrix group so the padding ring shows uniform terminal-bg
-        # rather than leaking the SVG chrome underneath.
         bg_rect = (
             f'<rect x="{x_px:g}" y="{y_px:g}" '
             f'width="{w_px:g}" height="{h_px:g}" '
@@ -476,7 +500,7 @@ async def _capture(shot: Shot, config: dict[str, Any]) -> tuple[Path, int]:
         height = shot.height
 
     capture_app = SkimConfigApp(config_data=config)
-    clip_region = None
+    clip_regions: list[Region] | None = None
     async with capture_app.run_test(size=(shot.width, height)) as pilot:
         await _settle(pilot, shot.setup, expand=shot.height is None)
         if shot.focus is not None:
@@ -484,10 +508,14 @@ async def _capture(shot: Shot, config: dict[str, Any]) -> tuple[Path, int]:
             await pilot.pause()
         capture_app.save_screenshot(filename=target.name, path=str(OUTPUT_DIR))
         if shot.clip is not None:
-            clip_region = shot.clip(capture_app).region
+            result = shot.clip(capture_app)
+            items = result if isinstance(result, list) else [result]
+            clip_regions = [
+                item if isinstance(item, Region) else item.region for item in items
+            ]
 
-    if clip_region is not None:
-        _crop_svg_to_region(target, clip_region, padding=shot.clip_padding)
+    if clip_regions:
+        _crop_svg_to_region(target, clip_regions, padding=shot.clip_padding)
     _embed_nerd_font(target)
     return target, height
 
@@ -521,6 +549,46 @@ async def _initial_double_south_on(pilot: Any) -> None:
     pilot.app.query_one("#double-south").value = True
 
 
+async def _switch_to_output_with_select_open(pilot: Any) -> None:
+    """Switch to Output, focus the Hold-symbol-position select, and expand it.
+
+    Setting ``Select.expanded = True`` mounts the dropdown overlay below
+    the select widget. Subsequent ``pilot.pause()`` calls let layout settle
+    so ``SelectOverlay.region`` returns a meaningful rect for clipping.
+    """
+    pilot.app.query_one(TabbedContent).active = "output-tab"
+    await pilot.pause()
+    select = pilot.app.query_one("#hold-symbol-position")
+    select.focus()
+    await pilot.pause()
+    select.expanded = True
+    await pilot.pause()
+
+
+async def _setup_background_color_autocomplete(pilot: Any) -> None:
+    """Switch to Output, drive the Background-color input until its
+    autocomplete dropdown is visible.
+
+    Focuses ``#palette-background-color``, sends backspaces to clear the
+    pre-populated ``"white"`` value, then types ``"cyan"`` keystroke by
+    keystroke so the AutoComplete widget receives ``Input.Changed`` events
+    and shows its suggestion dropdown.
+    """
+    pilot.app.query_one(TabbedContent).active = "output-tab"
+    await pilot.pause()
+    color_input = pilot.app.query_one("#palette-background-color")
+    color_input.focus()
+    await pilot.pause()
+    # Clear whatever was pre-populated by the sample config (and a few
+    # extra in case the cursor isn't at the end).
+    for _ in range(len(color_input.value) + 2):
+        await pilot.press("backspace")
+    await pilot.pause()
+    for ch in "cyan":
+        await pilot.press(ch)
+    await pilot.pause()
+
+
 def _active_pane_scrollable(app: SkimConfigApp) -> SkimVerticalScroll:
     """Return the outer ``SkimVerticalScroll`` of whichever tab is active."""
     tabbed = app.query_one(TabbedContent)
@@ -536,6 +604,41 @@ def _tabs_strip(app: SkimConfigApp) -> Any:
 def _status_bar(app: SkimConfigApp) -> Any:
     """Return the ``SkimFooter`` widget at the bottom of the app."""
     return app.query_one(SkimFooter)
+
+
+def _select_with_overlay(app: SkimConfigApp) -> list[Any]:
+    """Return ``[field-row, SelectOverlay]`` so the clip covers both the row
+    and the open dropdown panel below it.
+
+    The crop helper takes the bounding box of both regions for the viewBox;
+    the strip filter then keeps only cells/texts inside one of the two
+    regions, so the dead zone between (i.e. siblings of the field-row that
+    sit at the overlay's y-range outside the overlay's x-range) is left
+    blank rather than leaking adjacent labels / inputs.
+    """
+    select = app.query_one("#hold-symbol-position")
+    field_row = select.parent
+    overlay = select.query_one(SelectOverlay)
+    return [field_row, overlay]
+
+
+def _background_color_with_autocomplete(app: SkimConfigApp) -> list[Any]:
+    """Return ``[field-row, AutoComplete-popup]`` for the background-color shot.
+
+    The AutoComplete widget is yielded as a sibling of the field-row (right
+    after the row in the compose tree), targeting the row's ColorInput.
+    Looking up the input by id and walking up to its parent gives the row;
+    iterating ``ColorAutoComplete`` widgets and matching ``target`` finds
+    the popup.
+    """
+    color_input = app.query_one("#palette-background-color")
+    field_row = color_input.parent
+    popup = next(
+        ac
+        for ac in app.query("ColorAutoComplete")
+        if ac.target is color_input
+    )
+    return [field_row, popup]
 
 
 def _field_row_for(descendant_id: str) -> ClipTarget:
@@ -632,23 +735,22 @@ SHOTS: list[Shot] = [
     ),
     Shot(
         "field-select",
-        _switch_to_output,
+        _switch_to_output_with_select_open,
         width=60,
-        clip=_field_row_for("hold-symbol-position"),
+        clip=_select_with_overlay,
         clip_padding=(1, 3, 1, 3),
-        focus=_widget("#hold-symbol-position"),
     ),
     Shot(
-        # The sample config gives every layer an explicit gradient list, so the
-        # LayerColorListPane initialises in ``manual-mode`` — that hides
-        # ``#lc-dynamic-color`` via CSS and reveals the ``lc-manual-step-N``
-        # rows. Clip to step 0 (label + swatch + colour input + autocomplete).
-        # The step input is disabled until the pane enters edit mode, so we
-        # don't focus it here — the screenshot shows the read-only state.
+        # Background-color field on the palette (the layer-colour Step 0 inputs
+        # are disabled until the LayerColorListPane enters edit mode, so they
+        # can't drive an autocomplete). Setup focuses the input, clears the
+        # pre-populated value, and types ``"cyan"`` to make the AutoComplete
+        # widget show its suggestion popup. Clip covers ``[field-row, popup]``
+        # so the dead zone shows uniform terminal-bg.
         "field-color-input",
-        _switch_to_output,
-        width=70,
-        clip=_widget("#lc-manual-step-0"),
+        _setup_background_color_autocomplete,
+        width=62,
+        clip=_background_color_with_autocomplete,
         clip_padding=(1, 3, 1, 3),
     ),
     Shot(

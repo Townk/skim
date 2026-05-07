@@ -26,18 +26,18 @@ missing.
 
 ## Anatomy { #anatomy }
 
+![Configurator on the Keyboard tab, with the tab bar at the top, scrolling content in the middle, and the status bar at the bottom](../_static/tui/keyboard-tab.svg){ width="993" loading=lazy }
+
 The Configurator window has three fixed pieces: a **tab bar** at the top,
 a **scrolling content area** in the middle, and a **status bar** at the
 bottom. The content area changes per tab; the tab bar and status bar
 persist.
 
-![Configurator on the Keyboard tab, with the tab bar at the top, scrolling content in the middle, and the status bar at the bottom](../_static/tui/keyboard-tab.svg){ loading=lazy }
-
 ### Tabs { #anatomy-tabs }
 
-The tab bar lists the three top-level configuration groups:
+![Tab strip with Keyboard, Keycodes, and Output entries; the Keyboard tab is highlighted as the active one](../_static/tui/tabs.svg){ width="1033" loading=lazy }
 
-![Tab strip with Keyboard, Keycodes, and Output entries; the Keyboard tab is highlighted as the active one](../_static/tui/tabs.svg){ loading=lazy }
+The tab bar lists the three top-level configuration groups.
 
 | Tab        | Schema target                                          | What you edit                                                   |
 | ---------- | ------------------------------------------------------ | --------------------------------------------------------------- |
@@ -52,6 +52,8 @@ moving between tabs doesn't lose your place.
 
 ### Scrolling content area { #anatomy-content }
 
+![Scrolling area of the Keyboard tab — content clipped at the bottom with a scrollbar visible on the right](../_static/tui/scrolling-area.svg){ width="1015" loading=lazy }
+
 The middle of the window is a vertical scroller that holds every section
 of the active tab stacked top-to-bottom. Sections start with a coloured
 **section title** (the accent colour) and contain one or more field rows.
@@ -61,19 +63,15 @@ keeps the focused row visible — moving focus past the bottom of the
 viewport scrolls the content automatically. You can also scroll
 explicitly with `Ctrl+E` (down) and `Ctrl+Y` (up); the wheel and
 `PageUp` / `PageDown` work too. A scrollbar on the right of the
-scrolling area indicates how much of the tab is currently visible:
-
-![Scrolling area of the Keyboard tab — content clipped at the bottom with a scrollbar visible on the right](../_static/tui/scrolling-area.svg){ loading=lazy }
+scrolling area indicates how much of the tab is currently visible.
 
 ### Status bar { #anatomy-status-bar }
 
+![Status bar with all seven global bindings on one row](../_static/tui/status-bar.svg){ width="1033" loading=lazy }
+
 The status bar at the bottom of the window lists the key bindings that
-apply right now:
-
-![Status bar with all seven global bindings on one row](../_static/tui/status-bar.svg){ loading=lazy }
-
-The bindings are global — they work from any tab and regardless of
-which field is focused. The set is:
+apply right now. The bindings are global — they work from any tab and
+regardless of which field is focused. The set is:
 
 | Binding   | Action          |
 | --------- | --------------- |
@@ -97,11 +95,7 @@ cells) so labels and fields line up across rows in the same section.
 
 #### Text input { #anatomy-components-text-input }
 
-![Text-input field row showing the "Keymap Title:" label and a single-line text editor](../_static/tui/field-text-input.svg){ width="330" loading=lazy }
-
-| Used for       | Schema target examples                                          |
-| -------------- | --------------------------------------------------------------- |
-| Free-form text | [`output.keymap_title`](config-file.md#output-keymap-title), [`output.copyright`](config-file.md#output-copyright), layer `name` / `id` / `variant`. |
+![Text-input field row showing the "Keymap Title:" label and a single-line text editor](../_static/tui/field-text-input.svg){ width="494" loading=lazy }
 
 A single-line text editor. Each keystroke updates the underlying
 config field immediately — there is no per-field commit step. Empty
@@ -114,11 +108,7 @@ edit lifecycle wraps every field it contains.
 
 #### Numeric input { #anatomy-components-numeric-input }
 
-![Numeric-input field row showing the "Width:" label and a numeric text editor](../_static/tui/field-numeric-input.svg){ width="330" loading=lazy }
-
-| Used for             | Schema target examples                                          |
-| -------------------- | --------------------------------------------------------------- |
-| Integer / float fields | [`output.layout.width`](config-file.md#output-layout-width), spacing values, layer `index`. |
+![Numeric-input field row showing the "Width:" label and a numeric text editor](../_static/tui/field-numeric-input.svg){ width="494" loading=lazy }
 
 Visually identical to the text input. Numeric fields are plain text
 boxes with no input filtering — you can type any character. The
@@ -130,11 +120,7 @@ confirm the value took.
 
 #### Switch { #anatomy-components-switch }
 
-![Switch field row showing the "Double South:" label and a two-state toggle in the on position](../_static/tui/field-switch.svg){ width="240" loading=lazy }
-
-| Used for       | Schema target examples                                          |
-| -------------- | --------------------------------------------------------------- |
-| Boolean fields | [`keyboard.features.double_south`](config-file.md#keyboard-features-double-south), every `legend_tables.*.show`. |
+![Switch field row showing the "Double South:" label and a two-state toggle in the on position](../_static/tui/field-switch.svg){ width="356" loading=lazy }
 
 A two-state toggle. Click the switch or press `Space` / `Enter` while
 focused to flip it. The change commits immediately; there is no
@@ -142,11 +128,7 @@ edit / cancel cycle.
 
 #### Select { #anatomy-components-select }
 
-![Select field row showing the "Hold symbol position:" label and a drop-down](../_static/tui/field-select.svg){ loading=lazy }
-
-| Used for     | Schema target examples                                          |
-| ------------ | --------------------------------------------------------------- |
-| Enum fields  | [`output.style.legend_tables.symbols.flow`](config-file.md#output-style-legend-tables-symbols-flow), [`output.style.hold_symbol_position`](config-file.md#output-style-hold-symbol-position), gradient type. |
+![Select field row showing the "Hold symbol position:" label, the closed-state select on the same row, and the open dropdown panel listing the available options below it](../_static/tui/field-select.svg){ width="585" loading=lazy }
 
 A drop-down. `Enter` or `Space` opens the list; arrow keys move the
 highlight; `Enter` commits the highlighted entry; `Escape` closes the
@@ -154,11 +136,7 @@ list without changing the field.
 
 #### Colour input { #anatomy-components-colour-input }
 
-![Colour-input field row showing the "Step 0:" label, a colour swatch, and a hex/CSS-name text editor](../_static/tui/field-color-input.svg){ loading=lazy }
-
-| Used for     | Schema target examples                                          |
-| ------------ | --------------------------------------------------------------- |
-| Colour values | Per-layer `base_color`, gradient steps, chrome colour fields.   |
+![Colour-input field row showing the "Background color:" label, a colour swatch, and a hex/CSS-name text editor with the autocomplete suggestion popup open below it after typing "cyan"](../_static/tui/field-color-input.svg){ width="603" loading=lazy }
 
 A text input paired with a live colour swatch in the same row. The
 input accepts any CSS colour value the schema allows (named colours,
@@ -167,11 +145,7 @@ An autocomplete list suggests CSS colour names while you're typing.
 
 #### List/detail pane { #anatomy-components-list-detail }
 
-![List/detail pane on the Keyboard tab — left column lists the layers with Add/Delete buttons; right column shows the selected layer's editable fields](../_static/tui/field-list-detail.svg){ loading=lazy }
-
-| Used for | Schema target examples                                          |
-| -------- | --------------------------------------------------------------- |
-| Lists of structured records | [`keyboard.layers`](config-file.md#keyboard-layers), [`keycodes.macros`](config-file.md#keycodes-macros), [`keycodes.tap_dances`](config-file.md#keycodes-tap-dances), [`keycodes.pre_process`](config-file.md#keycodes-pre-process), [`keycodes.overrides`](config-file.md#keycodes-overrides), [`output.style.palette.layers`](config-file.md#output-style-palette-layers). |
+![List/detail pane on the Keyboard tab — left column lists the layers with Add/Delete buttons; right column shows the selected layer's editable fields](../_static/tui/field-list-detail.svg){ width="905" loading=lazy }
 
 A two-column widget: a scrolling list of entries on the left, a
 form for the selected entry on the right. The list side is fixed at
