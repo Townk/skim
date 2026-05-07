@@ -612,6 +612,35 @@ def _make_select_with_overlay_setup(input_id: str) -> PilotSetup:
     return _setup
 
 
+def _make_list_detail_select_overlay_setup(
+    tab_setup: PilotSetup,
+    pane_class: str,
+    input_id: str,
+) -> PilotSetup:
+    """Setup that enters edit mode on a list-detail pane and expands one
+    of its detail-side Select widgets.
+
+    Detail-side selects are disabled until the pane enters edit mode, so
+    we focus the ListView, press ``Enter`` to enable the inputs, and
+    only then focus the target select and set ``expanded = True``.
+    """
+
+    async def _setup(pilot: Any) -> None:
+        await tab_setup(pilot)
+        pane = pilot.app.query_one(pane_class)
+        pane.query_one(".ldp-list").focus()
+        await pilot.pause()
+        await pilot.press("enter")
+        await pilot.pause()
+        select = pilot.app.query_one(f"#{input_id}")
+        select.focus()
+        await pilot.pause()
+        select.expanded = True
+        await pilot.pause()
+
+    return _setup
+
+
 def _make_list_detail_field_setup(
     tab_setup: PilotSetup,
     pane_class: str,
@@ -977,8 +1006,16 @@ SHOTS: list[Shot] = [
         clip_padding=(1, 3, 1, 3),
         keymap=VIAL_SAMPLE_KEYMAP,
     ),
-    _make_list_pane_shot(
-        "output-layer-color-list", _switch_to_output, "LayerColorListPane"
+    Shot(
+        # ``skim-config.yaml`` keeps every layer's gradient at ``null``, so
+        # the LayerColorListPane initialises in dynamic-mode rather than
+        # manual-mode (every layer reads "Auto" / "Dynamic" in the list).
+        "field-output-layer-color-list",
+        _switch_to_output,
+        width=95,
+        clip=_widget("LayerColorListPane"),
+        clip_padding=(1, 3, 1, 3),
+        config=SKIM_SAMPLE_CONFIG,
     ),
     # ---- List-detail children: focused-state shots of the per-entry editor
     # rows. Setup enters edit mode (or adds an entry for the empty
@@ -1082,11 +1119,17 @@ SHOTS: list[Shot] = [
         keymap=VIAL_SAMPLE_KEYMAP,
     ),
     Shot(
+        # Gradient Type select with the dropdown overlay expanded. The
+        # select is inside the list-detail pane and disabled until edit
+        # mode, so the setup also enters edit mode before expanding.
         "field-output-layer-color-gradient-type",
-        _make_list_detail_field_setup(_switch_to_output, "LayerColorListPane", "lc-gradient-type"),
+        _make_list_detail_select_overlay_setup(
+            _switch_to_output, "LayerColorListPane", "lc-gradient-type"
+        ),
         width=80,
-        clip=_field_row_for("lc-gradient-type"),
+        clip=_make_select_with_overlay_clip("lc-gradient-type"),
         clip_padding=(1, 3, 1, 3),
+        config=SKIM_SAMPLE_CONFIG,
     ),
     Shot(
         "field-output-layer-color-color-index",
@@ -1094,17 +1137,34 @@ SHOTS: list[Shot] = [
         width=80,
         clip=_field_row_for("lc-color-index"),
         clip_padding=(1, 3, 1, 3),
+        config=SKIM_SAMPLE_CONFIG,
     ),
     Shot(
-        # The lc-step-* rows only render when the LayerColorListPane is in
-        # ``manual-mode`` — every layer in the sample config has an explicit
-        # gradient list, so the pane initialises in manual-mode and the six
-        # step inputs are visible. Clip to step 0 (the help text covers all
-        # six side-by-side step inputs uniformly).
+        # ``lc-base-color`` is the dynamic-mode "main step colour" row.
+        # It's CSS-hidden when the pane is in ``manual-mode``, which is
+        # why we use ``skim-config.yaml`` (every layer's ``gradient`` is
+        # ``null`` so the pane initialises in dynamic mode and the row
+        # is visible).
+        "field-output-layer-color-base-color",
+        _make_list_detail_field_setup(_switch_to_output, "LayerColorListPane", "lc-base-color"),
+        width=80,
+        clip=_field_row_for("lc-base-color"),
+        clip_padding=(1, 3, 1, 3),
+        config=SKIM_SAMPLE_CONFIG,
+    ),
+    Shot(
+        # Capture the full detail panel of the LayerColorListPane in
+        # manual-mode so every detail-side field is visible in one shot:
+        # the Gradient Type select set to "Manual", the colour-index input,
+        # the gradient previews (dark + light), and the six lc-step-N
+        # rows. ``SvalCOLEMAK-config.yaml`` provides explicit gradient
+        # lists on every layer, which initialises the pane in manual-mode.
+        # Focus lands on ``lc-step-0`` since this shot illustrates the
+        # "Manual Gradient Step Color" help.
         "field-output-layer-color-step",
         _make_list_detail_field_setup(_switch_to_output, "LayerColorListPane", "lc-step-0"),
-        width=80,
-        clip=_field_row_for("lc-step-0"),
+        width=95,
+        clip=_widget("LayerColorListPane .ldp-detail"),
         clip_padding=(1, 3, 1, 3),
     ),
     # ---- Simple field shots (label + widget, focused state) ----

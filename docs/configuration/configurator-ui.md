@@ -884,7 +884,7 @@ The chrome colours that frame every rendered image. Each takes any CSS colour va
 
 #### Main Gradient Step Color { #output-layer-color-base-color }
 
-![Main Gradient Step Color field row](../_static/tui/field-output-layer-color-list.svg){ width="906" loading=lazy }
+![Main Gradient Step Color field row](../_static/tui/field-output-layer-color-base-color.svg){ width="485" loading=lazy }
 
 {%
    include-markdown "../../src/skim/assets/help/output-layer-color-base-color.md"
@@ -899,7 +899,7 @@ The chrome colours that frame every rendered image. Each takes any CSS colour va
 
 #### Manual Gradient Step Color { #output-layer-color-step }
 
-![Manual Gradient Step Color field row](../_static/tui/field-output-layer-color-step.svg){ width="485" loading=lazy }
+![Manual Gradient Step Color — full LayerColorListPane editing panel in manual mode, showing the Gradient Type select set to "Manual", the colour-index input, the gradient preview swatches, and the six manual gradient step inputs](../_static/tui/field-output-layer-color-step.svg){ width="613" loading=lazy }
 
 {%
    include-markdown "../../src/skim/assets/help/output-layer-color-step.md"
