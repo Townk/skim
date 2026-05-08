@@ -137,9 +137,7 @@ _UP_CUTOUT_OUTSET_MULTIPLIER = 0.025
 _CLIP_ID_COUNTER = itertools.count()
 
 
-def _translated(
-    elem: draw.DrawingBasicElement, origin: Point
-) -> draw.DrawingBasicElement:
+def _translated(elem: draw.DrawingBasicElement, origin: Point) -> draw.DrawingBasicElement:
     """Return a copy of a drawsvg shape shifted by ``origin``.
 
     Supports the three shape types thumb-cluster keys publish via their
@@ -166,6 +164,40 @@ def _translated(
         params = {k: v for k, v in params.items() if v is not None}
         return Trapezoid(**params, **elem._construction_kwargs)
     raise TypeError(f"_translated does not support {type(elem).__name__}")
+
+
+def _clip_only(elem: draw.DrawingBasicElement) -> draw.DrawingBasicElement:
+    """Return a copy of ``elem`` with paint attributes stripped.
+
+    Inside a ``<clipPath>`` only path geometry matters. drawsvg auto-
+    emits a ``<use xlink:href="#clip-id" />`` for any ClipPath that's
+    appended to a Drawing; some renderers paint that ``<use>``
+    visibly using whatever ``fill`` / ``stroke`` the clipPath's
+    children carry. Forcing ``fill="none"`` (and dropping any
+    ``stroke``) makes the spurious ``<use>`` paint nothing while
+    leaving the clipping geometry untouched.
+    """
+    if isinstance(elem, draw.Circle):
+        new_args = dict(elem.args)
+        new_args["fill"] = "none"
+        new_args.pop("stroke", None)
+        new_args.pop("stroke-width", None)
+        return draw.Circle(**new_args)
+    if isinstance(elem, draw.Rectangle):
+        new_args = dict(elem.args)
+        new_args["fill"] = "none"
+        new_args.pop("stroke", None)
+        new_args.pop("stroke-width", None)
+        return draw.Rectangle(**new_args)
+    if isinstance(elem, Trapezoid):
+        params = dict(elem._construction)
+        params = {k: v for k, v in params.items() if v is not None}
+        kwargs = dict(elem._construction_kwargs)
+        kwargs["fill"] = "none"
+        kwargs.pop("stroke", None)
+        kwargs.pop("stroke_width", None)
+        return Trapezoid(**params, **kwargs)
+    raise TypeError(f"_clip_only does not support {type(elem).__name__}")
 
 
 # ---------------------------------------------------------------------------
@@ -1480,12 +1512,18 @@ def ThumbCluster(
         #
         # Note: ``d.append(clip_path)`` causes drawsvg to emit both a
         # ``<defs><clipPath>…</clipPath></defs>`` block AND a
-        # ``<use xlink:href="#clip-id" />`` reference. The ``<use>`` of
-        # a non-renderable element is harmless (browsers ignore it per
-        # SVG spec) but is noise in the output. Suppression would
-        # require ``Drawing.append_def``, which isn't available on the
-        # generic ``Canvas`` protocol (d may be a Group here). Accept
-        # the noise.
+        # ``<use xlink:href="#clip-id" />`` reference. SVG spec says
+        # ``<use>`` of a non-renderable element is undefined, and some
+        # renderers (Chromium included) treat the ``<use>`` as
+        # painting the clipPath's children visibly — which would
+        # produce phantom shapes wherever the clipPath was supposed to
+        # silently define geometry. We can't suppress drawsvg's
+        # ``<use>`` (would require ``Drawing.append_def``, not on the
+        # generic ``Canvas`` protocol — ``d`` may be a Group here), so
+        # we make the children invisible-if-rendered by passing
+        # ``fill="none"``. The clip-rule still operates on the path
+        # geometry; ``fill`` only matters for what gets painted by the
+        # spurious ``<use>`` reference.
         clip_id = f"thumb-down-clip-{next(_CLIP_ID_COUNTER)}"
         dd_outset = slots.double_down_width * _DD_CUTOUT_OUTSET_MULTIPLIER
         up_outset = slots.up_width * _UP_CUTOUT_OUTSET_MULTIPLIER
@@ -1498,10 +1536,11 @@ def ThumbCluster(
                 y=down_o.y,
                 width=slots.down_width,
                 height=down.size.height,
+                fill="none",
             )
         )
-        clip_path.append(_translated(dd_cutout_local, double_down_o))
-        clip_path.append(_translated(up_cutout_local, up_o))
+        clip_path.append(_clip_only(_translated(dd_cutout_local, double_down_o)))
+        clip_path.append(_clip_only(_translated(up_cutout_local, up_o)))
         d.append(clip_path)
 
         down_group = draw.Group(clip_path=f"url(#{clip_id})")
