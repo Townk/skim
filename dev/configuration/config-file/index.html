@@ -4426,7 +4426,7 @@ width.</p>
 </tbody>
 </table>
 <p>Distance between an outer key's edge and its layer-indicator badge —
-the small coloured circle showing the layer this key switches to.
+the small colored circle showing the layer this key switches to.
 Doc-width-relative on purpose: finger and thumb clusters share the
 same gap, so indicators read at a uniform visual weight regardless of
 cluster sizing.</p>
@@ -4626,7 +4626,7 @@ layer it activates. Useful when you want a more uniform look or when you
 prefer to encode layer membership only in the badge column of the
 overview.</p>
 <figure>
-<figcaption>The cluster's north key activates layer 2. With <code>true</code>, layer 2's colour paints the key; with <code>false</code>, the key falls back to neutral.</figcaption>
+<figcaption>The cluster's north key activates layer 2. With <code>true</code>, layer 2's color paints the key; with <code>false</code>, the key falls back to neutral.</figcaption>
 <p><img alt="use_layer_colors_on_keys true vs false comparison" loading="lazy" src="../../_static/spacing/use-layer-colors-on-keys.svg" width="500" /></p>
 </figure>
 <h4 id="output-style-use-system-fonts"><code>use_system_fonts</code><a class="headerlink" href="#output-style-use-system-fonts" title="Permanent link">&para;</a></h4>
@@ -4670,7 +4670,7 @@ what's underneath. Set to <code>false</code> to stamp the Vial-style <code>⛛</
 each transparent position instead, so transparent keys stay visible
 without revealing the underlying layer-0 label.</p>
 <figure>
-<figcaption>A transparent key on a layer above 0. With <code>true</code>, the layer-0 label paints in a lightness-shifted variant of the key's colour; with <code>false</code>, the key carries the <code>⛛</code> transparent-key glyph in the same ghost colour.</figcaption>
+<figcaption>A transparent key on a layer above 0. With <code>true</code>, the layer-0 label paints in a lightness-shifted variant of the key's color; with <code>false</code>, the key carries the <code>⛛</code> transparent-key glyph in the same ghost color.</figcaption>
 <p><img alt="show_transparent_fallthrough true vs false comparison" loading="lazy" src="../../_static/spacing/show-transparent-fallthrough.svg" width="320" /></p>
 </figure>
 <h4 id="output-style-border"><code>border</code><a class="headerlink" href="#output-style-border" title="Permanent link">&para;</a></h4>
@@ -4810,7 +4810,7 @@ trail.</p>
 <p><img alt="Layer connector dot spacing highlighted" loading="lazy" src="../../_static/spacing/layer-connector-dot-spacing.svg" width="360" /></p>
 </figure>
 <h4 id="output-style-layer-indicator"><code>layer_indicator</code><a class="headerlink" href="#output-style-layer-indicator" title="Permanent link">&para;</a></h4>
-<p>Configures the layer-indicator badges — the small coloured circles
+<p>Configures the layer-indicator badges — the small colored circles
 drawn next to layer-switch keys in each cluster, and the matching
 badges in the overview's <code>LAYERS</code> column.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nt">output</span><span class="p">:</span>
@@ -4839,7 +4839,7 @@ a property of the indicator itself.</p>
 </tbody>
 </table>
 <p>Whether to draw layer-indicator badges. Each circle is tinted with
-the destination layer's colour, giving an at-a-glance hint of "where
+the destination layer's color, giving an at-a-glance hint of "where
 does this key take me." Set to <code>false</code> to suppress them entirely
 (both in clusters and in the overview's badge column).</p>
 <figure>
@@ -5331,7 +5331,7 @@ the muted profile of the curated sample palettes shipped with Skim.</p>
 </table>
 <p>The primary CSS color for the layer. Doubles as the "anchor" Skim
 plants in the auto-derived gradient when <code>gradient</code> is <code>null</code> (the
-default), and as the layer's single-colour reference everywhere a
+default), and as the layer's single-color reference everywhere a
 gradient stop isn't appropriate (e.g. the auto-mouse-layer accent).</p>
 <h6 id="color_index"><code>color_index</code><a class="headerlink" href="#color_index" title="Permanent link">&para;</a></h6>
 <table>
@@ -5356,7 +5356,7 @@ in two places:</p>
    darker, stops above get progressively lighter.</li>
 <li><strong>When <code>gradient</code> is set explicitly</strong> — Skim keeps the user-supplied
    tuple verbatim, but the renderer reads <code>gradient[color_index]</code> as
-   the layer's "primary" colour for indicator circles, layer badges,
+   the layer's "primary" color for indicator circles, layer badges,
    and the layer-trigger highlight on a source key.</li>
 </ol>
 <h6 id="gradient"><code>gradient</code><a class="headerlink" href="#gradient" title="Permanent link">&para;</a></h6>
@@ -5390,7 +5390,7 @@ ranging from very dark to very light, with <code>base_color</code> placed at
 <a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>
 <a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="w">        </span><span class="c1"># Layer 1: explicit 6-stop gradient. Skim uses this tuple</span>
 <a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a><span class="w">        </span><span class="c1"># verbatim; ``color_index`` still picks which stop counts as</span>
-<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a><span class="w">        </span><span class="c1"># the layer&#39;s &quot;primary&quot; colour for indicators / badges.</span>
+<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a><span class="w">        </span><span class="c1"># the layer&#39;s &quot;primary&quot; color for indicators / badges.</span>
 <a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">base_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#CC6633&quot;</span>
 <a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a><span class="w">          </span><span class="nt">color_index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
 <a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a><span class="w">          </span><span class="nt">gradient</span><span class="p">:</span>

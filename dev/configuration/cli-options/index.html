@@ -2474,10 +2474,10 @@ silences every log line. The value is case-insensitive.</p>
 <a id="__codelineno-2-76" name="__codelineno-2-76" href="#__codelineno-2-76"></a><span class="w">  </span>-w,<span class="w"> </span>--width<span class="w"> </span>FLOAT<span class="w">               </span>Override<span class="w"> </span>the<span class="w"> </span>keymap<span class="w"> </span>canvas<span class="w"> </span>width<span class="w"> </span><span class="k">in</span><span class="w"> </span>SVG
 <a id="__codelineno-2-77" name="__codelineno-2-77" href="#__codelineno-2-77"></a><span class="w">                                  </span>units<span class="w"> </span><span class="o">(</span>output.layout.width<span class="o">)</span>.
 <a id="__codelineno-2-78" name="__codelineno-2-78" href="#__codelineno-2-78"></a><span class="w">  </span>-L,<span class="w"> </span>--adjust-lightness<span class="w"> </span>FLOAT<span class="w">    </span>Target<span class="w"> </span>lightness<span class="w"> </span><span class="o">(</span><span class="m">0</span>.0-1.0<span class="o">)</span><span class="w"> </span>applied<span class="w"> </span>to<span class="w"> </span>every
-<a id="__codelineno-2-79" name="__codelineno-2-79" href="#__codelineno-2-79"></a><span class="w">                                  </span>layer<span class="w"> </span>base<span class="w"> </span>colour.<span class="w"> </span>Ignored<span class="w"> </span>when<span class="w"> </span>--config<span class="w"> </span>is
+<a id="__codelineno-2-79" name="__codelineno-2-79" href="#__codelineno-2-79"></a><span class="w">                                  </span>layer<span class="w"> </span>base<span class="w"> </span>color.<span class="w"> </span>Ignored<span class="w"> </span>when<span class="w"> </span>--config<span class="w"> </span>is
 <a id="__codelineno-2-80" name="__codelineno-2-80" href="#__codelineno-2-80"></a><span class="w">                                  </span>provided.
 <a id="__codelineno-2-81" name="__codelineno-2-81" href="#__codelineno-2-81"></a><span class="w">  </span>-S,<span class="w"> </span>--adjust-saturation<span class="w"> </span>FLOAT<span class="w">   </span>Cap<span class="w"> </span>saturation<span class="w"> </span><span class="o">(</span><span class="m">0</span>.0-1.0<span class="o">)</span><span class="w"> </span>on<span class="w"> </span>every<span class="w"> </span>layer<span class="w"> </span>base
-<a id="__codelineno-2-82" name="__codelineno-2-82" href="#__codelineno-2-82"></a><span class="w">                                  </span>colour.<span class="w"> </span>Ignored<span class="w"> </span>when<span class="w"> </span>--config<span class="w"> </span>is<span class="w"> </span>provided.
+<a id="__codelineno-2-82" name="__codelineno-2-82" href="#__codelineno-2-82"></a><span class="w">                                  </span>color.<span class="w"> </span>Ignored<span class="w"> </span>when<span class="w"> </span>--config<span class="w"> </span>is<span class="w"> </span>provided.
 <a id="__codelineno-2-83" name="__codelineno-2-83" href="#__codelineno-2-83"></a><span class="w">  </span>--help<span class="w">                          </span>Show<span class="w"> </span>this<span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span>exit.
 </code></pre></div>
 <p>Render keymap visualisation images. Reads a keymap from a file (or stdin),
@@ -2516,8 +2516,8 @@ extension is set by <a href="#generate-format"><code>--format</code></a>.</p>
 file populate the run; any field omitted falls back to Skim's built-in
 defaults.</p>
 <p>When <code>--config</code> is provided, <a href="#generate-adjust-lightness"><code>--adjust-lightness</code></a>
-and <a href="#generate-adjust-saturation"><code>--adjust-saturation</code></a> are ignored — colour
-adjustments only apply to the auto-derived defaults, not to colours the
+and <a href="#generate-adjust-saturation"><code>--adjust-saturation</code></a> are ignored — color
+adjustments only apply to the auto-derived defaults, not to colors the
 user has already chosen.</p>
 <h3 id="generate-keymap"><code>--keymap</code>, <code>-k</code><a class="headerlink" href="#generate-keymap" title="Permanent link">&para;</a></h3>
 <table>
@@ -2955,14 +2955,14 @@ when no config and no flag is provided is <code>1600</code>.</p>
 </tr>
 </tbody>
 </table>
-<p>Target lightness applied to every layer's auto-derived base colour before
+<p>Target lightness applied to every layer's auto-derived base color before
 the gradient is built. Useful when the bundled defaults clash with a
 specific output medium (e.g. for paper printing, lower the lightness so
 key labels stay legible). Adjusts the
 <a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>
 entries Skim would otherwise auto-derive from the keymap.</p>
 <p>Ignored when <a href="#generate-config"><code>--config</code></a> is provided — Skim emits a
-note on stderr and uses the config's colours unmodified.</p>
+note on stderr and uses the config's colors unmodified.</p>
 <h3 id="generate-adjust-saturation"><code>--adjust-saturation</code>, <code>-S</code><a class="headerlink" href="#generate-adjust-saturation" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2980,7 +2980,7 @@ note on stderr and uses the config's colours unmodified.</p>
 </tr>
 </tbody>
 </table>
-<p>Cap saturation on every layer's auto-derived base colour. Adjusts the
+<p>Cap saturation on every layer's auto-derived base color. Adjusts the
 <a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>
 entries Skim would otherwise auto-derive from the keymap. Same gating
 rule as <a href="#generate-adjust-lightness"><code>--adjust-lightness</code></a>: ignored when
@@ -3094,7 +3094,7 @@ the keymap-derived config is fed into the editor as the starting point.</p>
 <p>Load an existing configuration file. Required to be readable.</p>
 <p>When combined with <code>--keymap</code>, the keymap-derived config is treated as a
 scaffold and the contents of <code>--config</code> are deep-merged on top — so user
-edits like custom palette colours, titles, and copyrights are preserved
+edits like custom palette colors, titles, and copyrights are preserved
 across reloads.</p>
 <h3 id="configure-keymap"><code>--keymap</code>, <code>-k</code><a class="headerlink" href="#configure-keymap" title="Permanent link">&para;</a></h3>
 <table>
@@ -3112,8 +3112,8 @@ across reloads.</p>
 </tbody>
 </table>
 <p>Path to a keymap file (<code>.kbi</code>, <code>.vil</code>, or <code>.json</code>). Skim extracts layer
-names, palette base colours, and any custom keycodes it can resolve, then
-writes a YAML config. For Keybard (<code>.kbi</code>) files, palette colours are
+names, palette base colors, and any custom keycodes it can resolve, then
+writes a YAML config. For Keybard (<code>.kbi</code>) files, palette colors are
 extracted from the firmware metadata; for Vial / c2json files they're
 auto-derived.</p>
 <h3 id="configure-output"><code>--output</code>, <code>-o</code><a class="headerlink" href="#configure-output" title="Permanent link">&para;</a></h3>
@@ -3170,9 +3170,9 @@ the controlling terminal.</p>
 </tr>
 </tbody>
 </table>
-<p>Target lightness applied to layer base colours when generating from a
+<p>Target lightness applied to layer base colors when generating from a
 <strong>Keybard</strong> file. Has no effect for Vial or c2json input (those formats
-don't carry layer colours). Modifies the
+don't carry layer colors). Modifies the
 <a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>
 entries written to the generated config.</p>
 <h3 id="configure-adjust-saturation"><code>--adjust-saturation</code>, <code>-S</code><a class="headerlink" href="#configure-adjust-saturation" title="Permanent link">&para;</a></h3>
@@ -3192,7 +3192,7 @@ entries written to the generated config.</p>
 </tr>
 </tbody>
 </table>
-<p>Cap saturation on layer base colours when generating from a Keybard file.
+<p>Cap saturation on layer base colors when generating from a Keybard file.
 Modifies the
 <a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>
 entries written to the generated config. Same input-format restriction as
@@ -3282,7 +3282,7 @@ generated config.</p>
 </tbody>
 </table>
 <p>Pre-create N layers with default names (<code>Layer 0</code>, <code>Layer 1</code>, …) and
-default palette colours. Writes to both
+default palette colors. Writes to both
 <a href="../config-file/#keyboard-layers"><code>keyboard.layers</code></a> and
 <a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>.
 Existing layer entries from <code>--config</code> or <code>--keymap</code> are preserved; any
