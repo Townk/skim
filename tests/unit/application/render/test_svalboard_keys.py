@@ -14,6 +14,7 @@ wired into the cluster code.
 
 from __future__ import annotations
 
+import inspect
 import re
 
 import drawsvg as draw
@@ -22,6 +23,10 @@ import pytest
 from skim.application.render.primitives import CompassDirection, Point, Size
 from skim.application.render.render_context import RenderContext, using_render_context
 from skim.application.render.svalboard_keys import (
+    _DOUBLE_DOWN_CORNER_RADIUS_MULTIPLIER,
+    _DOUBLE_DOWN_HEIGHT_RATIO,
+    _DOUBLE_DOWN_INSET_MULTIPLIER,
+    _DOUBLE_DOWN_SLANT_MULTIPLIER,
     CenterKey,
     DirectionalKey,
     DoubleDownKey,
@@ -33,6 +38,7 @@ from skim.application.render.svalboard_keys import (
     SvalboardKeyMetrics,
     UpKey,
 )
+from skim.application.render.trapezoid import Trapezoid
 from skim.data import SkimConfig, SvalboardKeymap
 from skim.domain import KeyboardSide, KeyDirection
 
@@ -667,7 +673,7 @@ class TestDoubleDownKey:
         svg = str(_draw(key, Point(0.0, 0.0)).as_svg())
         path_lines = [line for line in svg.splitlines() if "<path" in line]
         for line in path_lines:
-            assert 'stroke=' not in line, f"unexpected stroke in {line!r}"
+            assert "stroke=" not in line, f"unexpected stroke in {line!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -872,9 +878,13 @@ class TestKnuckleKey:
 # _make_thumb_key — shared helper for parametrised path-metric tests
 # ---------------------------------------------------------------------------
 
-_THUMB_KEY_EXTRA_KWARGS: dict[str, dict] = {
-    # UpKey still takes stroke_color in Task 2; Task 3 removes it.
-    "UpKey": {"stroke_color": "#000"},
+_THUMB_KEY_BUILDERS = {
+    "DownKey": DownKey,
+    "PadKey": PadKey,
+    "NailKey": NailKey,
+    "KnuckleKey": KnuckleKey,
+    "DoubleDownKey": DoubleDownKey,
+    "UpKey": UpKey,
 }
 
 
@@ -885,19 +895,18 @@ def _make_thumb_key(ctx: RenderContext, name: str):
     the same contract.  The ``ctx`` argument must be active (the helper
     is called *inside* a ``with using_render_context`` block).
     """
-    import importlib
-    mod = importlib.import_module("skim.application.render.svalboard_keys")
-    composable = getattr(mod, name)
-    kwargs = dict(
-        side=KeyboardSide.RIGHT,
-        width=40.0,
-        label_text="A",
-        fill_color="#fff",
-        label_color="#000",
-    )
-    kwargs.update(_THUMB_KEY_EXTRA_KWARGS.get(name, {}))
+    builder = _THUMB_KEY_BUILDERS[name]
+    kwargs: dict[str, object] = {
+        "side": KeyboardSide.RIGHT,
+        "width": 40.0,
+        "label_text": "A",
+        "fill_color": "#fff",
+        "label_color": "#000",
+    }
+    if name == "UpKey":
+        kwargs["stroke_color"] = "#000"
     with using_render_context(ctx):
-        return composable(**kwargs)
+        return builder(**kwargs)
 
 
 # ---------------------------------------------------------------------------
@@ -910,20 +919,12 @@ class TestKeyPathMetric:
     that returns the rendered fill shape (and outset variants)."""
 
     @pytest.mark.parametrize(
-        "key_factory",
-        [
-            lambda ctx: _make_thumb_key(ctx, "DownKey"),
-            lambda ctx: _make_thumb_key(ctx, "PadKey"),
-            lambda ctx: _make_thumb_key(ctx, "NailKey"),
-            lambda ctx: _make_thumb_key(ctx, "KnuckleKey"),
-            lambda ctx: _make_thumb_key(ctx, "DoubleDownKey"),
-        ],
+        "name", ["DownKey", "PadKey", "NailKey", "KnuckleKey", "DoubleDownKey"]
     )
-    def test_thumb_trapezoid_path_outset_grows_bbox(self, ctx: RenderContext, key_factory):
+    def test_thumb_trapezoid_path_outset_grows_bbox(self, ctx: RenderContext, name: str):
         """``path(amount)`` returns a trapezoid whose ``d`` differs from
         ``path(0.0)`` — the outset arithmetic moves the shape outward."""
-        from skim.application.render.trapezoid import Trapezoid
-        key = key_factory(ctx)
+        key = _make_thumb_key(ctx, name)
         base = key.metrics.path(0.0)
         grown = key.metrics.path(2.5)
         assert isinstance(base, Trapezoid)
@@ -969,71 +970,76 @@ class TestKeyPathMetric:
         with using_render_context(ctx):
             key = _double_south_key(side=KeyboardSide.RIGHT, width=40.0)
         elem = key.metrics.path(0.0)
-        from skim.application.render.trapezoid import Trapezoid
         assert isinstance(elem, Trapezoid)
 
     def test_down_key_path_is_trapezoid(self, ctx: RenderContext):
-        from skim.application.render.svalboard_keys import DownKey
-        from skim.application.render.trapezoid import Trapezoid
         with using_render_context(ctx):
             key = DownKey(
-                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
-                fill_color="#fff", label_color="#000",
+                side=KeyboardSide.RIGHT,
+                width=40.0,
+                label_text="A",
+                fill_color="#fff",
+                label_color="#000",
             )
         elem = key.metrics.path(0.0)
         assert isinstance(elem, Trapezoid)
 
     def test_pad_key_path_is_trapezoid(self, ctx: RenderContext):
-        from skim.application.render.svalboard_keys import PadKey
-        from skim.application.render.trapezoid import Trapezoid
         with using_render_context(ctx):
             key = PadKey(
-                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
-                fill_color="#fff", label_color="#000",
+                side=KeyboardSide.RIGHT,
+                width=40.0,
+                label_text="A",
+                fill_color="#fff",
+                label_color="#000",
             )
         elem = key.metrics.path(0.0)
         assert isinstance(elem, Trapezoid)
 
     def test_nail_key_path_is_trapezoid(self, ctx: RenderContext):
-        from skim.application.render.svalboard_keys import NailKey
-        from skim.application.render.trapezoid import Trapezoid
         with using_render_context(ctx):
             key = NailKey(
-                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
-                fill_color="#fff", label_color="#000",
+                side=KeyboardSide.RIGHT,
+                width=40.0,
+                label_text="A",
+                fill_color="#fff",
+                label_color="#000",
             )
         elem = key.metrics.path(0.0)
         assert isinstance(elem, Trapezoid)
 
     def test_knuckle_key_path_is_trapezoid(self, ctx: RenderContext):
-        from skim.application.render.svalboard_keys import KnuckleKey
-        from skim.application.render.trapezoid import Trapezoid
         with using_render_context(ctx):
             key = KnuckleKey(
-                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
-                fill_color="#fff", label_color="#000",
+                side=KeyboardSide.RIGHT,
+                width=40.0,
+                label_text="A",
+                fill_color="#fff",
+                label_color="#000",
             )
         elem = key.metrics.path(0.0)
         assert isinstance(elem, Trapezoid)
 
     def test_double_down_key_path_is_trapezoid(self, ctx: RenderContext):
-        from skim.application.render.svalboard_keys import DoubleDownKey
-        from skim.application.render.trapezoid import Trapezoid
         with using_render_context(ctx):
             key = DoubleDownKey(
-                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
-                fill_color="#fff", label_color="#000",
+                side=KeyboardSide.RIGHT,
+                width=40.0,
+                label_text="A",
+                fill_color="#fff",
+                label_color="#000",
             )
         elem = key.metrics.path(0.0)
         assert isinstance(elem, Trapezoid)
 
     def test_up_key_path_is_trapezoid(self, ctx: RenderContext):
-        from skim.application.render.svalboard_keys import UpKey
-        from skim.application.render.trapezoid import Trapezoid
         with using_render_context(ctx):
             key = UpKey(
-                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
-                fill_color="#fff", label_color="#000",
+                side=KeyboardSide.RIGHT,
+                width=40.0,
+                label_text="A",
+                fill_color="#fff",
+                label_color="#000",
                 stroke_color="#000",
             )
         elem = key.metrics.path(0.0)
@@ -1050,31 +1056,27 @@ class TestDoubleDownKeyGeometry:
     legacy width/height/top_width, with no SVG stroke applied."""
 
     def test_signature_drops_stroke_color(self):
-        from skim.application.render.svalboard_keys import DoubleDownKey
-        import inspect
         # ``@Composable`` uses ``functools.wraps``; the underlying builder is
         # accessible via ``__wrapped__``.
         sig = inspect.signature(DoubleDownKey.__wrapped__)  # type: ignore[attr-defined]
         assert "stroke_color" not in sig.parameters
 
     def test_path_zero_outset_is_inset_trapezoid(self, ctx: RenderContext):
-        from skim.application.render.svalboard_keys import (
-            DoubleDownKey, _DOUBLE_DOWN_INSET_MULTIPLIER,
-            _DOUBLE_DOWN_HEIGHT_RATIO, _DOUBLE_DOWN_SLANT_MULTIPLIER,
-            _DOUBLE_DOWN_CORNER_RADIUS_MULTIPLIER,
-        )
-        from skim.application.render.trapezoid import Trapezoid
         width = 40.0
         with using_render_context(ctx):
             key = DoubleDownKey(
-                side=KeyboardSide.RIGHT, width=width, label_text="A",
-                fill_color="#fff", label_color="#000",
+                side=KeyboardSide.RIGHT,
+                width=width,
+                label_text="A",
+                fill_color="#fff",
+                label_color="#000",
             )
         elem = key.metrics.path(0.0)
         assert isinstance(elem, Trapezoid)
         inset = width * _DOUBLE_DOWN_INSET_MULTIPLIER
         expected = Trapezoid(
-            x=inset, y=inset,
+            x=inset,
+            y=inset,
             width=width - 2 * inset,
             height=width * _DOUBLE_DOWN_HEIGHT_RATIO - 2 * inset,
             top_width=(width * (1 - _DOUBLE_DOWN_SLANT_MULTIPLIER)) - 2 * inset,
@@ -1082,16 +1084,3 @@ class TestDoubleDownKeyGeometry:
             fill="#fff",
         )
         assert elem.args["d"] == expected.args["d"]
-
-    def test_draw_emits_no_stroke(self, ctx: RenderContext):
-        """The drawsvg ``<path>`` for DD must not have stroke=… set."""
-        from skim.application.render.svalboard_keys import DoubleDownKey
-        with using_render_context(ctx):
-            key = DoubleDownKey(
-                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
-                fill_color="#fff", label_color="#000",
-            )
-        svg = _draw(key, Point(0.0, 0.0)).as_svg()
-        path_lines = [line for line in svg.splitlines() if "<path" in line]
-        for line in path_lines:
-            assert 'stroke=' not in line, f"unexpected stroke in {line!r}"
