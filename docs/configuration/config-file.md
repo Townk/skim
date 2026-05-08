@@ -996,7 +996,7 @@ width.
 | `float` \| `string` \| `null`       | `null` (→ `0.75%` of doc width)   | doc width  |
 
 Distance between an outer key's edge and its layer-indicator badge —
-the small coloured circle showing the layer this key switches to.
+the small colored circle showing the layer this key switches to.
 Doc-width-relative on purpose: finger and thumb clusters share the
 same gap, so indicators read at a uniform visual weight regardless of
 cluster sizing.
@@ -1148,7 +1148,7 @@ prefer to encode layer membership only in the badge column of the
 overview.
 
 <figure markdown="1">
-<figcaption>The cluster's north key activates layer 2. With <code>true</code>, layer 2's colour paints the key; with <code>false</code>, the key falls back to neutral.</figcaption>
+<figcaption>The cluster's north key activates layer 2. With <code>true</code>, layer 2's color paints the key; with <code>false</code>, the key falls back to neutral.</figcaption>
 ![use_layer_colors_on_keys true vs false comparison](../_static/spacing/use-layer-colors-on-keys.svg){ width="500" loading=lazy }
 </figure>
 
@@ -1177,7 +1177,7 @@ each transparent position instead, so transparent keys stay visible
 without revealing the underlying layer-0 label.
 
 <figure markdown="1">
-<figcaption>A transparent key on a layer above 0. With <code>true</code>, the layer-0 label paints in a lightness-shifted variant of the key's colour; with <code>false</code>, the key carries the <code>⛛</code> transparent-key glyph in the same ghost colour.</figcaption>
+<figcaption>A transparent key on a layer above 0. With <code>true</code>, the layer-0 label paints in a lightness-shifted variant of the key's color; with <code>false</code>, the key carries the <code>⛛</code> transparent-key glyph in the same ghost color.</figcaption>
 ![show_transparent_fallthrough true vs false comparison](../_static/spacing/show-transparent-fallthrough.svg){ width="320" loading=lazy }
 </figure>
 
@@ -1283,7 +1283,7 @@ trail.
 </figure>
 
 #### `layer_indicator` { #output-style-layer-indicator }
-Configures the layer-indicator badges — the small coloured circles
+Configures the layer-indicator badges — the small colored circles
 drawn next to layer-switch keys in each cluster, and the matching
 badges in the overview's `LAYERS` column.
 
@@ -1307,7 +1307,7 @@ a property of the indicator itself.
 | `boolean` | `true`  |
 
 Whether to draw layer-indicator badges. Each circle is tinted with
-the destination layer's colour, giving an at-a-glance hint of "where
+the destination layer's color, giving an at-a-glance hint of "where
 does this key take me." Set to `false` to suppress them entirely
 (both in clusters and in the overview's badge column).
 
@@ -1660,7 +1660,7 @@ the muted profile of the curated sample palettes shipped with Skim.
 
 The primary CSS color for the layer. Doubles as the "anchor" Skim
 plants in the auto-derived gradient when `gradient` is `null` (the
-default), and as the layer's single-colour reference everywhere a
+default), and as the layer's single-color reference everywhere a
 gradient stop isn't appropriate (e.g. the auto-mouse-layer accent).
 
 ###### `color_index`
@@ -1677,7 +1677,7 @@ in two places:
    darker, stops above get progressively lighter.
 2. **When `gradient` is set explicitly** — Skim keeps the user-supplied
    tuple verbatim, but the renderer reads `gradient[color_index]` as
-   the layer's "primary" colour for indicator circles, layer badges,
+   the layer's "primary" color for indicator circles, layer badges,
    and the layer-trigger highlight on a source key.
 
 ###### `gradient`
@@ -1704,7 +1704,7 @@ output:
 
         # Layer 1: explicit 6-stop gradient. Skim uses this tuple
         # verbatim; ``color_index`` still picks which stop counts as
-        # the layer's "primary" colour for indicators / badges.
+        # the layer's "primary" color for indicators / badges.
         - base_color: "#CC6633"
           color_index: 2
           gradient:

@@ -193,10 +193,10 @@ Options:
   -w, --width FLOAT               Override the keymap canvas width in SVG
                                   units (output.layout.width).
   -L, --adjust-lightness FLOAT    Target lightness (0.0-1.0) applied to every
-                                  layer base colour. Ignored when --config is
+                                  layer base color. Ignored when --config is
                                   provided.
   -S, --adjust-saturation FLOAT   Cap saturation (0.0-1.0) on every layer base
-                                  colour. Ignored when --config is provided.
+                                  color. Ignored when --config is provided.
   --help                          Show this message and exit.
 ```
 
@@ -236,8 +236,8 @@ file populate the run; any field omitted falls back to Skim's built-in
 defaults.
 
 When `--config` is provided, [`--adjust-lightness`](#generate-adjust-lightness)
-and [`--adjust-saturation`](#generate-adjust-saturation) are ignored — colour
-adjustments only apply to the auto-derived defaults, not to colours the
+and [`--adjust-saturation`](#generate-adjust-saturation) are ignored — color
+adjustments only apply to the auto-derived defaults, not to colors the
 user has already chosen.
 
 ### `--keymap`, `-k` { #generate-keymap }
@@ -481,7 +481,7 @@ when no config and no flag is provided is `1600`.
 | ------- | ------- | --------- |
 | `float` | `null`  | `0.0–1.0` |
 
-Target lightness applied to every layer's auto-derived base colour before
+Target lightness applied to every layer's auto-derived base color before
 the gradient is built. Useful when the bundled defaults clash with a
 specific output medium (e.g. for paper printing, lower the lightness so
 key labels stay legible). Adjusts the
@@ -489,7 +489,7 @@ key labels stay legible). Adjusts the
 entries Skim would otherwise auto-derive from the keymap.
 
 Ignored when [`--config`](#generate-config) is provided — Skim emits a
-note on stderr and uses the config's colours unmodified.
+note on stderr and uses the config's colors unmodified.
 
 ### `--adjust-saturation`, `-S` { #generate-adjust-saturation }
 
@@ -497,7 +497,7 @@ note on stderr and uses the config's colours unmodified.
 | ------- | ------- | --------- |
 | `float` | `null`  | `0.0–1.0` |
 
-Cap saturation on every layer's auto-derived base colour. Adjusts the
+Cap saturation on every layer's auto-derived base color. Adjusts the
 [`output.style.palette.layers`](config-file.md#output-style-palette-layers)
 entries Skim would otherwise auto-derive from the keymap. Same gating
 rule as [`--adjust-lightness`](#generate-adjust-lightness): ignored when
@@ -601,7 +601,7 @@ Load an existing configuration file. Required to be readable.
 
 When combined with `--keymap`, the keymap-derived config is treated as a
 scaffold and the contents of `--config` are deep-merged on top — so user
-edits like custom palette colours, titles, and copyrights are preserved
+edits like custom palette colors, titles, and copyrights are preserved
 across reloads.
 
 ### `--keymap`, `-k` { #configure-keymap }
@@ -611,8 +611,8 @@ across reloads.
 | `path` | `null`  |
 
 Path to a keymap file (`.kbi`, `.vil`, or `.json`). Skim extracts layer
-names, palette base colours, and any custom keycodes it can resolve, then
-writes a YAML config. For Keybard (`.kbi`) files, palette colours are
+names, palette base colors, and any custom keycodes it can resolve, then
+writes a YAML config. For Keybard (`.kbi`) files, palette colors are
 extracted from the firmware metadata; for Vial / c2json files they're
 auto-derived.
 
@@ -643,9 +643,9 @@ the controlling terminal.
 | ------- | ------- | --------- |
 | `float` | `null`  | `0.0–1.0` |
 
-Target lightness applied to layer base colours when generating from a
+Target lightness applied to layer base colors when generating from a
 **Keybard** file. Has no effect for Vial or c2json input (those formats
-don't carry layer colours). Modifies the
+don't carry layer colors). Modifies the
 [`output.style.palette.layers`](config-file.md#output-style-palette-layers)
 entries written to the generated config.
 
@@ -655,7 +655,7 @@ entries written to the generated config.
 | ------- | ------- | --------- |
 | `float` | `null`  | `0.0–1.0` |
 
-Cap saturation on layer base colours when generating from a Keybard file.
+Cap saturation on layer base colors when generating from a Keybard file.
 Modifies the
 [`output.style.palette.layers`](config-file.md#output-style-palette-layers)
 entries written to the generated config. Same input-format restriction as
@@ -705,7 +705,7 @@ generated config.
 | `integer` | `null`  |
 
 Pre-create N layers with default names (`Layer 0`, `Layer 1`, …) and
-default palette colours. Writes to both
+default palette colors. Writes to both
 [`keyboard.layers`](config-file.md#keyboard-layers) and
 [`output.style.palette.layers`](config-file.md#output-style-palette-layers).
 Existing layer entries from `--config` or `--keymap` are preserved; any

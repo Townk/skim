@@ -14,15 +14,16 @@ The UI requires the optional `textual` extra. Install it with
 missing.
 
 > [!NOTE]
-> **How to read this reference.** Headings in `` `code style` `` name a
-> literal field in the underlying configuration — the heading
-> `` ### `Keymap Title` `` documents the input that writes to
-> [`output.keymap_title`](config-file.md#output-keymap-title). Plain-text
-> headings ("Tabs", "Status bar", "Field components") name a piece of the
-> UI itself, not a configurable field. Every field section starts with a
-> short type / config-target table and a one-line description, then links
-> to the config-file reference for the full visual semantics — this page
-> does not repeat what the rendered output looks like.
+> **How to read this reference.** The page is in two halves. The
+> [Anatomy](#anatomy) section names the Configurator's UI scaffolding —
+> tabs, the scrolling content area, the status bar, and the field
+> components used to edit values. The per-tab sections that follow
+> (Keyboard, Keycodes, Output) walk every editable field, organised
+> Tab → Section → Field. Every field block opens with a screenshot,
+> includes the same help text the in-app `F1` overlay shows, and ends
+> with a **Configures:** line linking to the matching entry in
+> [`config-file.md`](config-file.md) — that's where you'll find the
+> visual semantics, defaults, and accepted values.
 
 ## Anatomy { #anatomy }
 
@@ -43,7 +44,7 @@ The tab bar lists the three top-level configuration groups.
 | ---------- | ------------------------------------------------------ | --------------------------------------------------------------- |
 | Keyboard   | [`keyboard`](config-file.md#keyboard) + a few `output` knobs | Hardware features, layer roster, image title, copyright.   |
 | Keycodes   | [`keycodes`](config-file.md#keycodes)                  | Pre-process rules, label overrides, macro and tap-dance metadata. |
-| Output     | [`output`](config-file.md#output)                      | Layout, colours, borders, legends, palette.                     |
+| Output     | [`output`](config-file.md#output)                      | Layout, colors, borders, legends, palette.                     |
 
 The active tab is highlighted in the tab bar. Switch tabs by clicking
 the tab title or by pressing `Ctrl+P` (previous) / `Ctrl+N` (next). The
@@ -55,8 +56,8 @@ moving between tabs doesn't lose your place.
 ![Scrolling area of the Keyboard tab — content clipped at the bottom with a scrollbar visible on the right](../_static/tui/scrolling-area.svg){ width="1015" loading=lazy }
 
 The middle of the window is a vertical scroller that holds every section
-of the active tab stacked top-to-bottom. Sections start with a coloured
-**section title** (the accent colour) and contain one or more field rows.
+of the active tab stacked top-to-bottom. Sections start with a colored
+**section title** (the accent color) and contain one or more field rows.
 
 When the active tab is taller than the terminal window, the scroller
 keeps the focused row visible — moving focus past the bottom of the
@@ -106,6 +107,16 @@ input; the rollback affordance only exists inside a
 [list/detail pane](#anatomy-components-list-detail), where the pane's
 edit lifecycle wraps every field it contains.
 
+##### Interaction { #anatomy-components-text-input-interaction }
+
+| Binding     | Action                       |
+| ----------- | ---------------------------- |
+| `Tab`       | Move focus to the next field |
+| `Shift+Tab` | Move focus to the previous field |
+
+When inside a list/detail pane the input also responds to `Enter` (commit
+changes, exit edit mode) and `Escape` (discard changes, exit edit mode).
+
 #### Numeric input { #anatomy-components-numeric-input }
 
 ![Numeric-input field row showing the "Width:" label and a numeric text editor](../_static/tui/field-output-page-width.svg){ width="494" loading=lazy }
@@ -118,6 +129,11 @@ the input keeps its current text without visible feedback. Watch the
 rendered output (or the matching field in the YAML preview) to
 confirm the value took.
 
+##### Interaction { #anatomy-components-numeric-input-interaction }
+
+Identical to the
+[text input's interaction](#anatomy-components-text-input-interaction).
+
 #### Switch { #anatomy-components-switch }
 
 ![Switch field row showing the "Double South:" label and a two-state toggle in the on position](../_static/tui/field-keyboard-feature-double-south.svg){ width="356" loading=lazy }
@@ -125,6 +141,12 @@ confirm the value took.
 A two-state toggle. Click the switch or press `Space` / `Enter` while
 focused to flip it. The change commits immediately; there is no
 edit / cancel cycle.
+
+##### Interaction { #anatomy-components-switch-interaction }
+
+| Binding         | Action                       |
+| --------------- | ---------------------------- |
+| `Enter` / `Space` | Toggle the switch          |
 
 #### Select { #anatomy-components-select }
 
@@ -134,14 +156,43 @@ A drop-down. `Enter` or `Space` opens the list; arrow keys move the
 highlight; `Enter` commits the highlighted entry; `Escape` closes the
 list without changing the field.
 
-#### Colour input { #anatomy-components-colour-input }
+##### Interaction { #anatomy-components-select-interaction }
 
-![Colour-input field row showing the "Background color:" label, a colour swatch, and a hex/CSS-name text editor with the autocomplete suggestion popup open below it after typing "cyan"](../_static/tui/anatomy-color-input.svg){ width="604" loading=lazy }
+| Binding             | When closed              | When open                         |
+| ------------------- | ------------------------ | --------------------------------- |
+| `Enter` / `Space`   | Open the dropdown        | Commit the highlighted option     |
+| `Escape`            | Discard pending changes¹ | Close the dropdown without changing the value |
+| `Tab` / `Shift+Tab` | Move focus to next / previous field | —                       |
+| `↑` / `↓`           | —                        | Move the highlight in the dropdown |
 
-A text input paired with a live colour swatch in the same row. The
-input accepts any CSS colour value the schema allows (named colours,
+¹ Discard only applies inside a list/detail pane that's in edit mode;
+otherwise `Escape` is a no-op.
+
+#### Color input { #anatomy-components-color-input }
+
+![Color-input field row showing the "Background color:" label, a color swatch, and a hex/CSS-name text editor with the autocomplete suggestion popup open below it after typing "cyan"](../_static/tui/anatomy-color-input.svg){ width="604" loading=lazy }
+
+A text input paired with a live color swatch in the same row. The
+input accepts any CSS color value the schema allows (named colors,
 `#RRGGBB`, `rgb()` / `hsl()` strings); the swatch updates as you type.
-An autocomplete list suggests CSS colour names while you're typing.
+An autocomplete list suggests CSS color names while you're typing.
+
+##### Interaction { #anatomy-components-color-input-interaction }
+
+| Binding     | Action                                   |
+| ----------- | ---------------------------------------- |
+| `Tab`       | Move focus to the next field             |
+| `Shift+Tab` | Move focus to the previous field         |
+| `Alt+↑`     | Increase saturation by `0.05` (HSL nudge) |
+| `Alt+↓`     | Decrease saturation by `0.05` (HSL nudge) |
+| `Alt+→`     | Increase lightness by `0.05` (HSL nudge)  |
+| `Alt+←`     | Decrease lightness by `0.05` (HSL nudge)  |
+
+The `Alt+arrow` HSL nudges only fire when the input currently holds a
+six-digit hex color (`#RRGGBB`); named colors, three-digit hex, and
+`rgb()` / `hsl()` strings are silently skipped. Inside a list/detail
+pane, the input also responds to `Enter` / `Escape` for commit /
+discard.
 
 #### List/detail pane { #anatomy-components-list-detail }
 
@@ -170,6 +221,23 @@ Two buttons at the top of the list manage the list itself:
 To reorder entries, focus the list and press `m`. The selected row gets
 a `↕` move indicator; use the arrow keys to slide it up or down and
 `Enter` to commit the new position (or `Escape` to cancel).
+
+##### Interaction { #anatomy-components-list-detail-interaction }
+
+When the list is focused:
+
+| Binding   | Default behaviour              | In move mode                |
+| --------- | ------------------------------ | --------------------------- |
+| `↑` / `↓` | Move the cursor between entries | Move the selected entry up / down |
+| `Enter`   | Edit the selected entry        | Confirm the new position    |
+| `Escape`  | —                              | Cancel the move (rollback)  |
+| `m`       | Enter move mode                | —                           |
+| `a`       | Add a new entry (same as the `+ Add` button) | —             |
+| `d`       | Delete the selected entry (same as the `- Delete` button) | — |
+
+Once the pane is in edit mode, focus moves to the detail-side inputs
+which carry their own per-component bindings (Text input, Select,
+Switch, Color input).
 
 ## Keyboard tab { #fields-keyboard }
 
@@ -495,7 +563,7 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 
 ## Output tab { #fields-output }
 
-Layout dimensions, colours, and styling for the rendered images.
+Layout dimensions, colors, and styling for the rendered images.
 
 ### Page { #fields-output-page }
 
@@ -728,7 +796,7 @@ Layout dimensions, colours, and styling for the rendered images.
 
 ### Palette { #fields-output-palette }
 
-The chrome colours that frame every rendered image. Each takes any CSS colour value the schema allows; see the chrome colours table on the [`output.style.palette`](config-file.md#output-style-palette) field for the full list of defaults and visual swatches.
+The chrome colors that frame every rendered image. Each takes any CSS color value the schema allows; see the chrome colors table on the [`output.style.palette`](config-file.md#output-style-palette) field for the full list of defaults and visual swatches.
 
 #### Background Color { #output-palette-background-color }
 
@@ -899,7 +967,7 @@ The chrome colours that frame every rendered image. Each takes any CSS colour va
 
 #### Manual Gradient Step Color { #output-layer-color-step }
 
-![Manual Gradient Step Color — full LayerColorListPane editing panel in manual mode, showing the Gradient Type select set to "Manual", the colour-index input, the gradient preview swatches, and the six manual gradient step inputs](../_static/tui/field-output-layer-color-step.svg){ width="613" loading=lazy }
+![Manual Gradient Step Color — full LayerColorListPane editing panel in manual mode, showing the Gradient Type select set to "Manual", the color-index input, the gradient preview swatches, and the six manual gradient step inputs](../_static/tui/field-output-layer-color-step.svg){ width="613" loading=lazy }
 
 {%
    include-markdown "../../src/skim/assets/help/output-layer-color-step.md"
