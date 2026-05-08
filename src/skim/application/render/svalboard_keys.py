@@ -176,19 +176,48 @@ _UP_LABEL_MARGIN_MULTIPLIER = 0.10
 # the narrow face aligns to one side or the other depending on the
 # keyboard half. PadKey's narrow bottom goes outward (right hand →
 # right edge); NailKey / KnuckleKey go inward (right hand → left edge).
-_PAD_SLANT_MULTIPLIER = 0.035
+#
+# The slanted edge faces Down. To make it visually parallel to Down's
+# corresponding edge (so the Pad/Nail/Knuckle cluster reads as a clean
+# bevelled match against Down rather than three independently-tuned
+# slants), the slant multiplier is derived from Down's geometry:
+#
+#   Down's left/right edge slope (dx/dy) = (top inset / Down height)
+#                                        = (down_slant / 2) / down_height_ratio
+#
+# Multiplied by a thumb key's own height-as-fraction-of-width gives
+# the ratio "bottom-width reduction / width" — i.e. the slant
+# multiplier used by _vertical_trapezoid_thumb_key. See
+# :func:`_slant_matching_down`.
+
+
+def _slant_matching_down(height_ratio: float) -> float:
+    """Slant multiplier (bottom-width reduction as a fraction of the
+    key's own width) that makes a thumb key's slanted edge parallel to
+    Down's left/right edge.
+
+    Pad / Nail / Knuckle all sit flush against Down with a uniform
+    ``thumb_key_gap`` separating them. With this multiplier, their
+    slanted edges and Down's edge are exactly parallel, so the gap
+    band stays a constant width along the seam — no visual taper.
+    """
+    down_edge_slope = (_DOWN_SLANT_MULTIPLIER / 2.0) / _DOWN_HEIGHT_RATIO
+    return down_edge_slope * height_ratio
+
+
+_PAD_SLANT_MULTIPLIER = _slant_matching_down(_PAD_HEIGHT_RATIO)
 _PAD_CORNER_RADIUS_MULTIPLIER = 0.05
 _PAD_FONT_HEIGHT_MULTIPLIER = 0.4
 _PAD_LABEL_WIDTH_MULTIPLIER = 0.8 - _PAD_SLANT_MULTIPLIER
 _PAD_LABEL_MARGIN_MULTIPLIER = 0.1 + _PAD_SLANT_MULTIPLIER
 
-_NAIL_SLANT_MULTIPLIER = 0.03
+_NAIL_SLANT_MULTIPLIER = _slant_matching_down(_NAIL_HEIGHT_RATIO)
 _NAIL_CORNER_RADIUS_MULTIPLIER = 0.05
 _NAIL_FONT_HEIGHT_MULTIPLIER = 0.4
 _NAIL_LABEL_WIDTH_MULTIPLIER = 0.8 - _NAIL_SLANT_MULTIPLIER
 _NAIL_LABEL_MARGIN_MULTIPLIER = 0.1 + _NAIL_SLANT_MULTIPLIER
 
-_KNUCKLE_SLANT_MULTIPLIER = 0.028
+_KNUCKLE_SLANT_MULTIPLIER = _slant_matching_down(_KNUCKLE_HEIGHT_RATIO)
 _KNUCKLE_CORNER_RADIUS_MULTIPLIER = 0.05
 _KNUCKLE_FONT_HEIGHT_MULTIPLIER = 0.4
 _KNUCKLE_LABEL_WIDTH_MULTIPLIER = 0.8 - _KNUCKLE_SLANT_MULTIPLIER
