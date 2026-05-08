@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-05-08
+
 ### Added
 
 - **`output.layout.spacing` block** with 15 configurable fields covering
@@ -638,7 +640,8 @@ of layout-quality fixes.
 - Sphinx documentation with GitHub Pages deployment workflow
 - Pre-commit hooks for ruff formatting/linting and basedpyright type checking
 
-[Unreleased]: https://github.com/Townk/skim/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/Townk/skim/compare/v0.7.3...HEAD
+[0.7.3]: https://github.com/Townk/skim/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/Townk/skim/compare/v0.7.0...v0.7.2
 [0.7.0]: https://github.com/Townk/skim/compare/v0.5.5...v0.7.0
 [0.5.5]: https://github.com/Townk/skim/compare/v0.5.4...v0.5.5
