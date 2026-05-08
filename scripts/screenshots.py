@@ -204,12 +204,22 @@ def _strip_outside_regions(
     colour); cells from intervening widgets that happened to sit there get
     cleanly removed.
     """
+    # Rich's matrix paints each cell rect at ``y = ROW_OFFSET + N * cell_h``,
+    # not at ``N * cell_h`` — adjacent rows even overshoot each other by
+    # 0.25 px (rect height 24.65 vs. line-height 24.4) so glyphs tile cleanly.
+    # If we don't account for the offset, the clamp's top edge sits 1.5 px
+    # above the actual row, clipping a thin sliver of the row above into
+    # the region (e.g. the green ``+ Add (a)`` and red ``- Delete (d)``
+    # button cells leaking into the top of a footer crop).
+    ROW_TOP_OFFSET = 1.5
+    SLIVER_HEIGHT_PX = 1.0
+
     boxes = [
         (
             r.x * cell_w,
-            r.y * cell_h,
+            r.y * cell_h + ROW_TOP_OFFSET,
             (r.x + r.width) * cell_w,
-            (r.y + r.height) * cell_h,
+            (r.y + r.height) * cell_h + ROW_TOP_OFFSET,
         )
         for r in regions
     ]
@@ -230,7 +240,10 @@ def _strip_outside_regions(
             ny_end = min(y + h, by1)
             nw = nx_end - nx
             nh = ny_end - ny
-            if nw > 0 and nh > 0:
+            # Discard sub-pixel slivers from the inter-row overshoot zone
+            # — those carry the colour of the adjacent row's cell, not of
+            # the row inside our region.
+            if nw > 0 and nh >= SLIVER_HEIGHT_PX:
                 area = nw * nh
                 if area > best_area:
                     best_area = area
