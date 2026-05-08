@@ -101,3 +101,21 @@
 .md-section-nav__spacer {
     flex: 1 1 0;
 }
+
+
+/* Table column wrapping policy.
+   Most reference tables in this project follow the same pattern:
+   one or more short columns (Type / Default / Field / Form / Token /
+   Section / Allowed values / Base) followed by a single description
+   column that holds the long-form explanation. The browser's
+   default table layout often wraps the short columns instead of the
+   description column, leaving the description column wide and the
+   short columns chopped into multiple lines.
+
+   Force every column except the last to ``nowrap`` so the
+   description column absorbs the wrapping; the short columns stay
+   on a single line and the table reads cleanly. */
+.md-typeset table:not([class]) td:not(:last-child),
+.md-typeset table:not([class]) th:not(:last-child) {
+    white-space: nowrap;
+}

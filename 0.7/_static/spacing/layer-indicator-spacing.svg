@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="264.0" height="319.53599999999994" viewBox="0 0 264.0 319.53599999999994">
+<defs>
+</defs>
+<circle cx="132.0" cy="187.416" r="37.08" fill="#B8BCC3" />
+<rect x="92.64" y="67.29599999999999" width="78.72" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="92.64" y="134.208" width="78.72" height="11.808" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="173.39999999999998" y="146.016" width="78.72" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="173.39999999999998" y="146.016" width="11.808" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="92.64" y="228.81599999999997" width="78.72" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="92.64" y="228.81599999999997" width="78.72" height="11.808" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="11.88000000000001" y="146.016" width="78.72" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<rect x="78.792" y="146.016" width="11.808" height="78.72" rx="5.904" ry="5.904" fill="#B8BCC3" />
+<path d="M132.0,55.29599999999999 L132.0,71.29599999999999" stroke="#B8BCC3" stroke-width="2.0" />
+<circle cx="132.0" cy="71.29599999999999" r="2.0" fill="#B8BCC3" />
+<circle cx="132.0" cy="33.647999999999996" r="21.648" fill="#B8BCC3" stroke="#B8BCC3" stroke-width="2.0" />
+<text x="124.50646153846154" y="33.647999999999996" font-size="25.9776" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">2</text>
+<rect x="114.288" y="55.29599999999999" width="35.424" height="12.0" fill="#E11D48" fill-opacity="0.35" stroke="#E11D48" stroke-width="1.5" />
+</svg>

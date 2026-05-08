@@ -4,5 +4,6 @@
 <defs>
 </defs>
 <rect x="0" y="0" width="400.0" height="72.16" rx="14.432" ry="14.432" fill="#8673B5" />
-<text x="15.0" y="36.08" font-size="32.472" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white">2 MY CUSTOM NAME</text>
+<text x="33.18432" y="36.08" font-size="32.472" text-anchor="end" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white">2</text>
+<text x="48.18432" y="36.08" font-size="32.472" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white">MY CUSTOM NAME</text>
 </svg>

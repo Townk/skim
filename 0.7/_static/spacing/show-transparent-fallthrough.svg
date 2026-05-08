@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="300.0" height="172.0" viewBox="0 0 300.0 172.0">
+<defs>
+</defs>
+<rect x="28.0" y="28.0" width="96.0" height="96.0" rx="6.0" ry="6.0" fill="#3F7BB6" />
+<text x="76.0" y="76.0" font-size="32.0" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" text-anchor="middle" dominant-baseline="central" fill="#9CBEDD">K</text>
+<text x="76.0" y="144.0" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">true (ghost label)</text>
+<rect x="176.0" y="28.0" width="96.0" height="96.0" rx="6.0" ry="6.0" fill="#3F7BB6" />
+<text x="224.0" y="76.0" font-size="32.0" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" text-anchor="middle" dominant-baseline="central" fill="#9CBEDD">⛛</text>
+<text x="224.0" y="144.0" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">false (⛛ glyph)</text>
+</svg>

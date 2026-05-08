@@ -612,6 +612,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Options
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -628,6 +646,621 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-this-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to read this reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#global-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global options
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Global options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#global-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --version
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#global-verbosity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --verbosity, -v
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#global-quiet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --quiet, -q
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="generate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generate-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --config, -c
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-keymap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --keymap, -k
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-output-dir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --output-dir, -o
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --format, -f
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --layer, -l
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-use-system-fonts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --use-system-fonts, -F
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-render-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --render-engine, -e
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-force" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --force
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-no-special-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --no-special-keys, -N
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-no-symbols" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --no-symbols, -Y
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-symbol-legend-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --symbol-legend-flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-symbol-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --symbol-columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-macros-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --macros-scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-tap-dances-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --tap-dances-scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-symbols-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --symbols-scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-title" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --title, -t
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-copyright" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --copyright, -r
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-double-south" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --double-south, -d
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-width" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --width, -w
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-adjust-lightness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --adjust-lightness, -L
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-adjust-saturation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --adjust-saturation, -S
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-stdin-marker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        STDIN_MARKER
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        configure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="configure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configure-interactive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --interactive, -i
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --config, -c
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-keymap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --keymap, -k
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --output, -o
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-force" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --force
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-adjust-lightness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --adjust-lightness, -L
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-adjust-saturation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --adjust-saturation, -S
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-title" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --title, -t
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-copyright" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --copyright, -r
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-double-south" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --double-south, -d
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-width" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --width, -w
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-layer-count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --layer-count, -n
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        doctor
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#render-every-layer-plus-the-overview-as-svg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render every layer plus the overview as SVG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#render-a-single-layer-as-png" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render a single layer as PNG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#render-the-overview-plus-the-macros-legend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render the overview plus the macros legend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#render-with-a-custom-palette-via-config-width-override" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render with a custom palette via config + width override
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipe-a-c2json-keymap-through-skim-generate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipe a c2json keymap through skim generate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scaffold-a-config-from-a-keybard-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scaffold a config from a Keybard file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#edit-an-existing-config-in-the-tui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Edit an existing config in the TUI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-render-engine-availability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check render-engine availability
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -985,6 +1618,610 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-this-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to read this reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#global-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global options
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Global options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#global-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --version
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#global-verbosity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --verbosity, -v
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#global-quiet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --quiet, -q
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="generate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generate-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --config, -c
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-keymap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --keymap, -k
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-output-dir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --output-dir, -o
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --format, -f
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --layer, -l
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-use-system-fonts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --use-system-fonts, -F
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-render-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --render-engine, -e
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-force" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --force
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-no-special-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --no-special-keys, -N
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-no-symbols" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --no-symbols, -Y
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-symbol-legend-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --symbol-legend-flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-symbol-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --symbol-columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-macros-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --macros-scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-tap-dances-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --tap-dances-scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-symbols-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --symbols-scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-title" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --title, -t
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-copyright" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --copyright, -r
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-double-south" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --double-south, -d
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-width" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --width, -w
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-adjust-lightness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --adjust-lightness, -L
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-adjust-saturation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --adjust-saturation, -S
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-stdin-marker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        STDIN_MARKER
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        configure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="configure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configure-interactive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --interactive, -i
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --config, -c
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-keymap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --keymap, -k
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --output, -o
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-force" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --force
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-adjust-lightness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --adjust-lightness, -L
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-adjust-saturation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --adjust-saturation, -S
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-title" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --title, -t
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-copyright" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --copyright, -r
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-double-south" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --double-south, -d
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-width" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --width, -w
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-layer-count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --layer-count, -n
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        doctor
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#render-every-layer-plus-the-overview-as-svg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render every layer plus the overview as SVG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#render-a-single-layer-as-png" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render a single layer as PNG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#render-the-overview-plus-the-macros-legend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render the overview plus the macros legend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#render-with-a-custom-palette-via-config-width-override" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Render with a custom palette via config + width override
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipe-a-c2json-keymap-through-skim-generate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipe a c2json keymap through skim generate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scaffold-a-config-from-a-keybard-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scaffold a config from a Keybard file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#edit-an-existing-config-in-the-tui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Edit an existing config in the TUI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-render-engine-availability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check render-engine availability
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1017,7 +2254,1171 @@
 
 
 <h1 id="command-line-options">Command Line Options<a class="headerlink" href="#command-line-options" title="Permanent link">&para;</a></h1>
-<p>TBD</p>
+<p>This page documents every Skim subcommand and every flag it accepts. The
+<a href="../config-file/">Configuration File</a> page is the source of truth for what
+each visual option <em>does</em>; this page documents how to drive those options
+from the command line.</p>
+<p>CLI flags take the highest priority and override anything set in the config
+file for that run. Commands and flags that change a config field link back
+to the matching field in the configuration reference.</p>
+<hr />
+<h2 id="how-to-read-this-reference">How to read this reference<a class="headerlink" href="#how-to-read-this-reference" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Each command gets one H2 section (<code>## generate</code>, <code>## configure</code>, <code>## doctor</code>).</li>
+<li>Each section opens with a short prose description and a <strong>schema sketch</strong>
+  showing the full invocation form (<code>skim &lt;command&gt; [options] &lt;args&gt;</code>).</li>
+<li>Each flag gets one H3 section with an explicit anchor ID
+  (<code>#generate-config</code>, <code>#configure-keymap</code>, …) so other docs can link directly.</li>
+<li>A flag's section starts with the canonical type table (<code>Type | Default</code> or
+  <code>Type | Default | Allowed values</code> for enums) and is followed by prose
+  describing the flag's effect on the rendered output.</li>
+<li>Flags that change a config value link to the corresponding field in
+  <a href="../config-file/"><code>config-file.md</code></a> via its anchor instead of repeating
+  the visual. Flags that change which artefact the command writes to disk
+  show a short fenced terminal block listing the resulting file names.</li>
+</ul>
+<p>Notation conventions:</p>
+<ul>
+<li><code>&lt;placeholder&gt;</code> in a schema sketch is a runtime value you supply.</li>
+<li><code>"literal"</code> in a schema sketch is a literal token you write verbatim.</li>
+<li><code>[option]</code> is optional; arguments without brackets are required when the
+  command runs.</li>
+<li>Short forms (<code>-c</code>) and long forms (<code>--config</code>) of every flag are listed
+  side-by-side in the H3 heading.</li>
+</ul>
+<p>Command names can be abbreviated to any unique prefix — <code>skim gen</code> resolves
+to <code>skim generate</code>, <code>skim conf</code> to <code>skim configure</code>, <code>skim doc</code> to
+<code>skim doctor</code>. Ambiguous prefixes raise a usage error.</p>
+<hr />
+<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#generate"><code>generate</code></a></td>
+<td>Render keymap visualisation images from a keymap file.</td>
+</tr>
+<tr>
+<td><a href="#configure"><code>configure</code></a></td>
+<td>Generate a YAML config from a keymap file or launch the configurator.</td>
+</tr>
+<tr>
+<td><a href="#doctor"><code>doctor</code></a></td>
+<td>Check the local environment for required and optional dependencies.</td>
+</tr>
+</tbody>
+</table>
+<p>The top-level <code>skim</code> command also accepts a small set of <a href="#global-options">global
+flags</a> that apply to every subcommand.</p>
+<hr />
+<h2 id="global-options">Global options<a class="headerlink" href="#global-options" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>skim<span class="w"> </span>--help
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Usage:<span class="w"> </span>skim<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span>COMMAND<span class="w"> </span><span class="o">[</span>ARGS<span class="o">]</span>...
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>Svalboard<span class="w"> </span>Keymap<span class="w"> </span>Image<span class="w"> </span>Maker<span class="w"> </span><span class="o">(</span>skim<span class="o">)</span>.
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>Generate<span class="w"> </span>visual<span class="w"> </span>keyboard<span class="w"> </span>layout<span class="w"> </span>images<span class="w"> </span>from<span class="w"> </span>keymap<span class="w"> </span>configuration<span class="w"> </span>files.
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span>Supports<span class="w"> </span>Keybard<span class="w"> </span><span class="o">(</span>.kbi<span class="o">)</span>,<span class="w"> </span>Vial<span class="w"> </span><span class="o">(</span>.vil<span class="o">)</span>,<span class="w"> </span>and<span class="w"> </span>QMK<span class="w"> </span>c2json<span class="w"> </span>formats.
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span>Use<span class="w"> </span>--verbosity<span class="w"> </span>to<span class="w"> </span>control<span class="w"> </span>output<span class="w"> </span>detail<span class="w"> </span>level:<span class="w">     </span>DEBUG:<span class="w"> </span>Detailed<span class="w"> </span>debug
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span>information<span class="w">     </span>INFO:<span class="w"> </span>Progress<span class="w"> </span>updates<span class="w"> </span>and<span class="w"> </span>summaries<span class="w">     </span>WARNING:<span class="w"> </span>Only
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span>warnings<span class="w"> </span>and<span class="w"> </span>errors<span class="w"> </span><span class="o">(</span>default<span class="o">)</span><span class="w">     </span>ERROR:<span class="w"> </span>Only<span class="w"> </span>errors<span class="w">     </span>CRITICAL:<span class="w"> </span>Only
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span>critical<span class="w"> </span>errors<span class="w">     </span>NONE:<span class="w"> </span>Silence<span class="w"> </span>all<span class="w"> </span>output
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>Options:
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span>--version<span class="w">                       </span>Show<span class="w"> </span>the<span class="w"> </span>version<span class="w"> </span>and<span class="w"> </span>exit.
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span>-v,<span class="w"> </span>--verbosity<span class="w"> </span><span class="o">[</span>debug<span class="p">|</span>info<span class="p">|</span>warning<span class="p">|</span>error<span class="p">|</span>critical<span class="p">|</span>none<span class="o">]</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">                                  </span>Logging<span class="w"> </span>verbosity<span class="w"> </span>level.
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span>-q,<span class="w"> </span>--quiet<span class="w">                     </span>Silence<span class="w"> </span>all<span class="w"> </span>output<span class="w"> </span><span class="o">(</span>overrides<span class="w"> </span>--verbosity<span class="o">)</span>.
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">  </span>--help<span class="w">                          </span>Show<span class="w"> </span>this<span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span>exit.
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>Commands:
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span>configure<span class="w">  </span>Generate<span class="w"> </span>or<span class="w"> </span>edit<span class="w"> </span>a<span class="w"> </span>configuration<span class="w"> </span>file.
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span>doctor<span class="w">     </span>Check<span class="w"> </span>system<span class="w"> </span>environment<span class="w"> </span>and<span class="w"> </span>dependencies.
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">  </span>generate<span class="w">   </span>Generate<span class="w"> </span>keymap<span class="w"> </span>visualization<span class="w"> </span>images.
+</code></pre></div>
+<p>Flags listed before the subcommand name apply to the whole invocation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>skim<span class="w"> </span><span class="o">[</span>global-options<span class="o">]</span><span class="w"> </span>&lt;command&gt;<span class="w"> </span><span class="o">[</span>command-options<span class="o">]</span>
+</code></pre></div>
+<hr />
+<h3 id="global-version"><code>--version</code><a class="headerlink" href="#global-version" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flag</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>Print the program name and version, then exit. Does not run any subcommand.</p>
+<hr />
+<h3 id="global-verbosity"><code>--verbosity</code>, <code>-v</code><a class="headerlink" href="#global-verbosity" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Allowed values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td><code>"WARNING"</code></td>
+<td><code>"DEBUG"</code>, <code>"INFO"</code>, <code>"WARNING"</code>, <code>"ERROR"</code>, <code>"CRITICAL"</code>, <code>"NONE"</code></td>
+</tr>
+</tbody>
+</table>
+<p>Set the logging verbosity. <code>"DEBUG"</code> emits the most detail; <code>"NONE"</code>
+silences every log line. The value is case-insensitive.</p>
+<hr />
+<h3 id="global-quiet"><code>--quiet</code>, <code>-q</code><a class="headerlink" href="#global-quiet" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flag</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Silence all log output. Wins over <code>--verbosity</code> when both are passed.</p>
+<hr />
+<h2 id="generate"><code>generate</code><a class="headerlink" href="#generate" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>skim<span class="w"> </span>generate<span class="w"> </span>--help
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Usage:<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span><span class="o">[</span>STDIN_MARKER<span class="o">]</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span>Generate<span class="w"> </span>keymap<span class="w"> </span>visualization<span class="w"> </span>images.
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span>Parses<span class="w"> </span>a<span class="w"> </span>keymap<span class="w"> </span>file<span class="w"> </span>and<span class="w"> </span>generates<span class="w"> </span>a<span class="w"> </span>keymap<span class="w"> </span>image<span class="w"> </span><span class="k">for</span><span class="w"> </span>each<span class="w"> </span>layer.<span class="w"> </span>Optionally
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span>generates<span class="w"> </span>an<span class="w"> </span>overview<span class="w"> </span>image<span class="w"> </span>showing<span class="w"> </span>all<span class="w"> </span>layers.
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span>The<span class="w"> </span>supported<span class="w"> </span>output<span class="w"> </span>formats<span class="w"> </span>depend<span class="w"> </span>on<span class="w"> </span>the<span class="w"> </span>dependencies<span class="w"> </span>installed.<span class="w"> </span>For<span class="w"> </span>non-
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span>vector<span class="w"> </span>images<span class="w"> </span><span class="o">(</span>PNG,<span class="w"> </span>JPEG,<span class="w"> </span>WEBP,<span class="w"> </span>and<span class="w"> </span>AVIF<span class="o">)</span>,<span class="w"> </span>the<span class="w"> </span>Playwright<span class="w"> </span>Chromium<span class="w"> </span>Browser,
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span>or<span class="w"> </span>the<span class="w"> </span>Cairo<span class="w"> </span>library<span class="w"> </span>must<span class="w"> </span>be<span class="w"> </span>installed<span class="w"> </span><span class="k">in</span><span class="w"> </span>the<span class="w"> </span>system.
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">  </span>STDIN_MARKER:<span class="w"> </span>Pass<span class="w"> </span><span class="s1">&#39;-&#39;</span><span class="w"> </span>to<span class="w"> </span><span class="nb">read</span><span class="w"> </span>keymap<span class="w"> </span>from<span class="w"> </span>stdin<span class="w"> </span>instead<span class="w"> </span>of<span class="w"> </span>file.
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">  </span>Layer<span class="w"> </span>selection<span class="w"> </span>examples:
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">      </span>-l<span class="w"> </span>overview<span class="w">       </span>Generate<span class="w"> </span>only<span class="w"> </span>the<span class="w"> </span>overview<span class="w"> </span>image
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">      </span>-l<span class="w"> </span>macros<span class="w">         </span>Generate<span class="w"> </span>only<span class="w"> </span>the<span class="w"> </span>macros<span class="w"> </span>image
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">      </span>-l<span class="w"> </span>tap-dances<span class="w">     </span>Generate<span class="w"> </span>only<span class="w"> </span>the<span class="w"> </span>tap-dances<span class="w"> </span>image
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">      </span>-l<span class="w"> </span>special-keys<span class="w">   </span>Generate<span class="w"> </span>only<span class="w"> </span>the<span class="w"> </span>macros<span class="w"> </span>+<span class="w"> </span>tap-dances<span class="w"> </span>combined<span class="w"> </span>image
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">      </span>-l<span class="w"> </span>symbols<span class="w">        </span>Generate<span class="w"> </span>only<span class="w"> </span>the<span class="w"> </span>symbols<span class="w"> </span>image
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">      </span>-l<span class="w"> </span><span class="m">1</span><span class="w">              </span>Generate<span class="w"> </span>only<span class="w"> </span>layer<span class="w"> </span><span class="m">1</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">      </span>-l<span class="w"> </span><span class="m">1</span>-3<span class="w">            </span>Generate<span class="w"> </span>layers<span class="w"> </span><span class="m">1</span>,<span class="w"> </span><span class="m">2</span>,<span class="w"> </span>and<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">      </span>-l<span class="w"> </span><span class="m">1</span><span class="w"> </span>-l<span class="w"> </span><span class="m">3</span><span class="w"> </span>-l<span class="w"> </span><span class="m">5</span><span class="w">    </span>Generate<span class="w"> </span>layers<span class="w"> </span><span class="m">1</span>,<span class="w"> </span><span class="m">3</span>,<span class="w"> </span>and<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">      </span>-l<span class="w"> </span>all-layers<span class="w">     </span>Generate<span class="w"> </span>every<span class="w"> </span>individual<span class="w"> </span>layer
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">      </span>-l<span class="w"> </span>all<span class="w">            </span>Generate<span class="w"> </span>every<span class="w"> </span>layer<span class="w"> </span>+<span class="w"> </span>overview<span class="w"> </span>+<span class="w"> </span>macros<span class="w"> </span>+<span class="w"> </span>tap-dances
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">                        </span>+<span class="w"> </span>symbols
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">                        </span><span class="o">(</span>skips<span class="w"> </span>the<span class="w"> </span>combined<span class="w"> </span>special-keys<span class="w"> </span>image<span class="p">;</span><span class="w"> </span>opt<span class="w"> </span><span class="k">in</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">                        </span>explicitly<span class="w"> </span>with<span class="w"> </span>-l<span class="w"> </span>special-keys<span class="o">)</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">      </span><span class="o">(</span>no<span class="w"> </span>-l<span class="o">)</span><span class="w">           </span>Generate<span class="w"> </span>every<span class="w"> </span>layer<span class="w"> </span>plus<span class="w"> </span>overview
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a>Options:
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">  </span>-c,<span class="w"> </span>--config<span class="w"> </span>PATH<span class="w">               </span>Configuration<span class="w"> </span>file<span class="w"> </span>path.
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">  </span>-k,<span class="w"> </span>--keymap<span class="w"> </span>PATH<span class="w">               </span>Keymap<span class="w"> </span>file<span class="w"> </span>path<span class="w"> </span><span class="o">(</span>.vil,<span class="w"> </span>.kbi,<span class="w"> </span>.json<span class="o">)</span>.
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">  </span>-o,<span class="w"> </span>--output-dir<span class="w"> </span>PATH<span class="w">           </span>Output<span class="w"> </span>directory<span class="w"> </span><span class="k">for</span><span class="w"> </span>generated<span class="w"> </span>images.
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="w">  </span>-f,<span class="w"> </span>--format<span class="w"> </span><span class="o">[</span>svg<span class="o">]</span><span class="w">              </span>Output<span class="w"> </span>format.<span class="w"> </span>Raster<span class="w"> </span>formats<span class="w"> </span><span class="o">(</span>png,<span class="w"> </span>jpeg,
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="w">                                  </span>webp,<span class="w"> </span>avif<span class="o">)</span><span class="w"> </span>require<span class="w"> </span>a<span class="w"> </span>render<span class="w"> </span>engine.
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="w">  </span>-l,<span class="w"> </span>--layer<span class="w"> </span>TEXT<span class="w">                </span>Layers/images<span class="w"> </span>to<span class="w"> </span>generate<span class="w"> </span><span class="o">(</span>all,<span class="w"> </span>all-layers,
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="w">                                  </span>overview,<span class="w"> </span>macros,<span class="w"> </span>tap-dances,<span class="w"> </span>special-keys,
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="w">                                  </span>symbols,<span class="w"> </span>N,<span class="w"> </span>N-M<span class="o">)</span>.
+<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a><span class="w">  </span>-F,<span class="w"> </span>--use-system-fonts<span class="w">          </span>Use<span class="w"> </span>system<span class="w"> </span>fonts<span class="w"> </span>instead<span class="w"> </span>of<span class="w"> </span>embedding<span class="w"> </span>fonts
+<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="w">                                  </span><span class="k">in</span><span class="w"> </span>SVG.
+<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a><span class="w">  </span>-e,<span class="w"> </span>--render-engine<span class="w"> </span><span class="o">[</span>chromium<span class="p">|</span>cairo<span class="o">]</span>
+<a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a><span class="w">                                  </span>Render<span class="w"> </span>engine<span class="w"> </span><span class="k">for</span><span class="w"> </span>non-vector<span class="w"> </span>formats.
+<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a><span class="w">                                  </span><span class="s1">&#39;chromium&#39;</span><span class="w"> </span>uses<span class="w"> </span>Playwright,<span class="w"> </span><span class="s1">&#39;cairo&#39;</span><span class="w"> </span>uses
+<a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a><span class="w">                                  </span>Cairo<span class="w"> </span>library.<span class="w"> </span>Only<span class="w"> </span>shown<span class="w"> </span>when<span class="w"> </span>both<span class="w"> </span>are
+<a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a><span class="w">                                  </span>available.
+<a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a><span class="w">  </span>--force<span class="w">                         </span>Overwrite<span class="w"> </span>existing<span class="w"> </span>files<span class="w"> </span>without
+<a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a><span class="w">                                  </span>confirmation.
+<a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a><span class="w">  </span>-N,<span class="w"> </span>--no-special-keys<span class="w">           </span>Omit<span class="w"> </span>the<span class="w"> </span>macro<span class="w"> </span>and<span class="w"> </span>tap-dance<span class="w"> </span>legend<span class="w"> </span>tables
+<a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a><span class="w">                                  </span>from<span class="w"> </span>the<span class="w"> </span>rendered<span class="w"> </span>SVGs.
+<a id="__codelineno-2-51" name="__codelineno-2-51" href="#__codelineno-2-51"></a><span class="w">  </span>-Y,<span class="w"> </span>--no-symbols<span class="w">                </span>Omit<span class="w"> </span>the<span class="w"> </span>symbol<span class="w"> </span>legend<span class="w"> </span>from<span class="w"> </span>the<span class="w"> </span>rendered
+<a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a><span class="w">                                  </span>SVGs.
+<a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a><span class="w">  </span>--symbol-legend-flow<span class="w"> </span><span class="o">[</span>row<span class="p">|</span>column<span class="o">]</span>
+<a id="__codelineno-2-54" name="__codelineno-2-54" href="#__codelineno-2-54"></a><span class="w">                                  </span>Flow<span class="w"> </span>direction<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>symbol<span class="w"> </span>legend<span class="w"> </span>table.
+<a id="__codelineno-2-55" name="__codelineno-2-55" href="#__codelineno-2-55"></a><span class="w">                                  </span><span class="s1">&#39;row&#39;</span><span class="w"> </span>fills<span class="w"> </span>rows<span class="w"> </span>first<span class="p">;</span><span class="w"> </span><span class="s1">&#39;column&#39;</span><span class="w"> </span>fills
+<a id="__codelineno-2-56" name="__codelineno-2-56" href="#__codelineno-2-56"></a><span class="w">                                  </span>columns<span class="w"> </span>first.<span class="w"> </span>Default:<span class="w"> </span>column.
+<a id="__codelineno-2-57" name="__codelineno-2-57" href="#__codelineno-2-57"></a><span class="w">  </span>--symbol-columns<span class="w"> </span>INTEGER<span class="w"> </span>RANGE<span class="w">  </span>Force<span class="w"> </span>the<span class="w"> </span>standalone<span class="w"> </span>symbols<span class="w"> </span>image<span class="w"> </span>to<span class="w"> </span>lay
+<a id="__codelineno-2-58" name="__codelineno-2-58" href="#__codelineno-2-58"></a><span class="w">                                  </span>out<span class="w"> </span>at<span class="w"> </span>exactly<span class="w"> </span>N<span class="w"> </span>columns<span class="p">;</span><span class="w"> </span>the<span class="w"> </span>canvas<span class="w"> </span>shrinks
+<a id="__codelineno-2-59" name="__codelineno-2-59" href="#__codelineno-2-59"></a><span class="w">                                  </span>to<span class="w"> </span>fit<span class="w"> </span>the<span class="w"> </span>resulting<span class="w"> </span>natural<span class="w"> </span>width.<span class="w"> </span>Without
+<a id="__codelineno-2-60" name="__codelineno-2-60" href="#__codelineno-2-60"></a><span class="w">                                  </span>this<span class="w"> </span>flag<span class="w"> </span>the<span class="w"> </span>table<span class="w"> </span>picks<span class="w"> </span>the<span class="w"> </span>largest<span class="w"> </span>column
+<a id="__codelineno-2-61" name="__codelineno-2-61" href="#__codelineno-2-61"></a><span class="w">                                  </span>count<span class="w"> </span>that<span class="w"> </span>fits<span class="w"> </span>the<span class="w"> </span>canvas<span class="w"> </span>budget.<span class="w">  </span><span class="o">[</span>x&gt;<span class="o">=</span><span class="m">1</span><span class="o">]</span>
+<a id="__codelineno-2-62" name="__codelineno-2-62" href="#__codelineno-2-62"></a><span class="w">  </span>--macros-scale<span class="w"> </span>FLOAT<span class="w"> </span>RANGE<span class="w">      </span>Body-scale<span class="w"> </span>multiplier<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>standalone
+<a id="__codelineno-2-63" name="__codelineno-2-63" href="#__codelineno-2-63"></a><span class="w">                                  </span>macros<span class="w"> </span>image<span class="w"> </span><span class="o">(</span>chips<span class="w"> </span>and<span class="w"> </span>pills<span class="w"> </span>scale<span class="w"> </span>by<span class="w"> </span>this
+<a id="__codelineno-2-64" name="__codelineno-2-64" href="#__codelineno-2-64"></a><span class="w">                                  </span>factor<span class="p">;</span><span class="w"> </span>chrome<span class="w"> </span>stays<span class="w"> </span>at<span class="w"> </span>the<span class="w"> </span>unscaled<span class="w"> </span>per-
+<a id="__codelineno-2-65" name="__codelineno-2-65" href="#__codelineno-2-65"></a><span class="w">                                  </span>image<span class="w"> </span>size<span class="o">)</span>.<span class="w"> </span>Default:<span class="w"> </span><span class="m">1</span>.5.<span class="w">  </span><span class="o">[</span>x&gt;<span class="o">=</span><span class="m">0</span>.1<span class="o">]</span>
+<a id="__codelineno-2-66" name="__codelineno-2-66" href="#__codelineno-2-66"></a><span class="w">  </span>--tap-dances-scale<span class="w"> </span>FLOAT<span class="w"> </span>RANGE<span class="w">  </span>Body-scale<span class="w"> </span>multiplier<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>standalone
+<a id="__codelineno-2-67" name="__codelineno-2-67" href="#__codelineno-2-67"></a><span class="w">                                  </span>tap-dances<span class="w"> </span>image.<span class="w"> </span>Default:<span class="w"> </span><span class="m">1</span>.5.<span class="w">  </span><span class="o">[</span>x&gt;<span class="o">=</span><span class="m">0</span>.1<span class="o">]</span>
+<a id="__codelineno-2-68" name="__codelineno-2-68" href="#__codelineno-2-68"></a><span class="w">  </span>--symbols-scale<span class="w"> </span>FLOAT<span class="w"> </span>RANGE<span class="w">     </span>Body-scale<span class="w"> </span>multiplier<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>standalone
+<a id="__codelineno-2-69" name="__codelineno-2-69" href="#__codelineno-2-69"></a><span class="w">                                  </span>symbols<span class="w"> </span>image.<span class="w"> </span>Default:<span class="w"> </span><span class="m">1</span>.5.<span class="w">  </span><span class="o">[</span>x&gt;<span class="o">=</span><span class="m">0</span>.1<span class="o">]</span>
+<a id="__codelineno-2-70" name="__codelineno-2-70" href="#__codelineno-2-70"></a><span class="w">  </span>-t,<span class="w"> </span>--title<span class="w"> </span>TEXT<span class="w">                </span>Override<span class="w"> </span>the<span class="w"> </span>overview<span class="w"> </span>keymap<span class="w"> </span>title
+<a id="__codelineno-2-71" name="__codelineno-2-71" href="#__codelineno-2-71"></a><span class="w">                                  </span><span class="o">(</span>output.keymap_title<span class="o">)</span>.
+<a id="__codelineno-2-72" name="__codelineno-2-72" href="#__codelineno-2-72"></a><span class="w">  </span>-r,<span class="w"> </span>--copyright<span class="w"> </span>TEXT<span class="w">            </span>Override<span class="w"> </span>the<span class="w"> </span>copyright<span class="w"> </span>notice
+<a id="__codelineno-2-73" name="__codelineno-2-73" href="#__codelineno-2-73"></a><span class="w">                                  </span><span class="o">(</span>output.copyright<span class="o">)</span>.
+<a id="__codelineno-2-74" name="__codelineno-2-74" href="#__codelineno-2-74"></a><span class="w">  </span>-d,<span class="w"> </span>--double-south<span class="w">              </span>Force<span class="w"> </span>the<span class="w"> </span>double-south<span class="w"> </span>keyboard<span class="w"> </span>feature<span class="w"> </span>on
+<a id="__codelineno-2-75" name="__codelineno-2-75" href="#__codelineno-2-75"></a><span class="w">                                  </span><span class="o">(</span>keyboard.features.double_south<span class="o">)</span>.
+<a id="__codelineno-2-76" name="__codelineno-2-76" href="#__codelineno-2-76"></a><span class="w">  </span>-w,<span class="w"> </span>--width<span class="w"> </span>FLOAT<span class="w">               </span>Override<span class="w"> </span>the<span class="w"> </span>keymap<span class="w"> </span>canvas<span class="w"> </span>width<span class="w"> </span><span class="k">in</span><span class="w"> </span>SVG
+<a id="__codelineno-2-77" name="__codelineno-2-77" href="#__codelineno-2-77"></a><span class="w">                                  </span>units<span class="w"> </span><span class="o">(</span>output.layout.width<span class="o">)</span>.
+<a id="__codelineno-2-78" name="__codelineno-2-78" href="#__codelineno-2-78"></a><span class="w">  </span>-L,<span class="w"> </span>--adjust-lightness<span class="w"> </span>FLOAT<span class="w">    </span>Target<span class="w"> </span>lightness<span class="w"> </span><span class="o">(</span><span class="m">0</span>.0-1.0<span class="o">)</span><span class="w"> </span>applied<span class="w"> </span>to<span class="w"> </span>every
+<a id="__codelineno-2-79" name="__codelineno-2-79" href="#__codelineno-2-79"></a><span class="w">                                  </span>layer<span class="w"> </span>base<span class="w"> </span>color.<span class="w"> </span>Ignored<span class="w"> </span>when<span class="w"> </span>--config<span class="w"> </span>is
+<a id="__codelineno-2-80" name="__codelineno-2-80" href="#__codelineno-2-80"></a><span class="w">                                  </span>provided.
+<a id="__codelineno-2-81" name="__codelineno-2-81" href="#__codelineno-2-81"></a><span class="w">  </span>-S,<span class="w"> </span>--adjust-saturation<span class="w"> </span>FLOAT<span class="w">   </span>Cap<span class="w"> </span>saturation<span class="w"> </span><span class="o">(</span><span class="m">0</span>.0-1.0<span class="o">)</span><span class="w"> </span>on<span class="w"> </span>every<span class="w"> </span>layer<span class="w"> </span>base
+<a id="__codelineno-2-82" name="__codelineno-2-82" href="#__codelineno-2-82"></a><span class="w">                                  </span>color.<span class="w"> </span>Ignored<span class="w"> </span>when<span class="w"> </span>--config<span class="w"> </span>is<span class="w"> </span>provided.
+<a id="__codelineno-2-83" name="__codelineno-2-83" href="#__codelineno-2-83"></a><span class="w">  </span>--help<span class="w">                          </span>Show<span class="w"> </span>this<span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span>exit.
+</code></pre></div>
+<p>Render keymap visualisation images. Reads a keymap from a file (or stdin),
+optionally merges in a YAML config, and writes one image per requested
+layer/legend into the output directory.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>skim<span class="w"> </span>generate<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span><span class="o">[</span>-<span class="o">]</span>
+</code></pre></div>
+<p>The trailing <code>-</code> is the optional stdin marker (see <a href="#generate-stdin-marker"><code>STDIN_MARKER</code></a>).
+Without it, <code>--keymap</code> selects the input file.</p>
+<p>A typical invocation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>--config<span class="w"> </span>my-keymap.yaml<span class="w"> </span>--output-dir<span class="w"> </span>./out
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>out/keymap-layer-0.svg
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>out/keymap-layer-1.svg
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>out/keymap-overview.svg
+</code></pre></div>
+<p>Each file's stem matches the layer or artefact it represents:
+<code>keymap-layer-&lt;qmk-index&gt;</code>, <code>keymap-overview</code>, <code>keymap-macros</code>,
+<code>keymap-tap-dances</code>, <code>keymap-special-keys</code>, <code>keymap-symbols</code>. The
+extension is set by <a href="#generate-format"><code>--format</code></a>.</p>
+<hr />
+<h3 id="generate-config"><code>--config</code>, <code>-c</code><a class="headerlink" href="#generate-config" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Path to a YAML configuration file (must already exist). Settings from this
+file populate the run; any field omitted falls back to Skim's built-in
+defaults.</p>
+<p>When <code>--config</code> is provided, <a href="#generate-adjust-lightness"><code>--adjust-lightness</code></a>
+and <a href="#generate-adjust-saturation"><code>--adjust-saturation</code></a> are ignored — color
+adjustments only apply to the auto-derived defaults, not to colors the
+user has already chosen.</p>
+<hr />
+<h3 id="generate-keymap"><code>--keymap</code>, <code>-k</code><a class="headerlink" href="#generate-keymap" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Path to a keymap file. Format is detected from the extension and content:
+Keybard (<code>.kbi</code>), Vial (<code>.vil</code>), or QMK c2json (<code>.json</code>). Without <code>--keymap</code>
+and without <a href="#generate-stdin-marker"><code>STDIN_MARKER</code></a>, Skim reads from stdin
+if data is piped in and errors out otherwise.</p>
+<hr />
+<h3 id="generate-output-dir"><code>--output-dir</code>, <code>-o</code><a class="headerlink" href="#generate-output-dir" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td>current dir</td>
+</tr>
+</tbody>
+</table>
+<p>Directory the rendered images are written to. The directory must exist as
+a directory (Skim refuses to write into a regular file at that path) but is
+created if it doesn't yet exist.</p>
+<hr />
+<h3 id="generate-format"><code>--format</code>, <code>-f</code><a class="headerlink" href="#generate-format" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Allowed values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td><code>"svg"</code></td>
+<td><code>"svg"</code>, <code>"png"</code>, <code>"jpeg"</code>, <code>"webp"</code>, <code>"avif"</code></td>
+</tr>
+</tbody>
+</table>
+<p>Output image format. Raster formats (<code>png</code>, <code>jpeg</code>, <code>webp</code>, <code>avif</code>)
+require either Playwright/Chromium or the Cairo library to be installed —
+when neither is available, <code>svg</code> is the only allowed value. Run
+<a href="#doctor"><code>skim doctor</code></a> to check which engines the local install can
+reach.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>$<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>./out<span class="w"> </span>-f<span class="w"> </span>png
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>out/keymap-layer-0.png
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>out/keymap-overview.png
+</code></pre></div>
+<hr />
+<h3 id="generate-layer"><code>--layer</code>, <code>-l</code><a class="headerlink" href="#generate-layer" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>Selects which images to write. Repeat the flag or comma-separate values to
+combine selections. Tokens are interpreted as:</p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>N</code></td>
+<td>Render the per-layer image for QMK layer <code>N</code>.</td>
+</tr>
+<tr>
+<td><code>N-M</code></td>
+<td>Render every per-layer image from <code>N</code> to <code>M</code> inclusive.</td>
+</tr>
+<tr>
+<td><code>overview</code></td>
+<td>Render the overview image (every layer in one canvas).</td>
+</tr>
+<tr>
+<td><code>macros</code></td>
+<td>Render the standalone macros legend image.</td>
+</tr>
+<tr>
+<td><code>tap-dances</code></td>
+<td>Render the standalone tap-dances legend image.</td>
+</tr>
+<tr>
+<td><code>special-keys</code></td>
+<td>Render the combined macros + tap-dances image.</td>
+</tr>
+<tr>
+<td><code>symbols</code></td>
+<td>Render the standalone symbols legend image.</td>
+</tr>
+<tr>
+<td><code>all-layers</code></td>
+<td>Render every per-layer image; clear any prior <code>N</code>/<code>N-M</code> selection.</td>
+</tr>
+<tr>
+<td><code>all</code></td>
+<td>Render every per-layer image, the overview, and the standalone macros, tap-dances, and symbols images. Skips <code>special-keys</code> (already covered) — opt in explicitly with <code>-l special-keys</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Without <code>--layer</code>, Skim renders every per-layer image plus the overview.
+Macros, tap-dances, and symbols images are emitted only when the keymap
+actually defines content for them; otherwise Skim warns and skips the
+empty image.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>$<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>./out<span class="w"> </span>-l<span class="w"> </span><span class="m">0</span><span class="w"> </span>-l<span class="w"> </span>overview<span class="w"> </span>-l<span class="w"> </span>macros
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>out/keymap-layer-0.svg
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>out/keymap-overview.svg
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>out/keymap-macros.svg
+</code></pre></div>
+<hr />
+<h3 id="generate-use-system-fonts"><code>--use-system-fonts</code>, <code>-F</code><a class="headerlink" href="#generate-use-system-fonts" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flag</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>When set, generated SVGs reference font families by name and rely on the
+viewer's system to provide them. By default Skim embeds the fonts it
+ships with directly into each SVG so the file renders identically
+regardless of the viewer's installed fonts. Maps to
+<a href="../config-file/#output-style-use-system-fonts"><code>output.style.use_system_fonts</code></a>.</p>
+<p>Toggling this flag changes file content, not which files are written.
+Run <a href="#doctor"><code>skim doctor</code></a> to confirm the bundled fonts are installed
+locally before relying on it.</p>
+<hr />
+<h3 id="generate-render-engine"><code>--render-engine</code>, <code>-e</code><a class="headerlink" href="#generate-render-engine" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Allowed values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td><code>null</code></td>
+<td><code>"chromium"</code>, <code>"cairo"</code></td>
+</tr>
+</tbody>
+</table>
+<p>For non-vector formats, choose which engine renders the SVG to a raster.
+<code>"chromium"</code> uses Playwright and matches what a browser would paint;
+<code>"cairo"</code> uses the Cairo graphics library and is faster. Ignored for
+<code>--format svg</code>.</p>
+<p>When unset, Skim picks the first available engine. If neither engine is
+installed, raster formats fail.</p>
+<hr />
+<h3 id="generate-force"><code>--force</code><a class="headerlink" href="#generate-force" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flag</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Overwrite existing output files without prompting. Without this flag,
+existing files are kept and Skim aborts the run.</p>
+<hr />
+<h3 id="generate-no-special-keys"><code>--no-special-keys</code>, <code>-N</code><a class="headerlink" href="#generate-no-special-keys" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flag</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Omit the macros and tap-dances legend tables from each rendered SVG.
+Equivalent to setting both
+<a href="../config-file/#output-style-legend-tables-macros-show"><code>output.style.legend_tables.macros.show</code></a>
+and
+<a href="../config-file/#output-style-legend-tables-tap-dances-show"><code>output.style.legend_tables.tap_dances.show</code></a>
+to <code>false</code>.</p>
+<p>This flag changes file content, not which files are written. The
+standalone macros / tap-dances images requested via <a href="#generate-layer"><code>--layer</code></a>
+are still emitted — only the in-line legend tables on per-layer and overview
+images are suppressed.</p>
+<hr />
+<h3 id="generate-no-symbols"><code>--no-symbols</code>, <code>-Y</code><a class="headerlink" href="#generate-no-symbols" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flag</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Omit the symbol legend from each rendered SVG. Equivalent to setting
+<a href="../config-file/#output-style-legend-tables-symbols-show"><code>output.style.legend_tables.symbols.show</code></a>
+to <code>false</code>. The standalone symbols image (when requested via <code>-l symbols</code>)
+is still emitted; only the in-line legend on per-layer and overview images
+is suppressed.</p>
+<hr />
+<h3 id="generate-symbol-legend-flow"><code>--symbol-legend-flow</code><a class="headerlink" href="#generate-symbol-legend-flow" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Allowed values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td><code>null</code></td>
+<td><code>"row"</code>, <code>"column"</code></td>
+</tr>
+</tbody>
+</table>
+<p>Override the flow direction of the symbols legend table.
+Maps to <a href="../config-file/#output-style-legend-tables-symbols-flow"><code>output.style.legend_tables.symbols.flow</code></a>.
+When unset, the config's value applies.</p>
+<hr />
+<h3 id="generate-symbol-columns"><code>--symbol-columns</code><a class="headerlink" href="#generate-symbol-columns" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>integer</code></td>
+<td><code>null</code></td>
+<td><code>≥ 1</code></td>
+</tr>
+</tbody>
+</table>
+<p>Force the standalone symbols image to lay out at exactly N columns; the
+canvas shrinks to fit the resulting natural width. Without this flag the
+table picks the largest column count that fits the canvas budget. Maps to
+<a href="../config-file/#output-style-legend-tables-symbols-columns"><code>output.style.legend_tables.symbols.columns</code></a>.</p>
+<hr />
+<h3 id="generate-macros-scale"><code>--macros-scale</code><a class="headerlink" href="#generate-macros-scale" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>1.5</code></td>
+<td><code>≥ 0.1</code></td>
+</tr>
+</tbody>
+</table>
+<p>Body-scale multiplier for the standalone macros image. Chips and pills
+scale by this factor; the image's chrome (border, header, footer) stays
+at the unscaled per-image size. Maps to
+<a href="../config-file/#output-style-legend-tables-macros-scale"><code>output.style.legend_tables.macros.scale</code></a>.</p>
+<hr />
+<h3 id="generate-tap-dances-scale"><code>--tap-dances-scale</code><a class="headerlink" href="#generate-tap-dances-scale" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>1.5</code></td>
+<td><code>≥ 0.1</code></td>
+</tr>
+</tbody>
+</table>
+<p>Body-scale multiplier for the standalone tap-dances image. Same shape as
+<a href="#generate-macros-scale"><code>--macros-scale</code></a>. Maps to
+<a href="../config-file/#output-style-legend-tables-tap-dances-scale"><code>output.style.legend_tables.tap_dances.scale</code></a>.</p>
+<hr />
+<h3 id="generate-symbols-scale"><code>--symbols-scale</code><a class="headerlink" href="#generate-symbols-scale" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>1.5</code></td>
+<td><code>≥ 0.1</code></td>
+</tr>
+</tbody>
+</table>
+<p>Body-scale multiplier for the standalone symbols image. Same shape as
+<a href="#generate-macros-scale"><code>--macros-scale</code></a>. Maps to
+<a href="../config-file/#output-style-legend-tables-symbols-scale"><code>output.style.legend_tables.symbols.scale</code></a>.</p>
+<hr />
+<h3 id="generate-title"><code>--title</code>, <code>-t</code><a class="headerlink" href="#generate-title" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Override the overview keymap title. Maps to
+<a href="../config-file/#output-keymap-title"><code>output.keymap_title</code></a>. When unset,
+the title from the config file applies; when no title is set anywhere
+and a keymap file is provided, Skim derives one from the keymap's
+filename.</p>
+<hr />
+<h3 id="generate-copyright"><code>--copyright</code>, <code>-r</code><a class="headerlink" href="#generate-copyright" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Override the copyright notice rendered in the overview footer. Maps to
+<a href="../config-file/#output-copyright"><code>output.copyright</code></a>.</p>
+<hr />
+<h3 id="generate-double-south"><code>--double-south</code>, <code>-d</code><a class="headerlink" href="#generate-double-south" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flag</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Force the double-south finger-cluster feature on. Maps to
+<a href="../config-file/#keyboard-features-double-south"><code>keyboard.features.double_south</code></a>.
+The flag can only set the feature to <code>true</code>; to render without it, leave
+the flag off and let the config (default <code>false</code>) apply.</p>
+<hr />
+<h3 id="generate-width"><code>--width</code>, <code>-w</code><a class="headerlink" href="#generate-width" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Override the canvas width in SVG units. Maps to
+<a href="../config-file/#output-layout-width"><code>output.layout.width</code></a>. The default
+when no config and no flag is provided is <code>1600</code>.</p>
+<hr />
+<h3 id="generate-adjust-lightness"><code>--adjust-lightness</code>, <code>-L</code><a class="headerlink" href="#generate-adjust-lightness" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>null</code></td>
+<td><code>0.0–1.0</code></td>
+</tr>
+</tbody>
+</table>
+<p>Target lightness applied to every layer's auto-derived base color before
+the gradient is built. Useful when the bundled defaults clash with a
+specific output medium (e.g. for paper printing, lower the lightness so
+key labels stay legible). Adjusts the
+<a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>
+entries Skim would otherwise auto-derive from the keymap.</p>
+<p>Ignored when <a href="#generate-config"><code>--config</code></a> is provided — Skim emits a
+note on stderr and uses the config's colors unmodified.</p>
+<hr />
+<h3 id="generate-adjust-saturation"><code>--adjust-saturation</code>, <code>-S</code><a class="headerlink" href="#generate-adjust-saturation" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>null</code></td>
+<td><code>0.0–1.0</code></td>
+</tr>
+</tbody>
+</table>
+<p>Cap saturation on every layer's auto-derived base color. Adjusts the
+<a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>
+entries Skim would otherwise auto-derive from the keymap. Same gating
+rule as <a href="#generate-adjust-lightness"><code>--adjust-lightness</code></a>: ignored when
+<code>--config</code> is provided.</p>
+<hr />
+<h3 id="generate-stdin-marker"><code>STDIN_MARKER</code><a class="headerlink" href="#generate-stdin-marker" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>Optional positional argument. Pass the literal <code>-</code> to read the keymap
+from stdin even when <a href="#generate-keymap"><code>--keymap</code></a> is provided. Without
+either, Skim reads from stdin only when data is actually piped in.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>$<span class="w"> </span>qmk<span class="w"> </span>c2json<span class="w"> </span>-kb<span class="w"> </span>svalboard/...<span class="o">]</span><span class="w"> </span>-km<span class="w"> </span>vial<span class="w"> </span>keymap.c<span class="w"> </span><span class="p">|</span><span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-<span class="w"> </span>-o<span class="w"> </span>./out
+</code></pre></div>
+<hr />
+<h2 id="configure"><code>configure</code><a class="headerlink" href="#configure" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>skim<span class="w"> </span>configure<span class="w"> </span>--help
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>Usage:<span class="w"> </span>skim<span class="w"> </span>configure<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span>Generate<span class="w"> </span>or<span class="w"> </span>edit<span class="w"> </span>a<span class="w"> </span>configuration<span class="w"> </span>file.
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span>With<span class="w"> </span>no<span class="w"> </span>flags,<span class="w"> </span>shows<span class="w"> </span>this<span class="w"> </span><span class="nb">help</span><span class="w"> </span>message.
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">  </span>Use<span class="w"> </span>-i/--interactive<span class="w"> </span>to<span class="w"> </span>launch<span class="w"> </span>the<span class="w"> </span>TUI<span class="w"> </span>configuration<span class="w"> </span>editor.<span class="w"> </span>Optionally<span class="w"> </span>pass
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span>-c/--config<span class="w"> </span>to<span class="w"> </span>load<span class="w"> </span>an<span class="w"> </span>existing<span class="w"> </span>config<span class="w"> </span>file<span class="w"> </span>into<span class="w"> </span>the<span class="w"> </span>editor.
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span>Use<span class="w"> </span>-k<span class="w"> </span>to<span class="w"> </span>extract<span class="w"> </span>metadata<span class="w"> </span><span class="o">(</span>layer<span class="w"> </span>colors,<span class="w"> </span>names,<span class="w"> </span>custom<span class="w"> </span>keycodes<span class="o">)</span><span class="w"> </span>from<span class="w"> </span>a
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">  </span>Keybard<span class="w"> </span>file.
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">  </span>Color<span class="w"> </span>adjustments<span class="w"> </span><span class="o">(</span>--adjust-lightness,<span class="w"> </span>--adjust-saturation<span class="o">)</span><span class="w"> </span>are<span class="w"> </span>applied<span class="w"> </span>to
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span>all<span class="w"> </span>extracted<span class="w"> </span>colors<span class="w"> </span>to<span class="w"> </span>ensure<span class="w"> </span>readable<span class="w"> </span>contrast<span class="w"> </span><span class="k">in</span><span class="w"> </span>generated<span class="w"> </span>images.
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>Options:
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">  </span>-i,<span class="w"> </span>--interactive<span class="w">              </span>Launch<span class="w"> </span>interactive<span class="w"> </span>configuration<span class="w"> </span>editor
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">                                 </span><span class="o">(</span>TUI<span class="o">)</span>.
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">  </span>-c,<span class="w"> </span>--config<span class="w"> </span>PATH<span class="w">              </span>Load<span class="w"> </span>an<span class="w"> </span>existing<span class="w"> </span>configuration<span class="w"> </span>file
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">                                 </span><span class="o">(</span>interactive<span class="w"> </span>mode<span class="o">)</span>.
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">  </span>-k,<span class="w"> </span>--keymap<span class="w"> </span>PATH<span class="w">              </span>Keymap<span class="w"> </span>file<span class="w"> </span>path<span class="w"> </span><span class="o">(</span>.kbi,<span class="w"> </span>.vil,<span class="w"> </span>.json<span class="o">)</span>.
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="w">  </span>-o,<span class="w"> </span>--output<span class="w"> </span>PATH<span class="w">              </span>Output<span class="w"> </span>configuration<span class="w"> </span>file<span class="w"> </span>path.
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="w">  </span>--force<span class="w">                        </span>Overwrite<span class="w"> </span>existing<span class="w"> </span>file.
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="w">  </span>-L,<span class="w"> </span>--adjust-lightness<span class="w"> </span>FLOAT<span class="w">   </span>Adjust<span class="w"> </span>lightness<span class="w"> </span><span class="o">(</span><span class="m">0</span>.0-1.0<span class="o">)</span><span class="w"> </span><span class="o">(</span>non-interactive<span class="o">)</span>.
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="w">  </span>-S,<span class="w"> </span>--adjust-saturation<span class="w"> </span>FLOAT<span class="w">  </span>Adjust<span class="w"> </span>saturation<span class="w"> </span><span class="o">(</span><span class="m">0</span>.0-1.0<span class="o">)</span><span class="w"> </span><span class="o">(</span>non-
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="w">                                 </span>interactive<span class="o">)</span>.
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="w">  </span>-t,<span class="w"> </span>--title<span class="w"> </span>TEXT<span class="w">               </span>Set<span class="w"> </span>the<span class="w"> </span>keymap<span class="w"> </span>title<span class="w"> </span><span class="o">(</span>output.keymap_title<span class="o">)</span>.
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a><span class="w">  </span>-r,<span class="w"> </span>--copyright<span class="w"> </span>TEXT<span class="w">           </span>Set<span class="w"> </span>the<span class="w"> </span>copyright<span class="w"> </span>notice<span class="w"> </span><span class="o">(</span>output.copyright<span class="o">)</span>.
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="w">  </span>-d,<span class="w"> </span>--double-south<span class="w">             </span>Enable<span class="w"> </span>the<span class="w"> </span>double-south<span class="w"> </span>keyboard<span class="w"> </span>feature
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="w">                                 </span><span class="o">(</span>keyboard.features.double_south<span class="o">)</span>.
+<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a><span class="w">  </span>-w,<span class="w"> </span>--width<span class="w"> </span>FLOAT<span class="w">              </span>Set<span class="w"> </span>the<span class="w"> </span>keymap<span class="w"> </span>canvas<span class="w"> </span>width<span class="w"> </span><span class="k">in</span><span class="w"> </span>SVG<span class="w"> </span>units
+<a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a><span class="w">                                 </span><span class="o">(</span>output.layout.width<span class="o">)</span>.
+<a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a><span class="w">  </span>-n,<span class="w"> </span>--layer-count<span class="w"> </span>INTEGER<span class="w">      </span>Number<span class="w"> </span>of<span class="w"> </span>layers<span class="w"> </span>to<span class="w"> </span>pre-create<span class="w"> </span>with<span class="w"> </span>defaults
+<a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a><span class="w">                                 </span><span class="o">(</span>interactive<span class="w"> </span>mode<span class="o">)</span>.
+<a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a><span class="w">  </span>--help<span class="w">                         </span>Show<span class="w"> </span>this<span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span>exit.
+</code></pre></div>
+<p>Generate, edit, or scaffold a YAML configuration file. Without flags,
+prints help. With <code>-k</code>, extracts metadata (layer names, palette, custom
+keycodes) from a keymap file and writes a config. With <code>-i</code>, launches the
+<a href="../configurator-ui/">Configurator UI</a>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>skim<span class="w"> </span>configure<span class="w"> </span><span class="o">[</span>options<span class="o">]</span>
+</code></pre></div>
+<p>The most common forms:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>$<span class="w"> </span>skim<span class="w"> </span>configure<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>my-config.yaml
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>$<span class="w"> </span>skim<span class="w"> </span>configure<span class="w"> </span>-i<span class="w"> </span>-c<span class="w"> </span>my-config.yaml
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>$<span class="w"> </span>skim<span class="w"> </span>configure<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;My Keymap&quot;</span><span class="w"> </span>-r<span class="w"> </span><span class="s2">&quot;© 2026 Me&quot;</span><span class="w"> </span>-o<span class="w"> </span>my-config.yaml
+</code></pre></div>
+<hr />
+<h3 id="configure-interactive"><code>--interactive</code>, <code>-i</code><a class="headerlink" href="#configure-interactive" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flag</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Launch the Configurator UI (TUI) instead of writing a config to disk. The
+TUI is provided by the optional <code>textual</code> extra; install with
+<code>pip install qmk-skim[tui]</code> if missing.</p>
+<p>When combined with <a href="#configure-config"><code>--config</code></a>, the existing file is
+loaded into the editor. When combined with <a href="#configure-keymap"><code>--keymap</code></a>,
+the keymap-derived config is fed into the editor as the starting point.</p>
+<hr />
+<h3 id="configure-config"><code>--config</code>, <code>-c</code><a class="headerlink" href="#configure-config" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Load an existing configuration file. Required to be readable.</p>
+<p>When combined with <code>--keymap</code>, the keymap-derived config is treated as a
+scaffold and the contents of <code>--config</code> are deep-merged on top — so user
+edits like custom palette colors, titles, and copyrights are preserved
+across reloads.</p>
+<hr />
+<h3 id="configure-keymap"><code>--keymap</code>, <code>-k</code><a class="headerlink" href="#configure-keymap" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Path to a keymap file (<code>.kbi</code>, <code>.vil</code>, or <code>.json</code>). Skim extracts layer
+names, palette base colors, and any custom keycodes it can resolve, then
+writes a YAML config. For Keybard (<code>.kbi</code>) files, palette colors are
+extracted from the firmware metadata; for Vial / c2json files they're
+auto-derived.</p>
+<hr />
+<h3 id="configure-output"><code>--output</code>, <code>-o</code><a class="headerlink" href="#configure-output" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Where to write the generated YAML. When the path points at a directory,
+Skim writes <code>skim-config.yaml</code> inside it. Without <code>--output</code>, the YAML
+prints to stdout (non-interactive) or is held in the TUI's save dialog
+(interactive).</p>
+<hr />
+<h3 id="configure-force"><code>--force</code><a class="headerlink" href="#configure-force" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flag</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Overwrite an existing output file without prompting. Without this flag,
+Skim asks for confirmation; if stdin is a pipe, confirmation reads from
+the controlling terminal.</p>
+<hr />
+<h3 id="configure-adjust-lightness"><code>--adjust-lightness</code>, <code>-L</code><a class="headerlink" href="#configure-adjust-lightness" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>null</code></td>
+<td><code>0.0–1.0</code></td>
+</tr>
+</tbody>
+</table>
+<p>Target lightness applied to layer base colors when generating from a
+<strong>Keybard</strong> file. Has no effect for Vial or c2json input (those formats
+don't carry layer colors). Modifies the
+<a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>
+entries written to the generated config.</p>
+<hr />
+<h3 id="configure-adjust-saturation"><code>--adjust-saturation</code>, <code>-S</code><a class="headerlink" href="#configure-adjust-saturation" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>null</code></td>
+<td><code>0.0–1.0</code></td>
+</tr>
+</tbody>
+</table>
+<p>Cap saturation on layer base colors when generating from a Keybard file.
+Modifies the
+<a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>
+entries written to the generated config. Same input-format restriction as
+<a href="#configure-adjust-lightness"><code>--adjust-lightness</code></a>.</p>
+<hr />
+<h3 id="configure-title"><code>--title</code>, <code>-t</code><a class="headerlink" href="#configure-title" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Set the value of <a href="../config-file/#output-keymap-title"><code>output.keymap_title</code></a>
+in the generated config. Combines with every other flag — passing <code>-t</code>
+alone writes a near-default config with just the title set.</p>
+<hr />
+<h3 id="configure-copyright"><code>--copyright</code>, <code>-r</code><a class="headerlink" href="#configure-copyright" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Set the value of <a href="../config-file/#output-copyright"><code>output.copyright</code></a>
+in the generated config.</p>
+<hr />
+<h3 id="configure-double-south"><code>--double-south</code>, <code>-d</code><a class="headerlink" href="#configure-double-south" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flag</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Set <a href="../config-file/#keyboard-features-double-south"><code>keyboard.features.double_south</code></a>
+to <code>true</code> in the generated config.</p>
+<hr />
+<h3 id="configure-width"><code>--width</code>, <code>-w</code><a class="headerlink" href="#configure-width" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>float</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Set <a href="../config-file/#output-layout-width"><code>output.layout.width</code></a> in the
+generated config.</p>
+<hr />
+<h3 id="configure-layer-count"><code>--layer-count</code>, <code>-n</code><a class="headerlink" href="#configure-layer-count" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>integer</code></td>
+<td><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Pre-create N layers with default names (<code>Layer 0</code>, <code>Layer 1</code>, …) and
+default palette colors. Writes to both
+<a href="../config-file/#keyboard-layers"><code>keyboard.layers</code></a> and
+<a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>.
+Existing layer entries from <code>--config</code> or <code>--keymap</code> are preserved; any
+indices below <code>N</code> that aren't yet defined are filled in. The resulting
+list is sorted by layer index.</p>
+<p>When the existing config already has at least N distinct layer indices,
+the flag is a no-op.</p>
+<hr />
+<h2 id="doctor"><code>doctor</code><a class="headerlink" href="#doctor" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>skim<span class="w"> </span>doctor<span class="w"> </span>--help
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>Usage:<span class="w"> </span>skim<span class="w"> </span>doctor<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span>Check<span class="w"> </span>system<span class="w"> </span>environment<span class="w"> </span>and<span class="w"> </span>dependencies.
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>Options:
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">  </span>--help<span class="w">  </span>Show<span class="w"> </span>this<span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span>exit.
+</code></pre></div>
+<p>Check the local environment for everything Skim depends on. The command
+takes no flags.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>skim<span class="w"> </span>doctor
+</code></pre></div>
+<p>What it reports:</p>
+<ul>
+<li><strong>Installation Integrity</strong> — every bundled font and asset (Roboto
+  variants, Symbols Nerd Font, keycode-mapping table, glyph table,
+  Svalboard logo) is reachable from the install.</li>
+<li><strong>Playwright (Chromium)</strong> — required for raster export via Chromium.</li>
+<li><strong>Cairo Graphics</strong> — required for raster export via Cairo (faster than
+  Chromium).</li>
+<li><strong>System Font: \&lt;name&gt;</strong> — once per bundled font (<code>Roboto-Regular.ttf</code>,
+  <code>Roboto-Black.ttf</code>, <code>Roboto-Thin.ttf</code>, <code>SymbolsNerdFont-Regular.ttf</code>).
+  Failures are warnings, not errors — system fonts only matter when
+  <a href="#generate-use-system-fonts"><code>--use-system-fonts</code></a> is set on <code>skim
+  generate</code>.</li>
+<li><strong>Textual (TUI)</strong> — required for the
+  <a href="../configurator-ui/">Configurator UI</a>. Optional; absence is reported
+  as a warning.</li>
+</ul>
+<p>The command exits zero when every non-optional check passes. Failures on
+optional checks (system fonts, render engines, Textual) print as <code>WARN</code>
+lines and don't fail the run.</p>
+<hr />
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<p>A quick tour of common invocations.</p>
+<hr />
+<h3 id="render-every-layer-plus-the-overview-as-svg">Render every layer plus the overview as SVG<a class="headerlink" href="#render-every-layer-plus-the-overview-as-svg" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>$<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>./out
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>out/keymap-layer-0.svg
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>out/keymap-layer-1.svg
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>out/keymap-overview.svg
+</code></pre></div>
+<p>The default behaviour: every per-layer image plus the overview, no
+standalone legend images.</p>
+<hr />
+<h3 id="render-a-single-layer-as-png">Render a single layer as PNG<a class="headerlink" href="#render-a-single-layer-as-png" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>$<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>./out<span class="w"> </span>-l<span class="w"> </span><span class="m">1</span><span class="w"> </span>-f<span class="w"> </span>png
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>out/keymap-layer-1.png
+</code></pre></div>
+<hr />
+<h3 id="render-the-overview-plus-the-macros-legend">Render the overview plus the macros legend<a class="headerlink" href="#render-the-overview-plus-the-macros-legend" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>$<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>./out<span class="w"> </span>-l<span class="w"> </span>overview<span class="w"> </span>-l<span class="w"> </span>macros
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>out/keymap-overview.svg
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>out/keymap-macros.svg
+</code></pre></div>
+<hr />
+<h3 id="render-with-a-custom-palette-via-config-width-override">Render with a custom palette via config + width override<a class="headerlink" href="#render-with-a-custom-palette-via-config-width-override" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>$<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-c<span class="w"> </span>my-config.yaml<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>./out<span class="w"> </span>-w<span class="w"> </span><span class="m">2400</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>out/keymap-layer-0.svg
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>out/keymap-overview.svg
+</code></pre></div>
+<p>The CLI's <code>-w 2400</code> wins over any <code>output.layout.width</code> in
+<code>my-config.yaml</code>.</p>
+<hr />
+<h3 id="pipe-a-c2json-keymap-through-skim-generate">Pipe a c2json keymap through <code>skim generate</code><a class="headerlink" href="#pipe-a-c2json-keymap-through-skim-generate" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>$<span class="w"> </span>qmk<span class="w"> </span>c2json<span class="w"> </span>-kb<span class="w"> </span>my/board<span class="w"> </span>-km<span class="w"> </span>vial<span class="w"> </span>--no-cpp<span class="w"> </span>keymap.c<span class="w"> </span><span class="p">|</span><span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-<span class="w"> </span>-o<span class="w"> </span>./out<span class="w"> </span>-l<span class="w"> </span>overview
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>out/keymap-overview.svg
+</code></pre></div>
+<hr />
+<h3 id="scaffold-a-config-from-a-keybard-file">Scaffold a config from a Keybard file<a class="headerlink" href="#scaffold-a-config-from-a-keybard-file" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>$<span class="w"> </span>skim<span class="w"> </span>configure<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>skim-config.yaml<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;My Layout&quot;</span><span class="w"> </span>-r<span class="w"> </span><span class="s2">&quot;© 2026 Me&quot;</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>Configuration<span class="w"> </span>written<span class="w"> </span>to<span class="w"> </span>skim-config.yaml
+</code></pre></div>
+<p>The <code>-k</code> flag extracts layer names + palette; <code>-t</code> and <code>-r</code> populate
+<code>output.keymap_title</code> and <code>output.copyright</code>.</p>
+<hr />
+<h3 id="edit-an-existing-config-in-the-tui">Edit an existing config in the TUI<a class="headerlink" href="#edit-an-existing-config-in-the-tui" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>$<span class="w"> </span>skim<span class="w"> </span>configure<span class="w"> </span>-i<span class="w"> </span>-c<span class="w"> </span>skim-config.yaml
+</code></pre></div>
+<hr />
+<h3 id="check-render-engine-availability">Check render-engine availability<a class="headerlink" href="#check-render-engine-availability" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>$<span class="w"> </span>skim<span class="w"> </span>doctor
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="o">[</span>PASS<span class="o">]</span><span class="w"> </span>Installation<span class="w"> </span>Integrity:<span class="w"> </span>All<span class="w"> </span>bundled<span class="w"> </span>assets<span class="w"> </span>are<span class="w"> </span>present.
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="o">[</span>PASS<span class="o">]</span><span class="w"> </span>Playwright<span class="w"> </span><span class="o">(</span>Chromium<span class="o">)</span>:<span class="w"> </span>Available
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="o">[</span>WARN<span class="o">]</span><span class="w"> </span>Cairo<span class="w"> </span>Graphics:<span class="w"> </span>Not<span class="w"> </span>available
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">       </span>Details:<span class="w"> </span>Required<span class="w"> </span><span class="k">for</span><span class="w"> </span>PNG/JPEG/WEBP<span class="w"> </span><span class="nb">export</span><span class="w"> </span>using<span class="w"> </span>Cairo<span class="w"> </span><span class="o">(</span>faster<span class="w"> </span>than<span class="w"> </span>Chromium<span class="o">)</span>.
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>...
+</code></pre></div>
 
 
 
