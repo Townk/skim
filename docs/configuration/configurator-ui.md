@@ -267,11 +267,18 @@ Switch, Color input).
 
 ## Keyboard tab { #fields-keyboard }
 
-Hardware metadata, image titling, and the layer roster.
+The Keyboard tab gathers everything that's specific to your physical
+keyboard build and how it's identified in the rendered output: a
+title and copyright line for the overview image, the double-south
+hardware toggle, and the roster of QMK layers Skim should render.
 
 ---
 
 ### Info { #fields-keyboard-info }
+
+Text overlays Skim renders on the overview image. Both fields are
+optional — leave them blank to fall back to Skim's defaults (a
+title derived from the keymap's filename, and no copyright line).
 
 ---
 
@@ -307,6 +314,10 @@ Hardware metadata, image titling, and the layer roster.
 
 ### Features { #fields-keyboard-features }
 
+Hardware-feature toggles for the keyboard. Today this is just the
+double-south finger cluster; the section exists as a slot for
+future hardware variants.
+
 ---
 
 #### Double South { #keyboard-feature-double-south }
@@ -325,6 +336,11 @@ Hardware metadata, image titling, and the layer roster.
 ---
 
 ### Layers { #fields-keyboard-layers }
+
+The roster of QMK layers Skim renders. Each entry binds a firmware
+layer index to a human-readable identity (name, optional ID,
+optional variant), and the list's order controls how layers stack
+in the overview image.
 
 ---
 
@@ -406,11 +422,21 @@ Hardware metadata, image titling, and the layer roster.
 
 ## Keycodes tab { #fields-keycodes }
 
-Keycode rewriting, label overrides, and metadata for macros and tap-dances.
+The Keycodes tab controls the pipeline that turns raw QMK keycode
+strings into the labels Skim paints on each key. Pre-process rules
+rewrite non-standard keycodes into ones the bundled resolver knows;
+overrides force a specific label for a chosen keycode; the macros
+and tap-dances sections give those special keys human-friendly
+names for the legend tables.
 
 ---
 
 ### Pre-process { #fields-keycodes-pre-process }
+
+Search-and-replace rules that run before Skim's bundled keycode
+resolver looks anything up. Use these to normalise custom firmware
+keycodes onto the standard QMK constructs the resolver already
+knows.
 
 ---
 
@@ -462,6 +488,11 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 
 ### Overrides { #fields-keycodes-overrides }
 
+Force the rendered label for a specific keycode after the bundled
+resolver has run. Common uses: spelling words out (`KC_SPC` →
+`"Space"`), choosing a glyph (`KC_ENT` → `"↵"`), or pointing a
+custom keycode at a specific icon.
+
 ---
 
 #### Keycode Overrides { #keycodes-override-list }
@@ -511,6 +542,12 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 ---
 
 ### Macros { #fields-keycodes-macros }
+
+Friendly names for QMK macro slots. Each entry binds a macro
+identifier (`M0` … `M49` for Vial / Keybard keymaps, or a
+`#define` name for c2json keymaps) to the label Skim shows in the
+macros legend. Previews are auto-generated from the keymap and
+shouldn't be edited by hand.
 
 ---
 
@@ -562,6 +599,10 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 
 ### Tap-dances { #fields-keycodes-tap-dances }
 
+Friendly names for QMK tap-dance slots, mirroring the Macros
+section. Each entry binds a tap-dance identifier (`TD0` … `TD49`)
+to the label that appears in the tap-dance legend.
+
 ---
 
 #### Tap Dances { #keycodes-tap-dance-list }
@@ -612,11 +653,19 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 
 ## Output tab { #fields-output }
 
-Layout dimensions, colors, and styling for the rendered images.
+The Output tab controls how the rendered images look: the canvas
+size, the spacing around the keymap, the chrome around the page,
+the legends shown alongside each layer, and the colors used for
+the keys themselves.
 
 ---
 
 ### Page { #fields-output-page }
+
+The canvas itself. Width drives the entire image's scale, the
+spacing fields push the keymap inward from the edges, and the
+border block draws an optional rounded frame around the whole
+thing.
 
 ---
 
@@ -711,6 +760,11 @@ Layout dimensions, colors, and styling for the rendered images.
 ---
 
 ### Style { #fields-output-style }
+
+Toggles and choices that affect what details the renderer paints
+on each image — symbol and special-key legends, layer indicators
+and connectors, fall-through hints, and the position of hold-
+action symbols on tap-hold keys.
 
 ---
 
@@ -962,6 +1016,12 @@ The chrome colors that frame every rendered image. Each takes any CSS color valu
 
 ### Layer Colors { #fields-output-layer-colors }
 
+Per-layer accent color. Each entry binds a layer to a base color
+and an optional gradient, used for the layer's section header in
+the overview image and the color-coded keys when
+[`Use Layer Colors on Keys`](#output-style-use-layer-colors) is
+enabled.
+
 ---
 
 #### Layer Colors { #output-layer-color-list }
@@ -1037,5 +1097,3 @@ The chrome colors that frame every rendered image. Each takes any CSS color valu
 %}
 
 **Configures:** entries of [`output.style.palette.layers[*].gradient`](config-file.md#output-style-palette-layers) (one per manual gradient step; the configurator surfaces all six positions side-by-side as `Step 0` … `Step 5`)
-
----
