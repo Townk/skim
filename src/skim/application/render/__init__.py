@@ -154,8 +154,8 @@ def _draw_layer(
     registers its painted characters there during construction.
     """
     legends = config.output.style.legend_tables
-    used_macro_ids: tuple[str, ...] = ()
-    used_td_ids: tuple[str, ...] = ()
+    used_macro_ids: set[str] = set()
+    used_td_ids: set[str] = set()
     if legends.macros.show or legends.tap_dances.show:
         used_macro_ids, used_td_ids = collect_used_ids(layer)
     layer_macros = resolve_macros(used_macro_ids, macros) if legends.macros.show else []

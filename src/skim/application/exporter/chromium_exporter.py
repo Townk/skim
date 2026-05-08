@@ -39,7 +39,7 @@ from pathlib import Path
 
 import drawsvg as draw
 from PIL import Image
-from playwright.async_api import Browser, async_playwright
+from playwright.async_api import Browser, async_playwright  # pyright: ignore[reportMissingImports]
 
 
 class ChromiumExporter:

@@ -31,7 +31,7 @@ def setup_cairo_library_path() -> None:
 
 def check_playwright_available() -> bool:
     try:
-        from playwright.sync_api import sync_playwright
+        from playwright.sync_api import sync_playwright  # pyright: ignore[reportMissingImports]
 
         with sync_playwright() as p:
             try:
@@ -51,8 +51,8 @@ def check_cairo_available() -> bool:
         # Setup cairo library path before checking availability
         setup_cairo_library_path()
 
-        import cairocffi  # noqa: F401  # pyright: ignore[reportUnusedImport]
-        import cairosvg  # noqa: F401  # pyright: ignore[reportUnusedImport]
+        import cairocffi  # noqa: F401  # pyright: ignore[reportUnusedImport, reportMissingImports]
+        import cairosvg  # noqa: F401  # pyright: ignore[reportUnusedImport, reportMissingImports]
 
         return True
     except (ImportError, OSError):

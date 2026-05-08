@@ -1056,14 +1056,13 @@ def KeymapOverview(
             for row_idx, (_pos, qmk_idx) in enumerate(render_layers):
                 row_y = mutable_row_ys[row_idx]
                 lfh, rfh = finger_halves[row_idx]
-                layer_data = keymap.layers[qmk_idx]
                 # Match cluster names between FingerHalfMetrics
                 # (``index_origin``, ``middle_origin``, …) and
                 # FingerClusterMetrics + FingerClusterData
                 # (``index``, ``middle``, …).
-                for side_name, half_x, half, side_data in (
-                    ("left", left_half_x, lfh, layer_data.left),
-                    ("right", right_half_x, rfh, layer_data.right),
+                for side_name, half_x, half in (
+                    ("left", left_half_x, lfh),
+                    ("right", right_half_x, rfh),
                 ):
                     finger_idx_to_attr = (
                         ("index", "index_origin"),
@@ -1071,10 +1070,9 @@ def KeymapOverview(
                         ("ring", "ring_origin"),
                         ("pinky", "pinky_origin"),
                     )
-                    for finger_idx, (cluster_attr, origin_attr) in enumerate(finger_idx_to_attr):
+                    for cluster_attr, origin_attr in finger_idx_to_attr:
                         cluster_metrics = getattr(half.metrics, cluster_attr)
                         cluster_origin = getattr(half.metrics, origin_attr)
-                        cluster_data = side_data.fingers[finger_idx]
                         for slot in _FINGER_SLOTS:
                             indicator = getattr(cluster_metrics.indicators, slot)
                             if indicator is None:
@@ -1093,9 +1091,9 @@ def KeymapOverview(
             # Thumb cluster indicators — first layer only, matching
             # what the body actually paints.
             current_thumb_y = mutable_thumb_y[0]
-            for side_name, thumb_x, thumb, side_data in (
-                ("left", left_thumb_x, left_thumb, thumb_layer_data.left.thumb),
-                ("right", right_thumb_x, right_thumb, thumb_layer_data.right.thumb),
+            for side_name, thumb_x, thumb in (
+                ("left", left_thumb_x, left_thumb),
+                ("right", right_thumb_x, right_thumb),
             ):
                 for slot in _THUMB_SLOTS:
                     indicator = getattr(thumb.metrics.indicators, slot)
@@ -1387,7 +1385,7 @@ class ConnectorStep:
     path: draw.Path = field(default_factory=lambda: draw.Path(fill="none"))
 
 
-def step_indicator_key(step: "ConnectorStep") -> str:
+def step_indicator_key(step: ConnectorStep) -> str:
     """Position-based identifier for a step's indicator rect.
 
     Avoids the ``id(key)`` collision a user hits when the same

@@ -48,7 +48,7 @@ from dataclasses import dataclass
 from skim.data import LayerColor, SkimConfig, SvalboardKeymap, resolve_spacing
 from skim.domain import SvalboardTargetKey
 
-from .font import Font
+from .font import Font, FontUsageCollector
 
 # ---------------------------------------------------------------------------
 # Theme & typography
@@ -432,7 +432,7 @@ _render_ctx: ContextVar[RenderContext] = ContextVar("skim_render_ctx")
 def using_render_context(
     ctx: RenderContext,
     *,
-    font_usage_collector: "FontUsageCollector | None" = None,
+    font_usage_collector: FontUsageCollector | None = None,
 ) -> Iterator[RenderContext]:
     """Push ``ctx`` as the active render context for the duration of the block.
 
