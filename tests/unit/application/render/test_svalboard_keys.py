@@ -866,3 +866,123 @@ class TestKnuckleKey:
         left_x = _label_text_x(_draw(left, Point(0.0, 0.0)).as_svg())
         assert abs(right_x - left_x) < 0.5
         assert right_x < width / 2.0
+
+
+# ---------------------------------------------------------------------------
+# TestKeyPathMetric — every key composable exposes ``metrics.path``
+# ---------------------------------------------------------------------------
+
+
+class TestKeyPathMetric:
+    """Every key composable populates ``metrics.path`` with a callable
+    that returns the rendered fill shape (and outset variants)."""
+
+    def test_center_key_path_is_callable_returning_circle(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _center_key(side=KeyboardSide.RIGHT, width=40.0)
+        elem = key.metrics.path(0.0)
+        assert isinstance(elem, draw.Circle)
+        assert elem.args["r"] == 20.0  # half of width
+
+    def test_center_key_path_outset_grows_radius(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _center_key(side=KeyboardSide.RIGHT, width=40.0)
+        elem = key.metrics.path(2.5)
+        assert isinstance(elem, draw.Circle)
+        assert elem.args["r"] == 22.5
+
+    def test_directional_key_path_is_rectangle(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _directional_key(
+                side=KeyboardSide.RIGHT, direction=KeyDirection.NORTH, width=40.0
+            )
+        elem = key.metrics.path(0.0)
+        assert isinstance(elem, draw.Rectangle)
+        assert elem.args["width"] == 40.0
+        assert elem.args["height"] == 40.0
+
+    def test_directional_key_path_outset_grows_rect(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _directional_key(
+                side=KeyboardSide.RIGHT, direction=KeyDirection.NORTH, width=40.0
+            )
+        elem = key.metrics.path(1.0)
+        assert elem.args["width"] == 42.0
+        assert elem.args["height"] == 42.0
+        assert elem.args["x"] == -1.0
+        assert elem.args["y"] == -1.0
+
+    def test_double_south_key_path_is_trapezoid(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = _double_south_key(side=KeyboardSide.RIGHT, width=40.0)
+        elem = key.metrics.path(0.0)
+        from skim.application.render.trapezoid import Trapezoid
+        assert isinstance(elem, Trapezoid)
+
+    def test_down_key_path_is_trapezoid(self, ctx: RenderContext):
+        from skim.application.render.svalboard_keys import DownKey
+        from skim.application.render.trapezoid import Trapezoid
+        with using_render_context(ctx):
+            key = DownKey(
+                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
+                fill_color="#fff", label_color="#000",
+            )
+        elem = key.metrics.path(0.0)
+        assert isinstance(elem, Trapezoid)
+
+    def test_pad_key_path_is_trapezoid(self, ctx: RenderContext):
+        from skim.application.render.svalboard_keys import PadKey
+        from skim.application.render.trapezoid import Trapezoid
+        with using_render_context(ctx):
+            key = PadKey(
+                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
+                fill_color="#fff", label_color="#000",
+            )
+        elem = key.metrics.path(0.0)
+        assert isinstance(elem, Trapezoid)
+
+    def test_nail_key_path_is_trapezoid(self, ctx: RenderContext):
+        from skim.application.render.svalboard_keys import NailKey
+        from skim.application.render.trapezoid import Trapezoid
+        with using_render_context(ctx):
+            key = NailKey(
+                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
+                fill_color="#fff", label_color="#000",
+            )
+        elem = key.metrics.path(0.0)
+        assert isinstance(elem, Trapezoid)
+
+    def test_knuckle_key_path_is_trapezoid(self, ctx: RenderContext):
+        from skim.application.render.svalboard_keys import KnuckleKey
+        from skim.application.render.trapezoid import Trapezoid
+        with using_render_context(ctx):
+            key = KnuckleKey(
+                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
+                fill_color="#fff", label_color="#000",
+            )
+        elem = key.metrics.path(0.0)
+        assert isinstance(elem, Trapezoid)
+
+    def test_double_down_key_path_is_trapezoid(self, ctx: RenderContext):
+        from skim.application.render.svalboard_keys import DoubleDownKey
+        from skim.application.render.trapezoid import Trapezoid
+        with using_render_context(ctx):
+            key = DoubleDownKey(
+                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
+                fill_color="#fff", label_color="#000",
+                stroke_color="#000",
+            )
+        elem = key.metrics.path(0.0)
+        assert isinstance(elem, Trapezoid)
+
+    def test_up_key_path_is_trapezoid(self, ctx: RenderContext):
+        from skim.application.render.svalboard_keys import UpKey
+        from skim.application.render.trapezoid import Trapezoid
+        with using_render_context(ctx):
+            key = UpKey(
+                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
+                fill_color="#fff", label_color="#000",
+                stroke_color="#000",
+            )
+        elem = key.metrics.path(0.0)
+        assert isinstance(elem, Trapezoid)

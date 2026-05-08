@@ -19,6 +19,7 @@ and a long label shrinks to fit via the relaxation loop.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import drawsvg as draw
@@ -72,10 +73,18 @@ class SvalboardKeyMetrics:
     Routing the indicator concern through metrics keeps the key
     composable itself focused on shape + label — the cluster-level
     indicator code is the consumer.
+
+    * :attr:`path` — a callable ``(outset: float) -> DrawingBasicElement``
+      that returns the key's rendered fill shape in coordinates relative
+      to the key's draw origin. ``path(0.0)`` returns the shape at its
+      natural size; ``path(amount)`` returns the same shape outset by
+      ``amount`` on every edge — used by siblings (e.g.
+      :func:`ThumbCluster`) that need cutout / clipping geometry.
     """
 
     indicator_anchor: Point
     indicator_direction: CompassDirection
+    path: Callable[[float], draw.DrawingBasicElement]
 
 
 # ---------------------------------------------------------------------------
@@ -247,6 +256,9 @@ def CenterKey(
 
     size = Size(width, width)
 
+    def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
+        return draw.Circle(cx=half, cy=half, r=half + outset, fill=fill_color)
+
     def draw_at(d, origin):
         cx = origin.x + half
         cy = origin.y + half
@@ -266,6 +278,7 @@ def CenterKey(
         metrics=SvalboardKeyMetrics(
             indicator_anchor=indicator_anchor,
             indicator_direction=indicator_direction,
+            path=_path,
         ),
     )
 
@@ -357,6 +370,17 @@ def DirectionalKey(
 
     size = Size(width, width)
 
+    def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
+        return draw.Rectangle(
+            x=-outset,
+            y=-outset,
+            width=width + 2 * outset,
+            height=width + 2 * outset,
+            rx=accent_radius,
+            ry=accent_radius,
+            fill=fill_color,
+        )
+
     def draw_at(d, origin):
         x, y = origin.x, origin.y
         # Main rounded rect — ``rx`` / ``ry`` use ``accent_radius`` so
@@ -412,6 +436,7 @@ def DirectionalKey(
         metrics=SvalboardKeyMetrics(
             indicator_anchor=indicator_anchor,
             indicator_direction=indicator_direction,
+            path=_path,
         ),
     )
 
@@ -472,6 +497,17 @@ def DoubleSouthKey(
 
     size = Size(width, width)
 
+    def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
+        return Trapezoid(
+            x=-outset,
+            y=-outset,
+            width=width + 2 * outset,
+            height=width + 2 * outset,
+            bottom_width=bottom_width + 2 * outset,
+            corners_radius=accent_radius,
+            fill=fill_color,
+        )
+
     def draw_at(d, origin):
         x, y = origin.x, origin.y
         # Trapezoid main shape — narrower at the bottom.
@@ -514,6 +550,7 @@ def DoubleSouthKey(
         metrics=SvalboardKeyMetrics(
             indicator_anchor=indicator_anchor,
             indicator_direction=indicator_direction,
+            path=_path,
         ),
     )
 
@@ -574,6 +611,17 @@ def DownKey(
 
     size = Size(width, height)
 
+    def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
+        return Trapezoid(
+            x=-outset,
+            y=-outset,
+            width=width + 2 * outset,
+            height=height + 2 * outset,
+            top_width=top_width + 2 * outset,
+            corners_radius=corner_radius,
+            fill=fill_color,
+        )
+
     def draw_at(d, origin):
         x, y = origin.x, origin.y
         d.append(
@@ -602,6 +650,7 @@ def DownKey(
         metrics=SvalboardKeyMetrics(
             indicator_anchor=indicator_anchor,
             indicator_direction=indicator_direction,
+            path=_path,
         ),
     )
 
@@ -655,6 +704,17 @@ def DoubleDownKey(
 
     size = Size(width, height)
 
+    def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
+        return Trapezoid(
+            x=-outset,
+            y=-outset,
+            width=width + 2 * outset,
+            height=height + 2 * outset,
+            top_width=top_width + 2 * outset,
+            corners_radius=corner_radius,
+            fill=fill_color,
+        )
+
     def draw_at(d, origin):
         x, y = origin.x, origin.y
         d.append(
@@ -685,6 +745,7 @@ def DoubleDownKey(
         metrics=SvalboardKeyMetrics(
             indicator_anchor=indicator_anchor,
             indicator_direction=indicator_direction,
+            path=_path,
         ),
     )
 
@@ -779,6 +840,19 @@ def UpKey(
 
     size = Size(width, height)
 
+    def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
+        return Trapezoid(
+            x=-outset,
+            y=-outset,
+            width=width + 2 * outset,
+            height=height + 2 * outset,
+            left_height=None if inner_left_height is None else inner_left_height + 2 * outset,
+            right_height=None if inner_right_height is None else inner_right_height + 2 * outset,
+            corners_radius=corner_radius,
+            align_y=Alignment.START,
+            fill=fill_color,
+        )
+
     def draw_at(d, origin):
         x, y = origin.x, origin.y
         # Outer (stroke) trapezoid.
@@ -831,6 +905,7 @@ def UpKey(
         metrics=SvalboardKeyMetrics(
             indicator_anchor=indicator_anchor,
             indicator_direction=indicator_direction,
+            path=_path,
         ),
     )
 
@@ -913,6 +988,18 @@ def _vertical_trapezoid_thumb_key(
 
     size = Size(width, height)
 
+    def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
+        return Trapezoid(
+            x=-outset,
+            y=-outset,
+            width=width + 2 * outset,
+            height=height + 2 * outset,
+            bottom_width=bottom_width + 2 * outset,
+            corners_radius=corner_radius,
+            align_x=align_x,
+            fill=fill_color,
+        )
+
     def draw_at(d, origin):
         x, y = origin.x, origin.y
         d.append(
@@ -947,6 +1034,7 @@ def _vertical_trapezoid_thumb_key(
         metrics=SvalboardKeyMetrics(
             indicator_anchor=indicator_anchor,
             indicator_direction=indicator_direction,
+            path=_path,
         ),
     )
 
