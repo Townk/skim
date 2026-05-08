@@ -137,6 +137,24 @@ class Trapezoid(draw.DrawingBasicElement):
         else:
             path_data = self._create_sharp_path(points)
 
+        # Stash construction args for downstream transforms (e.g. cluster-
+        # level translation when building a clipPath). Internal contract,
+        # not part of the public Trapezoid API.
+        self._construction = {
+            "x": x,
+            "y": y,
+            "width": width,
+            "height": height,
+            "top_width": top_width if vertical else None,
+            "bottom_width": bottom_width if vertical else None,
+            "left_height": left_height if horizontal else None,
+            "right_height": right_height if horizontal else None,
+            "align_x": align_x,
+            "align_y": align_y,
+            "corners_radius": corners_radius,
+        }
+        self._construction_kwargs = dict(kwargs)
+
         self.args["d"] = path_data
 
     def _calculate_vertical_points(

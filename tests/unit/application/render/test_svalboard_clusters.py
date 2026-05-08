@@ -14,11 +14,15 @@ from skim.application.render.layer_indicator import LayerIndicatorMetrics
 from skim.application.render.primitives import CompassDirection, Point
 from skim.application.render.render_context import RenderContext, using_render_context
 from skim.application.render.svalboard_clusters import (
+    _DD_CUTOUT_OUTSET_MULTIPLIER,
+    _UP_CUTOUT_OUTSET_MULTIPLIER,
     FingerCluster,
     FingerClusterMetrics,
     ThumbCluster,
     ThumbClusterMetrics,
+    _translated,
 )
+from skim.application.render.trapezoid import Trapezoid
 from skim.data import LayerColor, Palette, SkimConfig, SvalboardKeymap
 from skim.data.config import Keyboard, KeyboardLayer, Output, Style
 from skim.data.keyboard import FingerCluster as FingerClusterData, ThumbCluster as ThumbClusterData
@@ -1045,3 +1049,41 @@ class TestThumbKeyColorsShape:
 
         field_names = {f.name for f in dataclasses.fields(_ThumbKeyColors)}
         assert field_names == {"fill", "label"}
+
+
+class TestTranslatedHelper:
+    """``_translated`` returns a copy of the input drawsvg element
+    shifted by ``(origin.x, origin.y)`` without mutating the original."""
+
+    def test_translated_circle_shifts_centre(self):
+        c = draw.Circle(cx=10.0, cy=20.0, r=5.0, fill="#fff")
+        out = _translated(c, Point(3.0, 4.0))
+        assert out.args["cx"] == 13.0
+        assert out.args["cy"] == 24.0
+        # Original unchanged.
+        assert c.args["cx"] == 10.0
+
+    def test_translated_rectangle_shifts_origin(self):
+        r = draw.Rectangle(x=5.0, y=6.0, width=20.0, height=30.0, fill="#fff")
+        out = _translated(r, Point(1.0, 2.0))
+        assert out.args["x"] == 6.0
+        assert out.args["y"] == 8.0
+        assert out.args["width"] == 20.0
+        assert out.args["height"] == 30.0
+
+    def test_translated_trapezoid_shifts_path(self):
+        t = Trapezoid(x=0.0, y=0.0, width=20.0, height=10.0, top_width=15.0, fill="#fff")
+        out = _translated(t, Point(5.0, 5.0))
+        # Compare against a re-instantiated Trapezoid at the shifted origin.
+        expected = Trapezoid(x=5.0, y=5.0, width=20.0, height=10.0, top_width=15.0, fill="#fff")
+        assert out.args["d"] == expected.args["d"]
+
+
+class TestCutoutMultipliers:
+    """Cluster owns the per-key cutout outset proportions."""
+
+    def test_dd_cutout_multiplier_value(self):
+        assert _DD_CUTOUT_OUTSET_MULTIPLIER == 0.05
+
+    def test_up_cutout_multiplier_value(self):
+        assert _UP_CUTOUT_OUTSET_MULTIPLIER == 0.025

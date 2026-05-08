@@ -36,7 +36,10 @@ The cluster does four jobs the per-key composables don't:
 from __future__ import annotations
 
 import colorsys
+import itertools
 from dataclasses import dataclass
+
+import drawsvg as draw
 
 from skim.data import LayerColor, SplitSidePosition, resolve_spacing
 from skim.data.keyboard import FingerCluster as FingerClusterData, ThumbCluster as ThumbClusterData
@@ -59,6 +62,7 @@ from .svalboard_keys import (
     SvalboardKeyMetrics,
     UpKey,
 )
+from .trapezoid import Trapezoid
 
 # Magnitude of the HSL lightness shift applied to a transparent key's
 # fill colour to produce its faded "ghost" label colour. Mirrors the
@@ -105,6 +109,61 @@ _CENTER_KEY_GAP_MULTIPLIER = 3.0
 # stray ``layer_switch`` index.
 _INDICATOR_FALLBACK_FILL = "#808080"
 _INDICATOR_FALLBACK_STROKE = "#606060"
+
+
+# ---------------------------------------------------------------------------
+# Down-key clip-path cutouts
+# ---------------------------------------------------------------------------
+
+# DD's cutout in the down key is outset by a fraction of DD's own width.
+# Value mirrors the legacy ``_DOUBLE_DOWN_STROKE_MULTIPLIER``: today's
+# stroke band (drawn at 0.05 × dd_width, centred) sat half-inside / half-
+# outside the trapezoid arg; the new DD shape is the inset-half, the
+# cutout edge is the outset-full from there → net same outer edge as
+# today's stroke. Kept exactly twice the per-key
+# ``_DOUBLE_DOWN_INSET_MULTIPLIER`` for that reason.
+_DD_CUTOUT_OUTSET_MULTIPLIER = 0.05
+
+# UP's cutout is outset by a fraction of UP's own width. Value mirrors
+# the legacy ``_UP_STROKE_MULTIPLIER`` (0.025) — today's outer
+# bg-coloured twin grew the inner trapezoid by exactly that on each
+# horizontal edge; the new clipPath cutout reproduces the same gap.
+_UP_CUTOUT_OUTSET_MULTIPLIER = 0.025
+
+# Module-level counter for clip-path ids. Restarts at zero per process;
+# within one render invocation the ids are stable. The SVG output's
+# clip-path id is purely structural — different ids that reference the
+# same shape produce visually identical output.
+_CLIP_ID_COUNTER = itertools.count()
+
+
+def _translated(elem: draw.Circle | draw.Rectangle | Trapezoid, origin: Point) -> draw.Circle | draw.Rectangle | Trapezoid:
+    """Return a copy of a drawsvg shape shifted by ``origin``.
+
+    Supports the three shape types thumb-cluster keys publish via their
+    ``path`` metric: :class:`drawsvg.Circle`, :class:`drawsvg.Rectangle`,
+    and :class:`Trapezoid`. The original element is not mutated.
+    """
+    if isinstance(elem, draw.Circle):
+        new_args = dict(elem.args)
+        new_args["cx"] = float(elem.args["cx"]) + origin.x
+        new_args["cy"] = float(elem.args["cy"]) + origin.y
+        return draw.Circle(**new_args)
+    if isinstance(elem, draw.Rectangle):
+        new_args = dict(elem.args)
+        new_args["x"] = float(elem.args["x"]) + origin.x
+        new_args["y"] = float(elem.args["y"]) + origin.y
+        return draw.Rectangle(**new_args)
+    if isinstance(elem, Trapezoid):
+        params = dict(elem._construction)
+        params["x"] = params["x"] + origin.x
+        params["y"] = params["y"] + origin.y
+        # Trapezoid's __init__ rejects mixed vertical / horizontal kwargs;
+        # only one orientation has values — drop the Nones from the
+        # other.
+        params = {k: v for k, v in params.items() if v is not None}
+        return Trapezoid(**params, **elem._construction_kwargs)
+    raise TypeError(f"_translated does not support {type(elem).__name__}")
 
 
 # ---------------------------------------------------------------------------
