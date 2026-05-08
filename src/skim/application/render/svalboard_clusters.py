@@ -1330,7 +1330,6 @@ def ThumbCluster(
         label_text=nudged_cluster.double_down_key.label,
         fill_color=double_down_colors.fill,
         label_color=double_down_colors.label,
-        stroke_color=double_down_colors.stroke,
     )
 
     # Layer indicators. Diameter is a proportion of the down key's

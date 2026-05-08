@@ -148,9 +148,12 @@ _DOWN_LABEL_BOTTOM_MARGIN_MULTIPLIER = 0.10
 # height).
 _DOWN_INDICATOR_ANCHOR_Y_RATIO = 0.84
 
-# DoubleDownKey — squat trapezoid with stroke outline; centred label.
+# DoubleDownKey — squat trapezoid; centred label.
 _DOUBLE_DOWN_SLANT_MULTIPLIER = 0.08
-_DOUBLE_DOWN_STROKE_MULTIPLIER = 0.05
+_DOUBLE_DOWN_INSET_MULTIPLIER = 0.025  # half of legacy 0.05 stroke band
+# Note: kept exactly half of the cluster's _DD_CUTOUT_OUTSET_MULTIPLIER —
+# inset(0.025) inward then outset(0.05) outward = +0.025 net = today's
+# legacy outer-stroke edge.
 _DOUBLE_DOWN_CORNER_RADIUS_MULTIPLIER = 0.13
 _DOUBLE_DOWN_FONT_HEIGHT_MULTIPLIER = 0.6
 _DOUBLE_DOWN_LABEL_WIDTH_MULTIPLIER = 0.8 - _DOUBLE_DOWN_SLANT_MULTIPLIER
@@ -664,22 +667,25 @@ def DoubleDownKey(
     label_text: str,
     fill_color: str,
     label_color: str,
-    stroke_color: str,
 ):
-    """The double-down key — squat trapezoid with a stroke outline.
+    """The double-down key — squat trapezoid below the up key.
 
     Sits between the down key and the up key in the thumb cluster.
-    Shape is symmetric (top-narrower vertical trapezoid), so the
-    drawing is identical on both halves. The indicator always sits
-    above the key — :class:`CompassDirection.NORTH` is mirror-
-    invariant under horizontal reflection, so the metrics happen to
-    be side-invariant for this one too.
+    Painted as a single trapezoid (no SVG stroke); the trapezoid is
+    inset by ``stroke_width / 2`` from the legacy reference shape so
+    today's visible fill and the new rendered shape coincide. The
+    surrounding hole / clip-path is the cluster's concern.
+
+    Reports :class:`SvalboardKeyMetrics` with the indicator above the
+    key on both sides (``CompassDirection.NORTH``); :func:`_mirror_metrics`
+    keeps the signature symmetric across keyboard halves even though
+    NORTH is mirror-invariant.
     """
     del ctx  # RichText reads ``use_system_fonts`` from its own ctx.
 
     height = width * _DOUBLE_DOWN_HEIGHT_RATIO
     top_width = width * (1.0 - _DOUBLE_DOWN_SLANT_MULTIPLIER)
-    stroke_width = width * _DOUBLE_DOWN_STROKE_MULTIPLIER
+    inset = width * _DOUBLE_DOWN_INSET_MULTIPLIER
     corner_radius = width * _DOUBLE_DOWN_CORNER_RADIUS_MULTIPLIER
     label_font_size = height * _DOUBLE_DOWN_FONT_HEIGHT_MULTIPLIER
     label_width_budget = width * _DOUBLE_DOWN_LABEL_WIDTH_MULTIPLIER
@@ -702,35 +708,32 @@ def DoubleDownKey(
         side=side,
     )
 
-    size = Size(width, height)
-
     def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
         return Trapezoid(
-            x=-outset,
-            y=-outset,
-            width=width + 2 * outset,
-            height=height + 2 * outset,
-            top_width=top_width + 2 * outset,
+            x=inset - outset,
+            y=inset - outset,
+            width=(width - 2 * inset) + 2 * outset,
+            height=(height - 2 * inset) + 2 * outset,
+            top_width=(top_width - 2 * inset) + 2 * outset,
             corners_radius=corner_radius,
             fill=fill_color,
         )
+
+    size = Size(width, height)
 
     def draw_at(d, origin):
         x, y = origin.x, origin.y
         d.append(
             Trapezoid(
-                x=x,
-                y=y,
-                width=width,
-                height=height,
-                top_width=top_width,
+                x=x + inset,
+                y=y + inset,
+                width=width - 2 * inset,
+                height=height - 2 * inset,
+                top_width=top_width - 2 * inset,
                 corners_radius=corner_radius,
                 fill=fill_color,
-                stroke=stroke_color,
-                stroke_width=stroke_width,
             )
         )
-        # Label centred at the cell centre.
         cx = x + width / 2.0
         cy = y + height / 2.0
         label_origin = Point(
