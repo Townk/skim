@@ -20,9 +20,7 @@ from skim.application.render.svalboard_clusters import (
     FingerClusterMetrics,
     ThumbCluster,
     ThumbClusterMetrics,
-    _translated,
 )
-from skim.application.render.trapezoid import Trapezoid
 from skim.data import LayerColor, Palette, SkimConfig, SvalboardKeymap
 from skim.data.config import Keyboard, KeyboardLayer, Output, Style
 from skim.data.keyboard import FingerCluster as FingerClusterData, ThumbCluster as ThumbClusterData
@@ -1051,34 +1049,6 @@ class TestThumbKeyColorsShape:
         assert field_names == {"fill", "label"}
 
 
-class TestTranslatedHelper:
-    """``_translated`` returns a copy of the input drawsvg element
-    shifted by ``(origin.x, origin.y)`` without mutating the original."""
-
-    def test_translated_circle_shifts_centre(self):
-        c = draw.Circle(cx=10.0, cy=20.0, r=5.0, fill="#fff")
-        out = _translated(c, Point(3.0, 4.0))
-        assert out.args["cx"] == 13.0
-        assert out.args["cy"] == 24.0
-        # Original unchanged.
-        assert c.args["cx"] == 10.0
-
-    def test_translated_rectangle_shifts_origin(self):
-        r = draw.Rectangle(x=5.0, y=6.0, width=20.0, height=30.0, fill="#fff")
-        out = _translated(r, Point(1.0, 2.0))
-        assert out.args["x"] == 6.0
-        assert out.args["y"] == 8.0
-        assert out.args["width"] == 20.0
-        assert out.args["height"] == 30.0
-
-    def test_translated_trapezoid_shifts_path(self):
-        t = Trapezoid(x=0.0, y=0.0, width=20.0, height=10.0, top_width=15.0, fill="#fff")
-        out = _translated(t, Point(5.0, 5.0))
-        # Compare against a re-instantiated Trapezoid at the shifted origin.
-        expected = Trapezoid(x=5.0, y=5.0, width=20.0, height=10.0, top_width=15.0, fill="#fff")
-        assert out.args["d"] == expected.args["d"]
-
-
 class TestCutoutMultipliers:
     """Cluster owns the per-key cutout outset proportions."""
 
@@ -1089,11 +1059,16 @@ class TestCutoutMultipliers:
         assert _UP_CUTOUT_OUTSET_MULTIPLIER == 0.025
 
 
-class TestDownClipPath:
-    """ThumbCluster emits a clipPath with DD + UP outset cutouts and
-    wraps the Down paint in a group that references it."""
+class TestDownCutouts:
+    """ThumbCluster bakes DD + UP cutouts into Down's rendered ``<path>``
+    via ``fill-rule="evenodd"`` — they become real edges of Down's
+    geometry, not separate clipping state. No ``<clipPath>`` is emitted
+    by the cluster, and a stroke (or any other outline-aware effect) on
+    Down's path traces both the outer outline and the cutout rims."""
 
-    def test_clippath_emitted(self, ctx: RenderContext, palette: Palette):
+    def test_no_clippath_emitted(self, ctx: RenderContext, palette: Palette):
+        """The cluster should not emit any ``<clipPath>`` — cutouts are
+        baked into Down's path directly."""
         cluster_data = ThumbClusterData(
             down_key=_td_key(label="DOWN"),
             pad_key=_td_key(label="PAD"),
@@ -1110,15 +1085,12 @@ class TestDownClipPath:
                 layer_qmk_index=_LAYER_0,
             )
         svg = str(_draw(cluster, Point(0, 0)).as_svg())
-        assert "<clipPath" in svg
-        assert 'clip-rule="evenodd"' in svg
-        assert 'clip-path="url(#thumb-down-clip-' in svg
+        assert "<clipPath" not in svg
+        assert "clip-path=" not in svg
 
-    def test_clippath_has_single_evenodd_path(self, ctx: RenderContext, palette: Palette):
-        """One composite ``<path clip-rule="evenodd">`` containing three
-        subpaths: the Down bbox (outer) plus the DD + UP cutouts. Browsers
-        only honour the evenodd rule when subpaths share a single path
-        element — sibling shapes silently fail to subtract."""
+    def test_down_path_has_three_subpaths_with_evenodd(self, ctx: RenderContext, palette: Palette):
+        """Down's rendered ``<path>`` carries three subpaths
+        (outer + DD cutout + UP cutout) and ``fill-rule="evenodd"``."""
         import re
 
         cluster_data = ThumbClusterData(
@@ -1137,49 +1109,8 @@ class TestDownClipPath:
                 layer_qmk_index=_LAYER_0,
             )
         svg = str(_draw(cluster, Point(0, 0)).as_svg())
-        match = re.search(r"<clipPath[^>]*>(.*?)</clipPath>", svg, re.DOTALL)
-        assert match is not None
-        body = match.group(1)
-        rect_count = body.count("<rect")
-        path_count = body.count("<path")
-        assert rect_count == 0, f"expected no <rect> children, got {rect_count}"
-        assert path_count == 1, f"expected 1 composite path, got {path_count}"
-        # The composite path uses clip-rule=evenodd and has three "M"
-        # commands (one per subpath).
-        path_match = re.search(r'<path d="([^"]*)"[^/>]*clip-rule="evenodd"', body)
-        assert path_match is not None, f"composite path missing clip-rule=evenodd: {body!r}"
-        m_commands = path_match.group(1).count("M ")
+        # Down's evenodd path is the only one with fill-rule=evenodd.
+        match = re.search(r'<path d="([^"]*)"[^/>]*fill-rule="evenodd"', svg)
+        assert match is not None, f"no evenodd path found in {svg!r}"
+        m_commands = match.group(1).count("M ")
         assert m_commands == 3, f"expected 3 M-subpaths (Down+DD+UP), got {m_commands}"
-
-    def test_clippath_id_unique_across_clusters(self, ctx: RenderContext, palette: Palette):
-        import re
-
-        cluster_data = ThumbClusterData(
-            down_key=_td_key(label="DOWN"),
-            pad_key=_td_key(label="PAD"),
-            up_key=_td_key(label="UP"),
-            nail_key=_td_key(label="NAIL"),
-            knuckle_key=_td_key(label="KNUCKLE"),
-            double_down_key=_td_key(label="DD"),
-        )
-        with using_render_context(ctx):
-            cluster_a = ThumbCluster(
-                cluster=cluster_data,
-                side=KeyboardSide.RIGHT,
-                width=200.0,
-                layer_qmk_index=_LAYER_0,
-            )
-            cluster_b = ThumbCluster(
-                cluster=cluster_data,
-                side=KeyboardSide.LEFT,
-                width=200.0,
-                layer_qmk_index=_LAYER_0,
-            )
-        svg_a = str(_draw(cluster_a, Point(0, 0)).as_svg())
-        svg_b = str(_draw(cluster_b, Point(0, 0)).as_svg())
-        m_a = re.search(r'id="(thumb-down-clip-\d+)"', svg_a)
-        m_b = re.search(r'id="(thumb-down-clip-\d+)"', svg_b)
-        assert m_a is not None and m_b is not None
-        id_a = m_a.group(1)
-        id_b = m_b.group(1)
-        assert id_a != id_b

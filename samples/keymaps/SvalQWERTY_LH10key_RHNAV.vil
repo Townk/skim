@@ -1082,7 +1082,7 @@
     [
       [
         "KC_LCTRL",
-        "LGUI_T(KC_TAB)",
+        "LWIN_T(KC_TAB)",
         "KC_LSHIFT",
         "LT1(KC_ENTER)",
         "KC_NO",

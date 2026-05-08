@@ -157,6 +157,19 @@ class Trapezoid(draw.DrawingBasicElement):
 
         self.args["d"] = path_data
 
+    def translated(self, dx: float, dy: float) -> "Trapezoid":
+        """Return a copy of self with origin shifted by ``(dx, dy)``.
+
+        Re-uses the construction args stash so the result is a real
+        :class:`Trapezoid` (not just a path-string copy) and downstream
+        transformations (``outset``, further ``translated``) keep
+        working on it.
+        """
+        params = {k: v for k, v in self._construction.items() if v is not None}
+        params["x"] = params["x"] + dx
+        params["y"] = params["y"] + dy
+        return Trapezoid(**params, **self._construction_kwargs)
+
     def outset(self, amount: float) -> "Trapezoid":
         """Return a new Trapezoid that is the Minkowski offset of self by ``amount``.
 

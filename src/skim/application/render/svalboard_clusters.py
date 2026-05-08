@@ -36,10 +36,7 @@ The cluster does four jobs the per-key composables don't:
 from __future__ import annotations
 
 import colorsys
-import itertools
 from dataclasses import dataclass
-
-import drawsvg as draw
 
 from skim.data import LayerColor, SplitSidePosition, resolve_spacing
 from skim.data.keyboard import FingerCluster as FingerClusterData, ThumbCluster as ThumbClusterData
@@ -129,75 +126,6 @@ _DD_CUTOUT_OUTSET_MULTIPLIER = 0.05
 # bg-coloured twin grew the inner trapezoid by exactly that on each
 # horizontal edge; the new clipPath cutout reproduces the same gap.
 _UP_CUTOUT_OUTSET_MULTIPLIER = 0.025
-
-# Module-level counter for clip-path ids. Restarts at zero per process;
-# within one render invocation the ids are stable. The SVG output's
-# clip-path id is purely structural — different ids that reference the
-# same shape produce visually identical output.
-_CLIP_ID_COUNTER = itertools.count()
-
-
-def _translated(elem: draw.DrawingBasicElement, origin: Point) -> draw.DrawingBasicElement:
-    """Return a copy of a drawsvg shape shifted by ``origin``.
-
-    Supports the three shape types thumb-cluster keys publish via their
-    ``path`` metric: :class:`drawsvg.Circle`, :class:`drawsvg.Rectangle`,
-    and :class:`Trapezoid`. The original element is not mutated.
-    """
-    if isinstance(elem, draw.Circle):
-        new_args = dict(elem.args)
-        new_args["cx"] = float(elem.args["cx"]) + origin.x
-        new_args["cy"] = float(elem.args["cy"]) + origin.y
-        return draw.Circle(**new_args)
-    if isinstance(elem, draw.Rectangle):
-        new_args = dict(elem.args)
-        new_args["x"] = float(elem.args["x"]) + origin.x
-        new_args["y"] = float(elem.args["y"]) + origin.y
-        return draw.Rectangle(**new_args)
-    if isinstance(elem, Trapezoid):
-        params = dict(elem._construction)
-        params["x"] = params["x"] + origin.x
-        params["y"] = params["y"] + origin.y
-        # Trapezoid's __init__ rejects mixed vertical / horizontal kwargs;
-        # only one orientation has values — drop the Nones from the
-        # other.
-        params = {k: v for k, v in params.items() if v is not None}
-        return Trapezoid(**params, **elem._construction_kwargs)
-    raise TypeError(f"_translated does not support {type(elem).__name__}")
-
-
-def _clip_only(elem: draw.DrawingBasicElement) -> draw.DrawingBasicElement:
-    """Return a copy of ``elem`` with paint attributes stripped.
-
-    Inside a ``<clipPath>`` only path geometry matters. drawsvg auto-
-    emits a ``<use xlink:href="#clip-id" />`` for any ClipPath that's
-    appended to a Drawing; some renderers paint that ``<use>``
-    visibly using whatever ``fill`` / ``stroke`` the clipPath's
-    children carry. Forcing ``fill="none"`` (and dropping any
-    ``stroke``) makes the spurious ``<use>`` paint nothing while
-    leaving the clipping geometry untouched.
-    """
-    if isinstance(elem, draw.Circle):
-        new_args = dict(elem.args)
-        new_args["fill"] = "none"
-        new_args.pop("stroke", None)
-        new_args.pop("stroke-width", None)
-        return draw.Circle(**new_args)
-    if isinstance(elem, draw.Rectangle):
-        new_args = dict(elem.args)
-        new_args["fill"] = "none"
-        new_args.pop("stroke", None)
-        new_args.pop("stroke-width", None)
-        return draw.Rectangle(**new_args)
-    if isinstance(elem, Trapezoid):
-        params = dict(elem._construction)
-        params = {k: v for k, v in params.items() if v is not None}
-        kwargs = dict(elem._construction_kwargs)
-        kwargs["fill"] = "none"
-        kwargs.pop("stroke", None)
-        kwargs.pop("stroke_width", None)
-        return Trapezoid(**params, **kwargs)
-    raise TypeError(f"_clip_only does not support {type(elem).__name__}")
 
 
 # ---------------------------------------------------------------------------
@@ -1375,14 +1303,11 @@ def ThumbCluster(
     )
     slots = _compute_thumb_slots(cluster_width=width, side=side, inset=thumb_inset)
 
-    # Per-key composables.
-    down = DownKey(
-        side=side,
-        width=slots.down_width,
-        label_text=nudged_cluster.down_key.label,
-        fill_color=down_colors.fill,
-        label_color=down_colors.label,
-    )
+    # Per-key composables. DD and UP are built first so their outset
+    # cutouts can be passed to Down — Down bakes them into its
+    # rendered ``<path>`` via ``fill-rule="evenodd"``, so the holes
+    # become real edges of Down's geometry (a stroke or any other
+    # outline-aware effect traces them).
     pad = PadKey(
         side=side,
         width=slots.pad_width,
@@ -1417,6 +1342,36 @@ def ThumbCluster(
         label_text=nudged_cluster.double_down_key.label,
         fill_color=double_down_colors.fill,
         label_color=double_down_colors.label,
+    )
+
+    # Translate DD's and UP's outset cutouts from their own local
+    # frames into Down's local frame.
+    dd_cutout_amount = slots.double_down_width * _DD_CUTOUT_OUTSET_MULTIPLIER
+    up_cutout_amount = slots.up_width * _UP_CUTOUT_OUTSET_MULTIPLIER
+    dd_offset_in_down = (
+        slots.double_down_origin.x - slots.down_origin.x,
+        slots.double_down_origin.y - slots.down_origin.y,
+    )
+    up_offset_in_down = (
+        slots.up_origin.x - slots.down_origin.x,
+        slots.up_origin.y - slots.down_origin.y,
+    )
+    dd_cutout = double_down.metrics.path(dd_cutout_amount)
+    up_cutout = up.metrics.path(up_cutout_amount)
+    assert isinstance(dd_cutout, Trapezoid)  # noqa: S101
+    assert isinstance(up_cutout, Trapezoid)  # noqa: S101
+    down_cutouts = (
+        dd_cutout.translated(*dd_offset_in_down),
+        up_cutout.translated(*up_offset_in_down),
+    )
+
+    down = DownKey(
+        side=side,
+        width=slots.down_width,
+        label_text=nudged_cluster.down_key.label,
+        fill_color=down_colors.fill,
+        label_color=down_colors.label,
+        cutouts=down_cutouts,
     )
 
     # Layer indicators. Diameter is a proportion of the down key's
@@ -1505,41 +1460,11 @@ def ThumbCluster(
             origin.y + slots.double_down_origin.y,
         )
 
-        # Build the clipPath that punches DD and UP holes in DOWN.
-        # All subpaths (Down bbox + DD cutout + UP cutout) are combined
-        # into a SINGLE ``<path>`` element with ``clip-rule="evenodd"``.
-        # Browsers (Chromium tested) only honour evenodd when the
-        # subpaths live on one element — putting clip-rule on the
-        # ``<clipPath>`` parent or on each sibling shape silently fails
-        # to apply the rule across siblings. The cutouts therefore
-        # need to be expressed as a single composite path string.
-        #
-        # ``fill="none"`` on the path keeps the spurious
-        # ``<use xlink:href="#clip-id"/>`` drawsvg auto-emits from
-        # painting visible phantom shapes — clipping uses geometry,
-        # not fill, so this only affects the phantom paint.
-        clip_id = f"thumb-down-clip-{next(_CLIP_ID_COUNTER)}"
-        dd_outset = slots.double_down_width * _DD_CUTOUT_OUTSET_MULTIPLIER
-        up_outset = slots.up_width * _UP_CUTOUT_OUTSET_MULTIPLIER
-        dd_cutout_local = double_down.metrics.path(dd_outset)
-        up_cutout_local = up.metrics.path(up_outset)
-        outer_d = (
-            f"M {down_o.x} {down_o.y} "
-            f"h {slots.down_width} "
-            f"v {down.size.height} "
-            f"h {-slots.down_width} Z"
-        )
-        dd_d = _translated(dd_cutout_local, double_down_o).args["d"]
-        up_d = _translated(up_cutout_local, up_o).args["d"]
-        clip_path = draw.ClipPath(id=clip_id)
-        clip_path.append(draw.Path(d=f"{outer_d} {dd_d} {up_d}", clip_rule="evenodd", fill="none"))
-        d.append(clip_path)
-
-        down_group = draw.Group(clip_path=f"url(#{clip_id})")
-        down.draw_at(down_group, down_o)
-        d.append(down_group)
-
-        # The remaining keys paint unwrapped, on top of the clipped Down.
+        # Down's rendered ``<path>`` already bakes in the DD/UP cutouts
+        # via ``fill-rule="evenodd"`` (see :func:`DownKey`). DD and UP
+        # paint on top of the holey Down — their fills cover the
+        # cutouts cleanly.
+        down.draw_at(d, down_o)
         pad.draw_at(d, pad_o)
         up.draw_at(d, up_o)
         nail.draw_at(d, nail_o)

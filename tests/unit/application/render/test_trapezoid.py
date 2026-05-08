@@ -415,3 +415,37 @@ class TestTrapezoidOutset:
         # 2N/cos(θ).
         avg_growth = ((new_top_width - 70) + (new_bottom_width - 100)) / 2
         assert avg_growth == pytest.approx(2 * n / cos_theta)
+
+
+class TestTrapezoidTranslated:
+    """Tests for Trapezoid.translated() — origin-shift convenience."""
+
+    def test_returns_fresh_independent_trapezoid(self):
+        original = Trapezoid(x=10, y=20, width=80, height=80, top_width=60)
+        moved = original.translated(5, 7)
+        assert moved is not original
+        assert moved._construction["x"] == 15
+        assert moved._construction["y"] == 27
+        # Original unmoved.
+        assert original._construction["x"] == 10
+        assert original._construction["y"] == 20
+
+    def test_path_d_shifts(self):
+        """The rendered path string has its M/L coordinates offset."""
+        original = Trapezoid(x=0, y=0, width=80, height=80, top_width=60)
+        moved = original.translated(10, 20)
+        # Rebuild the same shape at the shifted origin and compare.
+        expected = Trapezoid(x=10, y=20, width=80, height=80, top_width=60)
+        assert moved.args["d"] == expected.args["d"]
+
+    def test_zero_translation_is_equivalent(self):
+        original = Trapezoid(x=10, y=20, width=80, height=80, top_width=60)
+        moved = original.translated(0, 0)
+        assert moved.args["d"] == original.args["d"]
+
+    def test_round_trip_outset_and_translate(self):
+        """Outset then translate ≡ translate then outset (commute)."""
+        base = Trapezoid(x=0, y=0, width=100, height=100, top_width=80, corners_radius=4)
+        a = base.outset(2.5).translated(7, 11)
+        b = base.translated(7, 11).outset(2.5)
+        assert a.args["d"] == b.args["d"]

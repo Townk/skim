@@ -19,7 +19,7 @@ and a long label shrinks to fit via the relaxation loop.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 import drawsvg as draw
@@ -574,6 +574,7 @@ def DownKey(
     label_text: str,
     fill_color: str,
     label_color: str,
+    cutouts: Sequence[Trapezoid] = (),
 ):
     """The down key — tall narrow trapezoid at the bottom of the thumb cluster.
 
@@ -584,9 +585,19 @@ def DownKey(
     print their labels at the visible part of the key (the part not
     occluded by the thumb when typing).
 
+    The cluster passes the (already-translated to Down's local frame)
+    DD and UP outset cutouts via ``cutouts``. Each cutout is added as
+    an inner subpath to Down's rendered ``<path>``, with
+    ``fill-rule="evenodd"`` turning them into actual holes in the
+    fill — and crucially, into actual edges of the painted shape so
+    a stroke or other geometry-aware effect traces them. Pass an
+    empty tuple (the default) to render Down without holes.
+
     Reports :class:`SvalboardKeyMetrics` with the indicator on the
     outward (away-from-thumb) edge: ``EAST`` on the right hand,
-    ``WEST`` on the left.
+    ``WEST`` on the left. The ``path`` metric reports Down's outer
+    outline only — cutouts are external state, not part of the key's
+    intrinsic geometry.
     """
     del ctx  # RichText reads ``use_system_fonts`` from its own ctx.
 
@@ -629,17 +640,27 @@ def DownKey(
 
     def draw_at(d, origin):
         x, y = origin.x, origin.y
-        d.append(
-            Trapezoid(
-                x=x,
-                y=y,
-                width=width,
-                height=height,
-                top_width=top_width,
-                corners_radius=corner_radius,
-                fill=fill_color,
-            )
+        outer = Trapezoid(
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            top_width=top_width,
+            corners_radius=corner_radius,
         )
+        if cutouts:
+            subpaths = [outer.args["d"]]
+            subpaths.extend(c.translated(x, y).args["d"] for c in cutouts)
+            d.append(
+                draw.Path(
+                    d=" ".join(subpaths),
+                    fill=fill_color,
+                    fill_rule="evenodd",
+                )
+            )
+        else:
+            outer.args["fill"] = fill_color
+            d.append(outer)
         # Label centred horizontally, near the bottom of the key
         # (visible part — the part not occluded by the thumb).
         label_bottom_y = y + height - height * _DOWN_LABEL_BOTTOM_MARGIN_MULTIPLIER

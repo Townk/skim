@@ -1097,16 +1097,18 @@ class TestUpKeyGeometry:
     def test_draw_emits_single_trapezoid(self, ctx: RenderContext):
         with using_render_context(ctx):
             key = UpKey(
-                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
-                fill_color="#fff", label_color="#000",
+                side=KeyboardSide.RIGHT,
+                width=40.0,
+                label_text="A",
+                fill_color="#fff",
+                label_color="#000",
             )
         svg = str(_draw(key, Point(0.0, 0.0)).as_svg())
         # Count <path> elements with fill="#fff" — there should be exactly
         # one (the trapezoid). The label may render as separate elements
         # but won't share the fill colour.
         trap_paths = [
-            line for line in svg.splitlines()
-            if '<path' in line and 'fill="#fff"' in line
+            line for line in svg.splitlines() if "<path" in line and 'fill="#fff"' in line
         ]
         assert len(trap_paths) == 1, f"expected 1 trapezoid, got {len(trap_paths)}: {trap_paths}"
 
@@ -1114,16 +1116,21 @@ class TestUpKeyGeometry:
         width = 40.0
         with using_render_context(ctx):
             key = UpKey(
-                side=KeyboardSide.RIGHT, width=width, label_text="A",
-                fill_color="#fff", label_color="#000",
+                side=KeyboardSide.RIGHT,
+                width=width,
+                label_text="A",
+                fill_color="#fff",
+                label_color="#000",
             )
         elem = key.metrics.path(0.0)
         height = width * _UP_HEIGHT_RATIO
         short_face = height * (1.0 - _UP_SLANT_MULTIPLIER)
         # Right hand: slant on the left edge (left_height = short_face).
         expected = Trapezoid(
-            x=0, y=0,
-            width=width, height=height,
+            x=0,
+            y=0,
+            width=width,
+            height=height,
             left_height=short_face,
             corners_radius=width * _UP_CORNER_RADIUS_MULTIPLIER,
             align_y=Alignment.START,
