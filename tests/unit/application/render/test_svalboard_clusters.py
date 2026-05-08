@@ -1114,8 +1114,11 @@ class TestDownClipPath:
         assert 'clip-rule="evenodd"' in svg
         assert 'clip-path="url(#thumb-down-clip-' in svg
 
-    def test_clippath_has_three_children(self, ctx: RenderContext, palette: Palette):
-        """Outer rect (Down bbox) + two inner trapezoids (DD, UP cutouts)."""
+    def test_clippath_has_single_evenodd_path(self, ctx: RenderContext, palette: Palette):
+        """One composite ``<path clip-rule="evenodd">`` containing three
+        subpaths: the Down bbox (outer) plus the DD + UP cutouts. Browsers
+        only honour the evenodd rule when subpaths share a single path
+        element — sibling shapes silently fail to subtract."""
         import re
 
         cluster_data = ThumbClusterData(
@@ -1139,8 +1142,14 @@ class TestDownClipPath:
         body = match.group(1)
         rect_count = body.count("<rect")
         path_count = body.count("<path")
-        assert rect_count == 1, f"expected 1 rect (Down bbox), got {rect_count}"
-        assert path_count == 2, f"expected 2 paths (DD, UP cutouts), got {path_count}"
+        assert rect_count == 0, f"expected no <rect> children, got {rect_count}"
+        assert path_count == 1, f"expected 1 composite path, got {path_count}"
+        # The composite path uses clip-rule=evenodd and has three "M"
+        # commands (one per subpath).
+        path_match = re.search(r'<path d="([^"]*)"[^/>]*clip-rule="evenodd"', body)
+        assert path_match is not None, f"composite path missing clip-rule=evenodd: {body!r}"
+        m_commands = path_match.group(1).count("M ")
+        assert m_commands == 3, f"expected 3 M-subpaths (Down+DD+UP), got {m_commands}"
 
     def test_clippath_id_unique_across_clusters(self, ctx: RenderContext, palette: Palette):
         import re

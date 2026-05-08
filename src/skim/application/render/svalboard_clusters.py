@@ -1506,41 +1506,33 @@ def ThumbCluster(
         )
 
         # Build the clipPath that punches DD and UP holes in DOWN.
-        # Outer sub-shape (the Down bbox) + two inner sub-shapes (the
-        # outset cutouts) combined with clip-rule="evenodd" leaves
-        # everything except the cutouts visible.
+        # All subpaths (Down bbox + DD cutout + UP cutout) are combined
+        # into a SINGLE ``<path>`` element with ``clip-rule="evenodd"``.
+        # Browsers (Chromium tested) only honour evenodd when the
+        # subpaths live on one element — putting clip-rule on the
+        # ``<clipPath>`` parent or on each sibling shape silently fails
+        # to apply the rule across siblings. The cutouts therefore
+        # need to be expressed as a single composite path string.
         #
-        # Note: ``d.append(clip_path)`` causes drawsvg to emit both a
-        # ``<defs><clipPath>…</clipPath></defs>`` block AND a
-        # ``<use xlink:href="#clip-id" />`` reference. SVG spec says
-        # ``<use>`` of a non-renderable element is undefined, and some
-        # renderers (Chromium included) treat the ``<use>`` as
-        # painting the clipPath's children visibly — which would
-        # produce phantom shapes wherever the clipPath was supposed to
-        # silently define geometry. We can't suppress drawsvg's
-        # ``<use>`` (would require ``Drawing.append_def``, not on the
-        # generic ``Canvas`` protocol — ``d`` may be a Group here), so
-        # we make the children invisible-if-rendered by passing
-        # ``fill="none"``. The clip-rule still operates on the path
-        # geometry; ``fill`` only matters for what gets painted by the
-        # spurious ``<use>`` reference.
+        # ``fill="none"`` on the path keeps the spurious
+        # ``<use xlink:href="#clip-id"/>`` drawsvg auto-emits from
+        # painting visible phantom shapes — clipping uses geometry,
+        # not fill, so this only affects the phantom paint.
         clip_id = f"thumb-down-clip-{next(_CLIP_ID_COUNTER)}"
         dd_outset = slots.double_down_width * _DD_CUTOUT_OUTSET_MULTIPLIER
         up_outset = slots.up_width * _UP_CUTOUT_OUTSET_MULTIPLIER
         dd_cutout_local = double_down.metrics.path(dd_outset)
         up_cutout_local = up.metrics.path(up_outset)
-        clip_path = draw.ClipPath(id=clip_id, clip_rule="evenodd")
-        clip_path.append(
-            draw.Rectangle(
-                x=down_o.x,
-                y=down_o.y,
-                width=slots.down_width,
-                height=down.size.height,
-                fill="none",
-            )
+        outer_d = (
+            f"M {down_o.x} {down_o.y} "
+            f"h {slots.down_width} "
+            f"v {down.size.height} "
+            f"h {-slots.down_width} Z"
         )
-        clip_path.append(_clip_only(_translated(dd_cutout_local, double_down_o)))
-        clip_path.append(_clip_only(_translated(up_cutout_local, up_o)))
+        dd_d = _translated(dd_cutout_local, double_down_o).args["d"]
+        up_d = _translated(up_cutout_local, up_o).args["d"]
+        clip_path = draw.ClipPath(id=clip_id)
+        clip_path.append(draw.Path(d=f"{outer_d} {dd_d} {up_d}", clip_rule="evenodd", fill="none"))
         d.append(clip_path)
 
         down_group = draw.Group(clip_path=f"url(#{clip_id})")
