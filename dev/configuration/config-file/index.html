@@ -3182,6 +3182,7 @@ write as <code>keymap_title:</code> in your config. Plain-text headings (like
 organisational subsection or describe an algorithm, not a configuration
 field.</p>
 </div>
+<hr />
 <h2 id="top-level-structure">Top-level structure<a class="headerlink" href="#top-level-structure" title="Permanent link">&para;</a></h2>
 <p>The file has three top-level sections:</p>
 <table>
@@ -3228,6 +3229,7 @@ keymap a human-readable identity.</p>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">layers</span><span class="p">:</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w">                      </span><span class="c1"># see keyboard.layers below</span>
 </code></pre></div>
+<hr />
 <h3 id="keyboard-features"><code>features</code><a class="headerlink" href="#keyboard-features" title="Permanent link">&para;</a></h3>
 <p>A bag of hardware-feature toggles. Today there's only one knob, but the
 sub-section exists to keep room for future hardware variants without
@@ -3237,6 +3239,7 @@ breaking the schema.</p>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">features</span><span class="p">:</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">double_south</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
 </code></pre></div>
+<hr />
 <h4 id="keyboard-features-double-south"><code>double_south</code><a class="headerlink" href="#keyboard-features-double-south" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3266,6 +3269,7 @@ hidden in the output.</p>
 <p><img alt="Finger cluster with double-south" loading="lazy" src="../../_static/options/double-south/with.svg" width="180" /></p>
 </figure>
 </div>
+<hr />
 <h3 id="keyboard-layers"><code>layers</code><a class="headerlink" href="#keyboard-layers" title="Permanent link">&para;</a></h3>
 <p>A list of layer descriptors. The list does two unrelated jobs at once, and
 it helps to keep them separate when reading the rest of this section:</p>
@@ -3294,6 +3298,7 @@ and Keybard keymaps that can populate non-sequential layers like <code>0, 1, 2, 
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
 </code></pre></div>
 <p>Each entry has these fields:</p>
+<hr />
 <h4 id="index"><code>index</code><a class="headerlink" href="#index" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3331,6 +3336,7 @@ represent the layers defined in your keymap.</p>
 <p><img alt="Thumb cluster with layer indicator" height="160" loading="lazy" src="../../_static/options/keyboard-layers/thumb-with-indicator.svg" /></p>
 </figure>
 </div>
+<hr />
 <h4 id="name"><code>name</code><a class="headerlink" href="#name" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3360,6 +3366,7 @@ sizes them automatically.</p>
 </figure>
 </div>
 <p>When no name is provided, Skim simply uses the word <em>LAYER</em> followed by the QMK firmware layer index.</p>
+<hr />
 <h4 id="id"><code>id</code><a class="headerlink" href="#id" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3385,6 +3392,7 @@ can resolve them back to the firmware index.</p>
 <p>This option has no visual impact in the final image, but is required to produce
 an image with the correct connections between layers.</p>
 </div>
+<hr />
 <h4 id="variant"><code>variant</code><a class="headerlink" href="#variant" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3467,6 +3475,7 @@ legends Skim emits.</p>
 <li><strong><code>overrides</code></strong> has the final word: it can replace the resolved label with
    anything you like, and entries here win against the bundled table.</li>
 </ol>
+<hr />
 <h3 id="keycodes-pre-process"><code>pre_process</code><a class="headerlink" href="#keycodes-pre-process" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3499,6 +3508,7 @@ render.</p>
 resolution, so they should not rely on alias-resolution features in keycode
 strings. Use plain canonical QMK syntax in the <code>target</code>.</p>
 </div>
+<hr />
 <h3 id="keycodes-overrides"><code>overrides</code><a class="headerlink" href="#keycodes-overrides" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3527,6 +3537,7 @@ choosing a glyph (<code>KC_ENT</code> → <code>"⏎"</code>). For instance:</p>
 <p>The <code>target</code> field is always processed by the <a href="#key-label-resolution-algorithm">Key Label Resolution
 algorithm</a>, which allows you to create a rich
 graphic set of key code symbols without repeating yourself.</p>
+<hr />
 <h3 id="keycodes-macros"><code>macros</code><a class="headerlink" href="#keycodes-macros" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3551,6 +3562,7 @@ name that Skim uses in the macros legend table on generated images.</p>
   </p>
 </figure>
 </div>
+<hr />
 <h4 id="id_1"><code>id</code><a class="headerlink" href="#id_1" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3570,6 +3582,7 @@ name that Skim uses in the macros legend table on generated images.</p>
 keymaps that's one of the standard slot names (<code>M0</code>, <code>M1</code>, …, <code>M49</code>); for
 QMK <code>keymap.c</code> keymaps it's the name you used in your <code>#define</code> (e.g.
 <code>MY_MACRO</code> for <code>MACRO_MY_MACRO</code>).</p>
+<hr />
 <h4 id="name_1"><code>name</code><a class="headerlink" href="#name_1" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3588,6 +3601,7 @@ QMK <code>keymap.c</code> keymaps it's the name you used in your <code>#define</
 <p>A short human-readable label shown in the macros legend. This field is
 Skim-only — it has no equivalent in Vial or Keybard, so changes here
 don't round-trip back to your keyboard's firmware.</p>
+<hr />
 <h4 id="preview"><code>preview</code><a class="headerlink" href="#preview" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3609,6 +3623,7 @@ this field is <strong>not</strong> intended for hand-editing. To regenerate it, 
 Configurator UI with the <code>-k</code> / <code>--keymap</code> option pointed at your keymap
 file — Skim will read the macro definition from the keymap and refresh the
 preview.</p>
+<hr />
 <h3 id="keycodes-tap-dances"><code>tap_dances</code><a class="headerlink" href="#keycodes-tap-dances" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3634,6 +3649,7 @@ uses in the tap-dance legend table on generated images.</p>
   </p>
 </figure>
 </div>
+<hr />
 <h4 id="id_2"><code>id</code><a class="headerlink" href="#id_2" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3655,6 +3671,7 @@ uses in the tap-dance legend table on generated images.</p>
 identifiers (<code>TD(0)</code> → <code>TD0</code>, <code>TD(1)</code> → <code>TD1</code>, …, <code>TD(49)</code> → <code>TD49</code>) — that
 mapping isn't a QMK standard, but it lets Skim render specific <code>keymap.c</code>
 styles that reference the tap-dance by an unwrapped name.</p>
+<hr />
 <h4 id="name_2"><code>name</code><a class="headerlink" href="#name_2" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3673,6 +3690,7 @@ styles that reference the tap-dance by an unwrapped name.</p>
 <p>A short human-readable label shown in the tap-dance legend. Like
 <code>macros.name</code>, this field is Skim-only — it has no equivalent in Vial or
 Keybard, and changes don't round-trip back to your firmware.</p>
+<hr />
 <h4 id="preview_1"><code>preview</code><a class="headerlink" href="#preview_1" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -3693,6 +3711,7 @@ below its name in the legend. Although saved in the configuration file,
 this field is <strong>not</strong> intended for hand-editing. To regenerate it, run the
 Configurator UI with the <code>-k</code> / <code>--keymap</code> option pointed at your keymap
 file — Skim will read the tap-dance definition and refresh the preview.</p>
+<hr />
 <h3 id="keycodes-symbol-descriptions"><code>symbol_descriptions</code><a class="headerlink" href="#keycodes-symbol-descriptions" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3728,6 +3747,7 @@ keycode within a bundled category or add brand-new categories.</p>
 <p>User keys in an existing bundled category take precedence over the bundled
 description for the same keycode. Brand-new categories are appended after
 the bundled ones in the legend.</p>
+<hr />
 <h3 id="keycodes-function-descriptions"><code>function_descriptions</code><a class="headerlink" href="#keycodes-function-descriptions" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3753,6 +3773,7 @@ appended after the bundled ones.</p>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">Layers</span><span class="p">:</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">      </span><span class="nt">MO</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Hold</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">layer</span><span class="nv"> </span><span class="s">#0;&quot;</span>
 </code></pre></div>
+<hr />
 <h4 id="placeholders">Placeholders<a class="headerlink" href="#placeholders" title="Permanent link">&para;</a></h4>
 <p>Description strings support a small substitution syntax that lets the text
 reference the function's arguments and pull in other keycode glyphs:</p>
@@ -3782,6 +3803,7 @@ reference the function's arguments and pull in other keycode glyphs:</p>
 </tr>
 </tbody>
 </table>
+<hr />
 <h4 id="generic-vs-per-instance-entries">Generic vs per-instance entries<a class="headerlink" href="#generic-vs-per-instance-entries" title="Permanent link">&para;</a></h4>
 <p>Whether a description produces <strong>one</strong> legend row per function or <strong>one
 per unique call</strong> depends entirely on whether it contains an <code>@N;</code>
@@ -3819,6 +3841,7 @@ its "literal #" meaning inside each per-instance row.</p>
 single legend entry. Override the bundled entry with <code>@N;</code> if you'd
 rather see one row per unique layer destination.</p>
 </div>
+<hr />
 <h3 id="keycodes-symbol-legend-aliases"><code>symbol_legend_aliases</code><a class="headerlink" href="#keycodes-symbol-legend-aliases" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3858,6 +3881,7 @@ a single user alias is enough:</p>
 to <code>KC_RIGHT_CTRL</code> all collapse onto the <code>KC_LEFT_CTRL</code> legend row. You
 only have to alias the names that aren't <em>already</em> covered by the
 bundled chain.</p>
+<hr />
 <h3 id="key-label-resolution-algorithm">Key Label Resolution algorithm<a class="headerlink" href="#key-label-resolution-algorithm" title="Permanent link">&para;</a></h3>
 <p>Several of the configuration options in <code>keycodes</code> produce labels through
 <strong>Key Label Resolution</strong> — a small recursive substitution pass Skim runs
@@ -3972,8 +3996,8 @@ template.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Skim ships 3 open source fonts bundled (one of them with 3 variants) as
-companion assets for you to use:</p>
+<p>Skim ships these open source fonts bundled as companion assets for you
+to use:</p>
 <ul>
 <li>Roboto:<ul>
 <li>Thin (<code>Roboto-Thin.ttf</code>)</li>
@@ -3983,6 +4007,8 @@ companion assets for you to use:</p>
 </li>
 <li>Symbols Nerd Font (<code>SymbolsNerdFont-Regular.ttf</code>)</li>
 <li>DejaVu Sans Condensed (<code>DejaVuSansCondensed.ttf</code>)</li>
+<li>JetBrains Mono Nerd Font Mono (<code>JetBrainsMonoNerdFontMono-Regular.ttf</code>)
+  — used by the Configurator UI's screenshot pipeline.</li>
 </ul>
 <p>If these fonts support the glyph you're trying to use, Skim will render your
 key without major problems.</p>
@@ -4006,6 +4032,7 @@ follow a small set of rules to create a consistent image; that being said,
 you're free to override these decisions.</p>
 <p>The next sub-sections will explain in details how each field affect the output
 of your keymap.</p>
+<hr />
 <h3 id="output-keymap-title"><code>keymap_title</code><a class="headerlink" href="#output-keymap-title" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -4025,6 +4052,7 @@ of your keymap.</p>
 image created by Skim. If you don't set this property (or set it to <code>null</code>), an
 auto-generated name will be used instead. The name is derived from the keymap
 file name used to create the images.</p>
+<hr />
 <h3 id="output-copyright"><code>copyright</code><a class="headerlink" href="#output-copyright" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -4043,6 +4071,7 @@ file name used to create the images.</p>
 <p>An optional copyright notice rendered in the footer area of the keymap images.
 Leave <code>null</code> to omit it. Standard conventions apply (<code>"© 2026 Your Name"</code>);
 Skim does not enforce a format.</p>
+<hr />
 <h3 id="output-layout"><code>layout</code><a class="headerlink" href="#output-layout" title="Permanent link">&para;</a></h3>
 <p>Image dimensions and whitespace.</p>
 <p>Current schema:</p>
@@ -4052,6 +4081,7 @@ Skim does not enforce a format.</p>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="nt">spacing</span><span class="p">:</span>
 <a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w">                      </span><span class="c1"># see output.layout.spacing below</span>
 </code></pre></div>
+<hr />
 <h4 id="output-layout-width"><code>width</code><a class="headerlink" href="#output-layout-width" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -4087,6 +4117,7 @@ units regardless of <code>width</code>, which is occasionally what you want
 (e.g. pinning a 2-pixel border on every render size) but means you
 own the consequences on smaller / larger canvases.</p>
 </div>
+<hr />
 <h4 id="output-layout-spacing"><code>spacing</code><a class="headerlink" href="#output-layout-spacing" title="Permanent link">&para;</a></h4>
 <p>Every gap, padding, and inset Skim paints is configurable here. Skim
 ships with sensible defaults — every field accepts <code>null</code> to keep the
@@ -4158,6 +4189,7 @@ its base.</p>
 <p>In every illustration below, the rose-red highlight marks the value
 the field controls; everything else is greyed out so the value reads
 at a glance.</p>
+<hr />
 <h5 id="output-layout-spacing-margin"><code>margin</code><a class="headerlink" href="#output-layout-spacing-margin" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4182,6 +4214,7 @@ against the image edge.</p>
 <figcaption>The rose bands trace the four-sided gap between the canvas edge and the document border.</figcaption>
 <p><img alt="Margin highlighted around a small keymap document" loading="lazy" src="../../_static/spacing/margin.svg" width="520" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-inset"><code>inset</code><a class="headerlink" href="#output-layout-spacing-inset" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4207,6 +4240,7 @@ document column.</p>
 <figcaption>The rose bands trace the gap between the document border and the content.</figcaption>
 <p><img alt="Inset highlighted between border and content" loading="lazy" src="../../_static/spacing/inset.svg" width="520" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-column-gap"><code>column_gap</code><a class="headerlink" href="#output-layout-spacing-column-gap" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4231,6 +4265,7 @@ sections when both are rendered.</p>
 <figcaption>The three rose bands fall between the four finger clusters of one half-keyboard.</figcaption>
 <p><img alt="Column gap highlighted between clusters" loading="lazy" src="../../_static/spacing/column-gap.svg" width="520" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-section-spacing"><code>section_spacing</code><a class="headerlink" href="#output-layout-spacing-section-spacing" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4254,6 +4289,7 @@ header rule) and the section body that follows it.</p>
 <figcaption>The rose band sits between the title rule and the column-header strip.</figcaption>
 <p><img alt="Section spacing highlighted between stripe and body" loading="lazy" src="../../_static/spacing/section-spacing.svg" width="360" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-section-title-rule-gap"><code>section_title_rule_gap</code><a class="headerlink" href="#output-layout-spacing-section-title-rule-gap" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4280,6 +4316,7 @@ total height.</p>
 <figcaption>The rose band shows the gap between the section title bottom and the rule line.</figcaption>
 <p><img alt="Section title rule gap highlighted" loading="lazy" src="../../_static/spacing/section-title-rule-gap.svg" width="380" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-table-header-spacing"><code>table_header_spacing</code><a class="headerlink" href="#output-layout-spacing-table-header-spacing" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4310,6 +4347,7 @@ in three places that all share the same rhythm:</p>
 <figcaption>The rose band sits between the column-header text and the first data row.</figcaption>
 <p><img alt="Table header spacing highlighted" loading="lazy" src="../../_static/spacing/table-header-spacing.svg" width="460" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-table-col-spacing"><code>table_col_spacing</code><a class="headerlink" href="#output-layout-spacing-table-col-spacing" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4334,6 +4372,7 @@ pill row.</p>
 <figcaption>Three rose slivers between the four variant cells of one tap-dance row.</figcaption>
 <p><img alt="Table column spacing highlighted" loading="lazy" src="../../_static/spacing/table-col-spacing.svg" width="460" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-table-row-spacing"><code>table_row_spacing</code><a class="headerlink" href="#output-layout-spacing-table-row-spacing" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4356,6 +4395,7 @@ pill row.</p>
 <figcaption>Two rose bands between three stacked tap-dance rows.</figcaption>
 <p><img alt="Table row spacing highlighted" loading="lazy" src="../../_static/spacing/table-row-spacing.svg" width="500" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-finger-key-gap"><code>finger_key_gap</code><a class="headerlink" href="#output-layout-spacing-finger-key-gap" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4381,6 +4421,7 @@ so the geometry stays proportional however the cluster gets sized.</p>
 <figcaption>Four rose bands frame the center key inside a finger cluster.</figcaption>
 <p><img alt="Finger key gap highlighted" loading="lazy" src="../../_static/spacing/finger-key-gap.svg" width="320" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-thumb-key-gap"><code>thumb_key_gap</code><a class="headerlink" href="#output-layout-spacing-thumb-key-gap" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4408,6 +4449,7 @@ width.</p>
 <figcaption>Four rose bands sit on top of the pad, nail, up, and knuckle keys.</figcaption>
 <p><img alt="Thumb key gap highlighted" loading="lazy" src="../../_static/spacing/thumb-key-gap.svg" width="420" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-layer-indicator-spacing"><code>layer_indicator_spacing</code><a class="headerlink" href="#output-layout-spacing-layer-indicator-spacing" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4434,6 +4476,7 @@ cluster sizing.</p>
 <figcaption>The rose band sits between the north key's top edge and its layer indicator.</figcaption>
 <p><img alt="Layer indicator spacing highlighted" loading="lazy" src="../../_static/spacing/layer-indicator-spacing.svg" width="320" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-chip-padding"><code>chip_padding</code><a class="headerlink" href="#output-layout-spacing-chip-padding" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4460,6 +4503,7 @@ in step with horizontal changes.</p>
 <figcaption>The rose bands flank the name text inside a tap-dance chip outline.</figcaption>
 <p><img alt="Chip padding highlighted" loading="lazy" src="../../_static/spacing/chip-padding.svg" width="320" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-tap-dance-pill-padding"><code>tap_dance_pill_padding</code><a class="headerlink" href="#output-layout-spacing-tap-dance-pill-padding" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4484,6 +4528,7 @@ Vertical padding is <code>tap_dance_pill_padding * 0.25</code>.</p>
 <figcaption>The rose bands flank the centred label inside a tap-dance variant cell.</figcaption>
 <p><img alt="Tap-dance pill padding highlighted" loading="lazy" src="../../_static/spacing/tap-dance-pill-padding.svg" width="460" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-macro-action-inset"><code>macro_action_inset</code><a class="headerlink" href="#output-layout-spacing-macro-action-inset" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4513,6 +4558,7 @@ consistent.</p>
 <figcaption>Three rose bands inside one macro action pill.</figcaption>
 <p><img alt="Macro action inset highlighted" loading="lazy" src="../../_static/spacing/macro-action-inset.svg" width="320" /></p>
 </figure>
+<hr />
 <h5 id="output-layout-spacing-layer-badge-inset"><code>layer_badge_inset</code><a class="headerlink" href="#output-layout-spacing-layer-badge-inset" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4539,6 +4585,7 @@ edge reads as breathing room rather than crowding the next column.</p>
 <figcaption>Two rose bands flank the index column; the dashed band on the right shows the derived trailing inset (= 2× the leading value).</figcaption>
 <p><img alt="Layer badge inset highlighted" loading="lazy" src="../../_static/spacing/layer-badge-inset.svg" width="380" /></p>
 </figure>
+<hr />
 <h3 id="output-style"><code>style</code><a class="headerlink" href="#output-style" title="Permanent link">&para;</a></h3>
 <p>The largest sub-section. Every visual switch, stroke width, and color
 knob lives here. Configurable values are grouped by the conceptual
@@ -4568,6 +4615,7 @@ that affect the same element.</p>
 <a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a><span class="w">    </span><span class="nt">palette</span><span class="p">:</span>
 <a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a><span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w">                      </span><span class="c1"># see output.style.palette below</span>
 </code></pre></div>
+<hr />
 <h4 id="output-style-hold-symbol-position"><code>hold_symbol_position</code><a class="headerlink" href="#output-style-hold-symbol-position" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -4604,6 +4652,7 @@ the split each portion goes on:</p>
 <figcaption>Three LEFT thumb clusters, each rendered with one of the three modes — same hold-tap labels in every panel; only the swap behaviour differs.</figcaption>
 <p><img alt="Three thumb clusters illustrating hold_symbol_position modes" loading="lazy" src="../../_static/spacing/hold-symbol-position.svg" width="640" /></p>
 </figure>
+<hr />
 <h4 id="output-style-use-layer-colors-on-keys"><code>use_layer_colors_on_keys</code><a class="headerlink" href="#output-style-use-layer-colors-on-keys" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -4629,6 +4678,7 @@ overview.</p>
 <figcaption>The cluster's north key activates layer 2. With <code>true</code>, layer 2's color paints the key; with <code>false</code>, the key falls back to neutral.</figcaption>
 <p><img alt="use_layer_colors_on_keys true vs false comparison" loading="lazy" src="../../_static/spacing/use-layer-colors-on-keys.svg" width="500" /></p>
 </figure>
+<hr />
 <h4 id="output-style-use-system-fonts"><code>use_system_fonts</code><a class="headerlink" href="#output-style-use-system-fonts" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -4649,6 +4699,7 @@ image looks identical on every machine. When <code>true</code>, the SVG referenc
 system fonts by name — the file is smaller and may pick up your system's
 preferred typefaces, but viewers without those fonts installed will see a
 fallback.</p>
+<hr />
 <h4 id="output-style-show-transparent-fallthrough"><code>show_transparent_fallthrough</code><a class="headerlink" href="#output-style-show-transparent-fallthrough" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
@@ -4673,6 +4724,7 @@ without revealing the underlying layer-0 label.</p>
 <figcaption>A transparent key on a layer above 0. With <code>true</code>, the layer-0 label paints in a lightness-shifted variant of the key's color; with <code>false</code>, the key carries the <code>⛛</code> transparent-key glyph in the same ghost color.</figcaption>
 <p><img alt="show_transparent_fallthrough true vs false comparison" loading="lazy" src="../../_static/spacing/show-transparent-fallthrough.svg" width="320" /></p>
 </figure>
+<hr />
 <h4 id="output-style-border"><code>border</code><a class="headerlink" href="#output-style-border" title="Permanent link">&para;</a></h4>
 <p>Configures the rounded rectangle border drawn around the entire keyboard.
 Set the whole <code>border</code> object to <code>null</code> to suppress the border.</p>
@@ -4682,6 +4734,7 @@ Set the whole <code>border</code> object to <code>null</code> to suppress the bo
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">      </span><span class="nt">width</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float | &quot;N%&quot;&gt;</span>
 <a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">      </span><span class="nt">radius</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float&gt;</span>
 </code></pre></div>
+<hr />
 <h5 id="output-style-border-width"><code>width</code><a class="headerlink" href="#output-style-border-width" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4707,6 +4760,7 @@ proportion shorthand.</p>
 <figcaption>The rose stroke replaces the document border at the configured width.</figcaption>
 <p><img alt="Border width highlighted" loading="lazy" src="../../_static/spacing/border-width.svg" width="520" /></p>
 </figure>
+<hr />
 <h5 id="output-style-border-radius"><code>radius</code><a class="headerlink" href="#output-style-border-radius" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4723,6 +4777,7 @@ proportion shorthand.</p>
 </tbody>
 </table>
 <p>Corner radius for the rounded rectangle. Set to <code>0</code> for square corners.</p>
+<hr />
 <h4 id="output-style-layer-connector"><code>layer_connector</code><a class="headerlink" href="#output-style-layer-connector" title="Permanent link">&para;</a></h4>
 <p>Configures the dotted connector paths painted in the keymap overview
 image — the lines linking each layer indicator circle to its
@@ -4736,6 +4791,7 @@ corresponding key on the miniature keymap.</p>
 </code></pre></div>
 <p>The two stroke / spacing fields follow the magnitude rule (<code>&lt; 1</code>
 proportion / <code>≥ 1</code> absolute / <code>"N%"</code> shorthand / <code>null</code> default).</p>
+<hr />
 <h5 id="output-style-layer-connector-show"><code>show</code><a class="headerlink" href="#output-style-layer-connector-show" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4759,6 +4815,7 @@ images (which never paint connectors).</p>
 <figcaption>Two miniature 3-layer overviews built from the same keymap (two layer-switch keys on the LEFT half), stacked top to bottom. The dotted connectors only paint in the <code>true</code> panel.</figcaption>
 <p><img alt="layer_connector.show true vs false comparison" loading="lazy" src="../../_static/spacing/layer-connector-show.svg" width="540" /></p>
 </figure>
+<hr />
 <h5 id="output-style-layer-connector-width"><code>width</code><a class="headerlink" href="#output-style-layer-connector-width" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4784,6 +4841,7 @@ overview's chrome more.</p>
 <figcaption>The rose dotted line illustrates a connector path painted at the configured width.</figcaption>
 <p><img alt="Layer connector width highlighted" loading="lazy" src="../../_static/spacing/layer-connector-width.svg" width="360" /></p>
 </figure>
+<hr />
 <h5 id="output-style-layer-connector-dot-spacing"><code>dot_spacing</code><a class="headerlink" href="#output-style-layer-connector-dot-spacing" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4809,6 +4867,7 @@ trail.</p>
 <figcaption>The rose band sits in the gap between two adjacent dots.</figcaption>
 <p><img alt="Layer connector dot spacing highlighted" loading="lazy" src="../../_static/spacing/layer-connector-dot-spacing.svg" width="360" /></p>
 </figure>
+<hr />
 <h4 id="output-style-layer-indicator"><code>layer_indicator</code><a class="headerlink" href="#output-style-layer-indicator" title="Permanent link">&para;</a></h4>
 <p>Configures the layer-indicator badges — the small colored circles
 drawn next to layer-switch keys in each cluster, and the matching
@@ -4823,6 +4882,7 @@ badges in the overview's <code>LAYERS</code> column.</p>
 on <a href="#output-layout-spacing-layer-indicator-spacing"><code>output.layout.spacing.layer_indicator_spacing</code></a>
 since it's a spacing value applied between two elements rather than
 a property of the indicator itself.</p>
+<hr />
 <h5 id="output-style-layer-indicator-show"><code>show</code><a class="headerlink" href="#output-style-layer-indicator-show" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4846,6 +4906,7 @@ does this key take me." Set to <code>false</code> to suppress them entirely
 <figcaption>The cluster's north key activates layer 2. With <code>true</code>, a layer-tinted indicator badge sits above the key; with <code>false</code>, the badge is suppressed.</figcaption>
 <p><img alt="layer_indicator.show true vs false comparison" loading="lazy" src="../../_static/spacing/layer-indicator-show.svg" width="500" /></p>
 </figure>
+<hr />
 <h5 id="output-style-layer-indicator-width"><code>width</code><a class="headerlink" href="#output-style-layer-indicator-width" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -4868,6 +4929,7 @@ does this key take me." Set to <code>false</code> to suppress them entirely
 <figcaption>The rose stroke traces the layer indicator circle on the north key.</figcaption>
 <p><img alt="Layer indicator stroke highlighted" loading="lazy" src="../../_static/spacing/layer-indicator-stroke.svg" width="320" /></p>
 </figure>
+<hr />
 <h4 id="output-style-legend-tables"><code>legend_tables</code><a class="headerlink" href="#output-style-legend-tables" title="Permanent link">&para;</a></h4>
 <p>Configures the three legend tables Skim renders alongside the
 keymap: macros, tap-dances, and symbols. Each sub-block carries its
@@ -4894,6 +4956,7 @@ unique to its multi-column layout.</p>
 apply only to the <strong>standalone</strong> images (<code>skim generate -l macros</code> /
 <code>-l tap-dances</code> / <code>-l symbols</code>); the chrome (title, footer, outer
 padding) stays at the unscaled per-image size.</p>
+<hr />
 <h5 id="output-style-legend-tables-macros"><code>macros</code><a class="headerlink" href="#output-style-legend-tables-macros" title="Permanent link">&para;</a></h5>
 <p>Visibility and standalone-image scale for the macros legend.</p>
 <div class="option-comparison">
@@ -4939,6 +5002,7 @@ from <code>keycodes.macros</code>. Set to <code>false</code> to omit it.</p>
 </table>
 <p>Body-scale multiplier for the standalone macros image. Body chips
 and pills scale by this factor; the per-image chrome stays unscaled.</p>
+<hr />
 <h5 id="output-style-legend-tables-tap-dances"><code>tap_dances</code><a class="headerlink" href="#output-style-legend-tables-tap-dances" title="Permanent link">&para;</a></h5>
 <p>Visibility and standalone-image scale for the tap-dances legend.</p>
 <div class="option-comparison">
@@ -4982,6 +5046,7 @@ overview. Mirrors <code>macros.show</code>.</p>
 </table>
 <p>Body-scale multiplier for the standalone tap-dances image. Same
 semantics as <code>macros.scale</code>.</p>
+<hr />
 <h5 id="output-style-legend-tables-symbols"><code>symbols</code><a class="headerlink" href="#output-style-legend-tables-symbols" title="Permanent link">&para;</a></h5>
 <p>Visibility, standalone-image scale, and multi-column flow for the
 symbol legend.</p>
@@ -5077,6 +5142,7 @@ lets the layout pick the largest column count that fits the canvas
 budget — the behaviour used in per-layer and overview images. Has
 no effect on the embedded legends inside per-layer / overview
 images, only on the standalone symbols-only output.</p>
+<hr />
 <h4 id="output-style-strokes"><code>strokes</code><a class="headerlink" href="#output-style-strokes" title="Permanent link">&para;</a></h4>
 <p>Stroke widths for chrome lines that don't have their own dedicated
 block:</p>
@@ -5099,6 +5165,7 @@ block:</p>
 <a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">      </span><span class="nt">chip_outline</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float | &quot;N%&quot; | null&gt;</span>
 <a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">      </span><span class="nt">header_rule</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float | &quot;N%&quot; | null&gt;</span>
 </code></pre></div>
+<hr />
 <h5 id="output-style-strokes-chip-outline"><code>chip_outline</code><a class="headerlink" href="#output-style-strokes-chip-outline" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -5123,6 +5190,7 @@ across the name area on the right).</p>
 <figcaption>The rose stroke replaces the chip outline at the configured width.</figcaption>
 <p><img alt="Chip outline stroke highlighted" loading="lazy" src="../../_static/spacing/chip-outline-stroke.svg" width="320" /></p>
 </figure>
+<hr />
 <h5 id="output-style-strokes-header-rule"><code>header_rule</code><a class="headerlink" href="#output-style-strokes-header-rule" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -5148,6 +5216,7 @@ the rule weights stay consistent across all sections.</p>
 <figcaption>The rose stroke replaces the rule line under the section title.</figcaption>
 <p><img alt="Header rule stroke highlighted" loading="lazy" src="../../_static/spacing/header-rule-stroke.svg" width="380" /></p>
 </figure>
+<hr />
 <h4 id="output-style-palette"><code>palette</code><a class="headerlink" href="#output-style-palette" title="Permanent link">&para;</a></h4>
 <p>Color tokens used throughout the rendered image.</p>
 <p>Current schema:</p>
@@ -5179,6 +5248,7 @@ the rule weights stay consistent across all sections.</p>
 <a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">base_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#3366CC&quot;</span>
 <a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">base_color</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;#CC6633&quot;</span>
 </code></pre></div>
+<hr />
 <h5 id="chrome-colors">Chrome colors<a class="headerlink" href="#chrome-colors" title="Permanent link">&para;</a></h5>
 <p>These apply to the document chrome (background, headings, borders) and to
 keys that don't get a layer-specific tint.</p>
@@ -5230,6 +5300,7 @@ keys that don't get a layer-specific tint.</p>
 </table>
 <p>All accept any CSS color string (<code>"red"</code>, <code>"#3366CC"</code>, <code>"rgb(51,102,204)"</code>,
 <code>"hsl(218 60% 50%)"</code>).</p>
+<hr />
 <h5 id="output-style-palette-layers"><code>layers</code><a class="headerlink" href="#output-style-palette-layers" title="Permanent link">&para;</a></h5>
 <table>
 <thead>
@@ -5263,6 +5334,7 @@ a quick start and fill it in later.</p>
 <a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
 </code></pre></div>
 <p>Each entry has these fields:</p>
+<hr />
 <h5 id="auto-generated-layer-colors">Auto-generated layer colors<a class="headerlink" href="#auto-generated-layer-colors" title="Permanent link">&para;</a></h5>
 <p>When a layer has no explicit <code>palette.layers</code> entry, Skim derives a
 base color from its <code>index</code> field. Sixteen visually-distinct colors

@@ -2261,6 +2261,7 @@ from the command line.</p>
 <p>CLI flags take the highest priority and override anything set in the config
 file for that run. Commands and flags that change a config field link back
 to the matching field in the configuration reference.</p>
+<hr />
 <h2 id="how-to-read-this-reference">How to read this reference<a class="headerlink" href="#how-to-read-this-reference" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Each command gets one H2 section (<code>## generate</code>, <code>## configure</code>, <code>## doctor</code>).</li>
@@ -2288,6 +2289,7 @@ to the matching field in the configuration reference.</p>
 <p>Command names can be abbreviated to any unique prefix — <code>skim gen</code> resolves
 to <code>skim generate</code>, <code>skim conf</code> to <code>skim configure</code>, <code>skim doc</code> to
 <code>skim doctor</code>. Ambiguous prefixes raise a usage error.</p>
+<hr />
 <h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2343,6 +2345,7 @@ flags</a> that apply to every subcommand.</p>
 <p>Flags listed before the subcommand name apply to the whole invocation:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>skim<span class="w"> </span><span class="o">[</span>global-options<span class="o">]</span><span class="w"> </span>&lt;command&gt;<span class="w"> </span><span class="o">[</span>command-options<span class="o">]</span>
 </code></pre></div>
+<hr />
 <h3 id="global-version"><code>--version</code><a class="headerlink" href="#global-version" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2359,6 +2362,7 @@ flags</a> that apply to every subcommand.</p>
 </tbody>
 </table>
 <p>Print the program name and version, then exit. Does not run any subcommand.</p>
+<hr />
 <h3 id="global-verbosity"><code>--verbosity</code>, <code>-v</code><a class="headerlink" href="#global-verbosity" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2378,6 +2382,7 @@ flags</a> that apply to every subcommand.</p>
 </table>
 <p>Set the logging verbosity. <code>"DEBUG"</code> emits the most detail; <code>"NONE"</code>
 silences every log line. The value is case-insensitive.</p>
+<hr />
 <h3 id="global-quiet"><code>--quiet</code>, <code>-q</code><a class="headerlink" href="#global-quiet" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2497,6 +2502,7 @@ Without it, <code>--keymap</code> selects the input file.</p>
 <code>keymap-layer-&lt;qmk-index&gt;</code>, <code>keymap-overview</code>, <code>keymap-macros</code>,
 <code>keymap-tap-dances</code>, <code>keymap-special-keys</code>, <code>keymap-symbols</code>. The
 extension is set by <a href="#generate-format"><code>--format</code></a>.</p>
+<hr />
 <h3 id="generate-config"><code>--config</code>, <code>-c</code><a class="headerlink" href="#generate-config" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2519,6 +2525,7 @@ defaults.</p>
 and <a href="#generate-adjust-saturation"><code>--adjust-saturation</code></a> are ignored — color
 adjustments only apply to the auto-derived defaults, not to colors the
 user has already chosen.</p>
+<hr />
 <h3 id="generate-keymap"><code>--keymap</code>, <code>-k</code><a class="headerlink" href="#generate-keymap" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2538,6 +2545,7 @@ user has already chosen.</p>
 Keybard (<code>.kbi</code>), Vial (<code>.vil</code>), or QMK c2json (<code>.json</code>). Without <code>--keymap</code>
 and without <a href="#generate-stdin-marker"><code>STDIN_MARKER</code></a>, Skim reads from stdin
 if data is piped in and errors out otherwise.</p>
+<hr />
 <h3 id="generate-output-dir"><code>--output-dir</code>, <code>-o</code><a class="headerlink" href="#generate-output-dir" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2556,6 +2564,7 @@ if data is piped in and errors out otherwise.</p>
 <p>Directory the rendered images are written to. The directory must exist as
 a directory (Skim refuses to write into a regular file at that path) but is
 created if it doesn't yet exist.</p>
+<hr />
 <h3 id="generate-format"><code>--format</code>, <code>-f</code><a class="headerlink" href="#generate-format" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2582,6 +2591,7 @@ reach.</p>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>out/keymap-layer-0.png
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>out/keymap-overview.png
 </code></pre></div>
+<hr />
 <h3 id="generate-layer"><code>--layer</code>, <code>-l</code><a class="headerlink" href="#generate-layer" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2654,6 +2664,7 @@ empty image.</p>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>out/keymap-overview.svg
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>out/keymap-macros.svg
 </code></pre></div>
+<hr />
 <h3 id="generate-use-system-fonts"><code>--use-system-fonts</code>, <code>-F</code><a class="headerlink" href="#generate-use-system-fonts" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2677,6 +2688,7 @@ regardless of the viewer's installed fonts. Maps to
 <p>Toggling this flag changes file content, not which files are written.
 Run <a href="#doctor"><code>skim doctor</code></a> to confirm the bundled fonts are installed
 locally before relying on it.</p>
+<hr />
 <h3 id="generate-render-engine"><code>--render-engine</code>, <code>-e</code><a class="headerlink" href="#generate-render-engine" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2700,6 +2712,7 @@ locally before relying on it.</p>
 <code>--format svg</code>.</p>
 <p>When unset, Skim picks the first available engine. If neither engine is
 installed, raster formats fail.</p>
+<hr />
 <h3 id="generate-force"><code>--force</code><a class="headerlink" href="#generate-force" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2717,6 +2730,7 @@ installed, raster formats fail.</p>
 </table>
 <p>Overwrite existing output files without prompting. Without this flag,
 existing files are kept and Skim aborts the run.</p>
+<hr />
 <h3 id="generate-no-special-keys"><code>--no-special-keys</code>, <code>-N</code><a class="headerlink" href="#generate-no-special-keys" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2742,6 +2756,7 @@ to <code>false</code>.</p>
 standalone macros / tap-dances images requested via <a href="#generate-layer"><code>--layer</code></a>
 are still emitted — only the in-line legend tables on per-layer and overview
 images are suppressed.</p>
+<hr />
 <h3 id="generate-no-symbols"><code>--no-symbols</code>, <code>-Y</code><a class="headerlink" href="#generate-no-symbols" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2762,6 +2777,7 @@ images are suppressed.</p>
 to <code>false</code>. The standalone symbols image (when requested via <code>-l symbols</code>)
 is still emitted; only the in-line legend on per-layer and overview images
 is suppressed.</p>
+<hr />
 <h3 id="generate-symbol-legend-flow"><code>--symbol-legend-flow</code><a class="headerlink" href="#generate-symbol-legend-flow" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2782,6 +2798,7 @@ is suppressed.</p>
 <p>Override the flow direction of the symbols legend table.
 Maps to <a href="../config-file/#output-style-legend-tables-symbols-flow"><code>output.style.legend_tables.symbols.flow</code></a>.
 When unset, the config's value applies.</p>
+<hr />
 <h3 id="generate-symbol-columns"><code>--symbol-columns</code><a class="headerlink" href="#generate-symbol-columns" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2803,6 +2820,7 @@ When unset, the config's value applies.</p>
 canvas shrinks to fit the resulting natural width. Without this flag the
 table picks the largest column count that fits the canvas budget. Maps to
 <a href="../config-file/#output-style-legend-tables-symbols-columns"><code>output.style.legend_tables.symbols.columns</code></a>.</p>
+<hr />
 <h3 id="generate-macros-scale"><code>--macros-scale</code><a class="headerlink" href="#generate-macros-scale" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2816,7 +2834,7 @@ table picks the largest column count that fits the canvas budget. Maps to
 <tr>
 <td><code>float</code></td>
 <td><code>1.5</code></td>
-<td><code>&gt; 0.1</code></td>
+<td><code>≥ 0.1</code></td>
 </tr>
 </tbody>
 </table>
@@ -2824,6 +2842,7 @@ table picks the largest column count that fits the canvas budget. Maps to
 scale by this factor; the image's chrome (border, header, footer) stays
 at the unscaled per-image size. Maps to
 <a href="../config-file/#output-style-legend-tables-macros-scale"><code>output.style.legend_tables.macros.scale</code></a>.</p>
+<hr />
 <h3 id="generate-tap-dances-scale"><code>--tap-dances-scale</code><a class="headerlink" href="#generate-tap-dances-scale" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2837,13 +2856,14 @@ at the unscaled per-image size. Maps to
 <tr>
 <td><code>float</code></td>
 <td><code>1.5</code></td>
-<td><code>&gt; 0.1</code></td>
+<td><code>≥ 0.1</code></td>
 </tr>
 </tbody>
 </table>
 <p>Body-scale multiplier for the standalone tap-dances image. Same shape as
 <a href="#generate-macros-scale"><code>--macros-scale</code></a>. Maps to
 <a href="../config-file/#output-style-legend-tables-tap-dances-scale"><code>output.style.legend_tables.tap_dances.scale</code></a>.</p>
+<hr />
 <h3 id="generate-symbols-scale"><code>--symbols-scale</code><a class="headerlink" href="#generate-symbols-scale" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2857,13 +2877,14 @@ at the unscaled per-image size. Maps to
 <tr>
 <td><code>float</code></td>
 <td><code>1.5</code></td>
-<td><code>&gt; 0.1</code></td>
+<td><code>≥ 0.1</code></td>
 </tr>
 </tbody>
 </table>
 <p>Body-scale multiplier for the standalone symbols image. Same shape as
 <a href="#generate-macros-scale"><code>--macros-scale</code></a>. Maps to
 <a href="../config-file/#output-style-legend-tables-symbols-scale"><code>output.style.legend_tables.symbols.scale</code></a>.</p>
+<hr />
 <h3 id="generate-title"><code>--title</code>, <code>-t</code><a class="headerlink" href="#generate-title" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2884,6 +2905,7 @@ at the unscaled per-image size. Maps to
 the title from the config file applies; when no title is set anywhere
 and a keymap file is provided, Skim derives one from the keymap's
 filename.</p>
+<hr />
 <h3 id="generate-copyright"><code>--copyright</code>, <code>-r</code><a class="headerlink" href="#generate-copyright" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2901,6 +2923,7 @@ filename.</p>
 </table>
 <p>Override the copyright notice rendered in the overview footer. Maps to
 <a href="../config-file/#output-copyright"><code>output.copyright</code></a>.</p>
+<hr />
 <h3 id="generate-double-south"><code>--double-south</code>, <code>-d</code><a class="headerlink" href="#generate-double-south" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2920,6 +2943,7 @@ filename.</p>
 <a href="../config-file/#keyboard-features-double-south"><code>keyboard.features.double_south</code></a>.
 The flag can only set the feature to <code>true</code>; to render without it, leave
 the flag off and let the config (default <code>false</code>) apply.</p>
+<hr />
 <h3 id="generate-width"><code>--width</code>, <code>-w</code><a class="headerlink" href="#generate-width" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2938,6 +2962,7 @@ the flag off and let the config (default <code>false</code>) apply.</p>
 <p>Override the canvas width in SVG units. Maps to
 <a href="../config-file/#output-layout-width"><code>output.layout.width</code></a>. The default
 when no config and no flag is provided is <code>1600</code>.</p>
+<hr />
 <h3 id="generate-adjust-lightness"><code>--adjust-lightness</code>, <code>-L</code><a class="headerlink" href="#generate-adjust-lightness" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2963,6 +2988,7 @@ key labels stay legible). Adjusts the
 entries Skim would otherwise auto-derive from the keymap.</p>
 <p>Ignored when <a href="#generate-config"><code>--config</code></a> is provided — Skim emits a
 note on stderr and uses the config's colors unmodified.</p>
+<hr />
 <h3 id="generate-adjust-saturation"><code>--adjust-saturation</code>, <code>-S</code><a class="headerlink" href="#generate-adjust-saturation" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2985,6 +3011,7 @@ note on stderr and uses the config's colors unmodified.</p>
 entries Skim would otherwise auto-derive from the keymap. Same gating
 rule as <a href="#generate-adjust-lightness"><code>--adjust-lightness</code></a>: ignored when
 <code>--config</code> is provided.</p>
+<hr />
 <h3 id="generate-stdin-marker"><code>STDIN_MARKER</code><a class="headerlink" href="#generate-stdin-marker" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3055,6 +3082,7 @@ keycodes) from a keymap file and writes a config. With <code>-i</code>, launches
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>$<span class="w"> </span>skim<span class="w"> </span>configure<span class="w"> </span>-i<span class="w"> </span>-c<span class="w"> </span>my-config.yaml
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>$<span class="w"> </span>skim<span class="w"> </span>configure<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;My Keymap&quot;</span><span class="w"> </span>-r<span class="w"> </span><span class="s2">&quot;© 2026 Me&quot;</span><span class="w"> </span>-o<span class="w"> </span>my-config.yaml
 </code></pre></div>
+<hr />
 <h3 id="configure-interactive"><code>--interactive</code>, <code>-i</code><a class="headerlink" href="#configure-interactive" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3076,6 +3104,7 @@ TUI is provided by the optional <code>textual</code> extra; install with
 <p>When combined with <a href="#configure-config"><code>--config</code></a>, the existing file is
 loaded into the editor. When combined with <a href="#configure-keymap"><code>--keymap</code></a>,
 the keymap-derived config is fed into the editor as the starting point.</p>
+<hr />
 <h3 id="configure-config"><code>--config</code>, <code>-c</code><a class="headerlink" href="#configure-config" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3096,6 +3125,7 @@ the keymap-derived config is fed into the editor as the starting point.</p>
 scaffold and the contents of <code>--config</code> are deep-merged on top — so user
 edits like custom palette colors, titles, and copyrights are preserved
 across reloads.</p>
+<hr />
 <h3 id="configure-keymap"><code>--keymap</code>, <code>-k</code><a class="headerlink" href="#configure-keymap" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3116,6 +3146,7 @@ names, palette base colors, and any custom keycodes it can resolve, then
 writes a YAML config. For Keybard (<code>.kbi</code>) files, palette colors are
 extracted from the firmware metadata; for Vial / c2json files they're
 auto-derived.</p>
+<hr />
 <h3 id="configure-output"><code>--output</code>, <code>-o</code><a class="headerlink" href="#configure-output" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3135,6 +3166,7 @@ auto-derived.</p>
 Skim writes <code>skim-config.yaml</code> inside it. Without <code>--output</code>, the YAML
 prints to stdout (non-interactive) or is held in the TUI's save dialog
 (interactive).</p>
+<hr />
 <h3 id="configure-force"><code>--force</code><a class="headerlink" href="#configure-force" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3153,6 +3185,7 @@ prints to stdout (non-interactive) or is held in the TUI's save dialog
 <p>Overwrite an existing output file without prompting. Without this flag,
 Skim asks for confirmation; if stdin is a pipe, confirmation reads from
 the controlling terminal.</p>
+<hr />
 <h3 id="configure-adjust-lightness"><code>--adjust-lightness</code>, <code>-L</code><a class="headerlink" href="#configure-adjust-lightness" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3175,6 +3208,7 @@ the controlling terminal.</p>
 don't carry layer colors). Modifies the
 <a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>
 entries written to the generated config.</p>
+<hr />
 <h3 id="configure-adjust-saturation"><code>--adjust-saturation</code>, <code>-S</code><a class="headerlink" href="#configure-adjust-saturation" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3197,6 +3231,7 @@ Modifies the
 <a href="../config-file/#output-style-palette-layers"><code>output.style.palette.layers</code></a>
 entries written to the generated config. Same input-format restriction as
 <a href="#configure-adjust-lightness"><code>--adjust-lightness</code></a>.</p>
+<hr />
 <h3 id="configure-title"><code>--title</code>, <code>-t</code><a class="headerlink" href="#configure-title" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3215,6 +3250,7 @@ entries written to the generated config. Same input-format restriction as
 <p>Set the value of <a href="../config-file/#output-keymap-title"><code>output.keymap_title</code></a>
 in the generated config. Combines with every other flag — passing <code>-t</code>
 alone writes a near-default config with just the title set.</p>
+<hr />
 <h3 id="configure-copyright"><code>--copyright</code>, <code>-r</code><a class="headerlink" href="#configure-copyright" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3232,6 +3268,7 @@ alone writes a near-default config with just the title set.</p>
 </table>
 <p>Set the value of <a href="../config-file/#output-copyright"><code>output.copyright</code></a>
 in the generated config.</p>
+<hr />
 <h3 id="configure-double-south"><code>--double-south</code>, <code>-d</code><a class="headerlink" href="#configure-double-south" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3249,6 +3286,7 @@ in the generated config.</p>
 </table>
 <p>Set <a href="../config-file/#keyboard-features-double-south"><code>keyboard.features.double_south</code></a>
 to <code>true</code> in the generated config.</p>
+<hr />
 <h3 id="configure-width"><code>--width</code>, <code>-w</code><a class="headerlink" href="#configure-width" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3266,6 +3304,7 @@ to <code>true</code> in the generated config.</p>
 </table>
 <p>Set <a href="../config-file/#output-layout-width"><code>output.layout.width</code></a> in the
 generated config.</p>
+<hr />
 <h3 id="configure-layer-count"><code>--layer-count</code>, <code>-n</code><a class="headerlink" href="#configure-layer-count" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3327,6 +3366,7 @@ lines and don't fail the run.</p>
 <hr />
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <p>A quick tour of common invocations.</p>
+<hr />
 <h3 id="render-every-layer-plus-the-overview-as-svg">Render every layer plus the overview as SVG<a class="headerlink" href="#render-every-layer-plus-the-overview-as-svg" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>$<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>./out
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>out/keymap-layer-0.svg
@@ -3335,15 +3375,18 @@ lines and don't fail the run.</p>
 </code></pre></div>
 <p>The default behaviour: every per-layer image plus the overview, no
 standalone legend images.</p>
+<hr />
 <h3 id="render-a-single-layer-as-png">Render a single layer as PNG<a class="headerlink" href="#render-a-single-layer-as-png" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>$<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>./out<span class="w"> </span>-l<span class="w"> </span><span class="m">1</span><span class="w"> </span>-f<span class="w"> </span>png
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>out/keymap-layer-1.png
 </code></pre></div>
+<hr />
 <h3 id="render-the-overview-plus-the-macros-legend">Render the overview plus the macros legend<a class="headerlink" href="#render-the-overview-plus-the-macros-legend" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>$<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>./out<span class="w"> </span>-l<span class="w"> </span>overview<span class="w"> </span>-l<span class="w"> </span>macros
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>out/keymap-overview.svg
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>out/keymap-macros.svg
 </code></pre></div>
+<hr />
 <h3 id="render-with-a-custom-palette-via-config-width-override">Render with a custom palette via config + width override<a class="headerlink" href="#render-with-a-custom-palette-via-config-width-override" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>$<span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-c<span class="w"> </span>my-config.yaml<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>./out<span class="w"> </span>-w<span class="w"> </span><span class="m">2400</span>
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>out/keymap-layer-0.svg
@@ -3351,19 +3394,23 @@ standalone legend images.</p>
 </code></pre></div>
 <p>The CLI's <code>-w 2400</code> wins over any <code>output.layout.width</code> in
 <code>my-config.yaml</code>.</p>
+<hr />
 <h3 id="pipe-a-c2json-keymap-through-skim-generate">Pipe a c2json keymap through <code>skim generate</code><a class="headerlink" href="#pipe-a-c2json-keymap-through-skim-generate" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>$<span class="w"> </span>qmk<span class="w"> </span>c2json<span class="w"> </span>-kb<span class="w"> </span>my/board<span class="w"> </span>-km<span class="w"> </span>vial<span class="w"> </span>--no-cpp<span class="w"> </span>keymap.c<span class="w"> </span><span class="p">|</span><span class="w"> </span>skim<span class="w"> </span>generate<span class="w"> </span>-<span class="w"> </span>-o<span class="w"> </span>./out<span class="w"> </span>-l<span class="w"> </span>overview
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>out/keymap-overview.svg
 </code></pre></div>
+<hr />
 <h3 id="scaffold-a-config-from-a-keybard-file">Scaffold a config from a Keybard file<a class="headerlink" href="#scaffold-a-config-from-a-keybard-file" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>$<span class="w"> </span>skim<span class="w"> </span>configure<span class="w"> </span>-k<span class="w"> </span>layout.kbi<span class="w"> </span>-o<span class="w"> </span>skim-config.yaml<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;My Layout&quot;</span><span class="w"> </span>-r<span class="w"> </span><span class="s2">&quot;© 2026 Me&quot;</span>
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>Configuration<span class="w"> </span>written<span class="w"> </span>to<span class="w"> </span>skim-config.yaml
 </code></pre></div>
 <p>The <code>-k</code> flag extracts layer names + palette; <code>-t</code> and <code>-r</code> populate
 <code>output.keymap_title</code> and <code>output.copyright</code>.</p>
+<hr />
 <h3 id="edit-an-existing-config-in-the-tui">Edit an existing config in the TUI<a class="headerlink" href="#edit-an-existing-config-in-the-tui" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>$<span class="w"> </span>skim<span class="w"> </span>configure<span class="w"> </span>-i<span class="w"> </span>-c<span class="w"> </span>skim-config.yaml
 </code></pre></div>
+<hr />
 <h3 id="check-render-engine-availability">Check render-engine availability<a class="headerlink" href="#check-render-engine-availability" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>$<span class="w"> </span>skim<span class="w"> </span>doctor
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="o">[</span>PASS<span class="o">]</span><span class="w"> </span>Installation<span class="w"> </span>Integrity:<span class="w"> </span>All<span class="w"> </span>bundled<span class="w"> </span>assets<span class="w"> </span>are<span class="w"> </span>present.
