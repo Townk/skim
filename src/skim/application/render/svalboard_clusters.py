@@ -998,18 +998,15 @@ class ThumbClusterMetrics:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class _ThumbKeyColors:
-    """Resolved fill / label / stroke colours for one thumb-cluster slot.
+    """Resolved fill / label colours for one thumb-cluster slot.
 
-    Some thumb keys (down / pad / nail / knuckle) don't draw a
-    stroke — for those slots the resolved ``stroke`` is unused and
-    the cluster passes only ``fill`` and ``label`` to the per-key
-    composable. ``stroke`` carries the palette's outline colour so
-    the up / double-down keys (which DO stroke) can use it.
+    Thumb keys no longer stroke (the bg-coloured stroke trick is
+    replaced by a real clipPath on the down key — see
+    :func:`ThumbCluster`). Slots only need fill + label colours.
     """
 
     fill: str
     label: str
-    stroke: str
 
 
 def _resolve_thumb_key_colors(
@@ -1020,15 +1017,13 @@ def _resolve_thumb_key_colors(
     layer_base_color: str,
     use_layer_colors_on_keys: bool,
 ) -> _ThumbKeyColors:
-    """Resolve fill + label + stroke for one thumb slot.
+    """Resolve fill + label for one thumb slot.
 
     Reuses the finger-cluster's :func:`_resolve_fill` (without an
     accent variant, since thumb keys don't carry the accent bar
     that finger directional keys do) and
     :func:`_resolve_label_color` (ghost-label logic for transparent
-    keys). Stroke always lands on the palette's
-    ``key_label_color`` — the legacy thumb keys use that as the
-    outline colour for keys that stroke.
+    keys).
     """
     fill = _resolve_fill(
         key=key,
@@ -1043,7 +1038,7 @@ def _resolve_thumb_key_colors(
         palette=palette,
         layer_base_color=layer_base_color,
     )
-    return _ThumbKeyColors(fill=fill, label=label, stroke=palette.key_label_color)
+    return _ThumbKeyColors(fill=fill, label=label)
 
 
 # ---------------------------------------------------------------------------

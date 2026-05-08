@@ -1027,3 +1027,21 @@ class TestThumbLayerIndicators:
         # Sanity: anchor unchanged + direction stays NORTH.
         assert dd_ind.routing_direction is CompassDirection.NORTH
         assert dd_metrics.indicator_anchor.y == pytest.approx(0.0)
+
+
+# ---------------------------------------------------------------------------
+# _ThumbKeyColors dataclass shape
+# ---------------------------------------------------------------------------
+
+
+class TestThumbKeyColorsShape:
+    """``_ThumbKeyColors`` no longer carries a stroke field — DD and
+    UP have stopped consuming it."""
+
+    def test_dataclass_has_no_stroke_field(self):
+        import dataclasses
+
+        from skim.application.render.svalboard_clusters import _ThumbKeyColors
+
+        field_names = {f.name for f in dataclasses.fields(_ThumbKeyColors)}
+        assert field_names == {"fill", "label"}
