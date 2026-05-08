@@ -1060,15 +1060,15 @@ class TestCutoutMultipliers:
 
 
 class TestDownCutouts:
-    """ThumbCluster bakes DD + UP cutouts into Down's rendered ``<path>``
-    via ``fill-rule="evenodd"`` — they become real edges of Down's
-    geometry, not separate clipping state. No ``<clipPath>`` is emitted
-    by the cluster, and a stroke (or any other outline-aware effect) on
-    Down's path traces both the outer outline and the cutout rims."""
+    """ThumbCluster computes Down's rendered ``<path>`` as a true
+    Boolean subtraction (Down minus DD minus UP) via Skia PathOps.
+    The holes are real edges of Down's geometry — a stroke or any
+    other outline-aware effect traces both the outer outline and
+    the rims of the holes — and no spillover sits outside Down's
+    outline (XOR / fill-rule="evenodd" would produce that)."""
 
     def test_no_clippath_emitted(self, ctx: RenderContext, palette: Palette):
-        """The cluster should not emit any ``<clipPath>`` — cutouts are
-        baked into Down's path directly."""
+        """No ``<clipPath>`` — cutouts are baked into Down's path."""
         cluster_data = ThumbClusterData(
             down_key=_td_key(label="DOWN"),
             pad_key=_td_key(label="PAD"),
@@ -1088,9 +1088,17 @@ class TestDownCutouts:
         assert "<clipPath" not in svg
         assert "clip-path=" not in svg
 
-    def test_down_path_has_three_subpaths_with_evenodd(self, ctx: RenderContext, palette: Palette):
-        """Down's rendered ``<path>`` carries three subpaths
-        (outer + DD cutout + UP cutout) and ``fill-rule="evenodd"``."""
+    def test_down_path_uses_real_subtraction_not_evenodd(
+        self, ctx: RenderContext, palette: Palette
+    ):
+        """No ``fill-rule="evenodd"`` anywhere — the subtraction is real.
+        Down's rendered path is the geometric difference Down minus DD
+        minus UP. Because UP overlaps Down's outer edge, Skia turns UP
+        into a notch in the outline (not a separate hole); DD, fully
+        inside Down, becomes an inner hole. So the resulting path has
+        between 1 and 3 ``M``-subpaths depending on overlap geometry —
+        the invariant we pin is "no spillover": the path's bounding
+        box must not exceed Down's original bounding box."""
         import re
 
         cluster_data = ThumbClusterData(
@@ -1109,8 +1117,24 @@ class TestDownCutouts:
                 layer_qmk_index=_LAYER_0,
             )
         svg = str(_draw(cluster, Point(0, 0)).as_svg())
-        # Down's evenodd path is the only one with fill-rule=evenodd.
-        match = re.search(r'<path d="([^"]*)"[^/>]*fill-rule="evenodd"', svg)
-        assert match is not None, f"no evenodd path found in {svg!r}"
-        m_commands = match.group(1).count("M ")
-        assert m_commands == 3, f"expected 3 M-subpaths (Down+DD+UP), got {m_commands}"
+        assert 'fill-rule="evenodd"' not in svg
+
+        # Find Down's path: it's the largest path (longest d-string)
+        # that uses cubic ``C`` commands (Skia's output for the
+        # rounded corners). Other thumb keys still use ``A`` arcs.
+        down_d = ""
+        for m in re.finditer(r'<path d="([^"]*)"', svg):
+            d_str = m.group(1)
+            if "C" in d_str and len(d_str) > len(down_d):
+                down_d = d_str
+        assert down_d, f"no skia-emitted path found in {svg!r}"
+
+        # Extract every coordinate in the d-string and assert the bbox
+        # never exceeds Down's bounding box plus a sub-pixel tolerance.
+        # cluster ``width=200`` → Down's slot sits at right side; check
+        # that no X coordinate exceeds the cluster width.
+        coords = [float(n) for n in re.findall(r"-?\d+\.?\d*", down_d)]
+        max_x_in_down = max(coords[::2])  # x coords (every other)
+        assert max_x_in_down <= 200.0 + 1e-3, (
+            f"Down's path extends past x=200: max x = {max_x_in_down}"
+        )

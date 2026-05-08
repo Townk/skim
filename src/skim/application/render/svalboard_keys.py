@@ -28,6 +28,7 @@ from skim.domain import Alignment, KeyboardSide, KeyDirection
 
 from .composable import Composable
 from .font import Font
+from .path_ops import subtract
 from .primitives import CompassDirection, MetricsComponent, Point, Size
 from .render_context import TextStyle
 from .rich_text import RichText
@@ -649,13 +650,15 @@ def DownKey(
             corners_radius=corner_radius,
         )
         if cutouts:
-            subpaths = [outer.args["d"]]
-            subpaths.extend(c.translated(x, y).args["d"] for c in cutouts)
+            # True boolean subtraction via Skia PathOps — handles
+            # cutouts that extend past Down's outline correctly
+            # (XOR / fill-rule="evenodd" can't, since the spillover
+            # has odd subpath count and gets erroneously filled).
+            cutout_ds = [c.translated(x, y).args["d"] for c in cutouts]
             d.append(
                 draw.Path(
-                    d=" ".join(subpaths),
+                    d=subtract(outer.args["d"], *cutout_ds),
                     fill=fill_color,
-                    fill_rule="evenodd",
                 )
             )
         else:
