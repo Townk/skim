@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Thumb-cluster geometry overhaul** — the rendered thumb cluster now
+  has uniform spacing and exact slant-matching:
+  - Pad / Nail / Knuckle slants are now derived from Down's edge slope
+    (`(_DOWN_SLANT_MULTIPLIER / 2) / _DOWN_HEIGHT_RATIO`) rather than
+    hand-tuned per key, so each key's slanted edge is exactly parallel
+    to Down's. Previous per-key values were 1.09–1.35× too steep,
+    visible as a subtle taper along each seam.
+  - Pad / Nail / Knuckle's perpendicular distance to Down is now
+    exactly `thumb_key_gap` (replaces the previous axis-aligned
+    `thumb_key_gap / 2` offset, which produced gaps in the 0.27–0.37
+    × `thumb_key_gap` range and varied by key).
+  - Up / Knuckle's vertical distance to Pad / Nail is now exactly
+    `thumb_key_gap` (replaces the previous `center_y − inset × 1.5`
+    anchoring).
+  - Pad's width is now derived as `Knuckle.width − thumb_key_gap / 3`,
+    matching the original Svalboard documentation image proportion.
+    The hard-coded `_PAD_KEY_PROPORTION = 0.38` constant was removed.
+  - DD and UP cutout outsets in Down are now both
+    `thumb_key_gap × 0.4` rather than per-key proportions of each
+    cutout's own width (formerly 0.05 of DD width and 0.025 of UP
+    width). The rim band now scales with the user-configured gap.
+  - `_THUMB_INSET_PROPORTION` reduced from `0.038` to `0.038 × 2/3`
+    (≈ `0.02533`) — the new perpendicular-gap layout puts more
+    whitespace at every seam, so the gap itself wants to be tighter
+    for the cluster to read at the same overall density.
+- **Down rendered as true Boolean subtraction.** Down's painted
+  `<path>` is computed as `Down minus DD minus UP` via Skia PathOps
+  (new `skia-pathops` dependency, distributed as binary wheels).
+  Replaces the previous `<clipPath>` + `fill-rule="evenodd"` approach
+  — XOR fill produced spillover where UP's outset extended past
+  Down's outline. The new path has the holes baked into the geometry,
+  so a stroke (or any other outline-aware effect) traces the actual
+  painted shape, including the cutout rims.
+- **`Trapezoid.outset(amount)` and `Trapezoid.translated(dx, dy)`**
+  added on the existing `Trapezoid` primitive. `outset` is a true
+  Minkowski offset (every edge moves perpendicular by `amount`,
+  corner radii grow by `amount`); `translated` rebuilds at a shifted
+  origin. Replaces the previous parameter-inflation approach which
+  diverged from the true offset on slanted edges and didn't adjust
+  corner radii.
+
 ### Removed
 
 - Internal: deleted the inline `publish-package` job from

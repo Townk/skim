@@ -112,15 +112,13 @@ _INDICATOR_FALLBACK_STROKE = "#606060"
 # Down-key cutouts
 # ---------------------------------------------------------------------------
 
-# Both DD and UP cutouts in the down key are outset by ``thumb_key_gap
-# / 3`` — i.e. the visible "gap band" at each cutout's rim is one third
-# of the side-gap between Down and the surrounding keys. Tuned for the
-# layout produced by :func:`_compute_thumb_slots`; if the side gaps
-# change, this divisor is the one you'd retune. Computed at draw time
-# from ``thumb_inset`` rather than as a per-key proportion of the cut-
-# out's own width, so it stays in lockstep with the user-configured
-# ``Spacing.thumb_key_gap``.
-_DOWN_CUTOUT_OUTSET_DIVISOR = 3.0
+# Both DD and UP cutouts in the down key are outset by
+# ``thumb_key_gap × _DOWN_CUTOUT_OUTSET_MULTIPLIER`` — i.e. the visible
+# "gap band" at each cutout's rim is this fraction of the side-gap
+# between Down and the surrounding keys. 0.4 sits between 1/3 and 1/2,
+# tuned for the layout produced by :func:`_compute_thumb_slots`. Stays
+# in lockstep with the user-configured ``Spacing.thumb_key_gap``.
+_DOWN_CUTOUT_OUTSET_MULTIPLIER = 0.4
 
 
 # ---------------------------------------------------------------------------
@@ -947,7 +945,11 @@ _UP_KEY_PROPORTION = 0.372
 _NAIL_KEY_PROPORTION = 0.4
 _KNUCKLE_KEY_PROPORTION = 0.385
 _DOUBLE_DOWN_KEY_PROPORTION = 0.13
-_THUMB_INSET_PROPORTION = 0.038
+# Thumb-key gap as a proportion of cluster width. Reduced by one third
+# from the legacy 0.038 — the new perpendicular-gap layout puts more
+# whitespace at every seam, so the gap itself wants to be smaller for
+# the cluster to read at the same overall density.
+_THUMB_INSET_PROPORTION = 0.038 * 2.0 / 3.0
 
 # Cluster bbox aspect — the legacy ``ThumbClusterComponent._ASPECT_RATIO``
 # is "1.5:1" (width / height). Used to compute the cluster height
@@ -1405,10 +1407,10 @@ def ThumbCluster(
     )
 
     # Translate DD's and UP's outset cutouts from their own local
-    # frames into Down's local frame. Cutout outset = thumb_inset /
-    # _DOWN_CUTOUT_OUTSET_DIVISOR for both keys, so the rim band
+    # frames into Down's local frame. Cutout outset = thumb_inset ×
+    # _DOWN_CUTOUT_OUTSET_MULTIPLIER for both keys, so the rim band
     # stays a uniform size and scales with the user-configured gap.
-    cutout_amount = thumb_inset / _DOWN_CUTOUT_OUTSET_DIVISOR
+    cutout_amount = thumb_inset * _DOWN_CUTOUT_OUTSET_MULTIPLIER
     dd_offset_in_down = (
         slots.double_down_origin.x - slots.down_origin.x,
         slots.double_down_origin.y - slots.down_origin.y,

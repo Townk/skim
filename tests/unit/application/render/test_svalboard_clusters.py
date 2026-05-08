@@ -14,7 +14,7 @@ from skim.application.render.layer_indicator import LayerIndicatorMetrics
 from skim.application.render.primitives import CompassDirection, Point
 from skim.application.render.render_context import RenderContext, using_render_context
 from skim.application.render.svalboard_clusters import (
-    _DOWN_CUTOUT_OUTSET_DIVISOR,
+    _DOWN_CUTOUT_OUTSET_MULTIPLIER,
     FingerCluster,
     FingerClusterMetrics,
     ThumbCluster,
@@ -1011,7 +1011,9 @@ class TestThumbLayerIndicators:
         # in DD-local coords (the NORTH edge); the circle centre sits
         # ``gap + 2*inset + radius`` ABOVE the anchor in NORTH (i.e.,
         # at y = -(gap + 2*inset + radius)).
-        inset = cluster_width * 0.038
+        from skim.application.render.svalboard_clusters import _THUMB_INSET_PROPORTION
+
+        inset = cluster_width * _THUMB_INSET_PROPORTION
         radius = dd_ind.circle_radius
         # Layer-indicator gap is now doc-width-relative (the legacy
         # ``down_width * 0.18`` was per-cluster; the unified default
@@ -1048,14 +1050,14 @@ class TestThumbKeyColorsShape:
         assert field_names == {"fill", "label"}
 
 
-class TestCutoutOutsetDivisor:
-    """The DD/UP cutouts in Down are sized as ``thumb_key_gap /
-    _DOWN_CUTOUT_OUTSET_DIVISOR`` — i.e. the rim band scales with the
+class TestCutoutOutsetMultiplier:
+    """The DD/UP cutouts in Down are sized as ``thumb_key_gap ×
+    _DOWN_CUTOUT_OUTSET_MULTIPLIER`` — i.e. the rim band scales with the
     side gap between Down and the surrounding keys, not with the
     cutout's own width."""
 
-    def test_divisor_value(self):
-        assert _DOWN_CUTOUT_OUTSET_DIVISOR == 3.0
+    def test_multiplier_value(self):
+        assert _DOWN_CUTOUT_OUTSET_MULTIPLIER == 0.4
 
 
 class TestDownCutouts:
