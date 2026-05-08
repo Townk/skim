@@ -1,5 +1,12 @@
 name: Publish to PyPI
 
+# Sole PyPI-publishing path. Fires on the ``release: published`` event
+# that ``gh release create`` emits inside ``just release`` (and on any
+# other published GitHub Release / manual dispatch). PyPI's trusted-
+# publisher entry for this project must list this exact workflow
+# filename — see ``.github/workflows/release.yml``'s header comment
+# for the wider flow.
+
 on:
   release:
     types: [published]

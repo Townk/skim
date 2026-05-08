@@ -1581,7 +1581,7 @@ wheels = [
 
 [[package]]
 name = "qmk-skim"
-version = "0.7.3.dev0"
+version = "0.7.4.dev0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },

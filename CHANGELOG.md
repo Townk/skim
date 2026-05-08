@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Internal: deleted the inline `publish-package` job from
+  `.github/workflows/release.yml`. Under the new `just release` flow,
+  PyPI publishing is owned exclusively by
+  `.github/workflows/publish.yml` (triggered by the
+  `release: published` event that `gh release create` emits). The
+  inline job was dead code — `release.yml` only ever sees
+  `pyproject.toml` at a `.dev` version on mainline HEAD now, so the
+  `is_prerelease=false` gate never fires. Header comments on both
+  workflow files spell out the new ownership.
+
 ## [0.7.3] - 2026-05-08
 
 ### Added
