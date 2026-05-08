@@ -38,6 +38,7 @@ from __future__ import annotations
 import colorsys
 import itertools
 from dataclasses import dataclass
+from typing import cast
 
 import drawsvg as draw
 
@@ -137,7 +138,9 @@ _UP_CUTOUT_OUTSET_MULTIPLIER = 0.025
 _CLIP_ID_COUNTER = itertools.count()
 
 
-def _translated(elem: draw.Circle | draw.Rectangle | Trapezoid, origin: Point) -> draw.Circle | draw.Rectangle | Trapezoid:
+def _translated(
+    elem: draw.Circle | draw.Rectangle | Trapezoid, origin: Point
+) -> draw.Circle | draw.Rectangle | Trapezoid:
     """Return a copy of a drawsvg shape shifted by ``origin``.
 
     Supports the three shape types thumb-cluster keys publish via their
@@ -1461,8 +1464,6 @@ def ThumbCluster(
     size = Size(width, content_height)
 
     def draw_at(d, origin):
-        # Compute each key's absolute paint origin once — both the
-        # key and (optionally) its indicator paint at the same one.
         down_o = Point(origin.x + slots.down_origin.x, origin.y + slots.down_origin.y)
         pad_o = Point(origin.x + slots.pad_origin.x, origin.y + slots.pad_origin.y)
         up_o = Point(origin.x + slots.up_origin.x, origin.y + slots.up_origin.y)
@@ -1473,12 +1474,42 @@ def ThumbCluster(
             origin.y + slots.double_down_origin.y,
         )
 
-        # Paint order matches the legacy ``for key in self._cluster``
-        # iteration over :class:`ThumbClusterData` field order:
-        # down → pad → up → nail → knuckle → double-down. The
-        # double-down sits ON TOP of the down key's upper edge, so
-        # painting it last keeps its outline visible.
-        down.draw_at(d, down_o)
+        # Build the clipPath that punches DD and UP holes in DOWN.
+        # Outer sub-shape (the Down bbox) + two inner sub-shapes (the
+        # outset cutouts) combined with clip-rule="evenodd" leaves
+        # everything except the cutouts visible.
+        #
+        # Note: ``d.append(clip_path)`` causes drawsvg to emit both a
+        # ``<defs><clipPath>…</clipPath></defs>`` block AND a
+        # ``<use xlink:href="#clip-id" />`` reference. The ``<use>`` of
+        # a non-renderable element is harmless (browsers ignore it per
+        # SVG spec) but is noise in the output. Suppression would
+        # require ``Drawing.append_def``, which isn't available on the
+        # generic ``Canvas`` protocol (d may be a Group here). Accept
+        # the noise.
+        clip_id = f"thumb-down-clip-{next(_CLIP_ID_COUNTER)}"
+        dd_outset = slots.double_down_width * _DD_CUTOUT_OUTSET_MULTIPLIER
+        up_outset = slots.up_width * _UP_CUTOUT_OUTSET_MULTIPLIER
+        dd_cutout_local = cast(Trapezoid, double_down.metrics.path(dd_outset))
+        up_cutout_local = cast(Trapezoid, up.metrics.path(up_outset))
+        clip_path = draw.ClipPath(id=clip_id, clip_rule="evenodd")
+        clip_path.append(
+            draw.Rectangle(
+                x=down_o.x,
+                y=down_o.y,
+                width=slots.down_width,
+                height=down.size.height,
+            )
+        )
+        clip_path.append(_translated(dd_cutout_local, double_down_o))
+        clip_path.append(_translated(up_cutout_local, up_o))
+        d.append(clip_path)
+
+        down_group = draw.Group(clip_path=f"url(#{clip_id})")
+        down.draw_at(down_group, down_o)
+        d.append(down_group)
+
+        # The remaining keys paint unwrapped, on top of the clipped Down.
         pad.draw_at(d, pad_o)
         up.draw_at(d, up_o)
         nail.draw_at(d, nail_o)

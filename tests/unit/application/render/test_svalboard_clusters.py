@@ -1087,3 +1087,90 @@ class TestCutoutMultipliers:
 
     def test_up_cutout_multiplier_value(self):
         assert _UP_CUTOUT_OUTSET_MULTIPLIER == 0.025
+
+
+class TestDownClipPath:
+    """ThumbCluster emits a clipPath with DD + UP outset cutouts and
+    wraps the Down paint in a group that references it."""
+
+    def test_clippath_emitted(self, ctx: RenderContext, palette: Palette):
+        cluster_data = ThumbClusterData(
+            down_key=_td_key(label="DOWN"),
+            pad_key=_td_key(label="PAD"),
+            up_key=_td_key(label="UP"),
+            nail_key=_td_key(label="NAIL"),
+            knuckle_key=_td_key(label="KNUCKLE"),
+            double_down_key=_td_key(label="DD"),
+        )
+        with using_render_context(ctx):
+            cluster = ThumbCluster(
+                cluster=cluster_data,
+                side=KeyboardSide.RIGHT,
+                width=200.0,
+                layer_qmk_index=_LAYER_0,
+            )
+        svg = str(_draw(cluster, Point(0, 0)).as_svg())
+        assert "<clipPath" in svg
+        assert 'clip-rule="evenodd"' in svg
+        assert 'clip-path="url(#thumb-down-clip-' in svg
+
+    def test_clippath_has_three_children(self, ctx: RenderContext, palette: Palette):
+        """Outer rect (Down bbox) + two inner trapezoids (DD, UP cutouts)."""
+        import re
+
+        cluster_data = ThumbClusterData(
+            down_key=_td_key(label="DOWN"),
+            pad_key=_td_key(label="PAD"),
+            up_key=_td_key(label="UP"),
+            nail_key=_td_key(label="NAIL"),
+            knuckle_key=_td_key(label="KNUCKLE"),
+            double_down_key=_td_key(label="DD"),
+        )
+        with using_render_context(ctx):
+            cluster = ThumbCluster(
+                cluster=cluster_data,
+                side=KeyboardSide.RIGHT,
+                width=200.0,
+                layer_qmk_index=_LAYER_0,
+            )
+        svg = str(_draw(cluster, Point(0, 0)).as_svg())
+        match = re.search(r"<clipPath[^>]*>(.*?)</clipPath>", svg, re.DOTALL)
+        assert match is not None
+        body = match.group(1)
+        rect_count = body.count("<rect")
+        path_count = body.count("<path")
+        assert rect_count == 1, f"expected 1 rect (Down bbox), got {rect_count}"
+        assert path_count == 2, f"expected 2 paths (DD, UP cutouts), got {path_count}"
+
+    def test_clippath_id_unique_across_clusters(self, ctx: RenderContext, palette: Palette):
+        import re
+
+        cluster_data = ThumbClusterData(
+            down_key=_td_key(label="DOWN"),
+            pad_key=_td_key(label="PAD"),
+            up_key=_td_key(label="UP"),
+            nail_key=_td_key(label="NAIL"),
+            knuckle_key=_td_key(label="KNUCKLE"),
+            double_down_key=_td_key(label="DD"),
+        )
+        with using_render_context(ctx):
+            cluster_a = ThumbCluster(
+                cluster=cluster_data,
+                side=KeyboardSide.RIGHT,
+                width=200.0,
+                layer_qmk_index=_LAYER_0,
+            )
+            cluster_b = ThumbCluster(
+                cluster=cluster_data,
+                side=KeyboardSide.LEFT,
+                width=200.0,
+                layer_qmk_index=_LAYER_0,
+            )
+        svg_a = str(_draw(cluster_a, Point(0, 0)).as_svg())
+        svg_b = str(_draw(cluster_b, Point(0, 0)).as_svg())
+        m_a = re.search(r'id="(thumb-down-clip-\d+)"', svg_a)
+        m_b = re.search(r'id="(thumb-down-clip-\d+)"', svg_b)
+        assert m_a is not None and m_b is not None
+        id_a = m_a.group(1)
+        id_b = m_b.group(1)
+        assert id_a != id_b
