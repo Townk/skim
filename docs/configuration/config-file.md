@@ -22,6 +22,8 @@ file interactively, see the [Configurator UI](configurator-ui.md).
 > organisational subsection or describe an algorithm, not a configuration
 > field.
 
+---
+
 ## Top-level structure
 
 The file has three top-level sections:
@@ -64,6 +66,8 @@ keyboard:
     ...                      # see keyboard.layers below
 ```
 
+---
+
 ### `features` { #keyboard-features }
 A bag of hardware-feature toggles. Today there's only one knob, but the
 sub-section exists to keep room for future hardware variants without
@@ -76,6 +80,8 @@ keyboard:
   features:
     double_south: <boolean>
 ```
+
+---
 
 #### `double_south` { #keyboard-features-double-south }
 
@@ -102,6 +108,8 @@ hidden in the output.
 </figure>
 
 </div>
+
+---
 
 ### `layers` { #keyboard-layers }
 A list of layer descriptors. The list does two unrelated jobs at once, and
@@ -136,6 +144,8 @@ keyboard:
 
 Each entry has these fields:
 
+---
+
 #### `index`
 
 | Type      | Default | Range    |
@@ -169,6 +179,8 @@ represent the layers defined in your keymap.
 
 </div>
 
+---
+
 #### `name`
 
 | Type     | Default |
@@ -195,6 +207,8 @@ sizes them automatically.
 
 When no name is provided, Skim simply uses the word _LAYER_ followed by the QMK firmware layer index.
 
+---
+
 #### `id`
 
 | Type     | Default |
@@ -210,6 +224,8 @@ can resolve them back to the firmware index.
 > [!NOTE]
 > This option has no visual impact in the final image, but is required to produce
 > an image with the correct connections between layers.
+
+---
 
 #### `variant`
 
@@ -294,6 +310,8 @@ The pipeline that produces a key's label runs in this order:
 3. **`overrides`** has the final word: it can replace the resolved label with
    anything you like, and entries here win against the bundled table.
 
+---
+
 ### `pre_process` { #keycodes-pre-process }
 
 | Type | Default |
@@ -320,6 +338,8 @@ render.
 > resolution, so they should not rely on alias-resolution features in keycode
 > strings. Use plain canonical QMK syntax in the `target`.
 
+---
+
 ### `overrides` { #keycodes-overrides }
 
 | Type | Default |
@@ -343,6 +363,8 @@ The `target` field is always processed by the [Key Label Resolution
 algorithm](#key-label-resolution-algorithm), which allows you to create a rich
 graphic set of key code symbols without repeating yourself.
 
+---
+
 ### `macros` { #keycodes-macros }
 
 | Type | Default |
@@ -359,6 +381,8 @@ name that Skim uses in the macros legend table on generated images.
   </figure>
 </div>
 
+---
+
 #### `id`
 
 | Type     | Default |
@@ -370,6 +394,8 @@ keymaps that's one of the standard slot names (`M0`, `M1`, …, `M49`); for
 QMK `keymap.c` keymaps it's the name you used in your `#define` (e.g.
 `MY_MACRO` for `MACRO_MY_MACRO`).
 
+---
+
 #### `name`
 
 | Type             | Default |
@@ -379,6 +405,8 @@ QMK `keymap.c` keymaps it's the name you used in your `#define` (e.g.
 A short human-readable label shown in the macros legend. This field is
 Skim-only — it has no equivalent in Vial or Keybard, so changes here
 don't round-trip back to your keyboard's firmware.
+
+---
 
 #### `preview`
 
@@ -392,6 +420,8 @@ this field is **not** intended for hand-editing. To regenerate it, run the
 Configurator UI with the `-k` / `--keymap` option pointed at your keymap
 file — Skim will read the macro definition from the keymap and refresh the
 preview.
+
+---
 
 ### `tap_dances` { #keycodes-tap-dances }
 
@@ -410,6 +440,8 @@ uses in the tap-dance legend table on generated images.
   </figure>
 </div>
 
+---
+
 #### `id`
 
 | Type     | Default |
@@ -424,6 +456,8 @@ identifiers (`TD(0)` → `TD0`, `TD(1)` → `TD1`, …, `TD(49)` → `TD49`) —
 mapping isn't a QMK standard, but it lets Skim render specific `keymap.c`
 styles that reference the tap-dance by an unwrapped name.
 
+---
+
 #### `name`
 
 | Type             | Default |
@@ -433,6 +467,8 @@ styles that reference the tap-dance by an unwrapped name.
 A short human-readable label shown in the tap-dance legend. Like
 `macros.name`, this field is Skim-only — it has no equivalent in Vial or
 Keybard, and changes don't round-trip back to your firmware.
+
+---
 
 #### `preview`
 
@@ -445,6 +481,8 @@ below its name in the legend. Although saved in the configuration file,
 this field is **not** intended for hand-editing. To regenerate it, run the
 Configurator UI with the `-k` / `--keymap` option pointed at your keymap
 file — Skim will read the tap-dance definition and refresh the preview.
+
+---
 
 ### `symbol_descriptions` { #keycodes-symbol-descriptions }
 
@@ -476,6 +514,8 @@ User keys in an existing bundled category take precedence over the bundled
 description for the same keycode. Brand-new categories are appended after
 the bundled ones in the legend.
 
+---
+
 ### `function_descriptions` { #keycodes-function-descriptions }
 
 | Type | Default |
@@ -495,6 +535,8 @@ keycodes:
       MO: "Hold to layer #0;"
 ```
 
+---
+
 #### Placeholders
 
 Description strings support a small substitution syntax that lets the text
@@ -506,6 +548,8 @@ reference the function's arguments and pull in other keycode glyphs:
 | `@N;`        | The Nth argument, **recursively resolved** to its rendered label. Triggers per-instance mode (see below). |
 | `@@KEYCODE;` | An alias reference — replaced by the resolved label of `KEYCODE`. Lets a description embed a glyph that's already named in the bundled keycode table. |
 | `\|;`         | The tap/hold separator character (the box-drawing `│`). Rare in descriptions; appears mostly in keycode aliases. |
+
+---
 
 #### Generic vs per-instance entries
 
@@ -548,6 +592,8 @@ its "literal #" meaning inside each per-instance row.
 > single legend entry. Override the bundled entry with `@N;` if you'd
 > rather see one row per unique layer destination.
 
+---
+
 ### `symbol_legend_aliases` { #keycodes-symbol-legend-aliases }
 
 | Type | Default |
@@ -585,6 +631,8 @@ keycodes:
 to `KC_RIGHT_CTRL` all collapse onto the `KC_LEFT_CTRL` legend row. You
 only have to alias the names that aren't *already* covered by the
 bundled chain.
+
+---
 
 ### Key Label Resolution algorithm
 
@@ -675,8 +723,8 @@ later text-rendering stage by the rich-text layer.
 > template.
 
 > [!NOTE]
-> Skim ships 3 open source fonts bundled (one of them with 3 variants) as
-> companion assets for you to use:
+> Skim ships these open source fonts bundled as companion assets for you
+> to use:
 >
 > - Roboto:
 >     - Thin (`Roboto-Thin.ttf`)
@@ -684,6 +732,8 @@ later text-rendering stage by the rich-text layer.
 >     - Black (`Roboto-Black.ttf`)
 > - Symbols Nerd Font (`SymbolsNerdFont-Regular.ttf`)
 > - DejaVu Sans Condensed (`DejaVuSansCondensed.ttf`)
+> - JetBrains Mono Nerd Font Mono (`JetBrainsMonoNerdFontMono-Regular.ttf`)
+>   — used by the Configurator UI's screenshot pipeline.
 >
 > If these fonts support the glyph you're trying to use, Skim will render your
 > key without major problems.
@@ -715,6 +765,8 @@ you're free to override these decisions.
 The next sub-sections will explain in details how each field affect the output
 of your keymap.
 
+---
+
 ### `keymap_title` { #output-keymap-title }
 
 | Type             | Default |
@@ -726,6 +778,8 @@ image created by Skim. If you don't set this property (or set it to `null`), an
 auto-generated name will be used instead. The name is derived from the keymap
 file name used to create the images.
 
+---
+
 ### `copyright` { #output-copyright }
 
 | Type             | Default |
@@ -735,6 +789,8 @@ file name used to create the images.
 An optional copyright notice rendered in the footer area of the keymap images.
 Leave `null` to omit it. Standard conventions apply (`"© 2026 Your Name"`);
 Skim does not enforce a format.
+
+---
 
 ### `layout` { #output-layout }
 Image dimensions and whitespace.
@@ -748,6 +804,8 @@ output:
     spacing:
       ...                      # see output.layout.spacing below
 ```
+
+---
 
 #### `width` { #output-layout-width }
 
@@ -776,6 +834,8 @@ for thumbnails or sharing on width-constrained platforms.
 > units regardless of `width`, which is occasionally what you want
 > (e.g. pinning a 2-pixel border on every render size) but means you
 > own the consequences on smaller / larger canvases.
+
+---
 
 #### `spacing` { #output-layout-spacing }
 Every gap, padding, and inset Skim paints is configurable here. Skim
@@ -830,6 +890,8 @@ In every illustration below, the rose-red highlight marks the value
 the field controls; everything else is greyed out so the value reads
 at a glance.
 
+---
+
 ##### `margin` { #output-layout-spacing-margin }
 
 | Type                            | Default        | Base       |
@@ -844,6 +906,8 @@ against the image edge.
 <figcaption>The rose bands trace the four-sided gap between the canvas edge and the document border.</figcaption>
 ![Margin highlighted around a small keymap document](../_static/spacing/margin.svg){ width="520" loading=lazy }
 </figure>
+
+---
 
 ##### `inset` { #output-layout-spacing-inset }
 
@@ -861,6 +925,8 @@ document column.
 ![Inset highlighted between border and content](../_static/spacing/inset.svg){ width="520" loading=lazy }
 </figure>
 
+---
+
 ##### `column_gap` { #output-layout-spacing-column-gap }
 
 | Type                            | Default                        | Base       |
@@ -876,6 +942,8 @@ sections when both are rendered.
 ![Column gap highlighted between clusters](../_static/spacing/column-gap.svg){ width="520" loading=lazy }
 </figure>
 
+---
+
 ##### `section_spacing` { #output-layout-spacing-section-spacing }
 
 | Type                            | Default                         | Base       |
@@ -889,6 +957,8 @@ header rule) and the section body that follows it.
 <figcaption>The rose band sits between the title rule and the column-header strip.</figcaption>
 ![Section spacing highlighted between stripe and body](../_static/spacing/section-spacing.svg){ width="360" loading=lazy }
 </figure>
+
+---
 
 ##### `section_title_rule_gap` { #output-layout-spacing-section-title-rule-gap }
 
@@ -906,6 +976,8 @@ total height.
 <figcaption>The rose band shows the gap between the section title bottom and the rule line.</figcaption>
 ![Section title rule gap highlighted](../_static/spacing/section-title-rule-gap.svg){ width="380" loading=lazy }
 </figure>
+
+---
 
 ##### `table_header_spacing` { #output-layout-spacing-table-header-spacing }
 
@@ -927,6 +999,8 @@ in three places that all share the same rhythm:
 ![Table header spacing highlighted](../_static/spacing/table-header-spacing.svg){ width="460" loading=lazy }
 </figure>
 
+---
+
 ##### `table_col_spacing` { #output-layout-spacing-table-col-spacing }
 
 | Type                            | Default                           | Base       |
@@ -942,6 +1016,8 @@ pill row.
 ![Table column spacing highlighted](../_static/spacing/table-col-spacing.svg){ width="460" loading=lazy }
 </figure>
 
+---
+
 ##### `table_row_spacing` { #output-layout-spacing-table-row-spacing }
 
 | Type                            | Default                          | Base       |
@@ -954,6 +1030,8 @@ Vertical gap between adjacent rows inside a table.
 <figcaption>Two rose bands between three stacked tap-dance rows.</figcaption>
 ![Table row spacing highlighted](../_static/spacing/table-row-spacing.svg){ width="500" loading=lazy }
 </figure>
+
+---
 
 ##### `finger_key_gap` { #output-layout-spacing-finger-key-gap }
 
@@ -970,6 +1048,8 @@ so the geometry stays proportional however the cluster gets sized.
 <figcaption>Four rose bands frame the center key inside a finger cluster.</figcaption>
 ![Finger key gap highlighted](../_static/spacing/finger-key-gap.svg){ width="320" loading=lazy }
 </figure>
+
+---
 
 ##### `thumb_key_gap` { #output-layout-spacing-thumb-key-gap }
 
@@ -989,6 +1069,8 @@ width.
 ![Thumb key gap highlighted](../_static/spacing/thumb-key-gap.svg){ width="420" loading=lazy }
 </figure>
 
+---
+
 ##### `layer_indicator_spacing` { #output-layout-spacing-layer-indicator-spacing }
 
 | Type                            | Default                          | Base       |
@@ -1005,6 +1087,8 @@ cluster sizing.
 <figcaption>The rose band sits between the north key's top edge and its layer indicator.</figcaption>
 ![Layer indicator spacing highlighted](../_static/spacing/layer-indicator-spacing.svg){ width="320" loading=lazy }
 </figure>
+
+---
 
 ##### `chip_padding` { #output-layout-spacing-chip-padding }
 
@@ -1023,6 +1107,8 @@ in step with horizontal changes.
 ![Chip padding highlighted](../_static/spacing/chip-padding.svg){ width="320" loading=lazy }
 </figure>
 
+---
+
 ##### `tap_dance_pill_padding` { #output-layout-spacing-tap-dance-pill-padding }
 
 | Type                            | Default                          | Base       |
@@ -1037,6 +1123,8 @@ Vertical padding is `tap_dance_pill_padding * 0.25`.
 <figcaption>The rose bands flank the centred label inside a tap-dance variant cell.</figcaption>
 ![Tap-dance pill padding highlighted](../_static/spacing/tap-dance-pill-padding.svg){ width="460" loading=lazy }
 </figure>
+
+---
 
 ##### `macro_action_inset` { #output-layout-spacing-macro-action-inset }
 
@@ -1058,6 +1146,8 @@ consistent.
 ![Macro action inset highlighted](../_static/spacing/macro-action-inset.svg){ width="320" loading=lazy }
 </figure>
 
+---
+
 ##### `layer_badge_inset` { #output-layout-spacing-layer-badge-inset }
 
 | Type                            | Default                          | Base       |
@@ -1074,6 +1164,8 @@ edge reads as breathing room rather than crowding the next column.
 <figcaption>Two rose bands flank the index column; the dashed band on the right shows the derived trailing inset (= 2× the leading value).</figcaption>
 ![Layer badge inset highlighted](../_static/spacing/layer-badge-inset.svg){ width="380" loading=lazy }
 </figure>
+
+---
 
 ### `style` { #output-style }
 The largest sub-section. Every visual switch, stroke width, and color
@@ -1108,6 +1200,8 @@ output:
       ...                      # see output.style.palette below
 ```
 
+---
+
 #### `hold_symbol_position` { #output-style-hold-symbol-position }
 
 | Type     | Default     | Allowed values                |
@@ -1134,6 +1228,8 @@ the split each portion goes on:
 ![Three thumb clusters illustrating hold_symbol_position modes](../_static/spacing/hold-symbol-position.svg){ width="640" loading=lazy }
 </figure>
 
+---
+
 #### `use_layer_colors_on_keys` { #output-style-use-layer-colors-on-keys }
 
 | Type      | Default |
@@ -1152,6 +1248,8 @@ overview.
 ![use_layer_colors_on_keys true vs false comparison](../_static/spacing/use-layer-colors-on-keys.svg){ width="500" loading=lazy }
 </figure>
 
+---
+
 #### `use_system_fonts` { #output-style-use-system-fonts }
 
 | Type      | Default |
@@ -1163,6 +1261,8 @@ image looks identical on every machine. When `true`, the SVG references
 system fonts by name — the file is smaller and may pick up your system's
 preferred typefaces, but viewers without those fonts installed will see a
 fallback.
+
+---
 
 #### `show_transparent_fallthrough` { #output-style-show-transparent-fallthrough }
 
@@ -1181,6 +1281,8 @@ without revealing the underlying layer-0 label.
 ![show_transparent_fallthrough true vs false comparison](../_static/spacing/show-transparent-fallthrough.svg){ width="320" loading=lazy }
 </figure>
 
+---
+
 #### `border` { #output-style-border }
 Configures the rounded rectangle border drawn around the entire keyboard.
 Set the whole `border` object to `null` to suppress the border.
@@ -1192,6 +1294,8 @@ output:
       width: <float | "N%">
       radius: <float>
 ```
+
+---
 
 ##### `width` { #output-style-border-width }
 
@@ -1209,6 +1313,8 @@ proportion shorthand.
 ![Border width highlighted](../_static/spacing/border-width.svg){ width="520" loading=lazy }
 </figure>
 
+---
+
 ##### `radius` { #output-style-border-radius }
 
 | Type    | Default |
@@ -1216,6 +1322,8 @@ proportion shorthand.
 | `float` | `10`    |
 
 Corner radius for the rounded rectangle. Set to `0` for square corners.
+
+---
 
 #### `layer_connector` { #output-style-layer-connector }
 Configures the dotted connector paths painted in the keymap overview
@@ -1234,6 +1342,8 @@ output:
 The two stroke / spacing fields follow the magnitude rule (`< 1`
 proportion / `≥ 1` absolute / `"N%"` shorthand / `null` default).
 
+---
+
 ##### `show` { #output-style-layer-connector-show }
 
 | Type      | Default |
@@ -1249,6 +1359,8 @@ images (which never paint connectors).
 <figcaption>Two miniature 3-layer overviews built from the same keymap (two layer-switch keys on the LEFT half), stacked top to bottom. The dotted connectors only paint in the <code>true</code> panel.</figcaption>
 ![layer_connector.show true vs false comparison](../_static/spacing/layer-connector-show.svg){ width="540" loading=lazy }
 </figure>
+
+---
 
 ##### `width` { #output-style-layer-connector-width }
 
@@ -1266,6 +1378,8 @@ overview's chrome more.
 ![Layer connector width highlighted](../_static/spacing/layer-connector-width.svg){ width="360" loading=lazy }
 </figure>
 
+---
+
 ##### `dot_spacing` { #output-style-layer-connector-dot-spacing }
 
 | Type                            | Default                          | Base       |
@@ -1281,6 +1395,8 @@ trail.
 <figcaption>The rose band sits in the gap between two adjacent dots.</figcaption>
 ![Layer connector dot spacing highlighted](../_static/spacing/layer-connector-dot-spacing.svg){ width="360" loading=lazy }
 </figure>
+
+---
 
 #### `layer_indicator` { #output-style-layer-indicator }
 Configures the layer-indicator badges — the small colored circles
@@ -1300,6 +1416,8 @@ on [`output.layout.spacing.layer_indicator_spacing`](#output-layout-spacing-laye
 since it's a spacing value applied between two elements rather than
 a property of the indicator itself.
 
+---
+
 ##### `show` { #output-style-layer-indicator-show }
 
 | Type      | Default |
@@ -1316,6 +1434,8 @@ does this key take me." Set to `false` to suppress them entirely
 ![layer_indicator.show true vs false comparison](../_static/spacing/layer-indicator-show.svg){ width="500" loading=lazy }
 </figure>
 
+---
+
 ##### `width` { #output-style-layer-indicator-width }
 
 | Type                            | Default                          | Base       |
@@ -1328,6 +1448,8 @@ Stroke width of the indicator circle outline.
 <figcaption>The rose stroke traces the layer indicator circle on the north key.</figcaption>
 ![Layer indicator stroke highlighted](../_static/spacing/layer-indicator-stroke.svg){ width="320" loading=lazy }
 </figure>
+
+---
 
 #### `legend_tables` { #output-style-legend-tables }
 Configures the three legend tables Skim renders alongside the
@@ -1359,6 +1481,8 @@ apply only to the **standalone** images (`skim generate -l macros` /
 `-l tap-dances` / `-l symbols`); the chrome (title, footer, outer
 padding) stays at the unscaled per-image size.
 
+---
+
 ##### `macros` { #output-style-legend-tables-macros }
 Visibility and standalone-image scale for the macros legend.
 
@@ -1389,6 +1513,8 @@ from `keycodes.macros`. Set to `false` to omit it.
 Body-scale multiplier for the standalone macros image. Body chips
 and pills scale by this factor; the per-image chrome stays unscaled.
 
+---
+
 ##### `tap_dances` { #output-style-legend-tables-tap-dances }
 Visibility and standalone-image scale for the tap-dances legend.
 
@@ -1416,6 +1542,8 @@ overview. Mirrors `macros.show`.
 
 Body-scale multiplier for the standalone tap-dances image. Same
 semantics as `macros.scale`.
+
+---
 
 ##### `symbols` { #output-style-legend-tables-symbols }
 Visibility, standalone-image scale, and multi-column flow for the
@@ -1479,6 +1607,8 @@ budget — the behaviour used in per-layer and overview images. Has
 no effect on the embedded legends inside per-layer / overview
 images, only on the standalone symbols-only output.
 
+---
+
 #### `strokes` { #output-style-strokes }
 Stroke widths for chrome lines that don't have their own dedicated
 block:
@@ -1504,6 +1634,8 @@ output:
       header_rule: <float | "N%" | null>
 ```
 
+---
+
 ##### `chip_outline` { #output-style-strokes-chip-outline }
 
 | Type                            | Default                           | Base       |
@@ -1518,6 +1650,8 @@ across the name area on the right).
 <figcaption>The rose stroke replaces the chip outline at the configured width.</figcaption>
 ![Chip outline stroke highlighted](../_static/spacing/chip-outline-stroke.svg){ width="320" loading=lazy }
 </figure>
+
+---
 
 ##### `header_rule` { #output-style-strokes-header-rule }
 
@@ -1534,6 +1668,8 @@ the rule weights stay consistent across all sections.
 <figcaption>The rose stroke replaces the rule line under the section title.</figcaption>
 ![Header rule stroke highlighted](../_static/spacing/header-rule-stroke.svg){ width="380" loading=lazy }
 </figure>
+
+---
 
 #### `palette` { #output-style-palette }
 Color tokens used throughout the rendered image.
@@ -1573,6 +1709,8 @@ output:
         - base_color: "#CC6633"
 ```
 
+---
+
 ##### Chrome colors
 
 These apply to the document chrome (background, headings, borders) and to
@@ -1590,6 +1728,8 @@ keys that don't get a layer-specific tint.
 
 All accept any CSS color string (`"red"`, `"#3366CC"`, `"rgb(51,102,204)"`,
 `"hsl(218 60% 50%)"`).
+
+---
 
 ##### `layers` { #output-style-palette-layers }
 
@@ -1619,6 +1759,8 @@ output:
 ```
 
 Each entry has these fields:
+
+---
 
 ##### Auto-generated layer colors
 

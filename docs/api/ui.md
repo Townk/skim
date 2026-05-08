@@ -30,6 +30,6 @@ Command-line interface and user interaction components.
 
 ::: skim.tui.keycodes_tab
 
-## Style Tab
+## Output Tab
 
 ::: skim.tui.output_tab

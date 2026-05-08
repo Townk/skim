@@ -131,6 +131,22 @@ option-images:
 spacing-mocks:
     uv run python scripts/spacing_mocks.py
 
+# Regenerate every image embedded in the published docs
+[group('Documentation')]
+docs-gen-images: option-images spacing-mocks screenshots
+    #!/usr/bin/env bash
+    set -euo pipefail
+    out=out/docs-keymap-images
+    mkdir -p "$out"
+    uv run skim generate \
+        --config samples/config/SvalCOLEMAK-config.yaml \
+        --keymap samples/keymaps/SvalCOLEMAKDHM.vil \
+        --layer 1 --layer overview \
+        --output-dir "$out" --force
+    cp "$out/keymap-layer-1.svg"  docs/_static/keymap-1.svg
+    cp "$out/keymap-overview.svg" docs/_static/svalboard-overview.svg
+    echo "Wrote docs/_static/keymap-1.svg, docs/_static/svalboard-overview.svg"
+
 # ------------------------------------------------------------------------------
 # Project Actions
 
@@ -184,8 +200,7 @@ release:
     # ──────── 1. Regenerate doc assets ────────
     echo ""
     echo "==> Regenerating doc images..."
-    just option-images
-    just screenshots
+    just docs-gen-images
     if [ -n "$(git status --porcelain docs/_static/)" ]; then
         git add docs/_static/
         git commit -m "chore(docs): regenerate option/screenshot images"

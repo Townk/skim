@@ -21,3 +21,7 @@ Business logic and processing components.
 ## Exporter
 
 ::: skim.application.exporter
+
+## Doctor
+
+::: skim.application.doctor

@@ -80,8 +80,10 @@ output:
         color_index: 2
         gradient: null
     use_system_fonts: false
-    show_layer_indicators: true
-    show_layer_connectors: true
+    layer_indicator:
+      show: true
+    layer_connector:
+      show: true
     show_transparent_fallthrough: true
   keymap_title: Colemak Layers Layout
   copyright: "\xA9 2024, SVALBOARD.COM"

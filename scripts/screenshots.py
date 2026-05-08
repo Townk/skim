@@ -587,12 +587,6 @@ async def _switch_to_output(pilot: Any) -> None:
     pilot.app.query_one(TabbedContent).active = "output-tab"
 
 
-async def _switch_to_output_style(pilot: Any) -> None:
-    pilot.app.query_one(TabbedContent).active = "output-tab"
-    await pilot.pause()
-    pilot.app.query_one("#output-style-section").scroll_visible(top=True, animate=False)
-
-
 async def _initial_double_south_on(pilot: Any) -> None:
     """Initial state but with the Double South switch set to ``True``.
 
@@ -908,9 +902,6 @@ SIMPLE_FIELDS: list[tuple[str, PilotSetup, str, int]] = [
 SHOTS: list[Shot] = [
     # ---- Full Anatomy reference frame ----
     Shot("keyboard-tab", _initial, **ANATOMY_FRAME),
-    Shot("keycodes-tab", _switch_to_keycodes),
-    Shot("output-tab", _switch_to_output),
-    Shot("output-style-tab", _switch_to_output_style),
     # ---- Anatomy crops (tab strip, scrolling area, status bar) ----
     Shot(
         "tabs",

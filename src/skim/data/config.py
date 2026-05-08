@@ -634,7 +634,7 @@ class Spacing(BaseModel):
 
     finger_key_gap: SpacingValue = Field(default=None)
     """Center key → outer keys inside a finger cluster. Base: finger
-    cluster width. Default: ``3.8%``."""
+    cluster width. Default: ``1.8%``."""
 
     thumb_key_gap: SpacingValue = Field(default=None)
     """Vertical gap above each outer thumb key (pad / nail / up /

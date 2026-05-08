@@ -9,6 +9,8 @@ CLI flags take the highest priority and override anything set in the config
 file for that run. Commands and flags that change a config field link back
 to the matching field in the configuration reference.
 
+---
+
 ## How to read this reference
 
 - Each command gets one H2 section (`## generate`, `## configure`, `## doctor`).
@@ -36,6 +38,8 @@ Notation conventions:
 Command names can be abbreviated to any unique prefix — `skim gen` resolves
 to `skim generate`, `skim conf` to `skim configure`, `skim doc` to
 `skim doctor`. Ambiguous prefixes raise a usage error.
+
+---
 
 ## Commands
 
@@ -85,6 +89,8 @@ Flags listed before the subcommand name apply to the whole invocation:
 skim [global-options] <command> [command-options]
 ```
 
+---
+
 ### `--version` { #global-version }
 
 | Type   | Default |
@@ -92,6 +98,8 @@ skim [global-options] <command> [command-options]
 | `flag` | —       |
 
 Print the program name and version, then exit. Does not run any subcommand.
+
+---
 
 ### `--verbosity`, `-v` { #global-verbosity }
 
@@ -101,6 +109,8 @@ Print the program name and version, then exit. Does not run any subcommand.
 
 Set the logging verbosity. `"DEBUG"` emits the most detail; `"NONE"`
 silences every log line. The value is case-insensitive.
+
+---
 
 ### `--quiet`, `-q` { #global-quiet }
 
@@ -225,6 +235,8 @@ Each file's stem matches the layer or artefact it represents:
 `keymap-tap-dances`, `keymap-special-keys`, `keymap-symbols`. The
 extension is set by [`--format`](#generate-format).
 
+---
+
 ### `--config`, `-c` { #generate-config }
 
 | Type   | Default |
@@ -240,6 +252,8 @@ and [`--adjust-saturation`](#generate-adjust-saturation) are ignored — color
 adjustments only apply to the auto-derived defaults, not to colors the
 user has already chosen.
 
+---
+
 ### `--keymap`, `-k` { #generate-keymap }
 
 | Type   | Default |
@@ -251,6 +265,8 @@ Keybard (`.kbi`), Vial (`.vil`), or QMK c2json (`.json`). Without `--keymap`
 and without [`STDIN_MARKER`](#generate-stdin-marker), Skim reads from stdin
 if data is piped in and errors out otherwise.
 
+---
+
 ### `--output-dir`, `-o` { #generate-output-dir }
 
 | Type   | Default     |
@@ -260,6 +276,8 @@ if data is piped in and errors out otherwise.
 Directory the rendered images are written to. The directory must exist as
 a directory (Skim refuses to write into a regular file at that path) but is
 created if it doesn't yet exist.
+
+---
 
 ### `--format`, `-f` { #generate-format }
 
@@ -278,6 +296,8 @@ $ skim generate -k layout.kbi -o ./out -f png
 out/keymap-layer-0.png
 out/keymap-overview.png
 ```
+
+---
 
 ### `--layer`, `-l` { #generate-layer }
 
@@ -312,6 +332,8 @@ out/keymap-overview.svg
 out/keymap-macros.svg
 ```
 
+---
+
 ### `--use-system-fonts`, `-F` { #generate-use-system-fonts }
 
 | Type   | Default |
@@ -328,6 +350,8 @@ Toggling this flag changes file content, not which files are written.
 Run [`skim doctor`](#doctor) to confirm the bundled fonts are installed
 locally before relying on it.
 
+---
+
 ### `--render-engine`, `-e` { #generate-render-engine }
 
 | Type     | Default | Allowed values         |
@@ -342,6 +366,8 @@ For non-vector formats, choose which engine renders the SVG to a raster.
 When unset, Skim picks the first available engine. If neither engine is
 installed, raster formats fail.
 
+---
+
 ### `--force` { #generate-force }
 
 | Type   | Default |
@@ -350,6 +376,8 @@ installed, raster formats fail.
 
 Overwrite existing output files without prompting. Without this flag,
 existing files are kept and Skim aborts the run.
+
+---
 
 ### `--no-special-keys`, `-N` { #generate-no-special-keys }
 
@@ -369,6 +397,8 @@ standalone macros / tap-dances images requested via [`--layer`](#generate-layer)
 are still emitted — only the in-line legend tables on per-layer and overview
 images are suppressed.
 
+---
+
 ### `--no-symbols`, `-Y` { #generate-no-symbols }
 
 | Type   | Default |
@@ -381,6 +411,8 @@ to `false`. The standalone symbols image (when requested via `-l symbols`)
 is still emitted; only the in-line legend on per-layer and overview images
 is suppressed.
 
+---
+
 ### `--symbol-legend-flow` { #generate-symbol-legend-flow }
 
 | Type     | Default | Allowed values        |
@@ -390,6 +422,8 @@ is suppressed.
 Override the flow direction of the symbols legend table.
 Maps to [`output.style.legend_tables.symbols.flow`](config-file.md#output-style-legend-tables-symbols-flow).
 When unset, the config's value applies.
+
+---
 
 ### `--symbol-columns` { #generate-symbol-columns }
 
@@ -402,36 +436,44 @@ canvas shrinks to fit the resulting natural width. Without this flag the
 table picks the largest column count that fits the canvas budget. Maps to
 [`output.style.legend_tables.symbols.columns`](config-file.md#output-style-legend-tables-symbols-columns).
 
+---
+
 ### `--macros-scale` { #generate-macros-scale }
 
-| Type    | Default | Range  |
-| ------- | ------- | ------ |
-| `float` | `1.5`   | `> 0.1` |
+| Type    | Default | Range   |
+| ------- | ------- | ------- |
+| `float` | `1.5`   | `≥ 0.1` |
 
 Body-scale multiplier for the standalone macros image. Chips and pills
 scale by this factor; the image's chrome (border, header, footer) stays
 at the unscaled per-image size. Maps to
 [`output.style.legend_tables.macros.scale`](config-file.md#output-style-legend-tables-macros-scale).
 
+---
+
 ### `--tap-dances-scale` { #generate-tap-dances-scale }
 
-| Type    | Default | Range  |
-| ------- | ------- | ------ |
-| `float` | `1.5`   | `> 0.1` |
+| Type    | Default | Range   |
+| ------- | ------- | ------- |
+| `float` | `1.5`   | `≥ 0.1` |
 
 Body-scale multiplier for the standalone tap-dances image. Same shape as
 [`--macros-scale`](#generate-macros-scale). Maps to
 [`output.style.legend_tables.tap_dances.scale`](config-file.md#output-style-legend-tables-tap-dances-scale).
 
+---
+
 ### `--symbols-scale` { #generate-symbols-scale }
 
-| Type    | Default | Range  |
-| ------- | ------- | ------ |
-| `float` | `1.5`   | `> 0.1` |
+| Type    | Default | Range   |
+| ------- | ------- | ------- |
+| `float` | `1.5`   | `≥ 0.1` |
 
 Body-scale multiplier for the standalone symbols image. Same shape as
 [`--macros-scale`](#generate-macros-scale). Maps to
 [`output.style.legend_tables.symbols.scale`](config-file.md#output-style-legend-tables-symbols-scale).
+
+---
 
 ### `--title`, `-t` { #generate-title }
 
@@ -445,6 +487,8 @@ the title from the config file applies; when no title is set anywhere
 and a keymap file is provided, Skim derives one from the keymap's
 filename.
 
+---
+
 ### `--copyright`, `-r` { #generate-copyright }
 
 | Type     | Default |
@@ -453,6 +497,8 @@ filename.
 
 Override the copyright notice rendered in the overview footer. Maps to
 [`output.copyright`](config-file.md#output-copyright).
+
+---
 
 ### `--double-south`, `-d` { #generate-double-south }
 
@@ -465,6 +511,8 @@ Force the double-south finger-cluster feature on. Maps to
 The flag can only set the feature to `true`; to render without it, leave
 the flag off and let the config (default `false`) apply.
 
+---
+
 ### `--width`, `-w` { #generate-width }
 
 | Type    | Default |
@@ -474,6 +522,8 @@ the flag off and let the config (default `false`) apply.
 Override the canvas width in SVG units. Maps to
 [`output.layout.width`](config-file.md#output-layout-width). The default
 when no config and no flag is provided is `1600`.
+
+---
 
 ### `--adjust-lightness`, `-L` { #generate-adjust-lightness }
 
@@ -491,6 +541,8 @@ entries Skim would otherwise auto-derive from the keymap.
 Ignored when [`--config`](#generate-config) is provided — Skim emits a
 note on stderr and uses the config's colors unmodified.
 
+---
+
 ### `--adjust-saturation`, `-S` { #generate-adjust-saturation }
 
 | Type    | Default | Range     |
@@ -502,6 +554,8 @@ Cap saturation on every layer's auto-derived base color. Adjusts the
 entries Skim would otherwise auto-derive from the keymap. Same gating
 rule as [`--adjust-lightness`](#generate-adjust-lightness): ignored when
 `--config` is provided.
+
+---
 
 ### `STDIN_MARKER` { #generate-stdin-marker }
 
@@ -577,6 +631,8 @@ $ skim configure -i -c my-config.yaml
 $ skim configure -t "My Keymap" -r "© 2026 Me" -o my-config.yaml
 ```
 
+---
+
 ### `--interactive`, `-i` { #configure-interactive }
 
 | Type   | Default |
@@ -591,6 +647,8 @@ When combined with [`--config`](#configure-config), the existing file is
 loaded into the editor. When combined with [`--keymap`](#configure-keymap),
 the keymap-derived config is fed into the editor as the starting point.
 
+---
+
 ### `--config`, `-c` { #configure-config }
 
 | Type   | Default |
@@ -604,6 +662,8 @@ scaffold and the contents of `--config` are deep-merged on top — so user
 edits like custom palette colors, titles, and copyrights are preserved
 across reloads.
 
+---
+
 ### `--keymap`, `-k` { #configure-keymap }
 
 | Type   | Default |
@@ -616,6 +676,8 @@ writes a YAML config. For Keybard (`.kbi`) files, palette colors are
 extracted from the firmware metadata; for Vial / c2json files they're
 auto-derived.
 
+---
+
 ### `--output`, `-o` { #configure-output }
 
 | Type   | Default |
@@ -627,6 +689,8 @@ Skim writes `skim-config.yaml` inside it. Without `--output`, the YAML
 prints to stdout (non-interactive) or is held in the TUI's save dialog
 (interactive).
 
+---
+
 ### `--force` { #configure-force }
 
 | Type   | Default |
@@ -636,6 +700,8 @@ prints to stdout (non-interactive) or is held in the TUI's save dialog
 Overwrite an existing output file without prompting. Without this flag,
 Skim asks for confirmation; if stdin is a pipe, confirmation reads from
 the controlling terminal.
+
+---
 
 ### `--adjust-lightness`, `-L` { #configure-adjust-lightness }
 
@@ -649,6 +715,8 @@ don't carry layer colors). Modifies the
 [`output.style.palette.layers`](config-file.md#output-style-palette-layers)
 entries written to the generated config.
 
+---
+
 ### `--adjust-saturation`, `-S` { #configure-adjust-saturation }
 
 | Type    | Default | Range     |
@@ -661,6 +729,8 @@ Modifies the
 entries written to the generated config. Same input-format restriction as
 [`--adjust-lightness`](#configure-adjust-lightness).
 
+---
+
 ### `--title`, `-t` { #configure-title }
 
 | Type     | Default |
@@ -671,6 +741,8 @@ Set the value of [`output.keymap_title`](config-file.md#output-keymap-title)
 in the generated config. Combines with every other flag — passing `-t`
 alone writes a near-default config with just the title set.
 
+---
+
 ### `--copyright`, `-r` { #configure-copyright }
 
 | Type     | Default |
@@ -679,6 +751,8 @@ alone writes a near-default config with just the title set.
 
 Set the value of [`output.copyright`](config-file.md#output-copyright)
 in the generated config.
+
+---
 
 ### `--double-south`, `-d` { #configure-double-south }
 
@@ -689,6 +763,8 @@ in the generated config.
 Set [`keyboard.features.double_south`](config-file.md#keyboard-features-double-south)
 to `true` in the generated config.
 
+---
+
 ### `--width`, `-w` { #configure-width }
 
 | Type    | Default |
@@ -697,6 +773,8 @@ to `true` in the generated config.
 
 Set [`output.layout.width`](config-file.md#output-layout-width) in the
 generated config.
+
+---
 
 ### `--layer-count`, `-n` { #configure-layer-count }
 
@@ -763,6 +841,8 @@ lines and don't fail the run.
 
 A quick tour of common invocations.
 
+---
+
 ### Render every layer plus the overview as SVG
 
 ```bash
@@ -775,12 +855,16 @@ out/keymap-overview.svg
 The default behaviour: every per-layer image plus the overview, no
 standalone legend images.
 
+---
+
 ### Render a single layer as PNG
 
 ```bash
 $ skim generate -k layout.kbi -o ./out -l 1 -f png
 out/keymap-layer-1.png
 ```
+
+---
 
 ### Render the overview plus the macros legend
 
@@ -789,6 +873,8 @@ $ skim generate -k layout.kbi -o ./out -l overview -l macros
 out/keymap-overview.svg
 out/keymap-macros.svg
 ```
+
+---
 
 ### Render with a custom palette via config + width override
 
@@ -801,12 +887,16 @@ out/keymap-overview.svg
 The CLI's `-w 2400` wins over any `output.layout.width` in
 `my-config.yaml`.
 
+---
+
 ### Pipe a c2json keymap through `skim generate`
 
 ```bash
 $ qmk c2json -kb my/board -km vial --no-cpp keymap.c | skim generate - -o ./out -l overview
 out/keymap-overview.svg
 ```
+
+---
 
 ### Scaffold a config from a Keybard file
 
@@ -818,11 +908,15 @@ Configuration written to skim-config.yaml
 The `-k` flag extracts layer names + palette; `-t` and `-r` populate
 `output.keymap_title` and `output.copyright`.
 
+---
+
 ### Edit an existing config in the TUI
 
 ```bash
 $ skim configure -i -c skim-config.yaml
 ```
+
+---
 
 ### Check render-engine availability
 
