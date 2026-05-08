@@ -2,6 +2,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
      width="1600.0" height="2648.099424669385" viewBox="0 0 1796.84081542109 2973.8832059619103">
 <defs>
+<clipPath id="thumb-down-clip-22" clip-rule="evenodd">
+<rect x="701.1356434981551" y="2134.112141150026" width="64.5273326199554" height="167.77106481188406" />
+<path fill="#0F460F" d="M 716.9738848201919 2157.2490063515984 A 4.362047685108985 4.362047685108985 0 0 1 721.4875642064892 2152.889594942433 L 745.3110554097766 2152.889594942433 A 4.362047685108985 4.362047685108985 0 0 1 749.8247347960739 2157.2490063515984 L 750.8636399121924 2187.1175284400015 A 4.362047685108985 4.362047685108985 0 0 1 746.6532239282717 2191.4769398491667 L 720.1453956879941 2191.4769398491667 A 4.362047685108985 4.362047685108985 0 0 1 715.9349797040734 2187.1175284400015 Z" />
+<path fill="#0F460F" d="M 630.0781448170603 2207.8367695794127 A 4.800833546924682 4.800833546924682 0 0 1 634.878978363985 2203.035936032488 L 726.094815755554 2203.035936032488 A 4.800833546924682 4.800833546924682 0 0 1 730.8956493024787 2207.8367695794127 L 730.8956493024787 2233.7612707328058 A 4.800833546924682 4.800833546924682 0 0 1 726.0989561627063 2238.761447371254 L 634.8748379568327 2242.5525795564326 A 4.800833546924682 4.800833546924682 0 0 1 630.0781448170603 2237.951089101031 Z" />
+</clipPath>
+<clipPath id="thumb-down-clip-23" clip-rule="evenodd">
+<rect x="1039.2449739779768" y="2134.112141150026" width="64.5273326199554" height="167.77106481188406" />
+<path fill="#88A824" d="M 1055.0832153000133 2157.2490063515984 A 4.362047685108985 4.362047685108985 0 0 1 1059.5968946863106 2152.889594942433 L 1083.420385889598 2152.889594942433 A 4.362047685108985 4.362047685108985 0 0 1 1087.9340652758954 2157.2490063515984 L 1088.9729703920138 2187.1175284400015 A 4.362047685108985 4.362047685108985 0 0 1 1084.7625544080931 2191.4769398491667 L 1058.2547261678155 2191.4769398491667 A 4.362047685108985 4.362047685108985 0 0 1 1054.0443101838948 2187.1175284400015 Z" />
+<path fill="#0F460F" d="M 1074.0123007936088 2207.8367695794127 A 4.800833546924682 4.800833546924682 0 0 1 1078.8131343405335 2203.035936032488 L 1170.0289717321025 2203.035936032488 A 4.800833546924682 4.800833546924682 0 0 1 1174.8298052790271 2207.8367695794127 L 1174.8298052790271 2237.951089101031 A 4.800833546924682 4.800833546924682 0 0 1 1170.0331121392549 2242.5525795564326 L 1078.808993933381 2238.761447371254 A 4.800833546924682 4.800833546924682 0 0 1 1074.0123007936088 2233.7612707328058 Z" />
+</clipPath>
 </defs>
 <rect x="1.0" y="1.0" width="1794.84081542109" height="2971.8832059619103" rx="10.0" ry="10.0" fill="white" stroke="black" stroke-width="2.0" />
 <text x="43.0" y="57.5" font-size="31.0" text-anchor="start" dominant-baseline="central" font-family="'Roboto Thin', 'Helvetica Neue', Arial, sans-serif" fill="black">Vial Sample Layers Layout</text>
@@ -1259,31 +1269,35 @@
 <text x="1445.67027159294" y="1993.3702264269077" font-size="24.331664427636248" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">/</text>
 <rect x="43.0" y="2143.92029570826" width="124.9079500960875" height="40.821430445000004" rx="8.164286089" ry="8.164286089" fill="black" />
 <text x="58.0" y="2164.33101093076" font-size="18.369643700250002" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white">THUMBS</text>
+<use xlink:href="#thumb-down-clip-22" />
+<g clip-path="url(#thumb-down-clip-22)">
 <path fill="#145D14" d="M 708.8297164926744 2141.8464876759112 A 7.743279914394648 7.743279914394648 0 0 1 716.9448399900442 2134.112141150026 L 749.8537796262215 2134.112141150026 A 7.743279914394648 7.743279914394648 0 0 1 757.9689031235913 2141.8464876759112 L 765.2911325351353 2294.1488594360253 A 7.743279914394648 7.743279914394648 0 0 1 757.9196962037158 2301.8832059619103 L 708.8789234125497 2301.8832059619103 A 7.743279914394648 7.743279914394648 0 0 1 701.5074870811303 2294.1488594360253 Z" />
 <text x="722.7522999258402" y="2276.394909577028" font-size="25.165659721782607" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󰘶</text>
+</g>
 <path fill="#6F768B" d="M 607.9581751949396 2148.824372987376 A 4.904077279116611 4.904077279116611 0 0 1 612.8622524740562 2143.9202957082593 L 701.1356434981552 2143.9202957082593 A 4.904077279116611 4.904077279116611 0 0 1 705.7228453387072 2148.81412487528 L 702.9237421204548 2192.0435182073643 A 4.904077279116611 4.904077279116611 0 0 1 697.7027894027736 2196.937347374385 L 612.8622524740562 2196.937347374385 A 4.904077279116611 4.904077279116611 0 0 1 607.9581751949396 2192.033270095268 Z" />
 <text x="648.3234304407397" y="2170.428821541322" font-size="21.206820666450206" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󰘳</text>
-<path fill="white" d="M 630.0781448170603 2207.8367695794127 A 4.800833546924682 4.800833546924682 0 0 1 634.878978363985 2203.035936032488 L 726.094815755554 2203.035936032488 A 4.800833546924682 4.800833546924682 0 0 1 730.8956493024787 2207.8367695794127 L 730.8956493024787 2233.8188807353686 A 4.800833546924682 4.800833546924682 0 0 1 726.1003666415141 2238.850510614002 L 634.8734274780248 2243.241251348286 A 4.800833546924682 4.800833546924682 0 0 1 630.0781448170603 2238.6712141330695 Z" />
 <path fill="#0F460F" d="M 632.4785615905226 2210.237186352875 A 4.800833546924682 4.800833546924682 0 0 1 637.2793951374473 2205.4363528059503 L 723.6943989820916 2205.4363528059503 A 4.800833546924682 4.800833546924682 0 0 1 728.4952325290162 2210.237186352875 L 728.4952325290162 2231.3608539593433 A 4.800833546924682 4.800833546924682 0 0 1 723.6989631759506 2236.3709792598565 L 637.2748309435883 2240.142214120905 A 4.800833546924682 4.800833546924682 0 0 1 632.4785615905226 2235.5506723275685 Z" />
 <text x="706.127712594481" y="2220.7990201561092" font-size="15.711818880844413" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󰌑</text>
 <path fill="#6F768B" d="M 761.060371339118 2149.073671778756 A 5.162186609596432 5.162186609596432 0 0 1 765.9210854485904 2143.9202957082593 L 858.8404444213261 2143.9202957082593 A 5.162186609596432 5.162186609596432 0 0 1 864.0026310309225 2149.082482317856 L 864.0026310309225 2191.7036127868314 A 5.162186609596432 5.162186609596432 0 0 1 858.8404444213261 2196.865799396428 L 769.0183974143482 2196.865799396428 A 5.162186609596432 5.162186609596432 0 0 1 763.5547383046277 2191.7124233259315 Z" />
 <text x="803.2356324797291" y="2170.3930475523434" font-size="21.178201475267418" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󰌒</text>
 <path fill="#6F768B" d="M 764.8903390471817 2210.3981605024815 A 4.968604611736566 4.968604611736566 0 0 1 769.5991434079278 2205.4363528059503 L 859.0340264191861 2205.4363528059503 A 4.968604611736566 4.968604611736566 0 0 1 864.0026310309227 2210.404957417687 L 864.0026310309227 2253.607904469471 A 4.968604611736566 4.968604611736566 0 0 1 859.0340264191861 2258.576509081208 L 772.3815619905004 2258.576509081208 A 4.968604611736566 4.968604611736566 0 0 1 767.1531571277735 2253.6147013846767 Z" />
 <text x="807.5532922967061" y="2232.006430943579" font-size="21.256062510102954" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󰘴</text>
-<path fill="#0F460F" stroke="white" stroke-width="1.6777106481188406" d="M 717.8058566983975 2158.0876168101477 A 4.362047685108985 4.362047685108985 0 0 1 722.3264195305486 2153.7284502664925 L 744.4722000857172 2153.7284502664925 A 4.362047685108985 4.362047685108985 0 0 1 748.9927629178683 2158.0876168101477 L 750.0179011422792 2186.2789179814517 A 4.362047685108985 4.362047685108985 0 0 1 745.8143686042123 2190.638084525107 L 720.9842510120535 2190.638084525107 A 4.362047685108985 4.362047685108985 0 0 1 716.7807184739866 2186.2789179814517 Z" />
+<path fill="#0F460F" d="M 718.6371743724933 2158.926191511951 A 4.362047685108985 4.362047685108985 0 0 1 723.165274854608 2154.5673055905518 L 743.6333447616578 2154.5673055905518 A 4.362047685108985 4.362047685108985 0 0 1 748.1614452437725 2158.926191511951 L 749.1715081682562 2185.4403432796485 A 4.362047685108985 4.362047685108985 0 0 1 744.9755132801529 2189.7992292010476 L 721.8231063361129 2189.7992292010476 A 4.362047685108985 4.362047685108985 0 0 1 717.6271114480096 2185.4403432796485 Z" />
 <text x="724.2521395788241" y="2172.1832673957997" font-size="22.145780555168695" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󰘲</text>
+<use xlink:href="#thumb-down-clip-23" />
+<g clip-path="url(#thumb-down-clip-23)">
 <path fill="#5D3814" d="M 1046.9390469724958 2141.8464876759112 A 7.743279914394648 7.743279914394648 0 0 1 1055.0541704698658 2134.112141150026 L 1087.9631101060431 2134.112141150026 A 7.743279914394648 7.743279914394648 0 0 1 1096.078233603413 2141.8464876759112 L 1103.4004630149568 2294.1488594360253 A 7.743279914394648 7.743279914394648 0 0 1 1096.0290266835375 2301.8832059619103 L 1046.9882538923714 2301.8832059619103 A 7.743279914394648 7.743279914394648 0 0 1 1039.616817560952 2294.1488594360253 Z" />
 <text x="1061.8295403949612" y="2274.4590895984293" font-size="25.165659721782607" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󰧾</text>
+</g>
 <path fill="#6F768B" d="M 1099.1851047573803 2148.81412487528 A 4.904077279116611 4.904077279116611 0 0 1 1103.7723065979321 2143.9202957082593 L 1192.0456976220312 2143.9202957082593 A 4.904077279116611 4.904077279116611 0 0 1 1196.9497749011477 2148.824372987376 L 1196.9497749011477 2192.033270095268 A 4.904077279116611 4.904077279116611 0 0 1 1192.0456976220312 2196.937347374385 L 1107.2051606933137 2196.937347374385 A 4.904077279116611 4.904077279116611 0 0 1 1101.9842079756324 2192.0435182073643 Z" />
 <text x="1139.7154577615804" y="2170.428821541322" font-size="21.206820666450206" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󱁐</text>
-<path fill="white" d="M 1074.0123007936088 2207.8367695794127 A 4.800833546924682 4.800833546924682 0 0 1 1078.8131343405335 2203.035936032488 L 1170.0289717321025 2203.035936032488 A 4.800833546924682 4.800833546924682 0 0 1 1174.8298052790271 2207.8367695794127 L 1174.8298052790271 2238.6712141330695 A 4.800833546924682 4.800833546924682 0 0 1 1170.0345226180625 2243.241251348286 L 1078.8075834545734 2238.850510614002 A 4.800833546924682 4.800833546924682 0 0 1 1074.0123007936088 2233.8188807353686 Z" />
 <path fill="#0F460F" d="M 1076.4127175670712 2210.237186352875 A 4.800833546924682 4.800833546924682 0 0 1 1081.213551113996 2205.4363528059503 L 1167.6285549586403 2205.4363528059503 A 4.800833546924682 4.800833546924682 0 0 1 1172.429388505565 2210.237186352875 L 1172.429388505565 2235.5506723275685 A 4.800833546924682 4.800833546924682 0 0 1 1167.6331191524991 2240.142214120905 L 1081.208986920137 2236.3709792598565 A 4.800833546924682 4.800833546924682 0 0 1 1076.4127175670712 2231.3608539593433 Z" />
 <text x="1086.0143846609205" y="2220.7990201561092" font-size="15.711818880844413" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󱊷</text>
 <path fill="#6F768B" d="M 940.9053190651648 2149.082482317856 A 5.162186609596432 5.162186609596432 0 0 1 946.0675056747613 2143.9202957082593 L 1038.9868646474972 2143.9202957082593 A 5.162186609596432 5.162186609596432 0 0 1 1043.8475787569696 2149.073671778756 L 1041.3532117914594 2191.7124233259315 A 5.162186609596432 5.162186609596432 0 0 1 1035.8895526817391 2196.865799396428 L 946.0675056747613 2196.865799396428 A 5.162186609596432 5.162186609596432 0 0 1 940.9053190651648 2191.7036127868314 Z" />
 <text x="981.9380844234955" y="2170.3930475523434" font-size="21.178201475267418" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󰁮</text>
 <path fill="#6F768B" d="M 940.9053190651648 2210.404957417687 A 4.968604611736566 4.968604611736566 0 0 1 945.8739236769013 2205.4363528059503 L 1035.3088066881596 2205.4363528059503 A 4.968604611736566 4.968604611736566 0 0 1 1040.0176110489058 2210.3981605024815 L 1037.754792968314 2253.6147013846767 A 4.968604611736566 4.968604611736566 0 0 1 1032.526388105587 2258.576509081208 L 945.8739236769013 2258.576509081208 A 4.968604611736566 4.968604611736566 0 0 1 940.9053190651648 2253.607904469471 Z" />
 <text x="979.480241597704" y="2232.006430943579" font-size="21.256062510102954" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="white" opacity="1.0">⎇</text>
-<path fill="#88A824" stroke="white" stroke-width="1.6777106481188406" d="M 1055.9151871782192 2158.0876168101477 A 4.362047685108985 4.362047685108985 0 0 1 1060.4357500103702 2153.7284502664925 L 1082.5815305655387 2153.7284502664925 A 4.362047685108985 4.362047685108985 0 0 1 1087.1020933976897 2158.0876168101477 L 1088.127231622101 2186.2789179814517 A 4.362047685108985 4.362047685108985 0 0 1 1083.9236990840338 2190.638084525107 L 1059.093581491875 2190.638084525107 A 4.362047685108985 4.362047685108985 0 0 1 1054.890048953808 2186.2789179814517 Z" />
+<path fill="#88A824" d="M 1056.746504852315 2158.926191511951 A 4.362047685108985 4.362047685108985 0 0 1 1061.2746053344297 2154.5673055905518 L 1081.7426752414794 2154.5673055905518 A 4.362047685108985 4.362047685108985 0 0 1 1086.2707757235942 2158.926191511951 L 1087.2808386480779 2185.4403432796485 A 4.362047685108985 4.362047685108985 0 0 1 1083.0848437599745 2189.7992292010476 L 1059.9324368159346 2189.7992292010476 A 4.362047685108985 4.362047685108985 0 0 1 1055.7364419278313 2185.4403432796485 Z" />
 <text x="1063.3243300827835" y="2172.1832673957997" font-size="22.145780555168695" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="white" opacity="1.0">󰧾</text>
 <path d="M1115.7723065979321,2275.039835592009 L1099.7723065979321,2275.039835592009" stroke="#955A20" stroke-width="2.0" />
 <circle cx="1099.7723065979321" cy="2275.039835592009" r="2.0" fill="#955A20" />
@@ -1312,126 +1326,126 @@
 <text x="60.5" y="2398.3832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="2397.8832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">0</text>
 <rect x="111.0" y="2388.8832059619103" width="60.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M118.0,2394.8832059619103 L124.0,2394.8832059619103 L121.0,2400.8832059619103 Z" fill="black" />
-<text x="135.5" y="2398.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰌨 </text>
-<text x="147.5" y="2397.8832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">15</text>
+<path d="M121.0,2394.8832059619103 L127.0,2394.8832059619103 L124.0,2400.8832059619103 Z" fill="black" />
+<text x="137.0" y="2398.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰌨 </text>
+<text x="149.0" y="2397.8832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">15</text>
 <rect x="177.0" y="2388.8832059619103" width="60.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M184.0,2400.8832059619103 L190.0,2400.8832059619103 L187.0,2394.8832059619103 Z" fill="black" />
-<text x="201.5" y="2398.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰌨 </text>
-<text x="213.5" y="2397.8832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">15</text>
+<path d="M187.0,2400.8832059619103 L193.0,2400.8832059619103 L190.0,2394.8832059619103 Z" fill="black" />
+<text x="203.0" y="2398.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰌨 </text>
+<text x="215.0" y="2397.8832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">15</text>
 <rect x="43.0" y="2417.8832059619103" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="60.5" y="2429.3832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="2428.8832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">4</text>
 <rect x="111.0" y="2419.8832059619103" width="46.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<text x="121.0" y="2428.8832059619103" font-size="9.0" fill="black" font-weight="700" font-style="italic" text-anchor="middle" dominant-baseline="central" font-family="'Roboto', sans-serif">T</text>
-<text x="135.5" y="2429.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">;qj</text>
+<text x="124.0" y="2428.8832059619103" font-size="9.0" fill="black" font-weight="700" font-style="italic" text-anchor="middle" dominant-baseline="central" font-family="'Roboto', sans-serif">T</text>
+<text x="137.0" y="2429.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">;qj</text>
 <rect x="43.0" y="2448.8832059619103" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="60.5" y="2460.3832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="2459.8832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">5</text>
 <rect x="111.0" y="2450.8832059619103" width="54.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<circle cx="121.0" cy="2459.8832059619103" r="3.0" fill="black" />
-<text x="135.5" y="2460.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰹍 </text>
-<text x="147.5" y="2459.8832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">9</text>
+<circle cx="124.0" cy="2459.8832059619103" r="3.0" fill="black" />
+<text x="137.0" y="2460.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰹍 </text>
+<text x="149.0" y="2459.8832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">9</text>
 <rect x="171.0" y="2450.8832059619103" width="56.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<circle cx="181.0" cy="2459.8832059619103" r="3.0" fill="black" />
-<text x="195.5" y="2460.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰁨 </text>
-<text x="208.5" y="2460.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰍽</text>
+<circle cx="184.0" cy="2459.8832059619103" r="3.0" fill="black" />
+<text x="197.0" y="2460.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰁨 </text>
+<text x="210.0" y="2460.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰍽</text>
 <rect x="43.0" y="2479.8832059619103" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="60.5" y="2491.3832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="2490.8832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">6</text>
 <rect x="111.0" y="2481.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M118.0,2487.8832059619103 L124.0,2487.8832059619103 L121.0,2493.8832059619103 Z" fill="black" />
-<text x="136.5" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M121.0,2487.8832059619103 L127.0,2487.8832059619103 L124.0,2493.8832059619103 Z" fill="black" />
+<text x="138.0" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="161.0" y="2481.8832059619103" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="171.0" cy="2490.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M171.0,2490.8832059619103 L171.0,2488.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M171.0,2490.8832059619103 L172.6,2490.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="174.0" cy="2490.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M174.0,2490.8832059619103 L174.0,2488.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M174.0,2490.8832059619103 L175.6,2490.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="185.5" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="187.0" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="229.0" y="2481.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M236.0,2487.8832059619103 L242.0,2487.8832059619103 L239.0,2493.8832059619103 Z" fill="black" />
-<text x="254.5" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">1</text>
+<path d="M239.0,2487.8832059619103 L245.0,2487.8832059619103 L242.0,2493.8832059619103 Z" fill="black" />
+<text x="256.0" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">1</text>
 <rect x="279.0" y="2481.8832059619103" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="289.0" cy="2490.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M289.0,2490.8832059619103 L289.0,2488.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M289.0,2490.8832059619103 L290.6,2490.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="292.0" cy="2490.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M292.0,2490.8832059619103 L292.0,2488.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M292.0,2490.8832059619103 L293.6,2490.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="303.5" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="305.0" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="347.0" y="2481.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M354.0,2493.8832059619103 L360.0,2493.8832059619103 L357.0,2487.8832059619103 Z" fill="black" />
-<text x="372.5" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M357.0,2493.8832059619103 L363.0,2493.8832059619103 L360.0,2487.8832059619103 Z" fill="black" />
+<text x="374.0" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="397.0" y="2481.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M404.0,2493.8832059619103 L410.0,2493.8832059619103 L407.0,2487.8832059619103 Z" fill="black" />
-<text x="422.5" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">1</text>
+<path d="M407.0,2493.8832059619103 L413.0,2493.8832059619103 L410.0,2487.8832059619103 Z" fill="black" />
+<text x="424.0" y="2491.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">1</text>
 <rect x="43.0" y="2510.8832059619103" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="60.5" y="2522.3832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="2521.8832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">7</text>
 <rect x="111.0" y="2512.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M118.0,2518.8832059619103 L124.0,2518.8832059619103 L121.0,2524.8832059619103 Z" fill="black" />
-<text x="136.5" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M121.0,2518.8832059619103 L127.0,2518.8832059619103 L124.0,2524.8832059619103 Z" fill="black" />
+<text x="138.0" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="161.0" y="2512.8832059619103" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="171.0" cy="2521.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M171.0,2521.8832059619103 L171.0,2519.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M171.0,2521.8832059619103 L172.6,2521.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="174.0" cy="2521.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M174.0,2521.8832059619103 L174.0,2519.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M174.0,2521.8832059619103 L175.6,2521.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="185.5" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="187.0" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="229.0" y="2512.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M236.0,2518.8832059619103 L242.0,2518.8832059619103 L239.0,2524.8832059619103 Z" fill="black" />
-<text x="254.5" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">2</text>
+<path d="M239.0,2518.8832059619103 L245.0,2518.8832059619103 L242.0,2524.8832059619103 Z" fill="black" />
+<text x="256.0" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">2</text>
 <rect x="279.0" y="2512.8832059619103" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="289.0" cy="2521.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M289.0,2521.8832059619103 L289.0,2519.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M289.0,2521.8832059619103 L290.6,2521.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="292.0" cy="2521.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M292.0,2521.8832059619103 L292.0,2519.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M292.0,2521.8832059619103 L293.6,2521.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="303.5" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="305.0" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="347.0" y="2512.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M354.0,2524.8832059619103 L360.0,2524.8832059619103 L357.0,2518.8832059619103 Z" fill="black" />
-<text x="372.5" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M357.0,2524.8832059619103 L363.0,2524.8832059619103 L360.0,2518.8832059619103 Z" fill="black" />
+<text x="374.0" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="397.0" y="2512.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M404.0,2524.8832059619103 L410.0,2524.8832059619103 L407.0,2518.8832059619103 Z" fill="black" />
-<text x="422.5" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">2</text>
+<path d="M407.0,2524.8832059619103 L413.0,2524.8832059619103 L410.0,2518.8832059619103 Z" fill="black" />
+<text x="424.0" y="2522.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">2</text>
 <rect x="43.0" y="2541.8832059619103" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="60.5" y="2553.3832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="2552.8832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">8</text>
 <rect x="111.0" y="2543.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M118.0,2549.8832059619103 L124.0,2549.8832059619103 L121.0,2555.8832059619103 Z" fill="black" />
-<text x="136.5" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M121.0,2549.8832059619103 L127.0,2549.8832059619103 L124.0,2555.8832059619103 Z" fill="black" />
+<text x="138.0" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="161.0" y="2543.8832059619103" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="171.0" cy="2552.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M171.0,2552.8832059619103 L171.0,2550.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M171.0,2552.8832059619103 L172.6,2552.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="174.0" cy="2552.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M174.0,2552.8832059619103 L174.0,2550.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M174.0,2552.8832059619103 L175.6,2552.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="185.5" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="187.0" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="229.0" y="2543.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M236.0,2549.8832059619103 L242.0,2549.8832059619103 L239.0,2555.8832059619103 Z" fill="black" />
-<text x="254.5" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">4</text>
+<path d="M239.0,2549.8832059619103 L245.0,2549.8832059619103 L242.0,2555.8832059619103 Z" fill="black" />
+<text x="256.0" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">4</text>
 <rect x="279.0" y="2543.8832059619103" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="289.0" cy="2552.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M289.0,2552.8832059619103 L289.0,2550.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M289.0,2552.8832059619103 L290.6,2552.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="292.0" cy="2552.8832059619103" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M292.0,2552.8832059619103 L292.0,2550.6832059619105" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M292.0,2552.8832059619103 L293.6,2552.8832059619103" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="303.5" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="305.0" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="347.0" y="2543.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M354.0,2555.8832059619103 L360.0,2555.8832059619103 L357.0,2549.8832059619103 Z" fill="black" />
-<text x="372.5" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M357.0,2555.8832059619103 L363.0,2555.8832059619103 L360.0,2549.8832059619103 Z" fill="black" />
+<text x="374.0" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="397.0" y="2543.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M404.0,2555.8832059619103 L410.0,2555.8832059619103 L407.0,2549.8832059619103 Z" fill="black" />
-<text x="422.5" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">4</text>
+<path d="M407.0,2555.8832059619103 L413.0,2555.8832059619103 L410.0,2549.8832059619103 Z" fill="black" />
+<text x="424.0" y="2553.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">4</text>
 <rect x="43.0" y="2572.8832059619103" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="57.0" y="2584.3832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="71.0" y="2583.8832059619103" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">20</text>
 <rect x="111.0" y="2574.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<circle cx="121.0" cy="2583.8832059619103" r="3.0" fill="black" />
-<text x="136.0" y="2584.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">Q</text>
+<circle cx="124.0" cy="2583.8832059619103" r="3.0" fill="black" />
+<text x="137.5" y="2584.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">Q</text>
 <rect x="161.0" y="2574.8832059619103" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<circle cx="171.0" cy="2583.8832059619103" r="3.0" fill="black" />
-<text x="186.5" y="2584.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">U</text>
+<circle cx="174.0" cy="2583.8832059619103" r="3.0" fill="black" />
+<text x="188.0" y="2584.3832059619103" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">U</text>
 <text x="918.420407710545" y="2342.8832059619103" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#8BA5B5">TAP-DANCE</text>
 <text x="1753.84081542109" y="2342.8832059619103" font-size="10.0" text-anchor="end" dominant-baseline="text-before-edge" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">4 ENTRIES</text>
 <path d="M918.420407710545,2362.8832059619103 L1753.84081542109,2362.8832059619103" stroke="#8BA5B5" stroke-opacity="0.5" stroke-width="1.2" />

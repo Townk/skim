@@ -38,7 +38,6 @@ from __future__ import annotations
 import colorsys
 import itertools
 from dataclasses import dataclass
-from typing import cast
 
 import drawsvg as draw
 
@@ -139,8 +138,8 @@ _CLIP_ID_COUNTER = itertools.count()
 
 
 def _translated(
-    elem: draw.Circle | draw.Rectangle | Trapezoid, origin: Point
-) -> draw.Circle | draw.Rectangle | Trapezoid:
+    elem: draw.DrawingBasicElement, origin: Point
+) -> draw.DrawingBasicElement:
     """Return a copy of a drawsvg shape shifted by ``origin``.
 
     Supports the three shape types thumb-cluster keys publish via their
@@ -1490,8 +1489,8 @@ def ThumbCluster(
         clip_id = f"thumb-down-clip-{next(_CLIP_ID_COUNTER)}"
         dd_outset = slots.double_down_width * _DD_CUTOUT_OUTSET_MULTIPLIER
         up_outset = slots.up_width * _UP_CUTOUT_OUTSET_MULTIPLIER
-        dd_cutout_local = cast(Trapezoid, double_down.metrics.path(dd_outset))
-        up_cutout_local = cast(Trapezoid, up.metrics.path(up_outset))
+        dd_cutout_local = double_down.metrics.path(dd_outset)
+        up_cutout_local = up.metrics.path(up_outset)
         clip_path = draw.ClipPath(id=clip_id, clip_rule="evenodd")
         clip_path.append(
             draw.Rectangle(

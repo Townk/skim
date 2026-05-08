@@ -13,126 +13,126 @@
 <text x="60.5" y="167.5" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="167.0" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">0</text>
 <rect x="111.0" y="158.0" width="60.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M118.0,164.0 L124.0,164.0 L121.0,170.0 Z" fill="black" />
-<text x="135.5" y="167.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰌨 </text>
-<text x="147.5" y="167.0" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">15</text>
+<path d="M121.0,164.0 L127.0,164.0 L124.0,170.0 Z" fill="black" />
+<text x="137.0" y="167.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰌨 </text>
+<text x="149.0" y="167.0" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">15</text>
 <rect x="177.0" y="158.0" width="60.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M184.0,170.0 L190.0,170.0 L187.0,164.0 Z" fill="black" />
-<text x="201.5" y="167.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰌨 </text>
-<text x="213.5" y="167.0" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">15</text>
+<path d="M187.0,170.0 L193.0,170.0 L190.0,164.0 Z" fill="black" />
+<text x="203.0" y="167.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰌨 </text>
+<text x="215.0" y="167.0" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">15</text>
 <rect x="43.0" y="187.0" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="60.5" y="198.5" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="198.0" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">4</text>
 <rect x="111.0" y="189.0" width="46.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<text x="121.0" y="198.0" font-size="9.0" fill="black" font-weight="700" font-style="italic" text-anchor="middle" dominant-baseline="central" font-family="'Roboto', sans-serif">T</text>
-<text x="135.5" y="198.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">;qj</text>
+<text x="124.0" y="198.0" font-size="9.0" fill="black" font-weight="700" font-style="italic" text-anchor="middle" dominant-baseline="central" font-family="'Roboto', sans-serif">T</text>
+<text x="137.0" y="198.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">;qj</text>
 <rect x="43.0" y="218.0" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="60.5" y="229.5" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="229.0" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">5</text>
 <rect x="111.0" y="220.0" width="54.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<circle cx="121.0" cy="229.0" r="3.0" fill="black" />
-<text x="135.5" y="229.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰹍 </text>
-<text x="147.5" y="229.0" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">9</text>
+<circle cx="124.0" cy="229.0" r="3.0" fill="black" />
+<text x="137.0" y="229.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰹍 </text>
+<text x="149.0" y="229.0" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">9</text>
 <rect x="171.0" y="220.0" width="56.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<circle cx="181.0" cy="229.0" r="3.0" fill="black" />
-<text x="195.5" y="229.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰁨 </text>
-<text x="208.5" y="229.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰍽</text>
+<circle cx="184.0" cy="229.0" r="3.0" fill="black" />
+<text x="197.0" y="229.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰁨 </text>
+<text x="210.0" y="229.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0">󰍽</text>
 <rect x="43.0" y="249.0" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="60.5" y="260.5" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="260.0" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">6</text>
 <rect x="111.0" y="251.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M118.0,257.0 L124.0,257.0 L121.0,263.0 Z" fill="black" />
-<text x="136.5" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M121.0,257.0 L127.0,257.0 L124.0,263.0 Z" fill="black" />
+<text x="138.0" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="161.0" y="251.0" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="171.0" cy="260.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M171.0,260.0 L171.0,257.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M171.0,260.0 L172.6,260.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="174.0" cy="260.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M174.0,260.0 L174.0,257.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M174.0,260.0 L175.6,260.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="185.5" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="187.0" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="229.0" y="251.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M236.0,257.0 L242.0,257.0 L239.0,263.0 Z" fill="black" />
-<text x="254.5" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">1</text>
+<path d="M239.0,257.0 L245.0,257.0 L242.0,263.0 Z" fill="black" />
+<text x="256.0" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">1</text>
 <rect x="279.0" y="251.0" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="289.0" cy="260.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M289.0,260.0 L289.0,257.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M289.0,260.0 L290.6,260.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="292.0" cy="260.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M292.0,260.0 L292.0,257.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M292.0,260.0 L293.6,260.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="303.5" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="305.0" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="347.0" y="251.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M354.0,263.0 L360.0,263.0 L357.0,257.0 Z" fill="black" />
-<text x="372.5" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M357.0,263.0 L363.0,263.0 L360.0,257.0 Z" fill="black" />
+<text x="374.0" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="397.0" y="251.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M404.0,263.0 L410.0,263.0 L407.0,257.0 Z" fill="black" />
-<text x="422.5" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">1</text>
+<path d="M407.0,263.0 L413.0,263.0 L410.0,257.0 Z" fill="black" />
+<text x="424.0" y="260.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">1</text>
 <rect x="43.0" y="280.0" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="60.5" y="291.5" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="291.0" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">7</text>
 <rect x="111.0" y="282.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M118.0,288.0 L124.0,288.0 L121.0,294.0 Z" fill="black" />
-<text x="136.5" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M121.0,288.0 L127.0,288.0 L124.0,294.0 Z" fill="black" />
+<text x="138.0" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="161.0" y="282.0" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="171.0" cy="291.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M171.0,291.0 L171.0,288.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M171.0,291.0 L172.6,291.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="174.0" cy="291.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M174.0,291.0 L174.0,288.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M174.0,291.0 L175.6,291.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="185.5" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="187.0" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="229.0" y="282.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M236.0,288.0 L242.0,288.0 L239.0,294.0 Z" fill="black" />
-<text x="254.5" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">2</text>
+<path d="M239.0,288.0 L245.0,288.0 L242.0,294.0 Z" fill="black" />
+<text x="256.0" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">2</text>
 <rect x="279.0" y="282.0" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="289.0" cy="291.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M289.0,291.0 L289.0,288.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M289.0,291.0 L290.6,291.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="292.0" cy="291.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M292.0,291.0 L292.0,288.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M292.0,291.0 L293.6,291.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="303.5" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="305.0" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="347.0" y="282.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M354.0,294.0 L360.0,294.0 L357.0,288.0 Z" fill="black" />
-<text x="372.5" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M357.0,294.0 L363.0,294.0 L360.0,288.0 Z" fill="black" />
+<text x="374.0" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="397.0" y="282.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M404.0,294.0 L410.0,294.0 L407.0,288.0 Z" fill="black" />
-<text x="422.5" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">2</text>
+<path d="M407.0,294.0 L413.0,294.0 L410.0,288.0 Z" fill="black" />
+<text x="424.0" y="291.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">2</text>
 <rect x="43.0" y="311.0" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="60.5" y="322.5" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="74.5" y="322.0" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">8</text>
 <rect x="111.0" y="313.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M118.0,319.0 L124.0,319.0 L121.0,325.0 Z" fill="black" />
-<text x="136.5" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M121.0,319.0 L127.0,319.0 L124.0,325.0 Z" fill="black" />
+<text x="138.0" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="161.0" y="313.0" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="171.0" cy="322.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M171.0,322.0 L171.0,319.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M171.0,322.0 L172.6,322.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="174.0" cy="322.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M174.0,322.0 L174.0,319.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M174.0,322.0 L175.6,322.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="185.5" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="187.0" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="229.0" y="313.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M236.0,319.0 L242.0,319.0 L239.0,325.0 Z" fill="black" />
-<text x="254.5" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">4</text>
+<path d="M239.0,319.0 L245.0,319.0 L242.0,325.0 Z" fill="black" />
+<text x="256.0" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">4</text>
 <rect x="279.0" y="313.0" width="62.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
 <g>
-<circle cx="289.0" cy="322.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
-<path d="M289.0,322.0 L289.0,319.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
-<path d="M289.0,322.0 L290.6,322.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<circle cx="292.0" cy="322.0" r="3.5000000000000004" fill="none" stroke="black" stroke-width="1.1" />
+<path d="M292.0,322.0 L292.0,319.8" stroke="black" stroke-width="1.1" stroke-linecap="round" />
+<path d="M292.0,322.0 L293.6,322.0" stroke="black" stroke-width="1.1" stroke-linecap="round" />
 </g>
-<text x="303.5" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
+<text x="305.0" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">30ms</text>
 <rect x="347.0" y="313.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M354.0,325.0 L360.0,325.0 L357.0,319.0 Z" fill="black" />
-<text x="372.5" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
+<path d="M357.0,325.0 L363.0,325.0 L360.0,319.0 Z" fill="black" />
+<text x="374.0" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">E</text>
 <rect x="397.0" y="313.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<path d="M404.0,325.0 L410.0,325.0 L407.0,319.0 Z" fill="black" />
-<text x="422.5" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">4</text>
+<path d="M407.0,325.0 L413.0,325.0 L410.0,319.0 Z" fill="black" />
+<text x="424.0" y="322.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">4</text>
 <rect x="43.0" y="342.0" width="56.00000000000001" height="22.0" rx="4.0" ry="4.0" fill="#89511C" stroke="#CF9155" stroke-width="1.2" />
 <text x="57.0" y="353.5" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="#FFF" opacity="1.0">󱜨 </text>
 <text x="71.0" y="353.0" font-size="12.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="#FFF" opacity="1.0">20</text>
 <rect x="111.0" y="344.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<circle cx="121.0" cy="353.0" r="3.0" fill="black" />
-<text x="136.0" y="353.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">Q</text>
+<circle cx="124.0" cy="353.0" r="3.0" fill="black" />
+<text x="137.5" y="353.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">Q</text>
 <rect x="161.0" y="344.0" width="44.0" height="18.0" rx="4.0" ry="4.0" fill="#FAFAF6" stroke="black" stroke-opacity="0.18" />
-<circle cx="171.0" cy="353.0" r="3.0" fill="black" />
-<text x="186.5" y="353.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">U</text>
+<circle cx="174.0" cy="353.0" r="3.0" fill="black" />
+<text x="188.0" y="353.5" font-size="10.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0">U</text>
 <text x="820.0" y="112.0" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#8BA5B5">TAP-DANCE</text>
 <text x="1557.0" y="112.0" font-size="10.0" text-anchor="end" dominant-baseline="text-before-edge" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">4 ENTRIES</text>
 <path d="M820.0,132.0 L1557.0,132.0" stroke="#8BA5B5" stroke-opacity="0.5" stroke-width="1.2" />
