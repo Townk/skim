@@ -109,23 +109,18 @@ _INDICATOR_FALLBACK_STROKE = "#606060"
 
 
 # ---------------------------------------------------------------------------
-# Down-key clip-path cutouts
+# Down-key cutouts
 # ---------------------------------------------------------------------------
 
-# DD's cutout in the down key is outset by a fraction of DD's own width.
-# Value mirrors the legacy ``_DOUBLE_DOWN_STROKE_MULTIPLIER``: today's
-# stroke band (drawn at 0.05 × dd_width, centred) sat half-inside / half-
-# outside the trapezoid arg; the new DD shape is the inset-half, the
-# cutout edge is the outset-full from there → net same outer edge as
-# today's stroke. Kept exactly twice the per-key
-# ``_DOUBLE_DOWN_INSET_MULTIPLIER`` for that reason.
-_DD_CUTOUT_OUTSET_MULTIPLIER = 0.05
-
-# UP's cutout is outset by a fraction of UP's own width. Value mirrors
-# the legacy ``_UP_STROKE_MULTIPLIER`` (0.025) — today's outer
-# bg-coloured twin grew the inner trapezoid by exactly that on each
-# horizontal edge; the new clipPath cutout reproduces the same gap.
-_UP_CUTOUT_OUTSET_MULTIPLIER = 0.025
+# Both DD and UP cutouts in the down key are outset by ``thumb_key_gap
+# / 3`` — i.e. the visible "gap band" at each cutout's rim is one third
+# of the side-gap between Down and the surrounding keys. Tuned for the
+# layout produced by :func:`_compute_thumb_slots`; if the side gaps
+# change, this divisor is the one you'd retune. Computed at draw time
+# from ``thumb_inset`` rather than as a per-key proportion of the cut-
+# out's own width, so it stays in lockstep with the user-configured
+# ``Spacing.thumb_key_gap``.
+_DOWN_CUTOUT_OUTSET_DIVISOR = 3.0
 
 
 # ---------------------------------------------------------------------------
@@ -942,11 +937,12 @@ def FingerCluster(
 # ---------------------------------------------------------------------------
 
 
-# Per-key proportional widths inside the thumb-cluster bbox. Pulled
-# from the legacy ``ThumbClusterComponent._CLUSTER_WIDTH_PROPORTIONS``
-# verbatim so the rendered cluster stays pixel-equivalent.
+# Per-key proportional widths inside the thumb-cluster bbox. Most
+# come from the legacy ``ThumbClusterComponent._CLUSTER_WIDTH_PROPORTIONS``
+# verbatim. PAD's width is now derived (Knuckle width minus
+# ``thumb_key_gap / 3``) to match the original Svalboard docs image
+# proportion; the literal proportion is therefore unused.
 _DOWN_KEY_PROPORTION = 0.25
-_PAD_KEY_PROPORTION = 0.38
 _UP_KEY_PROPORTION = 0.372
 _NAIL_KEY_PROPORTION = 0.4
 _KNUCKLE_KEY_PROPORTION = 0.385
@@ -1151,11 +1147,25 @@ def _compute_thumb_slots(
 ) -> _ThumbClusterSlots:
     """Resolve per-key thumb-cluster boundaries from the bbox width.
 
-    Layout matches the legacy ``ThumbClusterLayout._compute_layout``
-    verbatim. ``side`` controls which way pad / nail / up /
-    knuckle's outward edges point; the down + double-down keys are
-    horizontally centred on the cluster's vertical midline and
-    don't depend on side.
+    Layout invariants:
+
+    * **Pad / Nail / Knuckle perpendicular-distance to Down = ``inset``**
+      (= ``thumb_key_gap``). The previous layout used an axis-aligned
+      ``inset/2`` offset which produced inconsistent perpendicular gaps
+      and a tapered seam. With Pad/Nail/Knuckle's slants now exactly
+      parallel to Down's edges (see :func:`_slant_matching_down`), the
+      perpendicular gap stays constant from top to bottom of the seam.
+    * **Pad / Nail bottom → Up / Knuckle top vertical gap = ``inset``.**
+      Up sits below Pad on the right; Knuckle sits below Nail on the
+      left; both gaps are the same size as the side gaps.
+    * **Pad's width = ``Knuckle.width − inset / 3``.** Matches the
+      original Svalboard docs image proportion. PAD's width is no
+      longer a hard-coded multiplier of cluster width.
+
+    ``side`` controls which way pad / nail / up / knuckle's outward
+    edges point; the down + double-down keys are horizontally
+    centred on the cluster's vertical midline and don't depend on
+    side.
 
     ``inset`` overrides the default ``cluster_width *
     _THUMB_INSET_PROPORTION``. Callers with a render context resolve
@@ -1163,12 +1173,19 @@ def _compute_thumb_slots(
     passing it in; callers without a context (mocks, tests) leave
     ``inset=None`` to use the built-in default.
     """
+    import math  # noqa: PLC0415  (small helper, local import keeps module imports clean)
+
+    from .svalboard_keys import (  # noqa: PLC0415  (avoid cycle in module-level import order)
+        _DOWN_HEIGHT_RATIO,
+        _DOWN_SLANT_MULTIPLIER,
+        _NAIL_HEIGHT_RATIO,
+        _PAD_HEIGHT_RATIO,
+    )
+
     cluster_height = cluster_width * _THUMB_CLUSTER_HEIGHT_RATIO
     center_x = cluster_width / 2.0
-    center_y = cluster_height / 2.0
 
     down_w = cluster_width * _DOWN_KEY_PROPORTION
-    pad_w = cluster_width * _PAD_KEY_PROPORTION
     up_w = cluster_width * _UP_KEY_PROPORTION
     nail_w = cluster_width * _NAIL_KEY_PROPORTION
     knuckle_w = cluster_width * _KNUCKLE_KEY_PROPORTION
@@ -1176,29 +1193,72 @@ def _compute_thumb_slots(
     if inset is None:
         inset = cluster_width * _THUMB_INSET_PROPORTION
 
+    # PAD width derived from Knuckle (matches Svalboard docs image).
+    pad_w = knuckle_w - inset / 3.0
+
     is_left = side is KeyboardSide.LEFT
     down_origin = Point(center_x - down_w / 2.0, 0.0)
     double_down_origin = Point(center_x - double_down_w / 2.0, inset * 2.0)
 
-    # Pad / nail sit either side of the down key, with the slant /
-    # taper running away from the down key.
-    top_left_x = center_x - down_w / 2.0 - pad_w + inset / 2.0
-    top_right_x = center_x + down_w / 2.0 - inset / 2.0
-    pad_origin = Point(top_left_x if is_left else top_right_x, inset)
+    # Down's slanted-edge geometry — used to position Pad/Nail/Knuckle
+    # so their slanted edges sit at perpendicular distance == inset
+    # from Down's corresponding slanted edge.
+    down_h = down_w * _DOWN_HEIGHT_RATIO
+    down_top_inset = down_w * _DOWN_SLANT_MULTIPLIER / 2.0
+    down_slope = down_top_inset / down_h  # |dx/dy| of the slanted edge
+    cos_theta = 1.0 / math.sqrt(1.0 + down_slope * down_slope)
+    target_axis_x = inset / cos_theta  # axis x-distance giving perp = inset
 
-    nail_top_left_x = center_x - down_w / 2.0 - nail_w + inset / 2.0
-    nail_origin = Point(top_right_x if is_left else nail_top_left_x, inset)
+    down_right_top_x = center_x + down_w / 2.0 - down_top_inset
+    down_left_top_x = center_x - down_w / 2.0 + down_top_inset
 
-    # Up / knuckle sit at mid-cluster, mirroring nail / pad's side
-    # placement. Up's own outward-side slant lives in :func:`UpKey`;
-    # the cluster just positions it.
+    def _down_right_at(y: float) -> float:
+        return down_right_top_x + down_slope * y
+
+    def _down_left_at(y: float) -> float:
+        return down_left_top_x - down_slope * y
+
+    # Pad / Nail top y is one inset below Down's top edge (parity with
+    # the previous layout's vertical anchoring).
+    pad_y = inset
+    nail_y = inset
+
+    # Pad on outward side, Nail on inward side. For RIGHT cluster the
+    # outward side is the right of Down; for LEFT cluster it's the left.
+    # Each key's slanted edge sits perpendicular-distance == inset from
+    # Down's corresponding edge at the key's top y.
+    if is_left:
+        pad_origin = Point(_down_left_at(pad_y) - target_axis_x - pad_w, pad_y)
+        nail_origin = Point(_down_right_at(nail_y) + target_axis_x, nail_y)
+    else:
+        pad_origin = Point(_down_right_at(pad_y) + target_axis_x, pad_y)
+        nail_origin = Point(_down_left_at(nail_y) - target_axis_x - nail_w, nail_y)
+
+    # Up sits below Pad; Knuckle sits below Nail. Vertical gap = inset.
+    pad_h = pad_w * _PAD_HEIGHT_RATIO
+    nail_h = nail_w * _NAIL_HEIGHT_RATIO
+    up_y = pad_origin.y + pad_h + inset
+    knuckle_y = nail_origin.y + nail_h + inset
+
+    # Up's inward edge sits inset/2 from cluster vertical midline (the
+    # legacy positioning — UP's horizontal placement is independent of
+    # the side gaps since UP doesn't share an edge with Down here).
     up_left_x = center_x - up_w - inset / 2.0
     up_right_x = center_x + inset / 2.0
-    up_origin = Point(up_left_x if is_left else up_right_x, center_y - inset * 1.5)
+    up_origin = Point(up_left_x if is_left else up_right_x, up_y)
 
-    knuckle_left_x = nail_origin.x + nail_w - knuckle_w
-    knuckle_right_x = nail_origin.x
-    knuckle_origin = Point(knuckle_left_x if is_left else knuckle_right_x, up_origin.y)
+    # Knuckle's slanted edge sits perpendicular-distance == inset from
+    # Down (same rule as Nail, but at Knuckle's lower y).
+    if is_left:
+        knuckle_origin = Point(
+            _down_right_at(knuckle_y) + target_axis_x,
+            knuckle_y,
+        )
+    else:
+        knuckle_origin = Point(
+            _down_left_at(knuckle_y) - target_axis_x - knuckle_w,
+            knuckle_y,
+        )
 
     return _ThumbClusterSlots(
         down_origin=down_origin,
@@ -1345,9 +1405,10 @@ def ThumbCluster(
     )
 
     # Translate DD's and UP's outset cutouts from their own local
-    # frames into Down's local frame.
-    dd_cutout_amount = slots.double_down_width * _DD_CUTOUT_OUTSET_MULTIPLIER
-    up_cutout_amount = slots.up_width * _UP_CUTOUT_OUTSET_MULTIPLIER
+    # frames into Down's local frame. Cutout outset = thumb_inset /
+    # _DOWN_CUTOUT_OUTSET_DIVISOR for both keys, so the rim band
+    # stays a uniform size and scales with the user-configured gap.
+    cutout_amount = thumb_inset / _DOWN_CUTOUT_OUTSET_DIVISOR
     dd_offset_in_down = (
         slots.double_down_origin.x - slots.down_origin.x,
         slots.double_down_origin.y - slots.down_origin.y,
@@ -1356,8 +1417,8 @@ def ThumbCluster(
         slots.up_origin.x - slots.down_origin.x,
         slots.up_origin.y - slots.down_origin.y,
     )
-    dd_cutout = double_down.metrics.path(dd_cutout_amount)
-    up_cutout = up.metrics.path(up_cutout_amount)
+    dd_cutout = double_down.metrics.path(cutout_amount)
+    up_cutout = up.metrics.path(cutout_amount)
     assert isinstance(dd_cutout, Trapezoid)  # noqa: S101
     assert isinstance(up_cutout, Trapezoid)  # noqa: S101
     down_cutouts = (

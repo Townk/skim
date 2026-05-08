@@ -14,8 +14,7 @@ from skim.application.render.layer_indicator import LayerIndicatorMetrics
 from skim.application.render.primitives import CompassDirection, Point
 from skim.application.render.render_context import RenderContext, using_render_context
 from skim.application.render.svalboard_clusters import (
-    _DD_CUTOUT_OUTSET_MULTIPLIER,
-    _UP_CUTOUT_OUTSET_MULTIPLIER,
+    _DOWN_CUTOUT_OUTSET_DIVISOR,
     FingerCluster,
     FingerClusterMetrics,
     ThumbCluster,
@@ -1049,14 +1048,14 @@ class TestThumbKeyColorsShape:
         assert field_names == {"fill", "label"}
 
 
-class TestCutoutMultipliers:
-    """Cluster owns the per-key cutout outset proportions."""
+class TestCutoutOutsetDivisor:
+    """The DD/UP cutouts in Down are sized as ``thumb_key_gap /
+    _DOWN_CUTOUT_OUTSET_DIVISOR`` — i.e. the rim band scales with the
+    side gap between Down and the surrounding keys, not with the
+    cutout's own width."""
 
-    def test_dd_cutout_multiplier_value(self):
-        assert _DD_CUTOUT_OUTSET_MULTIPLIER == 0.05
-
-    def test_up_cutout_multiplier_value(self):
-        assert _UP_CUTOUT_OUTSET_MULTIPLIER == 0.025
+    def test_divisor_value(self):
+        assert _DOWN_CUTOUT_OUTSET_DIVISOR == 3.0
 
 
 class TestDownCutouts:
