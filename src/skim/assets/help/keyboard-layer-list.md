@@ -1,5 +1,7 @@
 # Layers
 
+<!-- body -->
+
 The list of keyboard layers that SKIM will generate keymap images for.
 Each layer must be present in the keymap used to render the images, but not all
 layers from the keymap need to be listed here.

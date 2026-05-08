@@ -1,5 +1,7 @@
 # Macros
 
+<!-- body -->
+
 A list of macro definitions referenced by `Mn` (or `QK_MACRO_n`, or
 `MACRO_n`, where `n` is a number, usually between 1 and 50) keycodes
 in the keymap. Each entry has a stable id matching the keycode

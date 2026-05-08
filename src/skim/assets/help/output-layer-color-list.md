@@ -1,5 +1,7 @@
 # Layer Colors
 
+<!-- body -->
+
 The list of color settings for each layer. Each entry defines how layer keys
 and indicators are colored in the rendered keymap.
 

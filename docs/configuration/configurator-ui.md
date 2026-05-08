@@ -25,6 +25,8 @@ missing.
 > [`config-file.md`](config-file.md) — that's where you'll find the
 > visual semantics, defaults, and accepted values.
 
+---
+
 ## Anatomy { #anatomy }
 
 ![Configurator on the Keyboard tab, with the tab bar at the top, scrolling content in the middle, and the status bar at the bottom](../_static/tui/keyboard-tab.svg){ width="993" loading=lazy }
@@ -33,6 +35,8 @@ The Configurator window has three fixed pieces: a **tab bar** at the top,
 a **scrolling content area** in the middle, and a **status bar** at the
 bottom. The content area changes per tab; the tab bar and status bar
 persist.
+
+---
 
 ### Tabs { #anatomy-tabs }
 
@@ -51,6 +55,8 @@ the tab title or by pressing `Ctrl+P` (previous) / `Ctrl+N` (next). The
 last-focused field on a tab is restored when you return to it, so
 moving between tabs doesn't lose your place.
 
+---
+
 ### Scrolling content area { #anatomy-content }
 
 ![Scrolling area of the Keyboard tab — content clipped at the bottom with a scrollbar visible on the right](../_static/tui/scrolling-area.svg){ width="1015" loading=lazy }
@@ -66,6 +72,8 @@ explicitly with `Ctrl+E` (down) and `Ctrl+Y` (up); the wheel and
 `PageUp` / `PageDown` work too. A scrollbar on the right of the
 scrolling area indicates how much of the tab is currently visible.
 
+---
+
 ### Status bar { #anatomy-status-bar }
 
 ![Status bar with all seven global bindings on one row](../_static/tui/status-bar.svg){ width="1033" loading=lazy }
@@ -74,25 +82,31 @@ The status bar at the bottom of the window lists the key bindings that
 apply right now. The bindings are global — they work from any tab and
 regardless of which field is focused. The set is:
 
-| Binding   | Action          |
-| --------- | --------------- |
-| `Ctrl+Q`  | Quit (prompts to save unsaved changes). |
-| `Ctrl+S`  | Save the current state to disk.         |
-| `Ctrl+P`  | Switch to the previous tab.             |
-| `Ctrl+N`  | Switch to the next tab.                 |
-| `Ctrl+E`  | Scroll the content area down.           |
-| `Ctrl+Y`  | Scroll the content area up.             |
-| `F1` / `Alt+H` | Open the help overlay.             |
+| Binding         | Action                                       |
+| --------------- | -------------------------------------------- |
+| `Ctrl+Q`        | Quit (prompts to save unsaved changes).      |
+| `Ctrl+S`        | Save the current state to disk.              |
+| `Ctrl+P`        | Switch to the previous tab.                  |
+| `Ctrl+N`        | Switch to the next tab.                      |
+| `Ctrl+E`        | Scroll the content area down.                |
+| `Ctrl+Y`        | Scroll the content area up.                  |
+| `Tab`           | Move focus to the next field.                |
+| `Shift+Tab`     | Move focus to the previous field.            |
+| `F1` / `Alt+H`  | Open the help overlay.                       |
 
 Modal dialogs (save target, overwrite confirm, quit confirm, help) carry
 their own bindings — those replace the main set while the dialog is
 open, then disappear when the dialog closes.
+
+---
 
 ### Field components { #anatomy-components }
 
 Every editable row uses one of a small set of components, plus a
 left-aligned label that names the field. The label width is fixed (22
 cells) so labels and fields line up across rows in the same section.
+
+---
 
 #### Text input { #anatomy-components-text-input }
 
@@ -107,15 +121,20 @@ input; the rollback affordance only exists inside a
 [list/detail pane](#anatomy-components-list-detail), where the pane's
 edit lifecycle wraps every field it contains.
 
-##### Interaction { #anatomy-components-text-input-interaction }
+##### Key bindings { #anatomy-components-text-input-key-bindings }
 
-| Binding     | Action                       |
-| ----------- | ---------------------------- |
-| `Tab`       | Move focus to the next field |
-| `Shift+Tab` | Move focus to the previous field |
+Inside a list/detail pane the input takes part in the pane's edit
+lifecycle:
 
-When inside a list/detail pane the input also responds to `Enter` (commit
-changes, exit edit mode) and `Escape` (discard changes, exit edit mode).
+| Binding  | Action                              |
+| -------- | ----------------------------------- |
+| `Enter`  | Commit changes and exit edit mode   |
+| `Escape` | Discard changes and exit edit mode  |
+
+Outside a list/detail pane the input has no extra bindings — every
+keystroke updates the underlying field directly.
+
+---
 
 #### Numeric input { #anatomy-components-numeric-input }
 
@@ -129,10 +148,12 @@ the input keeps its current text without visible feedback. Watch the
 rendered output (or the matching field in the YAML preview) to
 confirm the value took.
 
-##### Interaction { #anatomy-components-numeric-input-interaction }
+##### Key bindings { #anatomy-components-numeric-input-key-bindings }
 
 Identical to the
-[text input's interaction](#anatomy-components-text-input-interaction).
+[text input's key bindings](#anatomy-components-text-input-key-bindings).
+
+---
 
 #### Switch { #anatomy-components-switch }
 
@@ -142,11 +163,13 @@ A two-state toggle. Click the switch or press `Space` / `Enter` while
 focused to flip it. The change commits immediately; there is no
 edit / cancel cycle.
 
-##### Interaction { #anatomy-components-switch-interaction }
+##### Key bindings { #anatomy-components-switch-key-bindings }
 
 | Binding         | Action                       |
 | --------------- | ---------------------------- |
 | `Enter` / `Space` | Toggle the switch          |
+
+---
 
 #### Select { #anatomy-components-select }
 
@@ -156,17 +179,18 @@ A drop-down. `Enter` or `Space` opens the list; arrow keys move the
 highlight; `Enter` commits the highlighted entry; `Escape` closes the
 list without changing the field.
 
-##### Interaction { #anatomy-components-select-interaction }
+##### Key bindings { #anatomy-components-select-key-bindings }
 
-| Binding             | When closed              | When open                         |
-| ------------------- | ------------------------ | --------------------------------- |
-| `Enter` / `Space`   | Open the dropdown        | Commit the highlighted option     |
-| `Escape`            | Discard pending changes¹ | Close the dropdown without changing the value |
-| `Tab` / `Shift+Tab` | Move focus to next / previous field | —                       |
-| `↑` / `↓`           | —                        | Move the highlight in the dropdown |
+| Binding           | When closed              | When open                                     |
+| ----------------- | ------------------------ | --------------------------------------------- |
+| `Enter` / `Space` | Open the dropdown        | Commit the highlighted option                 |
+| `Escape`          | Discard pending changes¹ | Close the dropdown without changing the value |
+| `↑` / `↓`         | —                        | Move the highlight in the dropdown            |
 
 ¹ Discard only applies inside a list/detail pane that's in edit mode;
 otherwise `Escape` is a no-op.
+
+---
 
 #### Color input { #anatomy-components-color-input }
 
@@ -177,22 +201,22 @@ input accepts any CSS color value the schema allows (named colors,
 `#RRGGBB`, `rgb()` / `hsl()` strings); the swatch updates as you type.
 An autocomplete list suggests CSS color names while you're typing.
 
-##### Interaction { #anatomy-components-color-input-interaction }
+##### Key bindings { #anatomy-components-color-input-key-bindings }
 
-| Binding     | Action                                   |
-| ----------- | ---------------------------------------- |
-| `Tab`       | Move focus to the next field             |
-| `Shift+Tab` | Move focus to the previous field         |
-| `Alt+↑`     | Increase saturation by `0.05` (HSL nudge) |
-| `Alt+↓`     | Decrease saturation by `0.05` (HSL nudge) |
-| `Alt+→`     | Increase lightness by `0.05` (HSL nudge)  |
-| `Alt+←`     | Decrease lightness by `0.05` (HSL nudge)  |
+| Binding | Action                                    |
+| ------- | ----------------------------------------- |
+| `Alt+↑` | Increase saturation by `0.05` (HSL nudge) |
+| `Alt+↓` | Decrease saturation by `0.05` (HSL nudge) |
+| `Alt+→` | Increase lightness by `0.05` (HSL nudge)  |
+| `Alt+←` | Decrease lightness by `0.05` (HSL nudge)  |
 
 The `Alt+arrow` HSL nudges only fire when the input currently holds a
 six-digit hex color (`#RRGGBB`); named colors, three-digit hex, and
 `rgb()` / `hsl()` strings are silently skipped. Inside a list/detail
 pane, the input also responds to `Enter` / `Escape` for commit /
 discard.
+
+---
 
 #### List/detail pane { #anatomy-components-list-detail }
 
@@ -222,7 +246,7 @@ To reorder entries, focus the list and press `m`. The selected row gets
 a `↕` move indicator; use the arrow keys to slide it up or down and
 `Enter` to commit the new position (or `Escape` to cancel).
 
-##### Interaction { #anatomy-components-list-detail-interaction }
+##### Key bindings { #anatomy-components-list-detail-key-bindings }
 
 When the list is focused:
 
@@ -239,11 +263,17 @@ Once the pane is in edit mode, focus moves to the detail-side inputs
 which carry their own per-component bindings (Text input, Select,
 Switch, Color input).
 
+---
+
 ## Keyboard tab { #fields-keyboard }
 
 Hardware metadata, image titling, and the layer roster.
 
+---
+
 ### Info { #fields-keyboard-info }
+
+---
 
 #### Keymap Title { #keyboard-info-title }
 
@@ -277,6 +307,8 @@ Hardware metadata, image titling, and the layer roster.
 
 ### Features { #fields-keyboard-features }
 
+---
+
 #### Double South { #keyboard-feature-double-south }
 
 ![Double South field row](../_static/tui/field-keyboard-feature-double-south.svg){ width="357" loading=lazy }
@@ -294,6 +326,8 @@ Hardware metadata, image titling, and the layer roster.
 
 ### Layers { #fields-keyboard-layers }
 
+---
+
 #### Layers { #keyboard-layer-list }
 
 ![Layers field row](../_static/tui/field-keyboard-layer-list.svg){ width="906" loading=lazy }
@@ -301,8 +335,9 @@ Hardware metadata, image titling, and the layer roster.
 {%
    include-markdown "../../src/skim/assets/help/keyboard-layer-list.md"
    comments=false
-   start="\n\n"
+   start="<!-- body -->"
    heading-offset=3
+   end="## Interaction"
 %}
 
 **Configures:** [`keyboard.layers`](config-file.md#keyboard-layers)
@@ -373,7 +408,11 @@ Hardware metadata, image titling, and the layer roster.
 
 Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 
+---
+
 ### Pre-process { #fields-keycodes-pre-process }
+
+---
 
 #### Pre-process Keycodes { #keycodes-pre-proc-list }
 
@@ -382,8 +421,9 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 {%
    include-markdown "../../src/skim/assets/help/keycodes-pre-proc-list.md"
    comments=false
-   start="\n\n"
+   start="<!-- body -->"
    heading-offset=3
+   end="## Interaction"
 %}
 
 **Configures:** [`keycodes.pre_process`](config-file.md#keycodes-pre-process)
@@ -422,6 +462,8 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 
 ### Overrides { #fields-keycodes-overrides }
 
+---
+
 #### Keycode Overrides { #keycodes-override-list }
 
 ![Keycode Overrides field row](../_static/tui/field-keycodes-override-list.svg){ width="906" loading=lazy }
@@ -429,8 +471,9 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 {%
    include-markdown "../../src/skim/assets/help/keycodes-override-list.md"
    comments=false
-   start="\n\n"
+   start="<!-- body -->"
    heading-offset=3
+   end="## Interaction"
 %}
 
 **Configures:** [`keycodes.overrides`](config-file.md#keycodes-overrides)
@@ -469,6 +512,8 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 
 ### Macros { #fields-keycodes-macros }
 
+---
+
 #### Macros { #keycodes-macro-list }
 
 ![Macros field row](../_static/tui/field-keycodes-macro-list.svg){ width="906" loading=lazy }
@@ -476,8 +521,9 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 {%
    include-markdown "../../src/skim/assets/help/keycodes-macro-list.md"
    comments=false
-   start="\n\n"
+   start="<!-- body -->"
    heading-offset=3
+   end="## Interaction"
 %}
 
 **Configures:** [`keycodes.macros`](config-file.md#keycodes-macros)
@@ -516,6 +562,8 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 
 ### Tap-dances { #fields-keycodes-tap-dances }
 
+---
+
 #### Tap Dances { #keycodes-tap-dance-list }
 
 ![Tap Dances field row](../_static/tui/field-keycodes-tap-dance-list.svg){ width="906" loading=lazy }
@@ -523,8 +571,9 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 {%
    include-markdown "../../src/skim/assets/help/keycodes-tap-dance-list.md"
    comments=false
-   start="\n\n"
+   start="<!-- body -->"
    heading-offset=3
+   end="## Interaction"
 %}
 
 **Configures:** [`keycodes.tap_dances`](config-file.md#keycodes-tap-dances)
@@ -565,7 +614,11 @@ Keycode rewriting, label overrides, and metadata for macros and tap-dances.
 
 Layout dimensions, colors, and styling for the rendered images.
 
+---
+
 ### Page { #fields-output-page }
+
+---
 
 #### Layout Width { #output-page-width }
 
@@ -658,6 +711,8 @@ Layout dimensions, colors, and styling for the rendered images.
 ---
 
 ### Style { #fields-output-style }
+
+---
 
 #### Hold Symbol Position { #output-style-hold-symbol-position }
 
@@ -798,6 +853,8 @@ Layout dimensions, colors, and styling for the rendered images.
 
 The chrome colors that frame every rendered image. Each takes any CSS color value the schema allows; see the chrome colors table on the [`output.style.palette`](config-file.md#output-style-palette) field for the full list of defaults and visual swatches.
 
+---
+
 #### Background Color { #output-palette-background-color }
 
 ![Background Color field row](../_static/tui/field-output-palette-background-color.svg){ width="586" loading=lazy }
@@ -905,6 +962,8 @@ The chrome colors that frame every rendered image. Each takes any CSS color valu
 
 ### Layer Colors { #fields-output-layer-colors }
 
+---
+
 #### Layer Colors { #output-layer-color-list }
 
 ![Layer Colors field row](../_static/tui/field-output-layer-color-list.svg){ width="906" loading=lazy }
@@ -912,8 +971,9 @@ The chrome colors that frame every rendered image. Each takes any CSS color valu
 {%
    include-markdown "../../src/skim/assets/help/output-layer-color-list.md"
    comments=false
-   start="\n\n"
+   start="<!-- body -->"
    heading-offset=3
+   end="## Interaction"
 %}
 
 **Configures:** [`output.style.palette.layers`](config-file.md#output-style-palette-layers)

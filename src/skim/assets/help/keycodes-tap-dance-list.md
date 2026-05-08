@@ -1,5 +1,7 @@
 # Tap Dances
 
+<!-- body -->
+
 A list of tap-dance definitions referenced by `TD(n)` keycodes. Each
 entry carries a stable id, an optional name, and a read-only preview
 summarising the tap / hold / double-tap / tap-then-hold actions.

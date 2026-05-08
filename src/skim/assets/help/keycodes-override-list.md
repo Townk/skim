@@ -1,5 +1,7 @@
 # Keycode Overrides
 
+<!-- body -->
+
 A list of label overrides for keycodes. Each override customizes how a specific keycode is displayed in the rendered keymap.
 
 Use this to replace default keycode labels with custom text, icons, or NerdFont glyphs.
