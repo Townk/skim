@@ -229,7 +229,11 @@ release:
     echo "==> Bumping to release version..."
     RELEASE_VERSION=$(uv run python scripts/release_version.py strip-dev)
     echo "    Released: $RELEASE_VERSION"
-    git add pyproject.toml
+
+    echo "==> Promoting CHANGELOG [Unreleased] -> [v$RELEASE_VERSION]..."
+    uv run python scripts/release_changelog.py promote "$RELEASE_VERSION"
+
+    git add pyproject.toml CHANGELOG.md
     git commit -m "chore: release v$RELEASE_VERSION"
 
     # ──────── 5. Tag ────────

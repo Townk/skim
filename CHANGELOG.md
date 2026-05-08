@@ -44,6 +44,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it instead of running `option-images` + `screenshots` separately, so
   spacing mocks and the keymap images stay coupled to the renderer on
   every release.
+- **`scripts/release_changelog.py promote X.Y.Z`** rewrites
+  `CHANGELOG.md` for a release: renames `## [Unreleased]` to
+  `## [X.Y.Z] - YYYY-MM-DD`, inserts a fresh empty `## [Unreleased]`
+  block above it, and updates the link-reference list at the bottom
+  (rewrites `[Unreleased]` to compare `vX.Y.Z...HEAD` and inserts a new
+  `[X.Y.Z]: ...compare/<prev>...vX.Y.Z` entry, where `<prev>` is parsed
+  from the previous `[Unreleased]` link). Idempotent — aborts if a
+  `[X.Y.Z]` section already exists. The `release` recipe now invokes it
+  so the changelog stays in sync with the released version
+  automatically.
 
 ### Changed
 
@@ -113,6 +123,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CHANGELOG dates for the `0.7.0` and `0.7.2` releases were inverted;
   corrected to chronological order (0.7.0 on 2026-05-03, 0.7.2 on
   2026-05-04).
+- CHANGELOG link-reference list at the bottom of the file was stale —
+  the `[Unreleased]` link pointed at `compare/v0.5.3...HEAD` despite
+  v0.7.2 being the latest release, and `[0.5.4]`, `[0.5.5]`, `[0.7.0]`,
+  `[0.7.2]` had no entries. Backfilled the missing entries and
+  rewrote `[Unreleased]` to compare `v0.7.2...HEAD` so the existing
+  links resolve correctly on GitHub.
 
 ### Documentation
 
@@ -622,7 +638,11 @@ of layout-quality fixes.
 - Sphinx documentation with GitHub Pages deployment workflow
 - Pre-commit hooks for ruff formatting/linting and basedpyright type checking
 
-[Unreleased]: https://github.com/Townk/skim/compare/v0.5.3...HEAD
+[Unreleased]: https://github.com/Townk/skim/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/Townk/skim/compare/v0.7.0...v0.7.2
+[0.7.0]: https://github.com/Townk/skim/compare/v0.5.5...v0.7.0
+[0.5.5]: https://github.com/Townk/skim/compare/v0.5.4...v0.5.5
+[0.5.4]: https://github.com/Townk/skim/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/Townk/skim/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/Townk/skim/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/Townk/skim/compare/v0.5.0...v0.5.1
