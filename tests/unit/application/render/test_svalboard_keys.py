@@ -27,6 +27,9 @@ from skim.application.render.svalboard_keys import (
     _DOUBLE_DOWN_HEIGHT_RATIO,
     _DOUBLE_DOWN_INSET_MULTIPLIER,
     _DOUBLE_DOWN_SLANT_MULTIPLIER,
+    _UP_CORNER_RADIUS_MULTIPLIER,
+    _UP_HEIGHT_RATIO,
+    _UP_SLANT_MULTIPLIER,
     CenterKey,
     DirectionalKey,
     DoubleDownKey,
@@ -40,7 +43,7 @@ from skim.application.render.svalboard_keys import (
 )
 from skim.application.render.trapezoid import Trapezoid
 from skim.data import SkimConfig, SvalboardKeymap
-from skim.domain import KeyboardSide, KeyDirection
+from skim.domain import Alignment, KeyboardSide, KeyDirection
 
 
 @pytest.fixture
@@ -503,7 +506,6 @@ def _up_key(
     label_text: str = "A",
     fill_color: str = "#abcdef",
     label_color: str = "#012345",
-    stroke_color: str = "#ffffff",
 ):
     return UpKey(
         side=side,
@@ -511,7 +513,6 @@ def _up_key(
         label_text=label_text,
         fill_color=fill_color,
         label_color=label_color,
-        stroke_color=stroke_color,
     )
 
 
@@ -682,7 +683,7 @@ class TestDoubleDownKey:
 
 
 class TestUpKey:
-    """Stroke + fill horizontal trapezoid at the cluster top."""
+    """Single-trapezoid horizontal key at the cluster top."""
 
     def test_size_uses_aspect_ratio(self, ctx: RenderContext):
         """Aspect 2.75:1 — ``height = width / 2.75``."""
@@ -710,15 +711,12 @@ class TestUpKey:
             _draw(left, Point(0.0, 0.0)).as_svg()
         )
 
-    def test_draw_emits_two_trapezoids_and_label(self, ctx: RenderContext):
-        """Outer (stroke colour) + inner (fill colour) trapezoids,
-        plus the label."""
+    def test_draw_emits_fill_and_label(self, ctx: RenderContext):
+        """Single fill-coloured trapezoid plus the label."""
         with using_render_context(ctx):
-            key = _up_key(label_text="UP", stroke_color="#ffffff")
+            key = _up_key(label_text="UP")
         svg = str(_draw(key, Point(0.0, 0.0)).as_svg())
-        assert svg.count("<path") >= 2  # stroke + fill paths
         assert 'fill="#abcdef"' in svg
-        assert 'fill="#ffffff"' in svg
         assert "UP" in svg
 
 
@@ -903,8 +901,6 @@ def _make_thumb_key(ctx: RenderContext, name: str):
         "fill_color": "#fff",
         "label_color": "#000",
     }
-    if name == "UpKey":
-        kwargs["stroke_color"] = "#000"
     with using_render_context(ctx):
         return builder(**kwargs)
 
@@ -919,7 +915,7 @@ class TestKeyPathMetric:
     that returns the rendered fill shape (and outset variants)."""
 
     @pytest.mark.parametrize(
-        "name", ["DownKey", "PadKey", "NailKey", "KnuckleKey", "DoubleDownKey"]
+        "name", ["DownKey", "PadKey", "NailKey", "KnuckleKey", "DoubleDownKey", "UpKey"]
     )
     def test_thumb_trapezoid_path_outset_grows_bbox(self, ctx: RenderContext, name: str):
         """``path(amount)`` returns a trapezoid whose ``d`` differs from
@@ -1040,7 +1036,6 @@ class TestKeyPathMetric:
                 label_text="A",
                 fill_color="#fff",
                 label_color="#000",
-                stroke_color="#000",
             )
         elem = key.metrics.path(0.0)
         assert isinstance(elem, Trapezoid)
@@ -1081,6 +1076,57 @@ class TestDoubleDownKeyGeometry:
             height=width * _DOUBLE_DOWN_HEIGHT_RATIO - 2 * inset,
             top_width=(width * (1 - _DOUBLE_DOWN_SLANT_MULTIPLIER)) - 2 * inset,
             corners_radius=width * _DOUBLE_DOWN_CORNER_RADIUS_MULTIPLIER,
+            fill="#fff",
+        )
+        assert elem.args["d"] == expected.args["d"]
+
+
+# ---------------------------------------------------------------------------
+# TestUpKeyGeometry
+# ---------------------------------------------------------------------------
+
+
+class TestUpKeyGeometry:
+    """UP paints a single trapezoid (the legacy ``inner``); no outer
+    twin, no stroke."""
+
+    def test_signature_drops_stroke_color(self):
+        sig = inspect.signature(UpKey.__wrapped__)  # type: ignore[attr-defined]
+        assert "stroke_color" not in sig.parameters
+
+    def test_draw_emits_single_trapezoid(self, ctx: RenderContext):
+        with using_render_context(ctx):
+            key = UpKey(
+                side=KeyboardSide.RIGHT, width=40.0, label_text="A",
+                fill_color="#fff", label_color="#000",
+            )
+        svg = str(_draw(key, Point(0.0, 0.0)).as_svg())
+        # Count <path> elements with fill="#fff" — there should be exactly
+        # one (the trapezoid). The label may render as separate elements
+        # but won't share the fill colour.
+        trap_paths = [
+            line for line in svg.splitlines()
+            if '<path' in line and 'fill="#fff"' in line
+        ]
+        assert len(trap_paths) == 1, f"expected 1 trapezoid, got {len(trap_paths)}: {trap_paths}"
+
+    def test_path_zero_outset_matches_legacy_inner(self, ctx: RenderContext):
+        width = 40.0
+        with using_render_context(ctx):
+            key = UpKey(
+                side=KeyboardSide.RIGHT, width=width, label_text="A",
+                fill_color="#fff", label_color="#000",
+            )
+        elem = key.metrics.path(0.0)
+        height = width * _UP_HEIGHT_RATIO
+        short_face = height * (1.0 - _UP_SLANT_MULTIPLIER)
+        # Right hand: slant on the left edge (left_height = short_face).
+        expected = Trapezoid(
+            x=0, y=0,
+            width=width, height=height,
+            left_height=short_face,
+            corners_radius=width * _UP_CORNER_RADIUS_MULTIPLIER,
+            align_y=Alignment.START,
             fill="#fff",
         )
         assert elem.args["d"] == expected.args["d"]

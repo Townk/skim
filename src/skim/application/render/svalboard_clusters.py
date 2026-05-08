@@ -1308,7 +1308,6 @@ def ThumbCluster(
         label_text=nudged_cluster.up_key.label,
         fill_color=up_colors.fill,
         label_color=up_colors.label,
-        stroke_color=up_colors.stroke,
     )
     nail = NailKey(
         side=side,

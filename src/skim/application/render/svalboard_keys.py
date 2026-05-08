@@ -159,10 +159,12 @@ _DOUBLE_DOWN_FONT_HEIGHT_MULTIPLIER = 0.6
 _DOUBLE_DOWN_LABEL_WIDTH_MULTIPLIER = 0.8 - _DOUBLE_DOWN_SLANT_MULTIPLIER
 
 # UpKey — wide short horizontal trapezoid, slanted on the OUTWARD side
-# (right hand: slant on the left edge). Drawn as two stacked
-# trapezoids — the outer paints in the stroke colour and is slightly
-# larger; the inner paints the fill on top.
+# (right hand: slant on the left edge). Painted as a single trapezoid
+# (no SVG stroke trick).
 _UP_SLANT_MULTIPLIER = 0.12
+# _UP_STROKE_MULTIPLIER is no longer referenced inside UpKey; it is
+# consumed by svalboard_clusters.py via _UP_CUTOUT_OUTSET_MULTIPLIER
+# (Task 5).
 _UP_STROKE_MULTIPLIER = 0.025
 _UP_CORNER_RADIUS_MULTIPLIER = 0.05
 _UP_FONT_HEIGHT_MULTIPLIER = 0.45
@@ -762,15 +764,15 @@ def UpKey(
     label_text: str,
     fill_color: str,
     label_color: str,
-    stroke_color: str,
 ):
     """The up key — wide short horizontal trapezoid at the top of the cluster.
 
     Asymmetric: the outward (away-from-thumb) edge is full-height,
     the inward edge is shorter — the outline tapers from the
-    outward end down to the inward end. Drawn as a stroke + fill
-    pair (outer trapezoid in stroke colour, slightly larger; inner
-    trapezoid in fill colour). Mirrors visually per side.
+    outward end down to the inward end. Painted as a single
+    trapezoid (no SVG stroke); the cluster's clip-path on the down
+    key handles the visible gap that used to come from a bg-coloured
+    outer twin.
 
     Label sits at the wide end of the key — outward — anchored
     away from the inward taper so the text doesn't crowd the slant.
@@ -780,43 +782,18 @@ def UpKey(
 
     height = width * _UP_HEIGHT_RATIO
     short_face = height * (1.0 - _UP_SLANT_MULTIPLIER)
-    stroke_width = width * _UP_STROKE_MULTIPLIER
     corner_radius = width * _UP_CORNER_RADIUS_MULTIPLIER
     label_font_size = height * _UP_FONT_HEIGHT_MULTIPLIER
     label_width_budget = width * _UP_LABEL_WIDTH_MULTIPLIER
 
-    # Right hand: slant on the inward (LEFT) edge → left edge is short.
-    # Left hand: slant on the inward (RIGHT) edge → right edge is short.
     if side is KeyboardSide.RIGHT:
         inner_left_height: float | None = short_face
-        inner_right_height: float | None = None  # full height
+        inner_right_height: float | None = None
     else:
         inner_left_height = None
         inner_right_height = short_face
 
-    # Outer (stroke) trapezoid is slightly larger so the stroke shows
-    # around the inner fill. ``2.3 * stroke_width`` extra height
-    # mirrors the legacy hand-tuned bump.
-    outer_extra_w = stroke_width * 2.0
-    outer_extra_h = stroke_width * 2.3
-    outer_short_face = (height + outer_extra_h) * (1.0 - _UP_SLANT_MULTIPLIER)
     if side is KeyboardSide.RIGHT:
-        outer_left_height: float | None = outer_short_face
-        outer_right_height: float | None = None
-    else:
-        outer_left_height = None
-        outer_right_height = outer_short_face
-
-    # Label position: anchored to the OUTWARD edge.
-    # Right hand: outward = right; text_anchor=start, x near left
-    # would put label on the inward (slanted) side — wrong. Use the
-    # legacy convention: text anchored to the outward end with x at
-    # the outward edge minus margin.
-    if side is KeyboardSide.RIGHT:
-        # Outward edge is RIGHT; label anchors to start, with x near
-        # left edge. This is the legacy mapping (label on the wide
-        # full-height outer side). The label visually sits on the
-        # full-height side opposite the slant.
         label_text_anchor = "start"
         label_x_factor = _UP_LABEL_MARGIN_MULTIPLIER
     else:
@@ -841,8 +818,6 @@ def UpKey(
         side=side,
     )
 
-    size = Size(width, height)
-
     def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
         return Trapezoid(
             x=-outset,
@@ -856,23 +831,10 @@ def UpKey(
             fill=fill_color,
         )
 
+    size = Size(width, height)
+
     def draw_at(d, origin):
         x, y = origin.x, origin.y
-        # Outer (stroke) trapezoid.
-        d.append(
-            Trapezoid(
-                x=x - stroke_width,
-                y=y - stroke_width,
-                width=width + outer_extra_w,
-                height=height + outer_extra_h,
-                left_height=outer_left_height,
-                right_height=outer_right_height,
-                corners_radius=corner_radius,
-                align_y=Alignment.START,
-                fill=stroke_color,
-            )
-        )
-        # Inner (fill) trapezoid.
         d.append(
             Trapezoid(
                 x=x,
@@ -886,13 +848,8 @@ def UpKey(
                 fill=fill_color,
             )
         )
-        # Label vertically centred on the SHORT face (the slanted
-        # half), x anchored per side. The legacy positions the label
-        # at half the short-face height — same intent here.
         label_y = y + short_face / 2.0
         label_x = x + width * label_x_factor
-        # Translate ``text_anchor`` + ``dominant_baseline=central`` to
-        # an offset for the bbox top-left.
         if label_text_anchor == "start":
             anchor_dx = 0.0
         elif label_text_anchor == "end":
