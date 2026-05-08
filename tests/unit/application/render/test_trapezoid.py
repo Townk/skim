@@ -176,3 +176,242 @@ class TestTrapezoidSvgAttributes:
     def test_tag_name_is_path(self):
         """Trapezoid renders as a path element."""
         assert Trapezoid.TAG_NAME == "path"
+
+
+class TestTrapezoidOutset:
+    """Tests for Trapezoid.outset() — the Minkowski offset method.
+
+    The outset moves every edge perpendicular to itself by ``amount``
+    and grows the corner radius by the same amount. Verified against
+    closed-form geometry.
+    """
+
+    def test_zero_outset_returns_equivalent_trapezoid(self):
+        """outset(0) returns a fresh Trapezoid with identical path."""
+        original = Trapezoid(x=10, y=20, width=100, height=80, top_width=70, corners_radius=5)
+        outset = original.outset(0)
+        assert outset is not original
+        assert outset.args["d"] == original.args["d"]
+
+    def test_centered_vertical_top_narrower_dimensions(self):
+        """For align_x=CENTER vertical with tw<bw: closed-form match."""
+        import math
+
+        original = Trapezoid(
+            x=0,
+            y=0,
+            width=100,
+            height=100,
+            top_width=80,
+            bottom_width=100,
+            corners_radius=4,
+        )
+        n = 10
+        outset = original.outset(n)
+        delta = (100 - 80) / 2
+        slant_len = math.sqrt(100 * 100 + delta * delta)
+        expected_top_width = 80 + 2 * n * (slant_len - delta) / 100
+        expected_bottom_width = 100 + 2 * n * (slant_len + delta) / 100
+        assert outset._construction["top_width"] == pytest.approx(expected_top_width)
+        assert outset._construction["bottom_width"] == pytest.approx(expected_bottom_width)
+        assert outset._construction["height"] == pytest.approx(120)
+        assert outset._construction["corners_radius"] == pytest.approx(14)
+        # New bbox width = max(new_tw, new_bw) = new_bw for tw<bw.
+        assert outset._construction["width"] == pytest.approx(expected_bottom_width)
+        # Centered: new origin = original_x + (W - new_bbox_w)/2.
+        assert outset._construction["x"] == pytest.approx((100 - expected_bottom_width) / 2)
+        assert outset._construction["y"] == pytest.approx(-10)
+
+    def test_centered_vertical_top_wider_dimensions(self):
+        """For align_x=CENTER vertical with tw>bw: top stays wider after outset."""
+        import math
+
+        original = Trapezoid(
+            x=0,
+            y=0,
+            width=100,
+            height=100,
+            top_width=100,
+            bottom_width=80,
+            corners_radius=4,
+        )
+        n = 10
+        outset = original.outset(n)
+        delta = (80 - 100) / 2  # negative
+        slant_len = math.sqrt(100 * 100 + delta * delta)
+        expected_top_width = 100 + 2 * n * (slant_len - delta) / 100
+        expected_bottom_width = 80 + 2 * n * (slant_len + delta) / 100
+        assert outset._construction["top_width"] == pytest.approx(expected_top_width)
+        assert outset._construction["bottom_width"] == pytest.approx(expected_bottom_width)
+        # bbox_w follows the wider face, which is now the top.
+        assert outset._construction["width"] == pytest.approx(expected_top_width)
+
+    def test_align_x_start_keeps_left_edge_straight(self):
+        """For align_x=START: the left edge stays vertical and shifts left by N."""
+        original = Trapezoid(
+            x=10,
+            y=20,
+            width=100,
+            height=100,
+            top_width=80,
+            bottom_width=100,
+            align_x=Alignment.START,
+            corners_radius=3,
+        )
+        n = 5
+        outset = original.outset(n)
+        assert outset._construction["x"] == pytest.approx(10 - n)
+        assert outset._construction["y"] == pytest.approx(20 - n)
+        assert outset._construction["align_x"] == Alignment.START
+        assert outset._construction["height"] == pytest.approx(100 + 2 * n)
+        assert outset._construction["corners_radius"] == pytest.approx(3 + n)
+
+    def test_align_x_end_keeps_right_edge_straight(self):
+        """For align_x=END: the right edge stays vertical at original_x + W + N."""
+        original = Trapezoid(
+            x=10,
+            y=20,
+            width=100,
+            height=100,
+            top_width=80,
+            bottom_width=100,
+            align_x=Alignment.END,
+            corners_radius=3,
+        )
+        n = 5
+        outset = original.outset(n)
+        # Right edge at new_x + new_bbox_w should equal original (x + W) + n.
+        right_edge = outset._construction["x"] + outset._construction["width"]
+        assert right_edge == pytest.approx(10 + 100 + n)
+        assert outset._construction["align_x"] == Alignment.END
+
+    def test_horizontal_align_y_start_dimensions(self):
+        """For align_y=START horizontal trapezoid: closed-form match."""
+        import math
+
+        original = Trapezoid(
+            x=0,
+            y=0,
+            width=100,
+            height=50,
+            left_height=40,
+            right_height=50,
+            align_y=Alignment.START,
+            corners_radius=2,
+        )
+        n = 4
+        outset = original.outset(n)
+        delta = 50 - 40
+        slant_len = math.sqrt(100 * 100 + delta * delta)
+        expected_lh = 40 + n * (100 + slant_len - delta) / 100
+        expected_rh = 50 + n * (100 + slant_len + delta) / 100
+        assert outset._construction["left_height"] == pytest.approx(expected_lh)
+        assert outset._construction["right_height"] == pytest.approx(expected_rh)
+        assert outset._construction["width"] == pytest.approx(108)
+        # bbox height = max(lh, rh) — for lh<rh, that's the right height.
+        assert outset._construction["height"] == pytest.approx(expected_rh)
+        assert outset._construction["x"] == pytest.approx(-n)
+        assert outset._construction["y"] == pytest.approx(-n)
+        assert outset._construction["corners_radius"] == pytest.approx(2 + n)
+
+    def test_corner_radius_grows_by_amount(self):
+        """Across all supported orientations, corners_radius grows by N."""
+        cases = [
+            Trapezoid(x=0, y=0, width=80, height=80, top_width=60, corners_radius=3),
+            Trapezoid(
+                x=0,
+                y=0,
+                width=80,
+                height=80,
+                top_width=60,
+                align_x=Alignment.START,
+                corners_radius=3,
+            ),
+            Trapezoid(
+                x=0,
+                y=0,
+                width=80,
+                height=80,
+                top_width=60,
+                align_x=Alignment.END,
+                corners_radius=3,
+            ),
+            Trapezoid(
+                x=0,
+                y=0,
+                width=80,
+                height=40,
+                left_height=40,
+                right_height=30,
+                align_y=Alignment.START,
+                corners_radius=3,
+            ),
+        ]
+        for trap in cases:
+            outset = trap.outset(2.5)
+            assert outset._construction["corners_radius"] == pytest.approx(5.5), (
+                f"corner radius did not grow for {trap._construction!r}"
+            )
+
+    def test_unsupported_align_raises(self):
+        """Horizontal align_y=CENTER currently raises NotImplementedError."""
+        original = Trapezoid(
+            x=0,
+            y=0,
+            width=80,
+            height=40,
+            left_height=40,
+            right_height=30,
+            align_y=Alignment.CENTER,
+        )
+        with pytest.raises(NotImplementedError, match="align_y"):
+            original.outset(2)
+
+    def test_perpendicular_distance_is_amount(self):
+        """For a CENTER trapezoid, perpendicular distance from the
+        original slanted edge to the outset slanted edge should be
+        exactly ``amount`` — proving this is a true Minkowski offset
+        rather than parameter inflation (which would yield
+        ``amount * cos(slant)``)."""
+        import math
+
+        # tw=70, bw=100, H=100. Slant angle θ from vertical:
+        # tan(θ) = 15/100 = 0.15, cos(θ) ≈ 0.9889. Param inflation
+        # would give x_shift_at_top = N (we expect more — N/cos(θ)).
+        original = Trapezoid(
+            x=0,
+            y=0,
+            width=100,
+            height=100,
+            top_width=70,
+            bottom_width=100,
+        )
+        n = 5
+        outset = original.outset(n)
+        delta = (100 - 70) / 2  # 15
+        slant_len = math.sqrt(100 * 100 + delta * delta)
+        cos_theta = 100 / slant_len
+        # Top corner of slanted side (right slant), original at x = 85.
+        # Perpendicular outset by N → x at new top edge level (y=-N) is
+        # 85 + N/cos(θ) shifted further by tan(θ)*N (because the new
+        # top is at a different y).
+        # Closed-form via formula: new_top_width = 70 + 2N*(L-Δ)/H.
+        new_top_width = outset._construction["top_width"]
+        expected_top_increase = 2 * n * (slant_len - delta) / 100
+        assert new_top_width - 70 == pytest.approx(expected_top_increase)
+        # Sanity-check that this is GREATER than 2*N*cos(θ) (param inflation
+        # would give 2*N for the bbox component, where Minkowski gives
+        # something larger by the cos factor):
+        param_inflation_top_increase = 2 * n  # what param inflation gave
+        assert new_top_width - 70 < param_inflation_top_increase, (
+            "for tw<bw, top width grows LESS than 2N because the new top "
+            "edge sits at y=-N and the slanted edge has been extended back"
+        )
+        # The reverse holds for bottom_width: it should grow MORE than 2N.
+        new_bottom_width = outset._construction["bottom_width"]
+        assert new_bottom_width - 100 > 2 * n
+        # And the perpendicular distance check: the diagonal of growth
+        # in the horizontal direction at the slant midline should be
+        # 2N/cos(θ).
+        avg_growth = ((new_top_width - 70) + (new_bottom_width - 100)) / 2
+        assert avg_growth == pytest.approx(2 * n / cos_theta)

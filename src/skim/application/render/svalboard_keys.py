@@ -504,14 +504,14 @@ def DoubleSouthKey(
 
     def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
         return Trapezoid(
-            x=-outset,
-            y=-outset,
-            width=width + 2 * outset,
-            height=width + 2 * outset,
-            bottom_width=bottom_width + 2 * outset,
+            x=0,
+            y=0,
+            width=width,
+            height=width,
+            bottom_width=bottom_width,
             corners_radius=accent_radius,
             fill=fill_color,
-        )
+        ).outset(outset)
 
     def draw_at(d, origin):
         x, y = origin.x, origin.y
@@ -618,14 +618,14 @@ def DownKey(
 
     def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
         return Trapezoid(
-            x=-outset,
-            y=-outset,
-            width=width + 2 * outset,
-            height=height + 2 * outset,
-            top_width=top_width + 2 * outset,
+            x=0,
+            y=0,
+            width=width,
+            height=height,
+            top_width=top_width,
             corners_radius=corner_radius,
             fill=fill_color,
-        )
+        ).outset(outset)
 
     def draw_at(d, origin):
         x, y = origin.x, origin.y
@@ -712,14 +712,14 @@ def DoubleDownKey(
 
     def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
         return Trapezoid(
-            x=inset - outset,
-            y=inset - outset,
-            width=(width - 2 * inset) + 2 * outset,
-            height=(height - 2 * inset) + 2 * outset,
-            top_width=(top_width - 2 * inset) + 2 * outset,
+            x=inset,
+            y=inset,
+            width=width - 2 * inset,
+            height=height - 2 * inset,
+            top_width=top_width - 2 * inset,
             corners_radius=corner_radius,
             fill=fill_color,
-        )
+        ).outset(outset)
 
     size = Size(width, height)
 
@@ -820,16 +820,16 @@ def UpKey(
 
     def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
         return Trapezoid(
-            x=-outset,
-            y=-outset,
-            width=width + 2 * outset,
-            height=height + 2 * outset,
-            left_height=None if inner_left_height is None else inner_left_height + 2 * outset,
-            right_height=None if inner_right_height is None else inner_right_height + 2 * outset,
+            x=0,
+            y=0,
+            width=width,
+            height=height,
+            left_height=inner_left_height,
+            right_height=inner_right_height,
             corners_radius=corner_radius,
             align_y=Alignment.START,
             fill=fill_color,
-        )
+        ).outset(outset)
 
     size = Size(width, height)
 
@@ -950,15 +950,15 @@ def _vertical_trapezoid_thumb_key(
 
     def _path(outset: float = 0.0) -> draw.DrawingBasicElement:
         return Trapezoid(
-            x=-outset,
-            y=-outset,
-            width=width + 2 * outset,
-            height=height + 2 * outset,
-            bottom_width=bottom_width + 2 * outset,
+            x=0,
+            y=0,
+            width=width,
+            height=height,
+            bottom_width=bottom_width,
             corners_radius=corner_radius,
             align_x=align_x,
             fill=fill_color,
-        )
+        ).outset(outset)
 
     def draw_at(d, origin):
         x, y = origin.x, origin.y

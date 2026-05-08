@@ -157,6 +157,178 @@ class Trapezoid(draw.DrawingBasicElement):
 
         self.args["d"] = path_data
 
+    def outset(self, amount: float) -> "Trapezoid":
+        """Return a new Trapezoid that is the Minkowski offset of self by ``amount``.
+
+        Every edge moves perpendicular to itself by ``amount``, and the
+        corner radii grow by ``amount`` — the shape you would get by
+        sweeping a disc of radius ``amount`` along the original outline.
+
+        For axis-aligned edges (e.g. the top/bottom of a vertical
+        trapezoid, or the left/right of a horizontal one with
+        align_y=START) the new edge is simply offset along the axis.
+        For slanted edges the math accounts for the slant angle so the
+        perpendicular distance is exactly ``amount``, not the slightly
+        smaller ``amount * cos(slant)`` you would get from naive
+        parameter inflation. Corner radii grow because the inscribed
+        corner circle of a Minkowski-offset shape gains ``amount`` in
+        radius.
+
+        Currently supports:
+
+        * Vertical trapezoids (``top_width`` / ``bottom_width`` set) with
+          ``align_x`` of CENTER, START, or END.
+        * Horizontal trapezoids (``left_height`` / ``right_height`` set)
+          with ``align_y`` of START.
+
+        Other ``align_y`` modes for horizontal trapezoids raise
+        :class:`NotImplementedError` — add cases here as the renderer
+        starts using them. ``amount`` of 0 returns a fresh equivalent
+        Trapezoid.
+        """
+        c = self._construction
+        x = c["x"]
+        y = c["y"]
+        bbox_w = c["width"]
+        bbox_h = c["height"]
+        radius = c["corners_radius"]
+
+        is_vertical = c["top_width"] is not None or c["bottom_width"] is not None
+
+        if is_vertical:
+            top_width = c["top_width"]
+            bottom_width = c["bottom_width"]
+            assert top_width is not None and bottom_width is not None  # noqa: S101
+            new_x, new_y, new_w, new_h, new_tw, new_bw = self._outset_vertical(
+                x=x,
+                y=y,
+                width=bbox_w,
+                height=bbox_h,
+                top_width=top_width,
+                bottom_width=bottom_width,
+                align_x=c["align_x"],
+                amount=amount,
+            )
+            return Trapezoid(
+                x=new_x,
+                y=new_y,
+                width=new_w,
+                height=new_h,
+                top_width=new_tw,
+                bottom_width=new_bw,
+                align_x=c["align_x"],
+                corners_radius=radius + amount,
+                **self._construction_kwargs,
+            )
+
+        left_height = c["left_height"]
+        right_height = c["right_height"]
+        assert left_height is not None and right_height is not None  # noqa: S101
+        new_x, new_y, new_w, new_h, new_lh, new_rh = self._outset_horizontal(
+            x=x,
+            y=y,
+            width=bbox_w,
+            left_height=left_height,
+            right_height=right_height,
+            align_y=c["align_y"],
+            amount=amount,
+        )
+        return Trapezoid(
+            x=new_x,
+            y=new_y,
+            width=new_w,
+            height=new_h,
+            left_height=new_lh,
+            right_height=new_rh,
+            align_y=c["align_y"],
+            corners_radius=radius + amount,
+            **self._construction_kwargs,
+        )
+
+    @staticmethod
+    def _outset_vertical(
+        *,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        top_width: float,
+        bottom_width: float,
+        align_x: Alignment,
+        amount: float,
+    ) -> tuple[float, float, float, float, float, float]:
+        """Return ``(new_x, new_y, new_bbox_w, new_bbox_h, new_top_width,
+        new_bottom_width)`` for the Minkowski outset of a vertical
+        trapezoid by ``amount``."""
+        n = amount
+        h = height
+        new_h = h + 2 * n
+
+        if align_x == Alignment.CENTER:
+            delta = (bottom_width - top_width) / 2.0
+            slant_len = math.sqrt(h * h + delta * delta)
+            new_tw = top_width + 2 * n * (slant_len - delta) / h
+            new_bw = bottom_width + 2 * n * (slant_len + delta) / h
+            new_bbox_w = max(new_tw, new_bw)
+            new_x = x + (width - new_bbox_w) / 2.0
+        elif align_x == Alignment.START:
+            delta = bottom_width - top_width
+            slant_len = math.sqrt(h * h + delta * delta)
+            new_tw = top_width + n * (h + slant_len - delta) / h
+            new_bw = bottom_width + n * (h + slant_len + delta) / h
+            new_bbox_w = max(new_tw, new_bw)
+            new_x = x - n
+        elif align_x == Alignment.END:
+            delta = bottom_width - top_width
+            slant_len = math.sqrt(h * h + delta * delta)
+            new_tw = top_width + n * (h + slant_len - delta) / h
+            new_bw = bottom_width + n * (h + slant_len + delta) / h
+            new_bbox_w = max(new_tw, new_bw)
+            new_x = x + width + n - new_bbox_w
+        else:
+            raise NotImplementedError(
+                f"Trapezoid.outset() does not support align_x={align_x!r} for vertical "
+                "trapezoids; add a case if a key starts using it."
+            )
+
+        new_y = y - n
+        return new_x, new_y, new_bbox_w, new_h, new_tw, new_bw
+
+    @staticmethod
+    def _outset_horizontal(
+        *,
+        x: float,
+        y: float,
+        width: float,
+        left_height: float,
+        right_height: float,
+        align_y: Alignment,
+        amount: float,
+    ) -> tuple[float, float, float, float, float, float]:
+        """Return ``(new_x, new_y, new_bbox_w, new_bbox_h, new_left_height,
+        new_right_height)`` for the Minkowski outset of a horizontal
+        trapezoid by ``amount``. The bbox height is recomputed from the
+        new edge heights, so it isn't passed in."""
+        n = amount
+        w = width
+        new_w = w + 2 * n
+
+        if align_y == Alignment.START:
+            delta = right_height - left_height
+            slant_len = math.sqrt(w * w + delta * delta)
+            new_lh = left_height + n * (w + slant_len - delta) / w
+            new_rh = right_height + n * (w + slant_len + delta) / w
+            new_bbox_h = max(new_lh, new_rh)
+            new_x = x - n
+            new_y = y - n
+        else:
+            raise NotImplementedError(
+                f"Trapezoid.outset() does not support align_y={align_y!r} for horizontal "
+                "trapezoids; add a case if a key starts using it."
+            )
+
+        return new_x, new_y, new_w, new_bbox_h, new_lh, new_rh
+
     def _calculate_vertical_points(
         self,
         width: float,
