@@ -82,8 +82,9 @@ output:
     use_system_fonts: false
     layer_indicator:
       show: true
-    layer_connector:
-      show: true
+    overview:
+      layer_connector:
+        show: true
     show_transparent_fallthrough: true
   keymap_title: Colemak Layers Layout
   copyright: "\xA9 2024, SVALBOARD.COM"

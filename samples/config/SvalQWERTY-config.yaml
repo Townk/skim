@@ -87,8 +87,9 @@ output:
     use_system_fonts: false
     layer_indicator:
       show: true
-    layer_connector:
-      show: true
+    overview:
+      layer_connector:
+        show: true
     show_transparent_fallthrough: true
     legend_tables:
       macros:
