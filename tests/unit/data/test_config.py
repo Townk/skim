@@ -183,6 +183,45 @@ class TestLayerQmkIndex:
         assert keyboard.layer_qmk_index(2) == 15
 
 
+class TestKeyboardLayerBaseLayerIndex:
+    """Tests for the per-layer ``base_layer_index`` field and its validation."""
+
+    def test_default_is_none(self):
+        """A newly built layer has no explicit base index."""
+        layer = KeyboardLayer(index=2, name="Symbols")
+        assert layer.base_layer_index is None
+
+    def test_accepts_valid_reference(self):
+        """A layer can point at any other configured layer."""
+        keyboard = Keyboard(
+            layers=[
+                KeyboardLayer(index=0, name="Base"),
+                KeyboardLayer(index=2, name="Symbols"),
+                KeyboardLayer(index=3, name="Numbers", base_layer_index=2),
+            ]
+        )
+        assert keyboard.layers[2].base_layer_index == 2
+
+    def test_rejects_self_reference(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Keyboard(
+                layers=[
+                    KeyboardLayer(index=2, name="Symbols", base_layer_index=2),
+                ]
+            )
+        assert "cannot reference the layer itself" in str(exc_info.value)
+
+    def test_rejects_unknown_index(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Keyboard(
+                layers=[
+                    KeyboardLayer(index=0, name="Base"),
+                    KeyboardLayer(index=3, name="Numbers", base_layer_index=9),
+                ]
+            )
+        assert "does not match any configured layer" in str(exc_info.value)
+
+
 class TestStyleShowLayerIndicators:
     """Tests for Style.layer_indicator.show field."""
 

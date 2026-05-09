@@ -18,6 +18,7 @@ keyboard:
     id: _GAM2
     name: Gaming
     variant: NUMBERS
+    base_layer_index: 2
   - index: 4
     id: _NAV
     name: Navigation

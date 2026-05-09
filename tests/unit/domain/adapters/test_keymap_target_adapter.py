@@ -317,6 +317,83 @@ class TestKeymapTargetAdapterFilteredBaseLayer:
         assert ghost.is_transparent is True
 
 
+class TestKeymapTargetAdapterPerLayerOverrides:
+    """Tests for ``layer_base_overrides`` — per-layer fall-through bases.
+
+    Mirrors a config where ``KeyboardLayer.base_layer_index`` is set on
+    individual layers: those layers point at their configured base, and
+    layers without an override fall back to the global ``base_layer_index``.
+    """
+
+    def _label_map(self) -> dict[str, SvalboardTargetKey]:
+        return {
+            "L0_L_I": SvalboardTargetKey(label="A0"),
+            "L2_L_I": SvalboardTargetKey(label="A2"),
+            "L3_L_I": SvalboardTargetKey(label="", is_transparent=True),
+            "L1_L_I": SvalboardTargetKey(label="", is_transparent=True),
+        }
+
+    def _keymap(self) -> SvalboardKeymap[str]:
+        return SvalboardKeymap({i: make_layout(f"L{i}") for i in (0, 1, 2, 3)})
+
+    def test_override_overrides_global_base(self):
+        """Layer 3's transparent key takes layer 2's value when 3→2 override."""
+        adapter = KeymapTargetAdapter(
+            MockLabelAdapter(self._label_map()),  # type: ignore[arg-type]
+            layer_base_overrides={3: 2},
+        )
+        result = adapter.transform(self._keymap())
+        ghost = result.layers[3].left.index.center_key
+        assert ghost.label == "A2"
+
+    def test_layer_without_override_uses_global_base(self):
+        """Layer 1 (no override) still falls through to global base layer 0."""
+        adapter = KeymapTargetAdapter(
+            MockLabelAdapter(self._label_map()),  # type: ignore[arg-type]
+            layer_base_overrides={3: 2},
+        )
+        result = adapter.transform(self._keymap())
+        ghost = result.layers[1].left.index.center_key
+        assert ghost.label == "A0"
+
+    def test_override_can_apply_to_layer_zero(self):
+        """An override on layer 0 itself redirects its fall-through too."""
+        adapter = KeymapTargetAdapter(
+            MockLabelAdapter(self._label_map()),  # type: ignore[arg-type]
+            layer_base_overrides={0: 2},
+        )
+        # Make layer 0's transparent so we can observe the substitution.
+        label_map = self._label_map()
+        label_map["L0_L_I"] = SvalboardTargetKey(label="", is_transparent=True)
+        adapter = KeymapTargetAdapter(
+            MockLabelAdapter(label_map),  # type: ignore[arg-type]
+            layer_base_overrides={0: 2},
+        )
+        result = adapter.transform(self._keymap())
+        ghost = result.layers[0].left.index.center_key
+        assert ghost.label == "A2"
+
+    def test_override_pointing_at_self_keeps_layer_unchanged(self):
+        """Defensive: an override that maps a layer to itself is a no-op."""
+        adapter = KeymapTargetAdapter(
+            MockLabelAdapter(self._label_map()),  # type: ignore[arg-type]
+            layer_base_overrides={3: 3},
+        )
+        result = adapter.transform(self._keymap())
+        ghost = result.layers[3].left.index.center_key
+        assert ghost.label == ""
+
+    def test_override_pointing_at_missing_layer_skips(self):
+        """Override referencing a layer not in the keymap leaves layer alone."""
+        adapter = KeymapTargetAdapter(
+            MockLabelAdapter(self._label_map()),  # type: ignore[arg-type]
+            layer_base_overrides={3: 99},
+        )
+        result = adapter.transform(self._keymap())
+        ghost = result.layers[3].left.index.center_key
+        assert ghost.label == ""
+
+
 class TestTransformLayer:
     def test_transforms_all_keys_in_layer(self):
         label_adapter = MockLabelAdapter()

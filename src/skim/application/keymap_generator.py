@@ -259,11 +259,12 @@ def _resolve_keymap(
     """Transform raw keycodes to renderable target keys.
 
     Applies keycode-to-label transformation using the configured mappings
-    and extracts layer-switching metadata for each key. When ``targets``
-    restricts the run to a subset of layers, transparent fall-through
-    sources its labels from the lowest QMK index in that subset rather
-    than always from layer 0 — so a filtered run does not bleed labels in
-    from layers the caller hid.
+    and extracts layer-switching metadata for each key. Transparent
+    fall-through resolves per layer: an explicit
+    ``KeyboardLayer.base_layer_index`` wins; otherwise the run-wide base
+    is used (the lowest index in ``targets.selected_layers`` for a
+    filtered run, else layer 0). This prevents a filtered run from
+    bleeding labels in from layers the caller hid.
 
     Args:
         config: The skim configuration containing keycode mappings.
@@ -282,10 +283,16 @@ def _resolve_keymap(
         if targets.selected_layers and not targets.all_layers
         else 0
     )
+    layer_base_overrides = {
+        layer.index: layer.base_layer_index
+        for layer in config.keyboard.layers
+        if layer.base_layer_index is not None
+    }
     keymap_adapter = KeymapTargetAdapter(
         label_adapter,
         fallthrough_to_layer_zero=config.output.style.show_transparent_fallthrough,
         base_layer_index=base_layer_index,
+        layer_base_overrides=layer_base_overrides,
     )
 
     keymap: SvalboardKeymap[SvalboardTargetKey] = keymap_adapter.transform(input_keymap)

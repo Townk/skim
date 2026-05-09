@@ -27,6 +27,8 @@ Example:
     ```
 """
 
+from collections.abc import Mapping
+
 from skim.data import SvalboardKeymap, SvalboardLayout
 from skim.domain import (
     SvalboardMacro,
@@ -125,12 +127,14 @@ class KeymapTargetAdapter:
     _label_adapter: KeycodeLabelAdapter
     _fallthrough_to_layer_zero: bool
     _base_layer_index: int
+    _layer_base_overrides: Mapping[int, int]
 
     def __init__(
         self,
         label_adapter: KeycodeLabelAdapter,
         fallthrough_to_layer_zero: bool = True,
         base_layer_index: int = 0,
+        layer_base_overrides: Mapping[int, int] | None = None,
     ) -> None:
         """Initialize the adapter with configuration and label transformer.
 
@@ -146,10 +150,16 @@ class KeymapTargetAdapter:
                 base). Set to the lowest QMK index of a layer-filtered run so
                 transparent keys don't bleed labels in from filtered-out
                 layers.
+            layer_base_overrides: Optional per-layer override map keyed by
+                QMK layer index. When a layer's QMK index appears here, its
+                transparent keys borrow from the mapped base index instead of
+                ``base_layer_index``. Layers absent from the map use
+                ``base_layer_index``. ``None`` (default) means no overrides.
         """
         self._label_adapter = label_adapter
         self._fallthrough_to_layer_zero = fallthrough_to_layer_zero
         self._base_layer_index = base_layer_index
+        self._layer_base_overrides = dict(layer_base_overrides) if layer_base_overrides else {}
 
     def transform(self, keymap: SvalboardKeymap[str]) -> SvalboardKeymap[SvalboardTargetKey]:
         """Transform an entire keymap from strings to target keys.
@@ -173,12 +183,9 @@ class KeymapTargetAdapter:
             for idx, layer in keymap.layers.items()
         }
 
-        base = layers.get(self._base_layer_index)
-        if self._fallthrough_to_layer_zero and base is not None:
+        if self._fallthrough_to_layer_zero:
             layers = {
-                idx: self._apply_fallthrough(layer, base, idx)
-                if idx != self._base_layer_index
-                else layer
+                idx: self._maybe_apply_fallthrough(idx, layer, layers)
                 for idx, layer in layers.items()
             }
         elif not self._fallthrough_to_layer_zero:
@@ -194,20 +201,39 @@ class KeymapTargetAdapter:
 
         return SvalboardKeymap(layers=layers, tap_dances=tap_dances, macros=macros)
 
+    def _maybe_apply_fallthrough(
+        self,
+        idx: int,
+        layer: SvalboardLayout[SvalboardTargetKey],
+        layers: Mapping[int, SvalboardLayout[SvalboardTargetKey]],
+    ) -> SvalboardLayout[SvalboardTargetKey]:
+        """Resolve the base for ``idx`` and substitute transparent keys.
+
+        Returns ``layer`` unchanged when the resolved base is the layer
+        itself or is missing from ``layers``.
+        """
+        base_idx = self._layer_base_overrides.get(idx, self._base_layer_index)
+        if base_idx == idx:
+            return layer
+        base = layers.get(base_idx)
+        if base is None:
+            return layer
+        return self._apply_fallthrough(layer, base, idx)
+
     @staticmethod
     def _apply_fallthrough(
         layer: SvalboardLayout[SvalboardTargetKey],
         base: SvalboardLayout[SvalboardTargetKey],
         current_layer_index: int,
     ) -> SvalboardLayout[SvalboardTargetKey]:
-        """Substitute layer-0 labels into transparent positions of ``layer``.
+        """Substitute base-layer labels into transparent positions of ``layer``.
 
         Transparent keys inherit both the label and the ``layer_switch`` from
-        the corresponding layer-0 key, so a fall-through key whose base maps
-        to a layer change is treated as a layer-changing key during
+        the corresponding base-layer key, so a fall-through key whose base
+        maps to a layer change is treated as a layer-changing key during
         rendering (layer-coloured background, layer indicator, connector).
 
-        Self-referential cases — where the layer-0 source maps to
+        Self-referential cases — where the base source maps to
         ``current_layer_index`` (e.g. ``MO(1)`` viewed on layer 1) — are
         suppressed: the substitution is skipped and the position renders as
         a blank transparent key (no label, no layer indicator, no connector).

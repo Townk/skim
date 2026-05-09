@@ -47,7 +47,7 @@ from collections.abc import Sequence
 from enum import Enum
 from typing import Annotated, Any
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PrivateAttr
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PrivateAttr, model_validator
 
 
 def _coerce_to_tuple(v: Any) -> Any:
@@ -76,6 +76,13 @@ class KeyboardLayer(BaseModel):
         variant: Optional secondary label shown below the layer name
             (e.g., "COLEMAK"). Used to display additional layer metadata
             in the overview image. Defaults to None if not specified.
+        base_layer_index: Optional QMK index of the layer this layer's
+            transparent keys should fall through to. ``None`` (default)
+            means the renderer picks the conventional base — layer 0
+            for an unfiltered run, or the lowest selected index for a
+            layer-filtered run. Set this to override on a per-layer
+            basis. The referenced layer must exist in
+            ``Keyboard.layers`` and cannot be the layer itself.
 
     Example:
         ```pycon
@@ -94,6 +101,7 @@ class KeyboardLayer(BaseModel):
     id: str | None = None
     name: str
     variant: str | None = None
+    base_layer_index: int | None = None
 
 
 class KeyboardFeatures(BaseModel):
@@ -161,6 +169,28 @@ class Keyboard(BaseModel):
     layers: Annotated[tuple[KeyboardLayer, ...], BeforeValidator(_coerce_to_tuple)] = ()
     _layer_id_map: dict[str, int] = PrivateAttr(default_factory=dict)
     _qmk_index_map: dict[int, int] = PrivateAttr(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _validate_base_layer_indices(self) -> "Keyboard":
+        """Reject ``base_layer_index`` values that self-refer or point at a
+        QMK index not present in ``layers``."""
+        known = {layer.index for layer in self.layers}
+        for layer in self.layers:
+            base = layer.base_layer_index
+            if base is None:
+                continue
+            if base == layer.index:
+                raise ValueError(
+                    f"keyboard.layers[index={layer.index}].base_layer_index "
+                    f"cannot reference the layer itself"
+                )
+            if base not in known:
+                raise ValueError(
+                    f"keyboard.layers[index={layer.index}].base_layer_index={base} "
+                    f"does not match any configured layer (known indices: "
+                    f"{sorted(known)})"
+                )
+        return self
 
     def model_post_init(self, context: object) -> None:
         """Initialize the layer ID lookup map after model construction.

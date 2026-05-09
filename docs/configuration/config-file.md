@@ -139,6 +139,7 @@ keyboard:
       id: <string>
       name: <string>
       variant: <string>
+      base_layer_index: <integer>
     - ...
 ```
 
@@ -245,6 +246,28 @@ image — typically used to tag the keymap variant (`"QWERTY"`, `"COLEMAK"`,
 </figure>
 
 </div>
+
+---
+
+#### `base_layer_index`
+
+| Type      | Default | Range    |
+| --------- | ------- | -------- |
+| `integer` \| `null` | `null` | `0`–`31` |
+
+The QMK index of the layer this layer's transparent (`KC_TRNS` / `_______`)
+keys should fall through to when Skim resolves their displayed labels. By
+default Skim picks the conventional base — layer `0` for an unfiltered run,
+or the lowest selected index for a layer-filtered run (e.g. `skim generate
+-l 2 -l 3` uses layer `2`). Set this when a specific layer's transparent
+keys logically inherit from a layer that is not the run-wide base — for
+example a "numbers" layer stacked on top of a "symbols" layer rather than
+on the alpha base.
+
+The value must be a `index` of another layer present in `keyboard.layers`;
+self-references are rejected at config load time. This option only changes
+the *displayed* labels; QMK's runtime fall-through behavior on the keyboard
+itself is unaffected.
 
 ---
 

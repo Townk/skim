@@ -226,6 +226,7 @@ class TestResolveKeymap:
             mock_label_adapter,
             fallthrough_to_layer_zero=True,
             base_layer_index=0,
+            layer_base_overrides={},
         )
         mock_target_adapter.transform.assert_called_once_with(input_keymap)
         assert result is mock_transformed_keymap
@@ -256,6 +257,7 @@ class TestResolveKeymap:
             mock_label_adapter,
             fallthrough_to_layer_zero=False,
             base_layer_index=0,
+            layer_base_overrides={},
         )
 
     @patch("skim.application.keymap_generator.KeymapTargetAdapter")
@@ -293,6 +295,35 @@ class TestResolveKeymap:
 
         kwargs = mock_target_adapter_cls.call_args.kwargs
         assert kwargs["base_layer_index"] == 0
+
+    @patch("skim.application.keymap_generator.KeymapTargetAdapter")
+    @patch("skim.application.keymap_generator.KeycodeLabelAdapter")
+    @patch("skim.application.keymap_generator.load_keycode_mappings")
+    def test_per_layer_base_index_threaded_into_overrides(
+        self, mock_load_mappings, mock_label_adapter_cls, mock_target_adapter_cls
+    ):
+        """Layers with explicit ``base_layer_index`` populate the override
+        map; layers without it stay out of the map and use the global base."""
+        from skim.data.config import Keyboard, KeyboardLayer
+
+        mock_load_mappings.return_value = {"keycodes": {}}
+        mock_label_adapter_cls.return_value = MagicMock()
+        mock_target_adapter_cls.return_value = MagicMock()
+
+        keyboard = Keyboard(
+            layers=(
+                KeyboardLayer(index=0, name="Base"),
+                KeyboardLayer(index=2, name="Symbols"),
+                KeyboardLayer(index=3, name="Numbers", base_layer_index=2),
+            )
+        )
+        config = SkimConfig().model_copy(update={"keyboard": keyboard})
+
+        targets = KeymapGeneratorTargets(all_layers=True)
+        _resolve_keymap(config, MagicMock(spec=SvalboardKeymap), targets)
+
+        kwargs = mock_target_adapter_cls.call_args.kwargs
+        assert kwargs["layer_base_overrides"] == {3: 2}
 
 
 class TestGenerateKeymap:
