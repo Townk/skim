@@ -252,16 +252,24 @@ def _get_input_keymap(inputs: InputFiles, config: SkimConfig) -> SvalboardKeymap
 
 
 def _resolve_keymap(
-    config: SkimConfig, input_keymap: SvalboardKeymap[str]
+    config: SkimConfig,
+    input_keymap: SvalboardKeymap[str],
+    targets: KeymapGeneratorTargets,
 ) -> SvalboardKeymap[SvalboardTargetKey]:
     """Transform raw keycodes to renderable target keys.
 
     Applies keycode-to-label transformation using the configured mappings
-    and extracts layer-switching metadata for each key.
+    and extracts layer-switching metadata for each key. When ``targets``
+    restricts the run to a subset of layers, transparent fall-through
+    sources its labels from the lowest QMK index in that subset rather
+    than always from layer 0 — so a filtered run does not bleed labels in
+    from layers the caller hid.
 
     Args:
         config: The skim configuration containing keycode mappings.
         input_keymap: A keymap containing raw QMK keycode strings.
+        targets: Generation targets, used to pick the fall-through base
+            layer when the run is layer-filtered.
 
     Returns:
         A keymap containing SvalboardTargetKey objects with display labels
@@ -269,9 +277,15 @@ def _resolve_keymap(
     """
     mappings = load_keycode_mappings(config.keycodes)
     label_adapter: KeycodeLabelAdapter = KeycodeLabelAdapter(config.keyboard, mappings)
+    base_layer_index = (
+        min(targets.selected_layers)
+        if targets.selected_layers and not targets.all_layers
+        else 0
+    )
     keymap_adapter = KeymapTargetAdapter(
         label_adapter,
         fallthrough_to_layer_zero=config.output.style.show_transparent_fallthrough,
+        base_layer_index=base_layer_index,
     )
 
     keymap: SvalboardKeymap[SvalboardTargetKey] = keymap_adapter.transform(input_keymap)
@@ -342,7 +356,7 @@ def generate_keymap(
         adjust_saturation=adjust_saturation,
     )
     input_keymap = _get_input_keymap(inputs, config)
-    keymap = _resolve_keymap(config, input_keymap)
+    keymap = _resolve_keymap(config, input_keymap, targets)
     keycode_mappings = load_keycode_mappings(config.keycodes)
     drawings = draw_keymap(
         config,

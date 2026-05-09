@@ -81,12 +81,13 @@ def _render_case(case: _Case) -> dict[str, str]:
     config = _get_config(None, use_system_fonts=True, keymap_for_defaults=case.keymap)
     inputs = InputFiles(keymap=case.keymap)
     raw_keymap = _get_input_keymap(inputs, config)
-    keymap = _resolve_keymap(config, raw_keymap)
+    targets = case.targets()
+    keymap = _resolve_keymap(config, raw_keymap, targets)
     keycode_mappings = load_keycode_mappings(config.keycodes)
     drawings = draw_keymap(
         config,
         keymap,
-        case.targets(),
+        targets,
         raw_keymap=raw_keymap,
         keycode_mappings=keycode_mappings,
     )

@@ -68,7 +68,7 @@ def _substitute(
     base_key: SvalboardTargetKey,
     current_layer_index: int,
 ) -> SvalboardTargetKey:
-    """Resolve one transparent position against its layer-0 source."""
+    """Resolve one transparent position against its base-layer source."""
     if not key.is_transparent:
         return key
     if base_key.layer_switch == current_layer_index:
@@ -124,11 +124,13 @@ class KeymapTargetAdapter:
 
     _label_adapter: KeycodeLabelAdapter
     _fallthrough_to_layer_zero: bool
+    _base_layer_index: int
 
     def __init__(
         self,
         label_adapter: KeycodeLabelAdapter,
         fallthrough_to_layer_zero: bool = True,
+        base_layer_index: int = 0,
     ) -> None:
         """Initialize the adapter with configuration and label transformer.
 
@@ -136,21 +138,27 @@ class KeymapTargetAdapter:
             label_adapter: The adapter for transforming individual keycodes
                 to labels.
             fallthrough_to_layer_zero: When True (default), transparent keys
-                on layers above 0 borrow their display label from the same
-                key position on layer 0. Set False to leave transparent keys
-                blank.
+                on layers other than ``base_layer_index`` borrow their display
+                label from the same key position on the base layer. Set False
+                to leave transparent keys blank.
+            base_layer_index: QMK index of the layer used as the source for
+                transparent fall-through. Defaults to 0 (the conventional QMK
+                base). Set to the lowest QMK index of a layer-filtered run so
+                transparent keys don't bleed labels in from filtered-out
+                layers.
         """
         self._label_adapter = label_adapter
         self._fallthrough_to_layer_zero = fallthrough_to_layer_zero
+        self._base_layer_index = base_layer_index
 
     def transform(self, keymap: SvalboardKeymap[str]) -> SvalboardKeymap[SvalboardTargetKey]:
         """Transform an entire keymap from strings to target keys.
 
         Processes each layer in the keymap, converting raw keycode strings
         to SvalboardTargetKey objects containing display labels and layer
-        metadata. When fallthrough is enabled and layer 0 is present, any
-        transparent key on a higher layer is rewritten to display the
-        layer-0 label at the same position.
+        metadata. When fallthrough is enabled and the base layer is present,
+        any transparent key on a non-base layer is rewritten to display the
+        base layer's label at the same position.
 
         Args:
             keymap: A keymap containing raw QMK keycode strings at each
@@ -165,10 +173,12 @@ class KeymapTargetAdapter:
             for idx, layer in keymap.layers.items()
         }
 
-        base = layers.get(0)
+        base = layers.get(self._base_layer_index)
         if self._fallthrough_to_layer_zero and base is not None:
             layers = {
-                idx: self._apply_fallthrough(layer, base, idx) if idx != 0 else layer
+                idx: self._apply_fallthrough(layer, base, idx)
+                if idx != self._base_layer_index
+                else layer
                 for idx, layer in layers.items()
             }
         elif not self._fallthrough_to_layer_zero:

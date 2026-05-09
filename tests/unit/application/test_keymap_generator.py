@@ -216,14 +216,16 @@ class TestResolveKeymap:
 
         config = SkimConfig()
         input_keymap = MagicMock(spec=SvalboardKeymap)
+        targets = KeymapGeneratorTargets(all_layers=True, overview=True)
 
-        result = _resolve_keymap(config, input_keymap)
+        result = _resolve_keymap(config, input_keymap, targets)
 
         mock_load_mappings.assert_called_once_with(config.keycodes)
         mock_label_adapter_cls.assert_called_once_with(config.keyboard, mock_mappings)
         mock_target_adapter_cls.assert_called_once_with(
             mock_label_adapter,
             fallthrough_to_layer_zero=True,
+            base_layer_index=0,
         )
         mock_target_adapter.transform.assert_called_once_with(input_keymap)
         assert result is mock_transformed_keymap
@@ -247,12 +249,50 @@ class TestResolveKeymap:
         new_output = SkimConfig().output.model_copy(update={"style": new_style})
         config = SkimConfig().model_copy(update={"output": new_output})
 
-        _resolve_keymap(config, MagicMock(spec=SvalboardKeymap))
+        targets = KeymapGeneratorTargets(all_layers=True, overview=True)
+        _resolve_keymap(config, MagicMock(spec=SvalboardKeymap), targets)
 
         mock_target_adapter_cls.assert_called_once_with(
             mock_label_adapter,
             fallthrough_to_layer_zero=False,
+            base_layer_index=0,
         )
+
+    @patch("skim.application.keymap_generator.KeymapTargetAdapter")
+    @patch("skim.application.keymap_generator.KeycodeLabelAdapter")
+    @patch("skim.application.keymap_generator.load_keycode_mappings")
+    def test_filtered_run_uses_lowest_selected_layer_as_base(
+        self, mock_load_mappings, mock_label_adapter_cls, mock_target_adapter_cls
+    ):
+        """A layer-filtered run picks the lowest selected QMK index as the
+        fall-through base, so layer 0 doesn't bleed into a {2, 3} run."""
+        mock_load_mappings.return_value = {"keycodes": {}}
+        mock_label_adapter_cls.return_value = MagicMock()
+        mock_target_adapter_cls.return_value = MagicMock()
+
+        targets = KeymapGeneratorTargets(selected_layers=[3, 2])
+        _resolve_keymap(SkimConfig(), MagicMock(spec=SvalboardKeymap), targets)
+
+        kwargs = mock_target_adapter_cls.call_args.kwargs
+        assert kwargs["base_layer_index"] == 2
+
+    @patch("skim.application.keymap_generator.KeymapTargetAdapter")
+    @patch("skim.application.keymap_generator.KeycodeLabelAdapter")
+    @patch("skim.application.keymap_generator.load_keycode_mappings")
+    def test_all_layers_keeps_layer_zero_as_base(
+        self, mock_load_mappings, mock_label_adapter_cls, mock_target_adapter_cls
+    ):
+        """``all_layers=True`` ignores any incidental ``selected_layers`` and
+        keeps the conventional layer-0 base."""
+        mock_load_mappings.return_value = {"keycodes": {}}
+        mock_label_adapter_cls.return_value = MagicMock()
+        mock_target_adapter_cls.return_value = MagicMock()
+
+        targets = KeymapGeneratorTargets(all_layers=True, selected_layers=[2, 3])
+        _resolve_keymap(SkimConfig(), MagicMock(spec=SvalboardKeymap), targets)
+
+        kwargs = mock_target_adapter_cls.call_args.kwargs
+        assert kwargs["base_layer_index"] == 0
 
 
 class TestGenerateKeymap:
@@ -293,7 +333,7 @@ class TestGenerateKeymap:
 
         mock_get_config.assert_called_once()
         mock_get_input_keymap.assert_called_once_with(inputs, mock_config)
-        mock_resolve_keymap.assert_called_once_with(mock_config, mock_input_keymap)
+        mock_resolve_keymap.assert_called_once_with(mock_config, mock_input_keymap, targets)
         # draw_keymap is called with positional args + optional raw_keymap / keycode_mappings kwargs
         mock_draw_keymap.assert_called_once()
         draw_call_args, draw_call_kwargs = mock_draw_keymap.call_args

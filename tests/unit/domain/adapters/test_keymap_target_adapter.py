@@ -251,6 +251,72 @@ class TestKeymapTargetAdapterTransparentFallthrough:
         assert higher_key.macro_id is None
 
 
+class TestKeymapTargetAdapterFilteredBaseLayer:
+    """Tests that ``base_layer_index`` redirects fall-through to a filtered base.
+
+    When the caller restricts a run to e.g. layers {2, 3}, transparent keys
+    on layer 3 should borrow labels from layer 2, NOT from layer 0 — layer 0
+    is filtered out of the run and its labels would bleed into the output.
+    """
+
+    def _label_map(self) -> dict[str, SvalboardTargetKey]:
+        return {
+            "L0_L_I": SvalboardTargetKey(label="A0"),
+            "L2_L_I": SvalboardTargetKey(label="A2"),
+            "L3_L_I": SvalboardTargetKey(label="", is_transparent=True),
+            "L2_L_M": SvalboardTargetKey(label="", is_transparent=True),
+        }
+
+    def _keymap(self) -> SvalboardKeymap[str]:
+        return SvalboardKeymap(
+            {i: make_layout(f"L{i}") for i in (0, 2, 3)},
+        )
+
+    def test_layer_three_borrows_from_filtered_base_layer_two(self):
+        adapter = KeymapTargetAdapter(
+            MockLabelAdapter(self._label_map()),  # type: ignore[arg-type]
+            base_layer_index=2,
+        )
+        result = adapter.transform(self._keymap())
+        ghost = result.layers[3].left.index.center_key
+        assert ghost.label == "A2"
+        assert ghost.is_transparent is True
+
+    def test_base_layer_itself_keeps_transparent_blank(self):
+        """A transparent key ON the base layer stays blank — there is no
+        lower layer to fall through to in a filtered run."""
+        adapter = KeymapTargetAdapter(
+            MockLabelAdapter(self._label_map()),  # type: ignore[arg-type]
+            base_layer_index=2,
+        )
+        result = adapter.transform(self._keymap())
+        base_blank = result.layers[2].left.middle.center_key
+        assert base_blank.label == ""
+        assert base_blank.is_transparent is True
+
+    def test_layer_zero_not_consulted_when_base_is_two(self):
+        """Layer 0's label must NOT leak into layer 3 when base is layer 2."""
+        adapter = KeymapTargetAdapter(
+            MockLabelAdapter(self._label_map()),  # type: ignore[arg-type]
+            base_layer_index=2,
+        )
+        result = adapter.transform(self._keymap())
+        ghost = result.layers[3].left.index.center_key
+        assert ghost.label != "A0"
+
+    def test_missing_base_layer_skips_substitution(self):
+        """If the requested base layer is not in the keymap, fall back to
+        leaving transparent keys unchanged (parity with the layer-0 path)."""
+        adapter = KeymapTargetAdapter(
+            MockLabelAdapter(self._label_map()),  # type: ignore[arg-type]
+            base_layer_index=5,
+        )
+        result = adapter.transform(self._keymap())
+        ghost = result.layers[3].left.index.center_key
+        assert ghost.label == ""
+        assert ghost.is_transparent is True
+
+
 class TestTransformLayer:
     def test_transforms_all_keys_in_layer(self):
         label_adapter = MockLabelAdapter()
