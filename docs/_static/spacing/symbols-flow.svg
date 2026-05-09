@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-     width="1059.2" height="213.0" viewBox="0 0 1059.2 213.0">
+     width="1041.2" height="213.0" viewBox="0 0 1041.2 213.0">
 <style>/*<![CDATA[*/
                 @font-face {
                     font-family: 'Finger-Key-Label';
@@ -16,35 +16,35 @@
 <defs>
 </defs>
 <text x="16.0" y="16.0" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#888888">SYMBOLS</text>
-<text x="493.6" y="16.0" font-size="10.0" text-anchor="end" dominant-baseline="text-before-edge" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">6 ENTRIES</text>
-<path d="M16.0,36.0 L493.6,36.0" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
+<text x="484.6" y="16.0" font-size="10.0" text-anchor="end" dominant-baseline="text-before-edge" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">6 ENTRIES</text>
+<path d="M16.0,36.0 L484.6,36.0" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
 <text x="16.0" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘳</text>
 <text x="50.575" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Command</text>
 <text x="17.950000000000003" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘴</text>
 <text x="50.575" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Control</text>
 <text x="16.975" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘵</text>
 <text x="50.575" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Option</text>
-<text x="275.725" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">0</text>
-<text x="307.375" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Base layer</text>
-<text x="275.725" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">1</text>
-<text x="307.375" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Numbers / Symbols</text>
-<text x="275.725" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">2</text>
-<text x="307.375" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Function / Navigation</text>
-<text x="254.8" y="185.0" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">"column"</text>
-<text x="565.6" y="16.0" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#888888">SYMBOLS</text>
-<text x="1043.2" y="16.0" font-size="10.0" text-anchor="end" dominant-baseline="text-before-edge" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">6 ENTRIES</text>
-<path d="M565.6,36.0 L1043.2,36.0" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
-<text x="565.6" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘳</text>
-<text x="600.1750000000001" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Command</text>
-<text x="824.3500000000001" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘴</text>
-<text x="856.9750000000001" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Control</text>
-<text x="566.575" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘵</text>
-<text x="600.1750000000001" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Option</text>
-<text x="825.3250000000002" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">0</text>
-<text x="856.9750000000001" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Base layer</text>
-<text x="568.5250000000001" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">1</text>
-<text x="600.1750000000001" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Numbers / Symbols</text>
-<text x="825.3250000000002" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">2</text>
-<text x="856.9750000000001" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Function / Navigation</text>
-<text x="804.4000000000001" y="185.0" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">"row"</text>
+<text x="266.725" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">0</text>
+<text x="298.375" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Base layer</text>
+<text x="266.725" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">1</text>
+<text x="298.375" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Numbers / Symbols</text>
+<text x="266.725" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">2</text>
+<text x="298.375" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Function / Navigation</text>
+<text x="250.3" y="185.0" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">"column"</text>
+<text x="556.6" y="16.0" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#888888">SYMBOLS</text>
+<text x="1025.2" y="16.0" font-size="10.0" text-anchor="end" dominant-baseline="text-before-edge" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">6 ENTRIES</text>
+<path d="M556.6,36.0 L1025.2,36.0" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
+<text x="556.6" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘳</text>
+<text x="591.1750000000001" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Command</text>
+<text x="806.3500000000001" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘴</text>
+<text x="838.9750000000001" y="75.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Control</text>
+<text x="557.575" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘵</text>
+<text x="591.1750000000001" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Option</text>
+<text x="807.3250000000002" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">0</text>
+<text x="838.9750000000001" y="118.5" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Base layer</text>
+<text x="559.5250000000001" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">1</text>
+<text x="591.1750000000001" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Numbers / Symbols</text>
+<text x="807.3250000000002" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="1.0" font-weight="700">2</text>
+<text x="838.9750000000001" y="162.0" font-size="19.5" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Function / Navigation</text>
+<text x="790.9000000000001" y="185.0" font-size="12.0" text-anchor="middle" dominant-baseline="text-before-edge" font-family="Roboto, sans-serif" fill="#4B5563">"row"</text>
 </svg>

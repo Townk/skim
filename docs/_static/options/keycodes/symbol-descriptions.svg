@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-     width="797.39" height="171.22" viewBox="0 0 797.39 171.22">
+     width="765.35" height="171.22" viewBox="0 0 765.35 171.22">
 <style>/*<![CDATA[*/
                 @font-face {
                     font-family: 'Finger-Key-Label';
@@ -15,24 +15,24 @@
                 /*]]>*/</style>
 <defs>
 </defs>
-<rect x="0.5" y="0.5" width="796.39" height="170.22" rx="18.0" ry="18.0" fill="#FFFFFF" stroke="#D4D8DD" stroke-width="1.0" />
+<rect x="0.5" y="0.5" width="764.35" height="170.22" rx="18.0" ry="18.0" fill="#FFFFFF" stroke="#D4D8DD" stroke-width="1.0" />
 <text x="20.0" y="20.0" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#888888">SYMBOLS</text>
-<text x="777.39" y="20.0" font-size="10.0" text-anchor="end" dominant-baseline="text-before-edge" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">8 ENTRIES</text>
-<path d="M20.0,40.0 L777.39,40.0" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
+<text x="745.35" y="20.0" font-size="10.0" text-anchor="end" dominant-baseline="text-before-edge" fill="#888" font-weight="400" letter-spacing="1.0" font-family="'Roboto', sans-serif">8 ENTRIES</text>
+<path d="M20.0,40.0 L745.35,40.0" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
 <text x="23.856666666666666" y="81.8" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘴</text>
 <text x="64.5" y="81.8" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Control</text>
-<text x="222.92" y="81.79999999999998" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘵</text>
-<text x="264.52750000000003" y="81.8" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Option</text>
-<text x="421.98333333333335" y="81.8" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘳</text>
-<text x="464.555" y="81.8" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Command</text>
-<text x="622.0108333333334" y="81.79999999999998" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘶</text>
-<text x="664.5825" y="81.8" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Shift</text>
+<text x="212.23999999999998" y="81.79999999999998" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘵</text>
+<text x="253.84750000000003" y="81.8" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Option</text>
+<text x="400.62333333333333" y="81.8" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘳</text>
+<text x="443.195" y="81.8" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Command</text>
+<text x="589.9708333333334" y="81.79999999999998" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰘶</text>
+<text x="632.5425" y="81.8" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Shift</text>
 <text x="22.410416666666666" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰌑</text>
 <text x="64.5" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Return</text>
-<text x="220.0275" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰁮</text>
-<text x="264.52750000000003" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Backspace</text>
-<text x="420.055" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰹾</text>
-<text x="464.555" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Delete</text>
-<text x="622.975" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󱁐</text>
-<text x="664.5825" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Space</text>
+<text x="209.3475" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰁮</text>
+<text x="253.84750000000003" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Backspace</text>
+<text x="398.695" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󰹾</text>
+<text x="443.195" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Delete</text>
+<text x="590.9350000000001" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Key-Symbols" fill="black" opacity="1.0" font-weight="700">󱁐</text>
+<text x="632.5425" y="133.42000000000002" font-size="23.14" text-anchor="start" dominant-baseline="central" font-family="Finger-Key-Label" fill="black" opacity="0.75">Space</text>
 </svg>
