@@ -755,6 +755,8 @@ output:
     ...
   style:
     ...
+  overview:
+    ...
 ```
 
 Skim is configured to layout the keymap elements proportionally everywhere.
@@ -1188,8 +1190,8 @@ output:
     # Object-shaped configs
     border:
       ...                      # see output.style.border below
-    layer_connector:
-      ...                      # see output.style.layer_connector below
+    overview:
+      ...                      # see output.style.overview below
     layer_indicator:
       ...                      # see output.style.layer_indicator below
     legend_tables:
@@ -1325,7 +1327,139 @@ Corner radius for the rounded rectangle. Set to `0` for square corners.
 
 ---
 
-#### `layer_connector` { #output-style-layer-connector }
+#### `overview` { #output-style-overview }
+
+Controls how the multi-layer **overview image** stacks its per-layer
+rows, where the (single) **thumb-cluster row** sits among them, and
+which layer that thumb cluster is sourced from. Only affects the
+overview image (`-l overview`); the per-layer images are unchanged.
+
+Current schema:
+
+```yaml
+output:
+  style:
+    overview:
+      layer_order: <"ascending" | "descending">
+      thumb_layer: <integer | null>
+      thumb_position: <"top" | "bottom" | "follow">
+      layer_connector:
+        ...                      # see output.style.overview.layer_connector below
+```
+
+The thumb cluster reflects whichever layer `thumb_layer` names —
+or, when left unset, the layer at the "anchor" end of the rendered
+stack (last rendered for `descending`, first rendered for
+`ascending`). `thumb_position` only changes the cluster's visual
+location.
+
+---
+
+##### `layer_order` { #output-style-overview-layer-order }
+
+| Type     | Default        |
+| -------- | -------------- |
+| `"ascending"` \| `"descending"` | `"descending"` |
+
+Direction in which the overview stacks its per-layer rows.
+
+* `"ascending"`: Layer 0 at the top, highest QMK index at the bottom.
+  Reads "base layer first" — natural reading order if you think of
+  layer 0 as the foundation and higher layers as additions.
+* `"descending"` (default, legacy behaviour): highest QMK index at the
+  top, Layer 0 at the bottom. Reads "most-specialised first" — the
+  topmost layer is the one most likely to be active when typing.
+
+<figure markdown="1">
+<figcaption><code>layer_order: descending</code></figcaption>
+![Overview with layers stacked descending](../_static/options/overview-layer-order/descending.svg){ width="640" loading=lazy }
+</figure>
+
+<figure markdown="1">
+<figcaption><code>layer_order: ascending</code></figcaption>
+![Overview with layers stacked ascending](../_static/options/overview-layer-order/ascending.svg){ width="640" loading=lazy }
+</figure>
+
+---
+
+##### `thumb_layer` { #output-style-overview-thumb-layer }
+
+| Type                | Default                   |
+| ------------------- | ------------------------- |
+| `integer` \| `null` | `null` (resolved at render time) |
+
+QMK layer index whose thumb cluster is rendered in the overview's
+**THUMBS** row.
+
+When this field is `null` or omitted, the renderer picks the layer
+at the "anchor" end of the rendered stack:
+
+* `layer_order: descending` → the **last** rendered layer (the row
+  at the bottom of the stack — typically the lowest QMK index in
+  the keymap).
+* `layer_order: ascending` → the **first** rendered layer (the row
+  at the top of the stack — typically the lowest QMK index in the
+  keymap).
+
+This makes the default work for any keymap, even one that doesn't
+define QMK index `0` at all (e.g. a Vial config that only populates
+layers `1`, `2`, `14`). If you provide an explicit value but the
+layer isn't in the keymap, the renderer falls back to the same
+contextual default.
+
+<figure markdown="1">
+<figcaption><code>thumb_layer: 1</code> (with <code>layer_order: ascending</code>, default <code>thumb_position: follow</code>)</figcaption>
+![Overview sourcing the thumb cluster from Lower](../_static/options/overview-thumb-layer/lower.svg){ width="640" loading=lazy }
+</figure>
+
+---
+
+##### `thumb_position` { #output-style-overview-thumb-position }
+
+| Type     | Default      |
+| -------- | ------------ |
+| `"top"` \| `"bottom"` \| `"follow"` | `"follow"`   |
+
+Where to place the **THUMBS** row in the rendered stack. The thumb
+cluster always reflects the keymap's first configured layer
+(typically QMK index 0); this option only changes its visual
+location.
+
+* `"follow"` (default): thumb row sits directly below the layer it
+  represents, regardless of where that layer ends up in the stack.
+  With `layer_order: descending` the base layer is already at the
+  bottom, so the thumb lands there too — same as `"bottom"`. With
+  `layer_order: ascending` the thumb tucks under the base layer at
+  the top of the stack instead.
+* `"top"`: thumb row sits before every layer.
+* `"bottom"` (legacy behaviour): thumb row sits after every layer.
+
+<figure markdown="1">
+<figcaption><code>thumb_position: top</code></figcaption>
+![Overview with thumb row at the top](../_static/options/overview-thumb-position/top.svg){ width="640" loading=lazy }
+</figure>
+
+<figure markdown="1">
+<figcaption><code>thumb_position: bottom</code></figcaption>
+![Overview with thumb row at the bottom](../_static/options/overview-thumb-position/bottom.svg){ width="640" loading=lazy }
+</figure>
+
+<figure markdown="1">
+<figcaption><code>thumb_position: follow</code> (with <code>layer_order: ascending</code>)</figcaption>
+![Overview with thumb row directly below the base layer](../_static/options/overview-thumb-position/follow.svg){ width="640" loading=lazy }
+</figure>
+
+> [!NOTE]
+> The connector routing engine handles the thumb at any position —
+> connectors that cross over the thumb row are routed via the
+> right-column lane bank rather than overlapping the thumb cluster's
+> chrome. Lane allocation grows the inter-row gaps as needed, so
+> visually-adjacent rows that have many cross-layer connectors will
+> sit further apart than rows that don't.
+
+---
+
+##### `layer_connector` { #output-style-overview-layer-connector }
 Configures the dotted connector paths painted in the keymap overview
 image — the lines linking each layer indicator circle to its
 corresponding key on the miniature keymap.
@@ -1333,10 +1467,11 @@ corresponding key on the miniature keymap.
 ```yaml
 output:
   style:
-    layer_connector:
-      show: <boolean>
-      width: <float | "N%" | null>
-      dot_spacing: <float | "N%" | null>
+    overview:
+      layer_connector:
+        show: <boolean>
+        width: <float | "N%" | null>
+        dot_spacing: <float | "N%" | null>
 ```
 
 The two stroke / spacing fields follow the magnitude rule (`< 1`
@@ -1344,7 +1479,7 @@ proportion / `≥ 1` absolute / `"N%"` shorthand / `null` default).
 
 ---
 
-##### `show` { #output-style-layer-connector-show }
+###### `show` { #output-style-overview-layer-connector-show }
 
 | Type      | Default |
 | --------- | ------- |
@@ -1357,12 +1492,12 @@ images (which never paint connectors).
 
 <figure markdown="1">
 <figcaption>Two miniature 3-layer overviews built from the same keymap (two layer-switch keys on the LEFT half), stacked top to bottom. The dotted connectors only paint in the <code>true</code> panel.</figcaption>
-![layer_connector.show true vs false comparison](../_static/spacing/layer-connector-show.svg){ width="540" loading=lazy }
+![layer_connector.show true vs false comparison](../_static/spacing/overview-layer-connector-show.svg){ width="540" loading=lazy }
 </figure>
 
 ---
 
-##### `width` { #output-style-layer-connector-width }
+###### `width` { #output-style-overview-layer-connector-width }
 
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
@@ -1375,12 +1510,12 @@ overview's chrome more.
 
 <figure markdown="1">
 <figcaption>The rose dotted line illustrates a connector path painted at the configured width.</figcaption>
-![Layer connector width highlighted](../_static/spacing/layer-connector-width.svg){ width="360" loading=lazy }
+![Layer connector width highlighted](../_static/spacing/overview-layer-connector-width.svg){ width="360" loading=lazy }
 </figure>
 
 ---
 
-##### `dot_spacing` { #output-style-layer-connector-dot-spacing }
+###### `dot_spacing` { #output-style-overview-layer-connector-dot-spacing }
 
 | Type                            | Default                          | Base       |
 | ------------------------------- | -------------------------------- | ---------- |
@@ -1393,7 +1528,7 @@ trail.
 
 <figure markdown="1">
 <figcaption>The rose band sits in the gap between two adjacent dots.</figcaption>
-![Layer connector dot spacing highlighted](../_static/spacing/layer-connector-dot-spacing.svg){ width="360" loading=lazy }
+![Layer connector dot spacing highlighted](../_static/spacing/overview-layer-connector-dot-spacing.svg){ width="360" loading=lazy }
 </figure>
 
 ---
@@ -1617,7 +1752,7 @@ block:
   [`output.style.border.width`](#output-style-border-width) (paired
   with `border.radius`).
 - The layer connector path lives on
-  [`output.style.layer_connector.width`](#output-style-layer-connector-width)
+  [`output.style.overview.layer_connector.width`](#output-style-overview-layer-connector-width)
   (paired with `dot_spacing`).
 - The layer indicator circle lives on
   [`output.style.layer_indicator.width`](#output-style-layer-indicator-width)

@@ -35,6 +35,7 @@ import yaml
 from skim.application.render.composable import Component
 from skim.application.render.font import Font, FontSubsetter, current_font_usage_collector
 from skim.application.render.keymap_overview import (
+    KeymapOverview,
     LayerBadge,
     _badge_label,
     _measure_badge_text_width,
@@ -53,8 +54,11 @@ from skim.application.render.tap_dance import TapDanceSection
 from skim.data.config import (
     KeyboardLayer,
     LayerColor,
+    LayerOrder,
+    Overview,
     SkimConfig,
     Spacing,
+    ThumbPosition,
 )
 from skim.data.keyboard import (
     FingerCluster as FingerClusterData,
@@ -968,11 +972,146 @@ def _build_palette_gradient() -> Iterator[tuple[str, draw.Drawing]]:
             )
 
 
+# Mini-overview snippets for the ``output.overview`` options. The body
+# composable scales every dimension off ``output.layout.width``, so a
+# small width yields a small natural size — perfect for a docs figure.
+# 720 lands a body ~520 px wide, comparable to the legend-tables cards.
+_OVERVIEW_DOC_WIDTH = 720.0
+
+# Three layers reads as "Base / Lower / Raise" — enough rows to make
+# ordering decisions visible without dwarfing the THUMBS row.
+_OVERVIEW_LAYER_COUNT = 3
+
+# Card padding used by both overview snippets — larger than the cluster
+# cards because the body is wider and benefits from more breathing room.
+_OVERVIEW_CARD_PADDING = 32.0
+
+
+def _overview_keymap() -> SvalboardKeymap[SvalboardTargetKey]:
+    """A 3-layer keymap with empty labels in every slot.
+
+    Empty labels keep the snippet free of distracting text — the focus
+    is on row order and thumb placement, not on which keys do what.
+    """
+    blank = SvalboardTargetKey(label="")
+    layout = SvalboardLayout.from_sequence([blank] * 60)
+    return SvalboardKeymap(
+        layers={i: layout for i in range(_OVERVIEW_LAYER_COUNT)}
+    )
+
+
+def _overview_config(
+    *,
+    layer_order: LayerOrder,
+    thumb_position: ThumbPosition,
+    thumb_layer: int | None = None,
+) -> SkimConfig:
+    """Build a SkimConfig for an overview snippet.
+
+    Pulls the COLEMAK palette so each layer row paints in the curated
+    colours used by every other snippet in the docs. Sets
+    ``output.layout.width`` so the resulting body fits comfortably
+    inside a docs figure without further scaling.
+    """
+    palette_layers = _load_palette_layers(
+        "SvalCOLEMAK-config.yaml", count=_OVERVIEW_LAYER_COUNT
+    )
+    config = _build_palette_config(
+        num_layers=_OVERVIEW_LAYER_COUNT, palette_layers=palette_layers
+    )
+    layer_names = ("Base", "Lower", "Raise")
+    keyboard = config.keyboard.model_copy(
+        update={
+            "layers": tuple(
+                KeyboardLayer(index=i, name=layer_names[i])
+                for i in range(_OVERVIEW_LAYER_COUNT)
+            )
+        }
+    )
+    layout = config.output.layout.model_copy(update={"width": _OVERVIEW_DOC_WIDTH})
+    overview = Overview(
+        layer_order=layer_order,
+        thumb_position=thumb_position,
+        thumb_layer=thumb_layer,
+    )
+    style = config.output.style.model_copy(update={"overview": overview})
+    output = config.output.model_copy(update={"layout": layout, "style": style})
+    return config.model_copy(update={"keyboard": keyboard, "output": output})
+
+
+def _render_overview_card(config: SkimConfig) -> draw.Drawing:
+    """Render the overview body and wrap it in the standard white card."""
+    keymap = _overview_keymap()
+    ctx = RenderContext.build(config=config, keymap=keymap)
+    with using_render_context(ctx):
+        body = KeymapOverview(keymap=keymap)
+        card = Size(
+            body.size.width + _OVERVIEW_CARD_PADDING,
+            body.size.height + _OVERVIEW_CARD_PADDING,
+        )
+        return _render_in_card(body, canvas=card)
+
+
+def _build_overview_layer_order() -> Iterator[tuple[str, draw.Drawing]]:
+    """Two miniature 3-layer overviews illustrating ``layer_order``.
+
+    Both variants use the default ``thumb_position`` (``follow``), so
+    the thumb cluster tucks directly under the base layer regardless
+    of where that layer ends up in the stack. The badge column makes
+    the ordering change obvious — Layer 0 sits at the bottom for
+    ``descending`` and at the top for ``ascending``.
+    """
+    for variant, order in (
+        ("descending", LayerOrder.DESCENDING),
+        ("ascending", LayerOrder.ASCENDING),
+    ):
+        config = _overview_config(layer_order=order, thumb_position=ThumbPosition.FOLLOW)
+        yield variant, _render_overview_card(config)
+
+
+def _build_overview_thumb_position() -> Iterator[tuple[str, draw.Drawing]]:
+    """Three miniature overviews illustrating ``thumb_position``.
+
+    All three variants share ``layer_order: ascending`` so each
+    enum value renders distinctly: ``top`` lifts THUMBS above every
+    layer, ``bottom`` drops it after every layer, and ``follow``
+    keeps it directly under Base (the layer the thumb cluster
+    represents) — an arrangement that's only visible when Base
+    isn't already at the bottom of the stack.
+    """
+    for variant in ("top", "bottom", "follow"):
+        config = _overview_config(
+            layer_order=LayerOrder.ASCENDING,
+            thumb_position=ThumbPosition(variant),
+        )
+        yield variant, _render_overview_card(config)
+
+
+def _build_overview_thumb_layer() -> Iterator[tuple[str, draw.Drawing]]:
+    """One miniature overview illustrating ``thumb_layer``.
+
+    Same canvas as the other overview snippets (ascending order,
+    default ``follow`` thumb position) but with ``thumb_layer: 1``,
+    so the THUMBS row sources from Lower instead of the default
+    base layer — and ``follow`` slides the row down to sit directly
+    below Lower in the rendered stack.
+    """
+    config = _overview_config(
+        layer_order=LayerOrder.ASCENDING,
+        thumb_position=ThumbPosition.FOLLOW,
+        thumb_layer=1,
+    )
+    yield "lower", _render_overview_card(config)
+
+
 BUILDERS: dict[str, OptionBuilder] = {
     "double-south": _build_double_south,
     "keyboard-layers": _build_keyboard_layers,
     "keycodes": _build_keycodes,
     "legend-tables": _build_legend_tables,
+    "overview-layer-order": _build_overview_layer_order,
+    "overview-thumb-position": _build_overview_thumb_position,
+    "overview-thumb-layer": _build_overview_thumb_layer,
     "palette-gradient": _build_palette_gradient,
 }
 

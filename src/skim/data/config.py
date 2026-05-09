@@ -819,7 +819,7 @@ class Strokes(BaseModel):
     visibility flag or other styling on the same conceptual element:
 
     * ``output.style.border.width`` — paired with ``Border.radius``.
-    * ``output.style.layer_connector.width`` — paired with
+    * ``output.style.overview.layer_connector.width`` — paired with
       ``layer_connector.show`` and ``dot_spacing``.
     * ``output.style.layer_indicator.width`` — paired with
       ``layer_indicator.show``.
@@ -1243,6 +1243,82 @@ class LegendTables(BaseModel):
     symbols: SymbolsLegend = Field(default_factory=SymbolsLegend)
 
 
+class LayerOrder(str, Enum):
+    """Direction in which the overview stacks its per-layer rows."""
+
+    ASCENDING = "ascending"
+    DESCENDING = "descending"
+
+
+LayerOrderStr = Annotated[LayerOrder, BeforeValidator(lambda v: LayerOrder(v))]
+"""Annotated type for LayerOrder that accepts string inputs at YAML load time."""
+
+
+class ThumbPosition(str, Enum):
+    """Where the thumb-cluster row sits in the overview stack."""
+
+    TOP = "top"
+    BOTTOM = "bottom"
+    FOLLOW = "follow"
+
+
+ThumbPositionStr = Annotated[ThumbPosition, BeforeValidator(lambda v: ThumbPosition(v))]
+"""Annotated type for ThumbPosition that accepts string inputs at YAML load time."""
+
+
+class Overview(BaseModel):
+    """Overview-specific layout configuration.
+
+    Controls how the multi-layer overview image stacks its per-layer
+    rows, where the (single) thumb cluster row sits among them, which
+    layer the thumb cluster is sourced from, and the dotted layer-
+    connector paths that link each layer-indicator badge to its key on
+    the miniature keymap.
+
+    Attributes:
+        layer_order: ``"ascending"`` to render layers top-to-bottom by
+            ascending QMK index (Layer 0 at top, highest index at the
+            bottom), ``"descending"`` to keep the legacy ordering
+            (highest index at the top, Layer 0 at the bottom).
+            Defaults to ``"descending"``.
+        thumb_position: Where to place the thumb-cluster row in the
+            stack. ``"top"`` puts it before every layer; ``"bottom"``
+            puts it after every layer (legacy behaviour); ``"follow"``
+            (default) keeps it directly below the layer it represents
+            (the layer named by ``thumb_layer``), regardless of where
+            that layer sits in the stack.
+        thumb_layer: QMK layer index whose thumb cluster is rendered
+            in the overview's THUMBS row. ``null`` (the default) and
+            absent values resolve at render time to the last rendered
+            layer when ``layer_order`` is ``"descending"`` and to the
+            first rendered layer when ``layer_order`` is ``"ascending"``
+            — the layer that visually anchors the stack regardless of
+            whether QMK index 0 is even present in the keymap. If an
+            explicit value is provided but the layer isn't in the
+            keymap, the renderer falls back to the same contextual
+            default.
+        layer_connector: Configuration for the dotted connector paths
+            in the keymap overview (visibility + stroke + dot cadence).
+
+    Example:
+        Layer 0 at the top with its thumb cluster directly below it,
+        then layers 1, 2, … going down::
+
+            output:
+              style:
+                overview:
+                  layer_order: ascending
+                  thumb_position: follow
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    layer_order: LayerOrderStr = Field(default=LayerOrder.DESCENDING)
+    thumb_position: ThumbPositionStr = Field(default=ThumbPosition.FOLLOW)
+    thumb_layer: int | None = None
+    layer_connector: LayerConnector = Field(default_factory=LayerConnector)
+
+
 class Style(BaseModel):
     """Visual styling configuration for keymap images.
 
@@ -1268,8 +1344,9 @@ class Style(BaseModel):
         border: Document border configuration, or None to disable.
             Defaults to a :class:`Border` with the canonical 2-unit
             stroke and 10-unit corner radius.
-        layer_connector: Configuration for the dotted connector paths
-            in the keymap overview (visibility + stroke + dot cadence).
+        overview: Overview-image-specific layout configuration —
+            layer-row ordering, thumb-row position, and the dotted
+            layer-connector paths.
         layer_indicator: Configuration for the layer-indicator badges
             painted next to layer-switch keys (visibility + stroke).
         legend_tables: Container for the macros / tap-dances / symbols
@@ -1298,7 +1375,7 @@ class Style(BaseModel):
     use_system_fonts: bool = False
     show_transparent_fallthrough: bool = True
     border: Border | None = Field(default_factory=Border)
-    layer_connector: LayerConnector = Field(default_factory=LayerConnector)
+    overview: Overview = Field(default_factory=Overview)
     layer_indicator: LayerIndicator = Field(default_factory=LayerIndicator)
     legend_tables: LegendTables = Field(default_factory=LegendTables)
     strokes: Strokes = Field(default_factory=Strokes)

@@ -1908,13 +1908,13 @@ def _build_layer_connector_width_mock() -> draw.Drawing:
 
         doc_width = ctx.document_metrics.doc_width
         stroke_w = resolve_spacing(
-            ctx.config.output.style.layer_connector.width,
+            ctx.config.output.style.overview.layer_connector.width,
             base=doc_width,
             default_proportion=_CONNECTOR_PATH_STROKE_WIDTH_RATIO,
         )
         dot = doc_width * _CONNECTOR_PATH_DASH_DOT_RATIO
         dash_gap = resolve_spacing(
-            ctx.config.output.style.layer_connector.dot_spacing,
+            ctx.config.output.style.overview.layer_connector.dot_spacing,
             base=doc_width,
             default_proportion=_CONNECTOR_PATH_DASH_GAP_RATIO,
         )
@@ -1958,13 +1958,13 @@ def _build_layer_connector_dot_spacing_mock() -> draw.Drawing:
 
         doc_width = ctx.document_metrics.doc_width
         stroke_w = resolve_spacing(
-            ctx.config.output.style.layer_connector.width,
+            ctx.config.output.style.overview.layer_connector.width,
             base=doc_width,
             default_proportion=_CONNECTOR_PATH_STROKE_WIDTH_RATIO,
         )
         dot = doc_width * _CONNECTOR_PATH_DASH_DOT_RATIO
         dash_gap = resolve_spacing(
-            ctx.config.output.style.layer_connector.dot_spacing,
+            ctx.config.output.style.overview.layer_connector.dot_spacing,
             base=doc_width,
             default_proportion=_CONNECTOR_PATH_DASH_GAP_RATIO,
         )
@@ -2452,13 +2452,18 @@ def _build_layer_connector_show_mock() -> draw.Drawing:
     panels: list[tuple[Component, str]] = []
     last_ctx: RenderContext | None = None
     for show, caption in ((True, "show: true"), (False, "show: false")):
+        base_overview = base_with_smaller_width.output.style.overview
         style = base_with_smaller_width.output.style.model_copy(
             update={
-                "layer_connector": base_with_smaller_width.output.style.layer_connector.model_copy(
+                "overview": base_overview.model_copy(
                     update={
-                        "show": show,
-                        "width": chunky_width,
-                        "dot_spacing": chunky_dot_spacing,
+                        "layer_connector": base_overview.layer_connector.model_copy(
+                            update={
+                                "show": show,
+                                "width": chunky_width,
+                                "dot_spacing": chunky_dot_spacing,
+                            }
+                        )
                     }
                 )
             }
@@ -2633,12 +2638,12 @@ BUILDERS: dict[str, MockBuilder] = {
     "chip-outline-stroke": _build_chip_outline_mock,
     "header-rule-stroke": _build_header_rule_stroke_mock,
     "layer-indicator-stroke": _build_layer_indicator_stroke_mock,
-    "layer-connector-width": _build_layer_connector_width_mock,
-    "layer-connector-dot-spacing": _build_layer_connector_dot_spacing_mock,
+    "overview-layer-connector-width": _build_layer_connector_width_mock,
+    "overview-layer-connector-dot-spacing": _build_layer_connector_dot_spacing_mock,
     # Flag options (before / after comparisons)
     "hold-symbol-position": _build_hold_symbol_position_mock,
     "layer-indicator-show": _build_layer_indicator_show_mock,
-    "layer-connector-show": _build_layer_connector_show_mock,
+    "overview-layer-connector-show": _build_layer_connector_show_mock,
     "use-layer-colors-on-keys": _build_use_layer_colors_on_keys_mock,
     "show-transparent-fallthrough": _build_show_transparent_fallthrough_mock,
     "symbols-flow": _build_symbols_flow_mock,

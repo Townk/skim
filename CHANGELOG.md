@@ -7,8 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`output.style.overview` config group** for overview-image specifics:
+  - `layer_order` (`"descending"` | `"ascending"`, default
+    `"descending"`) — direction the multi-layer overview stacks its
+    per-layer rows.
+  - `thumb_position` (`"top"` | `"bottom"` | `"follow"`, default
+    `"follow"`) — where the THUMBS row sits in the rendered stack.
+    `"follow"` keeps the row directly under the layer it represents.
+  - `thumb_layer` (`int` | `null`, default `null`) — which QMK layer
+    the thumb cluster is sourced from. `null` resolves at render time
+    to the last rendered layer for `descending` and the first for
+    `ascending`, so the default works for keymaps that don't define
+    QMK index 0.
+
 ### Changed
 
+- **`output.style.layer_connector` moved to
+  `output.style.overview.layer_connector`** — the dotted connector
+  paths only render in the overview image, so the field now lives
+  alongside the other overview options. The schema, docs, and TUI
+  write paths are updated accordingly.
 - **Thumb-cluster geometry overhaul** — the rendered thumb cluster now
   has uniform spacing and exact slant-matching:
   - Pad / Nail / Knuckle slants are now derived from Down's edge slope

@@ -247,19 +247,20 @@ class TestOutputCopyright:
 
 
 class TestStyleShowLayerConnectors:
-    """Tests for Style.layer_connector.show field."""
+    """Tests for Style.overview.layer_connector.show field."""
 
     def test_default_is_true(self):
         """layer_connector.show defaults to True."""
         style = Style()
-        assert style.layer_connector.show is True
+        assert style.overview.layer_connector.show is True
 
     def test_can_set_to_false(self):
         """layer_connector.show can be set to False."""
         from skim.data import LayerConnector
+        from skim.data.config import Overview
 
-        style = Style(layer_connector=LayerConnector(show=False))
-        assert style.layer_connector.show is False
+        style = Style(overview=Overview(layer_connector=LayerConnector(show=False)))
+        assert style.overview.layer_connector.show is False
 
 
 class TestStyleShowTransparentFallthrough:

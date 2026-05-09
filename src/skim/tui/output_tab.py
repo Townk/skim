@@ -765,7 +765,8 @@ class OutputTab(Widget):
                         help_key="output-style-use-layer-colors",
                     )
                 layer_indicator = style.get("layer_indicator", {}) or {}
-                layer_connector = style.get("layer_connector", {}) or {}
+                overview_block = style.get("overview", {}) or {}
+                layer_connector = overview_block.get("layer_connector", {}) or {}
                 legend_tables = style.get("legend_tables", {}) or {}
                 macros_legend = legend_tables.get("macros", {}) or {}
                 tap_dances_legend = legend_tables.get("tap_dances", {}) or {}
@@ -1035,7 +1036,7 @@ class OutputTab(Widget):
         elif switch_id == "show-layer-indicators":
             style.setdefault("layer_indicator", {})["show"] = value
         elif switch_id == "show-layer-connectors":
-            style.setdefault("layer_connector", {})["show"] = value
+            style.setdefault("overview", {}).setdefault("layer_connector", {})["show"] = value
         elif switch_id == "show-transparent-fallthrough":
             style["show_transparent_fallthrough"] = value
         elif switch_id == "show-special-keys-legend":

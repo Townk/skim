@@ -839,7 +839,7 @@ action symbols on tap-hold keys.
    heading-offset=3
 %}
 
-**Configures:** [`output.style.layer_connector.show`](config-file.md#output-style-layer-connector-show)
+**Configures:** [`output.style.overview.layer_connector.show`](config-file.md#output-style-overview-layer-connector-show)
 
 ---
 

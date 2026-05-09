@@ -52,7 +52,13 @@ from typing import Protocol
 
 import drawsvg as draw
 
-from skim.data import SkimConfig, SvalboardKeymap, resolve_spacing
+from skim.data import (
+    LayerOrder,
+    SkimConfig,
+    SvalboardKeymap,
+    ThumbPosition,
+    resolve_spacing,
+)
 from skim.data.keyboard import (
     FingerCluster as FingerClusterData,
     SplitSide,
@@ -528,6 +534,7 @@ class _OverviewRoutingLayout:
         layer_to_row: dict[int, int],
         row_y_positions: list[float],
         thumb_y_state: list[float],
+        thumb_row_position: int,
         row_height: float,
         thumb_height: float,
         cluster_x: float,
@@ -540,6 +547,12 @@ class _OverviewRoutingLayout:
         self._layer_to_row = layer_to_row
         self._row_y_positions = row_y_positions
         self._thumb_y_state = thumb_y_state  # single-element mutable list
+        # Position of the thumb in the row sequence, in render order.
+        # 0 = before the first finger row; len(rows) = after the last
+        # finger row (legacy "thumb at bottom" behaviour). A shift
+        # propagates to the thumb iff the shift's anchor row sits
+        # ABOVE the thumb in the sequence.
+        self._thumb_row_position = thumb_row_position
         self._row_height = row_height
         self._thumb_height = thumb_height
         self._cluster_x = cluster_x
@@ -602,7 +615,8 @@ class _OverviewRoutingLayout:
         # ``row_idx`` here is a QMK layer index per the
         # :class:`RoutingLayout` Protocol contract. Translate via
         # :attr:`_layer_to_row` before delegating to the underlying
-        # row list.
+        # row list. Thumb shifts iff it sits at-or-below this row
+        # in the rendered sequence.
         if amount <= 0:
             return
         translated = self._layer_to_row.get(row_idx)
@@ -610,11 +624,13 @@ class _OverviewRoutingLayout:
             return
         for i in range(translated, len(self._row_y_positions)):
             self._row_y_positions[i] += amount
-        self._thumb_y_state[0] += amount
+        if self._thumb_row_position > translated:
+            self._thumb_y_state[0] += amount
 
     def shift_below_layer_row(self, row_idx: int, amount: float) -> None:
         # ``row_idx`` is a QMK layer index — see
-        # :meth:`shift_layer_row_and_below`.
+        # :meth:`shift_layer_row_and_below`. Thumb shifts iff it sits
+        # strictly below this row in the rendered sequence.
         if amount <= 0:
             return
         translated = self._layer_to_row.get(row_idx)
@@ -622,7 +638,17 @@ class _OverviewRoutingLayout:
             return
         for i in range(translated + 1, len(self._row_y_positions)):
             self._row_y_positions[i] += amount
-        self._thumb_y_state[0] += amount
+        if self._thumb_row_position > translated:
+            self._thumb_y_state[0] += amount
+
+    def shift_below_thumb_row(self, amount: float) -> None:
+        """Shift every row that sits strictly below the thumb in the
+        rendered sequence. Used by ``_apply_gap_shift`` when the upper
+        cluster of an inter-row transition IS the thumb."""
+        if amount <= 0:
+            return
+        for i in range(self._thumb_row_position, len(self._row_y_positions)):
+            self._row_y_positions[i] += amount
 
     def shift_thumb_down(self, amount: float) -> None:
         if amount <= 0:
@@ -715,25 +741,63 @@ def KeymapOverview(
     badge_to_clusters_gap = 2.0 * column_gap
     center_gap = _CENTER_GAP_INSET_COUNT * column_gap
 
-    # Layers stack top-down with the HIGHEST QMK index on the top row.
-    # Reversing the config-order list places layer 15 at the top and
-    # layer 0 at the bottom, matching the legacy overview's row order
-    # so the most "specialised" / topmost-active layers read first.
-    render_layers: list[tuple[int, int]] = list(
-        reversed(
-            [
-                (pos, layer_cfg.index)
-                for pos, layer_cfg in enumerate(config.keyboard.layers)
-                if layer_cfg.index in keymap.layers
-            ]
-        )
-    )
+    # Render order is configurable. Default: descending — Layer 15 at
+    # the top, Layer 0 at the bottom (legacy behaviour, "most
+    # specialised first"). Ascending puts Layer 0 at the top.
+    overview_cfg = config.output.style.overview
+    config_order = [
+        (pos, layer_cfg.index)
+        for pos, layer_cfg in enumerate(config.keyboard.layers)
+        if layer_cfg.index in keymap.layers
+    ]
+    if overview_cfg.layer_order is LayerOrder.DESCENDING:
+        render_layers: list[tuple[int, int]] = list(reversed(config_order))
+    else:
+        render_layers = list(config_order)
 
     if not render_layers:
         # Nothing to render — return a zero-sized noop so the
         # composable's tuple-return contract holds. The document
         # composable also short-circuits, so this is defensive.
         return Size.zero(), lambda _d, _o: None
+
+    # Resolve which layer the thumb cluster is sourced from. An
+    # explicit ``thumb_layer`` names a QMK index directly. ``None``
+    # (the default), and any explicit value missing from the keymap,
+    # falls back to a contextual default: the last rendered layer for
+    # ``descending`` order, the first for ``ascending``. Both reduce
+    # to ``config_order[0]`` (the first ``keyboard.layers`` entry), so
+    # the default works regardless of whether QMK index 0 is defined.
+    if overview_cfg.layer_order is LayerOrder.DESCENDING:
+        default_thumb_qmk = render_layers[-1][1]
+    else:
+        default_thumb_qmk = render_layers[0][1]
+    requested_thumb = overview_cfg.thumb_layer
+    base_qmk_idx = (
+        requested_thumb
+        if requested_thumb is not None and requested_thumb in keymap.layers
+        else default_thumb_qmk
+    )
+
+    # Resolve the thumb's position in the rendered row sequence.
+    # ``TOP`` → 0 (before any layer); ``BOTTOM`` → after all layers
+    # (legacy); ``FOLLOW`` (default) → directly below the source
+    # layer (``thumb_layer``). With ``descending`` order the base
+    # layer sits at the bottom, so ``FOLLOW`` is identical to
+    # ``BOTTOM`` for the default ``thumb_layer``; with ``ascending``
+    # it tucks the thumb under the base layer at the top of the
+    # stack.
+    n_rows = len(render_layers)
+    thumb_pos = overview_cfg.thumb_position
+    if thumb_pos is ThumbPosition.TOP:
+        thumb_render_position = 0
+    elif thumb_pos is ThumbPosition.BOTTOM:
+        thumb_render_position = n_rows
+    else:  # FOLLOW
+        thumb_render_position = next(
+            (i + 1 for i, (_, qmk_idx) in enumerate(render_layers) if qmk_idx == base_qmk_idx),
+            n_rows,
+        )
 
     # --- Phase 1: derive cluster sizing from the budget. ---
     dims = _resolve_overview_layout(config, keymap)
@@ -802,22 +866,20 @@ def KeymapOverview(
         )
         finger_halves.append((left_half, right_half))
 
-    # Thumb cluster uses the FIRST CONFIG POSITION layer (typically QMK
-    # layer 0), independent of the row-order reversal. ``render_layers``
-    # is reversed to render layer-15-on-top, so the bottom row is config
-    # position 0 — pick that explicitly.
-    base_pos, base_qmk_idx = render_layers[-1]
-    del base_pos
-    thumb_layer = keymap.layers[base_qmk_idx]
+    # Thumb cluster sources from the QMK layer named by
+    # ``overview_cfg.thumb_layer`` (resolved earlier with a fallback
+    # to the first configured layer when the requested index isn't
+    # in the keymap).
+    thumb_source = keymap.layers[base_qmk_idx]
     left_thumb = ThumbCluster(
         side=KeyboardSide.LEFT,
-        cluster=thumb_layer.left.thumb,
+        cluster=thumb_source.left.thumb,
         layer_qmk_index=base_qmk_idx,
         **common_thumb_kwargs,
     )
     right_thumb = ThumbCluster(
         side=KeyboardSide.RIGHT,
-        cluster=thumb_layer.right.thumb,
+        cluster=thumb_source.right.thumb,
         layer_qmk_index=base_qmk_idx,
         **common_thumb_kwargs,
     )
@@ -901,29 +963,59 @@ def KeymapOverview(
     # (= one outer key down from the half's top edge). Same as the
     # cluster's ``north_key`` width since outer keys are square.
     ew_offset = finger_cluster_width * _OUTER_KEY_PROPORTION
-    # Top-of-body reservation: enough room for the half's own top
-    # overflow (north-key indicators bleeding above the cluster) AND
-    # the LAYERS heading, which sits above the first badge by
-    # ``layers_heading_height`` and so reaches up to
-    # ``placements[0].y + ew_offset - layers_heading_height``. The
-    # heading is shorter than ``ew_offset`` in practice, so it fits
-    # inside the badge's own row without extra reservation; we still
-    # take the max in case future scaling changes that.
-    body_top_padding = max(row_top_bleeds[0], layers_heading_height - ew_offset)
+    # Top-of-body reservation:
+    #
+    # * If the first row is a finger LAYER, reserve room for its top
+    #   overflow AND the LAYERS heading (which sits above the first
+    #   layer's badge, in the negative-y space relative to the badge).
+    # * If the first row is the THUMB, the LAYERS heading attaches to
+    #   the first finger row BELOW the thumb — there's already plenty
+    #   of vertical space for the heading inside the thumb→layer gap,
+    #   so no extra top reservation is needed. The body just needs to
+    #   accommodate the thumb's own top overflow (DD's NORTH indicator).
+    if thumb_render_position == 0:
+        body_top_padding = thumb_top_bleed
+    else:
+        body_top_padding = max(row_top_bleeds[0], layers_heading_height - ew_offset)
     y_cursor = body_top_padding
-    for i, bot_b in enumerate(row_bottom_bleeds):
-        placements.append(_RowPlacement(y=y_cursor, badge_y=y_cursor + ew_offset))
-        # Move past this row.
-        y_cursor += half_height
-        # Inter-row separation: this row's bottom bleed + inset + next
-        # row's top bleed (or the thumb row's top bleed for the last
-        # transition).
-        if i + 1 < len(finger_halves):
-            y_cursor += bot_b + inset + row_top_bleeds[i + 1]
-        else:
-            y_cursor += bot_b + inset + thumb_top_bleed
+    thumb_y = 0.0  # set below
 
-    thumb_y = y_cursor
+    def _bleed_after(idx_after: int) -> float:
+        """Top bleed of whatever row sits at sequence index ``idx_after``
+        (after the current row). Used for inter-row gap sizing."""
+        # If the thumb sits at this position, use its top bleed;
+        # otherwise the next finger row's top bleed.
+        finger_idx_at = idx_after - (1 if thumb_render_position < idx_after else 0)
+        if thumb_render_position == idx_after:
+            return thumb_top_bleed
+        if 0 <= finger_idx_at < len(row_top_bleeds):
+            return row_top_bleeds[finger_idx_at]
+        return 0.0
+
+    # Walk the rendered row sequence (finger rows + the thumb at its
+    # configured position). Place each row, then advance the cursor by
+    # ``bottom_bleed_of_this + inset + top_bleed_of_next``.
+    finger_iter = iter(enumerate(row_bottom_bleeds))
+    seq_idx = 0
+    finger_pos = 0
+    while seq_idx < len(finger_halves) + 1:
+        if seq_idx == thumb_render_position:
+            # Place the thumb row.
+            thumb_y = y_cursor
+            y_cursor += left_thumb.size.height
+            seq_idx += 1
+            if seq_idx < len(finger_halves) + 1:
+                y_cursor += thumb_bottom_bleed + inset + _bleed_after(seq_idx)
+            continue
+        # Place a finger row.
+        i, bot_b = next(finger_iter)
+        placements.append(_RowPlacement(y=y_cursor, badge_y=y_cursor + ew_offset))
+        y_cursor += half_height
+        seq_idx += 1
+        finger_pos = i + 1
+        del finger_pos  # unused, but documents intent
+        if seq_idx < len(finger_halves) + 1:
+            y_cursor += bot_b + inset + _bleed_after(seq_idx)
     # Thumb pad-key offset matches the per-cluster's pad_key origin's
     # local-y, which sits at one thumb-inset below the down key (which
     # is at cluster top). Read off the thumb cluster's metrics.
@@ -935,7 +1027,15 @@ def KeymapOverview(
     _THUMB_KEY_INSET_PROPORTION = 0.038
     thumb_pad_offset = thumb_cluster_width * _THUMB_KEY_INSET_PROPORTION
     thumbs_badge_y = thumb_y + thumb_pad_offset
-    body_height = thumb_y + left_thumb.size.height + thumb_bottom_bleed
+    # Body bottom = whichever sits lower: the last finger row (with
+    # its own bottom bleed) OR the thumb row (with its own bottom
+    # bleed). With the thumb at any position the deepest content can
+    # be either.
+    last_finger_bottom = (
+        placements[-1].y + half_height + row_bottom_bleeds[-1] if placements else 0.0
+    )
+    thumb_bottom = thumb_y + left_thumb.size.height + thumb_bottom_bleed
+    body_height = max(last_finger_bottom, thumb_bottom)
 
     # --- Phase 5: X positions. ---
     badge_x = 0.0
@@ -994,7 +1094,7 @@ def KeymapOverview(
     routing: ConnectorRouting | None = None
     if (
         config.output.style.layer_indicator.show
-        and config.output.style.layer_connector.show
+        and config.output.style.overview.layer_connector.show
         and len(render_layers) > 1
     ):
         layer_to_row = {qmk_idx: ri for ri, (_pos, qmk_idx) in enumerate(render_layers)}
@@ -1023,6 +1123,7 @@ def KeymapOverview(
             layer_to_row=layer_to_row,
             row_y_positions=mutable_row_ys,
             thumb_y_state=mutable_thumb_y,
+            thumb_row_position=thumb_render_position,
             row_height=half_height,
             thumb_height=left_thumb.size.height,
             cluster_x=left_half_x,
@@ -1114,16 +1215,28 @@ def KeymapOverview(
             layout=routing_layout,
             compute_indicator_rects=_compute_rects,
             keymap_spacing=keymap_spacing,
+            thumb_render_position=thumb_render_position,
         )
 
     # --- Phase 7: rebuild placements from post-routing layout state. ---
     placements = [_RowPlacement(y=y, badge_y=y + ew_offset) for y in mutable_row_ys]
     thumb_y = mutable_thumb_y[0]
     thumbs_badge_y = thumb_y + thumb_pad_offset
-    cluster_bottom = thumb_y + left_thumb.size.height
+    # The "bottom-most cluster" is whichever sits lower — the thumb
+    # (when at the bottom) or the last finger row. Use that as the
+    # anchor for body_height + DOWN-lane reservation.
+    last_finger_bottom = placements[-1].y + half_height if placements else 0.0
+    thumb_bottom_no_bleed = thumb_y + left_thumb.size.height
+    if thumb_bottom_no_bleed >= last_finger_bottom:
+        cluster_bottom = thumb_bottom_no_bleed
+        bottom_row_bleed = thumb_bottom_bleed
+    else:
+        cluster_bottom = last_finger_bottom
+        bottom_row_bleed = row_bottom_bleeds[-1]
+
     doc_width = config.output.layout.width
     connector_stroke_width = resolve_spacing(
-        config.output.style.layer_connector.width,
+        config.output.style.overview.layer_connector.width,
         base=doc_width,
         default_proportion=_CONNECTOR_PATH_STROKE_WIDTH_RATIO,
     )
@@ -1142,7 +1255,7 @@ def KeymapOverview(
     # extent past the centerline). Reserve both so the body fully
     # contains the painted strokes.
     body_width = right_half_x + side_width + max_right_outer_bleed + indicator_stroke_half
-    body_height = cluster_bottom + thumb_bottom_bleed + indicator_stroke_half
+    body_height = cluster_bottom + bottom_row_bleed + indicator_stroke_half
     if routing is not None and routing.paths:
         # Right-side: routing columns sit past the cluster overflow
         # (the first column is ``cluster_right_edge + 2 * keymap_spacing``)
@@ -1159,25 +1272,15 @@ def KeymapOverview(
         )
 
         # Bottom-side: actual painted content below ``cluster_bottom``
-        # is either (a) indicator circle strokes (``thumb_bottom_bleed
-        # + indicator_stroke_half``) or (b) the bottommost DOWN lane
-        # (when DOWN lanes exist). The legacy ``extra_bottom_padding``
-        # value includes a rect-padding offset (``6 * stroke_width``,
-        # for routing geometry only — no paint there) and a ``0.5 *
-        # keymap_spacing`` buffer for canvas-edge clearance. Strip
-        # both: ``KeymapDocument``'s content_offset provides
-        # canvas-edge breathing room and the rect padding is metadata.
+        # is either (a) indicator circle strokes
+        # (``bottom_row_bleed + indicator_stroke_half``) or (b) the
+        # bottommost DOWN lane (when DOWN lanes exist).
         if routing.extra_bottom_padding >= keymap_spacing:
-            # DOWN lanes present. The bottommost lane sits at
-            # ``cluster_bottom + thumb_overhang_b + n_d * ks``, where
-            # ``extra_bottom_padding = (n_d + 0.5) * ks + thumb_overhang_b``.
-            # Strip the ``0.5 * ks`` buffer; reserve the connector
-            # stroke half below the lane.
             bottom_lane_below_cluster = (
                 routing.extra_bottom_padding - 0.5 * keymap_spacing + connector_stroke_half
             )
             body_height = cluster_bottom + max(
-                thumb_bottom_bleed + indicator_stroke_half,
+                bottom_row_bleed + indicator_stroke_half,
                 bottom_lane_below_cluster,
             )
 
@@ -1200,7 +1303,7 @@ def KeymapOverview(
 
     dot = doc_width * _CONNECTOR_PATH_DASH_DOT_RATIO
     dash_gap = resolve_spacing(
-        config.output.style.layer_connector.dot_spacing,
+        config.output.style.overview.layer_connector.dot_spacing,
         base=doc_width,
         default_proportion=_CONNECTOR_PATH_DASH_GAP_RATIO,
     )
@@ -1322,6 +1425,12 @@ class RoutingLayout(Protocol):
 
     def shift_below_layer_row(self, row_idx: int, amount: float) -> None:
         """Apply a layer's extra_bottom_padding."""
+        ...
+
+    def shift_below_thumb_row(self, amount: float) -> None:
+        """Apply an extra-bottom-padding when the upper cluster of an
+        inter-row transition IS the thumb (i.e., the thumb sits between
+        two layer rows in the rendered sequence)."""
         ...
 
     def shift_thumb_down(self, amount: float) -> None: ...
@@ -1967,6 +2076,8 @@ def route_overview_connectors(
     layout: RoutingLayout,
     compute_indicator_rects: Callable[[], Mapping[str, tuple[float, float, float, float]]],
     keymap_spacing: float,
+    *,
+    thumb_render_position: int | None = None,
 ) -> ConnectorRouting:
     """Top-level orchestrator for overview connector routing.
 
@@ -2000,7 +2111,12 @@ def route_overview_connectors(
     # --- Pass 1: discover paddings, apply cascading layout shifts. ---
     rects_pass1 = compute_indicator_rects()
     thumb_extra_bottom = _pass1_discover_and_shift(
-        layers, thumb, layout, rects_pass1, keymap_spacing
+        layers,
+        thumb,
+        layout,
+        rects_pass1,
+        keymap_spacing,
+        thumb_render_position=thumb_render_position,
     )
 
     # --- Pass 2: rebuild paths against the now-shifted layout. ---
@@ -2034,6 +2150,8 @@ def _pass1_discover_and_shift(
     layout: RoutingLayout,
     indicator_rects: Mapping[str, tuple[float, float, float, float]],
     keymap_spacing: float,
+    *,
+    thumb_render_position: int | None = None,
 ) -> float:
     """Pass 1: route each source, discover paddings, apply gap-aware shifts.
 
@@ -2075,38 +2193,17 @@ def _pass1_discover_and_shift(
     # Iterate in render order: top row first (smallest initial cluster_top).
     sorted_layers = sorted(layers, key=lambda layer: initial_layer_bounds[layer.source_layer][0])
 
-    # State carried from the previous (upper) iteration.
-    prev_n_d = 0
-    prev_overhang_b = 0.0
-    prev_qmk: int | None = None
+    # The thumb sits at this position in the rendered row sequence.
+    # ``None`` (legacy) → thumb at the bottom (= len(sorted_layers)).
+    if thumb_render_position is None:
+        thumb_pos = len(sorted_layers)
+    else:
+        thumb_pos = max(0, min(len(sorted_layers), thumb_render_position))
 
-    for layer in sorted_layers:
-        n_u, n_d, overhang_t, overhang_b = _route_finger_layer_phase1(
-            layer, layout, indicator_rects, initial_layer_bounds, keymap_spacing
-        )
-
-        if prev_qmk is None:
-            # Topmost layer: gap above it abuts the header strip.
-            top_pad = n_u * keymap_spacing + overhang_t
-            if top_pad > 0:
-                layout.shift_layer_row_and_below(layer.source_layer, top_pad)
-        else:
-            _apply_gap_shift(
-                layout,
-                prev_qmk,
-                n_d_upper=prev_n_d,
-                n_u_lower=n_u,
-                overhang_b_upper=prev_overhang_b,
-                overhang_t_lower=overhang_t,
-                row_gap=row_gap,
-                keymap_spacing=keymap_spacing,
-            )
-
-        prev_n_d = n_d
-        prev_overhang_b = overhang_b
-        prev_qmk = layer.source_layer
-
-    # Thumb cluster: same shape as a finger layer for routing purposes.
+    # Pre-compute thumb's phase-1 routing values (we need them whenever
+    # we slot the thumb into the iteration). Doing this before the loop
+    # is safe because the thumb's routing only reads from
+    # ``initial_thumb_*``, not from the mutable layout state.
     thumb_n_u, thumb_n_d, thumb_overhang_t, thumb_overhang_b = _route_thumb_phase1(
         thumb,
         layout,
@@ -2116,24 +2213,107 @@ def _pass1_discover_and_shift(
         keymap_spacing=keymap_spacing,
     )
 
-    # Bottommost-layer ↔ thumb gap: same lane-bank rule as inter-layer gaps.
-    if prev_qmk is not None:
-        _apply_gap_shift(
-            layout,
-            prev_qmk,
-            n_d_upper=prev_n_d,
-            n_u_lower=thumb_n_u,
-            overhang_b_upper=prev_overhang_b,
-            overhang_t_lower=thumb_overhang_t,
-            row_gap=row_gap,
-            keymap_spacing=keymap_spacing,
-        )
-    elif thumb_n_u > 0 or thumb_overhang_t > 0:
-        layout.shift_thumb_down(thumb_n_u * keymap_spacing + thumb_overhang_t)
+    # State carried from the previous (upper) iteration. ``prev_kind``
+    # is None (no previous), "LAYER", or "THUMB" — controls which
+    # ``_apply_gap_shift_*`` flavour fires for the next transition.
+    prev_kind: str | None = None
+    prev_qmk: int | None = None
+    prev_n_d = 0
+    prev_overhang_b = 0.0
+    last_layer_n_d = 0
+    last_layer_overhang_b = 0.0
 
-    if thumb_n_d > 0:
-        return (thumb_n_d + 0.5) * keymap_spacing + thumb_overhang_b
-    return thumb_overhang_b
+    def _slot_thumb() -> None:
+        nonlocal prev_kind, prev_qmk, prev_n_d, prev_overhang_b
+        if prev_kind is None:
+            # Thumb at the very top of the rendered stack — no layer
+            # above for UP-paths to actually route up to, so pass 2's
+            # ``phase1_up_to_right`` will redirect them to right-column
+            # lanes instead. The thumb's indicator overhang is already
+            # reserved by Phase 4's ``body_top_padding``, so no extra
+            # vertical shift is needed here.
+            pass
+        else:
+            # Layer-above-thumb transition: same lane-bank rule.
+            _apply_gap_shift(
+                layout,
+                prev_qmk,  # type: ignore[arg-type]  # prev_kind == "LAYER" → not None
+                n_d_upper=prev_n_d,
+                n_u_lower=thumb_n_u,
+                overhang_b_upper=prev_overhang_b,
+                overhang_t_lower=thumb_overhang_t,
+                row_gap=row_gap,
+                keymap_spacing=keymap_spacing,
+            )
+        prev_kind = "THUMB"
+        prev_qmk = None
+        prev_n_d = thumb_n_d
+        prev_overhang_b = thumb_overhang_b
+
+    for i, layer in enumerate(sorted_layers):
+        # Slot the thumb in BEFORE this layer if its position is i.
+        if i == thumb_pos:
+            _slot_thumb()
+
+        n_u, n_d, overhang_t, overhang_b = _route_finger_layer_phase1(
+            layer, layout, indicator_rects, initial_layer_bounds, keymap_spacing
+        )
+
+        if prev_kind is None:
+            # Topmost row: gap above it abuts the header strip.
+            top_pad = n_u * keymap_spacing + overhang_t
+            if top_pad > 0:
+                layout.shift_layer_row_and_below(layer.source_layer, top_pad)
+        elif prev_kind == "LAYER":
+            _apply_gap_shift(
+                layout,
+                prev_qmk,  # type: ignore[arg-type]
+                n_d_upper=prev_n_d,
+                n_u_lower=n_u,
+                overhang_b_upper=prev_overhang_b,
+                overhang_t_lower=overhang_t,
+                row_gap=row_gap,
+                keymap_spacing=keymap_spacing,
+            )
+        else:  # prev_kind == "THUMB"
+            _apply_gap_shift_thumb(
+                layout,
+                n_d_upper=prev_n_d,
+                n_u_lower=n_u,
+                overhang_b_upper=prev_overhang_b,
+                overhang_t_lower=overhang_t,
+                row_gap=row_gap,
+                keymap_spacing=keymap_spacing,
+            )
+
+        prev_kind = "LAYER"
+        prev_qmk = layer.source_layer
+        prev_n_d = n_d
+        prev_overhang_b = overhang_b
+        last_layer_n_d = n_d
+        last_layer_overhang_b = overhang_b
+
+    # Thumb at bottom (or after last layer) — slot it now if it hasn't
+    # been processed inside the loop.
+    if thumb_pos >= len(sorted_layers):
+        _slot_thumb()
+
+    # ``extra_bottom_padding``: reserve space below the bottom-most
+    # cluster for any DOWN lanes routing past it. The bottom-most
+    # cluster is the thumb (if it sits at the bottom) OR the last
+    # finger layer (if the thumb sits higher up in the stack).
+    if thumb_pos >= len(sorted_layers):
+        # Thumb is the bottom row.
+        bottom_n_d = thumb_n_d
+        bottom_overhang_b = thumb_overhang_b
+    else:
+        # Last finger layer is the bottom row.
+        bottom_n_d = last_layer_n_d
+        bottom_overhang_b = last_layer_overhang_b
+
+    if bottom_n_d > 0:
+        return (bottom_n_d + 0.5) * keymap_spacing + bottom_overhang_b
+    return bottom_overhang_b
 
 
 def _route_finger_layer_phase1(
@@ -2192,6 +2372,27 @@ def _route_thumb_phase1(
     return n_u, n_d, overhang_t, overhang_b
 
 
+def _gap_shift_amount(
+    *,
+    n_d_upper: int,
+    n_u_lower: int,
+    overhang_b_upper: float,
+    overhang_t_lower: float,
+    row_gap: float,
+    keymap_spacing: float,
+) -> float:
+    """How much to push everything below an inter-row transition down
+    so the lane bank fits. Returns ``0`` when no lane bank is needed
+    (no connectors crossing the gap). ``2 * keymap_spacing > row_gap``
+    by construction, so the result is non-negative."""
+    n_lanes = n_d_upper + n_u_lower
+    if n_lanes == 0:
+        return 0.0
+    overhang = overhang_b_upper + overhang_t_lower
+    gap_target = (n_lanes + 1) * keymap_spacing + overhang
+    return max(0.0, gap_target - row_gap)
+
+
 def _apply_gap_shift(
     layout: RoutingLayout,
     upper_qmk: int,
@@ -2203,24 +2404,43 @@ def _apply_gap_shift(
     row_gap: float,
     keymap_spacing: float,
 ) -> None:
-    """Apply the gap-merging shift between an upper layer and the next-down
-    cluster (either another layer or the thumb).
-
-    When connectors cross the gap, the lane bank — ``(N_d + N_u + 1)*sp``
-    plus combined indicator overhang — replaces the layout's default
-    ``row_gap`` entirely. ``shift_below_layer_row(upper_qmk, delta)``
-    pushes everything below the upper cluster down by ``gap_target -
-    row_gap``, which is always positive because ``2 * keymap_spacing >
-    row_gap`` by construction.
-    """
-    n_lanes = n_d_upper + n_u_lower
-    if n_lanes == 0:
-        return
-    overhang = overhang_b_upper + overhang_t_lower
-    gap_target = (n_lanes + 1) * keymap_spacing + overhang
-    shift = gap_target - row_gap
+    """Apply the gap-merging shift below an upper LAYER (the upper
+    cluster of the inter-row transition is a finger layer)."""
+    shift = _gap_shift_amount(
+        n_d_upper=n_d_upper,
+        n_u_lower=n_u_lower,
+        overhang_b_upper=overhang_b_upper,
+        overhang_t_lower=overhang_t_lower,
+        row_gap=row_gap,
+        keymap_spacing=keymap_spacing,
+    )
     if shift > 0:
         layout.shift_below_layer_row(upper_qmk, shift)
+
+
+def _apply_gap_shift_thumb(
+    layout: RoutingLayout,
+    *,
+    n_d_upper: int,
+    n_u_lower: int,
+    overhang_b_upper: float,
+    overhang_t_lower: float,
+    row_gap: float,
+    keymap_spacing: float,
+) -> None:
+    """Apply the gap-merging shift below the THUMB (the upper cluster
+    of the inter-row transition is the thumb cluster — the thumb sits
+    above one or more layers in the rendered sequence)."""
+    shift = _gap_shift_amount(
+        n_d_upper=n_d_upper,
+        n_u_lower=n_u_lower,
+        overhang_b_upper=overhang_b_upper,
+        overhang_t_lower=overhang_t_lower,
+        row_gap=row_gap,
+        keymap_spacing=keymap_spacing,
+    )
+    if shift > 0:
+        layout.shift_below_thumb_row(shift)
 
 
 def _pass2_build_paths(
