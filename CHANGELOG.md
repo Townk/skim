@@ -70,6 +70,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   diverged from the true offset on slanted edges and didn't adjust
   corner radii.
 
+### Fixed
+
+- **`-l/--layer` filter now restricts the overview image too.** Combining
+  per-layer indices with `-l overview` (e.g. `-l 1,3-5,8 -l overview`)
+  previously rendered the requested per-layer images correctly but the
+  overview image still painted every populated layer in the keymap. The
+  filter now propagates into `draw_overview` so the overview shows only
+  the same subset of layers — and the symbol legend pulls only from
+  those layers. `-l overview` alone (no per-layer filter) is unchanged.
+
 ### Removed
 
 - Internal: deleted the inline `publish-package` job from

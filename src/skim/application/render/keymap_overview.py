@@ -279,6 +279,7 @@ class _OverviewLayoutDims:
 def _resolve_overview_layout(
     config: SkimConfig,
     keymap: SvalboardKeymap[SvalboardTargetKey],
+    selected_layers: set[int] | None = None,
 ) -> _OverviewLayoutDims:
     """Solve the overview body's badge column ↔ cluster column split.
 
@@ -288,6 +289,10 @@ def _resolve_overview_layout(
     against the real badge width. Converges in two passes because
     badge height only affects badge width indirectly via its own
     font size.
+
+    ``selected_layers``, when not ``None``, restricts the badge-label
+    set to only those QMK indices — keeps badge sizing aligned with
+    the layers :func:`KeymapOverview` will actually render.
     """
     # Local import to avoid pulling :mod:`render_context` into modules
     # that only depend on :mod:`layout` value types.
@@ -307,6 +312,7 @@ def _resolve_overview_layout(
                 (pos, layer_cfg.index)
                 for pos, layer_cfg in enumerate(config.keyboard.layers)
                 if layer_cfg.index in keymap.layers
+                and (selected_layers is None or layer_cfg.index in selected_layers)
             ]
         )
     )
@@ -698,6 +704,7 @@ def KeymapOverview(
     ctx,
     *,
     keymap: SvalboardKeymap[SvalboardTargetKey],
+    selected_layers: set[int] | None = None,
 ):
     """Multi-layer compact view + thumb cluster row.
 
@@ -749,6 +756,7 @@ def KeymapOverview(
         (pos, layer_cfg.index)
         for pos, layer_cfg in enumerate(config.keyboard.layers)
         if layer_cfg.index in keymap.layers
+        and (selected_layers is None or layer_cfg.index in selected_layers)
     ]
     if overview_cfg.layer_order is LayerOrder.DESCENDING:
         render_layers: list[tuple[int, int]] = list(reversed(config_order))
@@ -800,7 +808,7 @@ def KeymapOverview(
         )
 
     # --- Phase 1: derive cluster sizing from the budget. ---
-    dims = _resolve_overview_layout(config, keymap)
+    dims = _resolve_overview_layout(config, keymap, selected_layers=selected_layers)
     badge_dims = dims.badge
     finger_cluster_width = dims.finger_cluster_width
     side_width = dims.side_width

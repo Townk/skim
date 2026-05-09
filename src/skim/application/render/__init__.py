@@ -187,6 +187,7 @@ def draw_overview(
     keymap: SvalboardKeymap[SvalboardTargetKey],
     raw_keymap: SvalboardKeymap[str] | None = None,
     keycode_mappings: KeycodeMappings | None = None,
+    selected_layers: set[int] | None = None,
 ) -> draw.Drawing:
     """Render the multi-layer overview image.
 
@@ -194,12 +195,19 @@ def draw_overview(
     composable receives ready-to-paint data: all macros / tap-dances
     sorted, plus the union of symbol entries across the rendered
     layers.
+
+    ``selected_layers``, when not ``None``, restricts the overview to
+    that subset of QMK layer indices (matching the per-layer image
+    filter behavior of ``-l/--layer``). ``None`` keeps the legacy
+    "render every configured layer present in the keymap" behavior.
     """
     legends = config.output.style.legend_tables
     overview_macros = all_macros(keymap.macros) if legends.macros.show else []
     overview_tap_dances = all_tap_dances(keymap.tap_dances) if legends.tap_dances.show else []
     if legends.symbols.show:
-        symbol_entries = _overview_symbol_entries(config, keymap, raw_keymap, keycode_mappings)
+        symbol_entries = _overview_symbol_entries(
+            config, keymap, raw_keymap, keycode_mappings, selected_layers=selected_layers
+        )
     else:
         symbol_entries = []
     with using_render_context(RenderContext.build(config, keymap)):
@@ -211,6 +219,7 @@ def draw_overview(
                 macros=overview_macros,
                 tap_dances=overview_tap_dances,
                 symbol_entries=symbol_entries,
+                selected_layers=selected_layers,
             )
         )
 
@@ -244,13 +253,16 @@ def _overview_symbol_entries(
     keymap: SvalboardKeymap[SvalboardTargetKey],
     raw_keymap: SvalboardKeymap[str] | None,
     keycode_mappings: KeycodeMappings | None,
+    selected_layers: set[int] | None = None,
 ) -> list[SymbolLegendEntry]:
     """Union of every symbol entry referenced by the layers being rendered.
 
     The overview only paints layers that appear in BOTH ``raw_keymap``
     and the configured layer list, so the symbol-entry collection
     iterates that intersection rather than every key in
-    ``raw_keymap``.
+    ``raw_keymap``. ``selected_layers`` further restricts the
+    intersection to only the QMK indices the overview will actually
+    paint, so symbol entries don't leak in from filtered-out layers.
     """
     if raw_keymap is None or keycode_mappings is None:
         return []
@@ -258,6 +270,8 @@ def _overview_symbol_entries(
     for layer_cfg in config.keyboard.layers:
         qmk_idx = layer_cfg.index
         if qmk_idx in raw_keymap.layers and qmk_idx in keymap.layers:
+            if selected_layers is not None and qmk_idx not in selected_layers:
+                continue
             all_raw_keycodes.extend(k for k in raw_keymap.layers[qmk_idx] if k is not None)
     return _layer_symbol_entries(config, all_raw_keycodes, raw_keymap, keycode_mappings)
 
@@ -432,11 +446,17 @@ def draw_keymap(
         )
 
     if targets.overview:
+        # When the user combined ``-l <indices>`` with ``-l overview``,
+        # the overview should restrict itself to that same subset; an
+        # empty ``selected_layers`` (no per-layer filter) means render
+        # every configured layer the keymap defines.
+        overview_filter = set(targets.selected_layers) if targets.selected_layers else None
         keymap_images["keymap-overview"] = draw_overview(
             config,
             keymap,
             raw_keymap=raw_keymap,
             keycode_mappings=keycode_mappings,
+            selected_layers=overview_filter,
         )
 
     has_macros = bool(keymap.macros)

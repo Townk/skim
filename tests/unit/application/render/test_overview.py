@@ -124,6 +124,27 @@ class TestDrawOverview:
         svg = result.as_svg()
         assert "THUMBS" in svg
 
+    def test_selected_layers_filter_restricts_rendered_layers(self):
+        """When ``selected_layers`` is set, only those QMK indices appear."""
+        config = _make_config(num_layers=5)
+        keymap = _make_keymap(num_layers=5)
+        result = draw_overview(config, keymap, selected_layers={0, 2, 4})
+        svg = result.as_svg()
+        assert "LAYER0" in svg
+        assert "LAYER1" not in svg
+        assert "LAYER2" in svg
+        assert "LAYER3" not in svg
+        assert "LAYER4" in svg
+
+    def test_selected_layers_none_renders_all_layers(self):
+        """``selected_layers=None`` keeps the legacy "render every layer" behavior."""
+        config = _make_config(num_layers=4)
+        keymap = _make_keymap(num_layers=4)
+        result = draw_overview(config, keymap)
+        svg = result.as_svg()
+        for i in range(4):
+            assert f"LAYER{i}" in svg
+
     def test_no_connector_paths_when_show_layer_connectors_false(self):
         """When show_layer_connectors is False, no dashed paths appear in SVG."""
         layers_cfg = tuple(KeyboardLayer(index=i, name=f"Layer{i}") for i in range(3))

@@ -239,6 +239,7 @@ def KeymapOverviewDocument(
     macros: list[SvalboardMacro[SvalboardTargetKey]] | None = None,
     tap_dances: list[SvalboardTapDance[SvalboardTargetKey]] | None = None,
     symbol_entries: list[SymbolLegendEntry] | None = None,
+    selected_layers: set[int] | None = None,
 ):
     """The full overview image as a single composable.
 
@@ -272,7 +273,7 @@ def KeymapOverviewDocument(
     if not keymap.layers:
         return Spacer()
 
-    body = KeymapOverview(keymap=keymap)
+    body = KeymapOverview(keymap=keymap, selected_layers=selected_layers)
     content_w = max(body.size.width, doc_content_w)
 
     macro_entries = list(macros) if macros else []
