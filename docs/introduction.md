@@ -18,7 +18,7 @@ to visualize your keymap layout. Maybe you want to:
 
 <div class="keymap-hero" markdown>
 
-![Example Keymap Layer](_static/keymap-1.svg){ width="80%" }
+![Example Keymap Layer](_static/keymap-layer-0.svg){ width="80%" }
 
 </div>
 

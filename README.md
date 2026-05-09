@@ -8,7 +8,7 @@
 A Python CLI tool for generating high-quality keymap layout images for the
 [Svalboard](https://svalboard.com) keyboard.
 
-![Overview Keymap](docs/_static/svalboard-overview.svg)
+![Overview Keymap](docs/_static/keymap-overview.svg)
 
 ## Features
 

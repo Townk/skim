@@ -136,16 +136,17 @@ spacing-mocks:
 docs-gen-images: option-images spacing-mocks screenshots
     #!/usr/bin/env bash
     set -euo pipefail
-    out=out/docs-keymap-images
-    mkdir -p "$out"
     uv run skim generate \
         --config samples/config/SvalCOLEMAK-config.yaml \
         --keymap samples/keymaps/SvalCOLEMAKDHM.vil \
-        --layer 1 --layer overview \
-        --output-dir "$out" --force
-    cp "$out/keymap-layer-1.svg"  docs/_static/keymap-1.svg
-    cp "$out/keymap-overview.svg" docs/_static/svalboard-overview.svg
-    echo "Wrote docs/_static/keymap-1.svg, docs/_static/svalboard-overview.svg"
+        --layer 0 \
+        --output-dir docs/_static --force
+    uv run skim generate \
+        --config samples/config/SvalCOLEMAK-config.yaml \
+        --keymap samples/keymaps/SvalCOLEMAKDHM.vil \
+        --layer overview \
+        --output-dir docs/_static --force
+    echo "Wrote docs/_static/keymap-layer-0.svg, docs/_static/keymap-overview.svg"
 
 # ------------------------------------------------------------------------------
 # Project Actions

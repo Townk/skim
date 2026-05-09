@@ -8,7 +8,7 @@ from QMK, Vial, and Keybard keymap configuration files.
 
 ---
 
-![Skim Keymap Overview](_static/svalboard-overview.svg){ width="100%" }
+![Skim Keymap Overview](_static/keymap-overview.svg){ width="100%" }
 
 ---
 
