@@ -143,8 +143,10 @@
 <text x="1131.7652236842105" y="447.0701272481573" font-size="18.0684" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="white" opacity="1.0">2</text>
 <text x="43.0" y="585.8902499999999" font-size="11.0" font-weight="700" letter-spacing="3.0" text-anchor="start" dominant-baseline="text-before-edge" font-family="'Roboto', sans-serif" fill="#888888">SYMBOLS</text>
 <path d="M43.0,605.8902499999999 L1557.0,605.8902499999999" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
-<text x="44.5" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">\</text>
-<text x="63.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Non-US backslash</text>
-<text x="809.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">#</text>
-<text x="829.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Non-US hash</text>
+<text x="46.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">\</text>
+<text x="66.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Non-US backslash</text>
+<text x="555.1666666666667" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">#</text>
+<text x="576.6666666666667" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Non-US hash</text>
+<text x="1064.3333333333335" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘶</text>
+<text x="1087.3333333333335" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Shift</text>
 </svg>

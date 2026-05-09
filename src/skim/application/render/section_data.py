@@ -531,6 +531,25 @@ def _collect_raw(
                         )
                     # Fall through to recurse into args.
 
+            # Follow ``@@KEYCODE;`` references inside the function's
+            # ``macro_functions`` display template — those keycodes paint
+            # as glyphs on the rendered key (e.g. ``LWIN_T``'s template
+            # ``@@KC_LWIN;|;@0;`` shows the Windows glyph), so their
+            # ``symbol_descriptions`` need to surface in the legend even
+            # when the function itself isn't covered by a
+            # ``function_descriptions`` entry.
+            if func_name in macro_functions:
+                template_refs = _ALIAS_RE.findall(macro_functions[func_name])
+                if template_refs:
+                    _collect_raw(
+                        template_refs,
+                        keymap,
+                        keycode_mappings,
+                        out,
+                        visited_funcs,
+                        include_transparent=include_transparent,
+                    )
+
             args = _parse_function_args(args_str)
             _collect_raw(
                 args,
