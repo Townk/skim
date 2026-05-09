@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-05-08
+
 ### Added
 
 - **`output.style.overview` config group** for overview-image specifics:
@@ -725,7 +727,8 @@ of layout-quality fixes.
 - Sphinx documentation with GitHub Pages deployment workflow
 - Pre-commit hooks for ruff formatting/linting and basedpyright type checking
 
-[Unreleased]: https://github.com/Townk/skim/compare/v0.7.3...HEAD
+[Unreleased]: https://github.com/Townk/skim/compare/v0.7.4...HEAD
+[0.7.4]: https://github.com/Townk/skim/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/Townk/skim/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/Townk/skim/compare/v0.7.0...v0.7.2
 [0.7.0]: https://github.com/Townk/skim/compare/v0.5.5...v0.7.0
