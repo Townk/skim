@@ -1262,6 +1262,36 @@ def _compute_thumb_slots(
             knuckle_y,
         )
 
+    # Center the painted bbox around cluster_width / 2. ``pad_w =
+    # knuckle_w − inset/3`` (matches the Svalboard docs image), and
+    # both differ from ``nail_w`` (= 0.4·cluster_width vs knuckle's
+    # 0.385·cluster_width), so the laid-out cluster is asymmetric:
+    # the Nail / Knuckle side overflows the cluster_width box by
+    # ``(nail_w − pad_w) / 2 = 0.0075·cluster_width + inset/6``
+    # further than the Pad / Up side. The mismatch cancels out in a
+    # full-keyboard render (left / right halves mirror each other)
+    # but a solo cluster reads as off-centre. Compute the painted
+    # bbox across every key and shift every slot horizontally so the
+    # bbox centroid lands on the cluster's vertical midline.
+    extents = (
+        (down_origin.x, down_origin.x + down_w),
+        (pad_origin.x, pad_origin.x + pad_w),
+        (up_origin.x, up_origin.x + up_w),
+        (nail_origin.x, nail_origin.x + nail_w),
+        (knuckle_origin.x, knuckle_origin.x + knuckle_w),
+        (double_down_origin.x, double_down_origin.x + double_down_w),
+    )
+    painted_min_x = min(start for start, _ in extents)
+    painted_max_x = max(end for _, end in extents)
+    center_shift = center_x - (painted_min_x + painted_max_x) / 2.0
+    if center_shift:
+        down_origin = Point(down_origin.x + center_shift, down_origin.y)
+        pad_origin = Point(pad_origin.x + center_shift, pad_origin.y)
+        up_origin = Point(up_origin.x + center_shift, up_origin.y)
+        nail_origin = Point(nail_origin.x + center_shift, nail_origin.y)
+        knuckle_origin = Point(knuckle_origin.x + center_shift, knuckle_origin.y)
+        double_down_origin = Point(double_down_origin.x + center_shift, double_down_origin.y)
+
     return _ThumbClusterSlots(
         down_origin=down_origin,
         down_width=down_w,
