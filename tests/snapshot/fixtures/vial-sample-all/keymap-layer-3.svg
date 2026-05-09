@@ -149,28 +149,28 @@
 <path d="M43.0,648.00425 L1557.0,648.00425" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
 <text x="50.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700"></text>
 <text x="78.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Arrow Down</text>
-<text x="176.16666666666669" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="black" opacity="1.0" font-weight="700">↘</text>
-<text x="204.66666666666669" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">End</text>
-<text x="302.83333333333337" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="black" opacity="1.0" font-weight="700">↖</text>
-<text x="331.33333333333337" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Home</text>
-<text x="429.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700"></text>
-<text x="458.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Arrow Left</text>
-<text x="556.1666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="black" opacity="1.0" font-weight="700">⇟</text>
-<text x="584.6666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Page Down</text>
-<text x="682.8333333333334" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="black" opacity="1.0" font-weight="700">⇞</text>
-<text x="711.3333333333334" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Page Up</text>
-<text x="809.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700"></text>
-<text x="838.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Arrow Right</text>
-<text x="936.6666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700"></text>
-<text x="964.6666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Arrow Up</text>
-<text x="1061.3333333333335" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰹾</text>
-<text x="1091.3333333333335" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Delete</text>
-<text x="1188.5" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱊷</text>
-<text x="1218.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Escape</text>
-<text x="1309.6666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱜨 </text>
-<text x="1325.6666666666667" y="681.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">1</text>
-<text x="1344.6666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Run macro 1</text>
-<text x="1436.3333333333335" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱜨 </text>
-<text x="1452.3333333333335" y="681.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">2</text>
-<text x="1471.3333333333335" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Run macro 2</text>
+<text x="177.16666666666669" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="black" opacity="1.0" font-weight="700">↘</text>
+<text x="205.66666666666669" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">End</text>
+<text x="304.83333333333337" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="black" opacity="1.0" font-weight="700">↖</text>
+<text x="333.33333333333337" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Home</text>
+<text x="432.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700"></text>
+<text x="461.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Arrow Left</text>
+<text x="560.1666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="black" opacity="1.0" font-weight="700">⇟</text>
+<text x="588.6666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Page Down</text>
+<text x="687.8333333333334" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="black" opacity="1.0" font-weight="700">⇞</text>
+<text x="716.3333333333334" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Page Up</text>
+<text x="815.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700"></text>
+<text x="844.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Arrow Right</text>
+<text x="943.6666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700"></text>
+<text x="971.6666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Arrow Up</text>
+<text x="1069.3333333333335" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰹾</text>
+<text x="1099.3333333333335" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Delete</text>
+<text x="1197.5" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱊷</text>
+<text x="1227.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Escape</text>
+<text x="1319.6666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱜨 </text>
+<text x="1335.6666666666667" y="681.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">1</text>
+<text x="1354.6666666666667" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Run macro 1</text>
+<text x="1447.3333333333335" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱜨 </text>
+<text x="1463.3333333333335" y="681.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">2</text>
+<text x="1482.3333333333335" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Run macro 2</text>
 </svg>

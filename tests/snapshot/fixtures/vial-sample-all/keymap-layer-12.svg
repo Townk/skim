@@ -120,18 +120,18 @@
 <path d="M43.0,605.8902499999999 L1557.0,605.8902499999999" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
 <text x="50.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰌒</text>
 <text x="80.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Tab</text>
-<text x="303.83333333333337" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱁐</text>
-<text x="333.33333333333337" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Space</text>
-<text x="552.1666666666667" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">L </text>
-<text x="562.1666666666667" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
-<text x="586.6666666666667" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Left mouse button</text>
-<text x="805.0" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">R </text>
-<text x="816.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
-<text x="840.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Right mouse button</text>
-<text x="1056.3333333333335" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰁨 </text>
-<text x="1072.3333333333335" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰍽</text>
-<text x="1093.3333333333335" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Toggle auto-mouse</text>
-<text x="1310.6666666666667" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰌨 </text>
-<text x="1325.6666666666667" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">#</text>
-<text x="1346.6666666666667" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Make # the only active layer</text>
+<text x="305.83333333333337" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱁐</text>
+<text x="335.33333333333337" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Space</text>
+<text x="556.1666666666667" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">L </text>
+<text x="566.1666666666667" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
+<text x="590.6666666666667" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Left mouse button</text>
+<text x="811.0" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">R </text>
+<text x="822.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
+<text x="846.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Right mouse button</text>
+<text x="1064.3333333333335" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰁨 </text>
+<text x="1080.3333333333335" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰍽</text>
+<text x="1101.3333333333335" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Toggle auto-mouse</text>
+<text x="1320.6666666666667" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰌨 </text>
+<text x="1335.6666666666667" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">#</text>
+<text x="1356.6666666666667" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Make # the only active layer</text>
 </svg>

@@ -89,17 +89,32 @@ class SymbolMetrics:
     """Sizing constants for the symbols composables.
 
     Owns the entry-level pixel metrics (row height, glyph / description
-    font sizes, the glyph cell measurement floor). The four universal
-    table spacings (``table_col_spacing`` between columns,
-    ``table_row_spacing`` between rows, ``table_header_spacing``
-    between the glyph cell and the description, ``section_spacing``
-    between the title strip and the table) come from
-    :class:`DocumentMetrics` so the symbols section participates in the
-    same rhythm every other table-shaped composable uses.
+    font sizes, the glyph cell measurement floor). ``table_row_spacing``
+    and ``table_header_spacing`` come from :class:`DocumentMetrics`
+    unchanged so the symbols section participates in the same vertical
+    rhythm every other table-shaped composable uses.
+
+    ``table_col_min_spacing`` (the *minimum* gap between symbol columns)
+    is the only spacing that breaks from the canonical doc-level value.
+    The symbols layout puts each column's glyph immediately to the left
+    of its description (separated by ``table_header_spacing``), so a
+    column gap equal to the canonical ``table_col_spacing`` would
+    leave less horizontal whitespace between adjacent columns than
+    between a glyph and its own description — making columns visually
+    bleed together. The column gap is therefore derived as
+    ``table_header_spacing * 1.5`` so it always exceeds the
+    glyph→description gap by the same comfortable factor regardless
+    of the configured spacing. The value is a *minimum* because, in
+    fill-the-budget mode (``wrap_content=False``), :func:`SymbolTable`
+    inflates each entry's cell width to absorb the leftover space; the
+    rendered inter-column gap is therefore
+    ``table_col_min_spacing + (entry_w − natural_entry_w)``, which can
+    exceed the configured minimum when the canvas is wider than the
+    table's natural width.
     """
 
     # Universal table spacings — sourced from ``DocumentMetrics``.
-    table_col_spacing: float
+    table_col_min_spacing: float
     table_header_spacing: float
     table_row_spacing: float
 
@@ -121,7 +136,7 @@ class SymbolMetrics:
         doc_m = ctx.document_metrics
         w = doc_m.doc_width * scale
         return cls(
-            table_col_spacing=doc_m.table_col_spacing * scale,
+            table_col_min_spacing=doc_m.table_header_spacing * 1.5 * scale,
             table_header_spacing=doc_m.table_header_spacing * scale,
             table_row_spacing=doc_m.table_row_spacing * scale,
             entry_row_height=w * _ENTRY_ROW_HEIGHT_RATIO,
@@ -297,8 +312,8 @@ def SymbolTable(
         col_count = max(
             1,
             int(
-                (max_width + metrics.table_col_spacing)
-                / (natural_entry_w + metrics.table_col_spacing)
+                (max_width + metrics.table_col_min_spacing)
+                / (natural_entry_w + metrics.table_col_min_spacing)
             ),
         )
         if not wrap_content:
@@ -310,7 +325,7 @@ def SymbolTable(
             row_count_initial = (n + col_count - 1) // col_count
             col_count = (n + row_count_initial - 1) // row_count_initial
 
-    total_gaps = max(0, col_count - 1) * metrics.table_col_spacing
+    total_gaps = max(0, col_count - 1) * metrics.table_col_min_spacing
     entry_w = (
         natural_entry_w
         if wrap_content
@@ -342,7 +357,7 @@ def SymbolTable(
             else:  # column-major
                 col = idx // row_count
                 row = idx % row_count
-            cell_x = origin.x + col * (entry_w + metrics.table_col_spacing)
+            cell_x = origin.x + col * (entry_w + metrics.table_col_min_spacing)
             cell_y = origin.y + row * (metrics.entry_row_height + metrics.table_row_spacing)
             el.draw_at(d, Point(cell_x, cell_y))
 

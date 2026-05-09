@@ -155,28 +155,28 @@
 <text x="78.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Alt</text>
 <text x="50.5" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘴</text>
 <text x="78.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Ctrl</text>
-<text x="266.1428571428571" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘳</text>
-<text x="295.1428571428571" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Command / Window</text>
-<text x="266.1428571428571" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘶</text>
-<text x="295.1428571428571" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Shift</text>
-<text x="483.2857142857143" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘲</text>
-<text x="512.2857142857142" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Caps Lock</text>
-<text x="483.2857142857143" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰌒</text>
-<text x="512.2857142857142" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Tab</text>
-<text x="699.4285714285714" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰁮</text>
-<text x="729.4285714285714" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Backspace</text>
-<text x="699.4285714285714" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰹾</text>
-<text x="729.4285714285714" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Delete</text>
-<text x="918.0714285714286" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰌑</text>
-<text x="946.5714285714286" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Enter</text>
-<text x="917.0714285714286" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱊷</text>
-<text x="946.5714285714286" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Escape</text>
-<text x="1135.2142857142858" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱁐</text>
-<text x="1163.7142857142858" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Space</text>
-<text x="1131.2142857142858" y="711.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700"> </text>
-<text x="1147.2142857142858" y="710.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">′</text>
-<text x="1163.7142857142858" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Alternate repeat</text>
-<text x="1345.857142857143" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰧾 </text>
-<text x="1360.857142857143" y="681.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">#</text>
-<text x="1380.857142857143" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Hold to layer #</text>
+<text x="267.8571428571429" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘳</text>
+<text x="296.8571428571429" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Command / Window</text>
+<text x="267.8571428571429" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘶</text>
+<text x="296.8571428571429" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Shift</text>
+<text x="486.7142857142857" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘲</text>
+<text x="515.7142857142858" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Caps Lock</text>
+<text x="486.7142857142857" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰌒</text>
+<text x="515.7142857142858" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Tab</text>
+<text x="704.5714285714286" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰁮</text>
+<text x="734.5714285714286" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Backspace</text>
+<text x="704.5714285714286" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰹾</text>
+<text x="734.5714285714286" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Delete</text>
+<text x="924.9285714285714" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰌑</text>
+<text x="953.4285714285714" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Enter</text>
+<text x="923.9285714285714" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱊷</text>
+<text x="953.4285714285714" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Escape</text>
+<text x="1143.7857142857142" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱁐</text>
+<text x="1172.2857142857142" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Space</text>
+<text x="1139.7857142857142" y="711.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700"> </text>
+<text x="1155.7857142857142" y="710.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">′</text>
+<text x="1172.2857142857142" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Alternate repeat</text>
+<text x="1356.142857142857" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰧾 </text>
+<text x="1371.142857142857" y="681.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">#</text>
+<text x="1391.142857142857" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Hold to layer #</text>
 </svg>

@@ -154,18 +154,18 @@
 <text x="89.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Num Lock</text>
 <text x="45.5" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">ScLk</text>
 <text x="89.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Scroll Lock</text>
-<text x="433.5" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰹾</text>
-<text x="469.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Delete</text>
-<text x="434.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱊷</text>
-<text x="469.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Escape</text>
-<text x="814.5" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰏦</text>
-<text x="849.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Pause</text>
-<text x="814.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰹑</text>
-<text x="849.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Print Screen</text>
-<text x="1188.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰹍 </text>
-<text x="1204.0" y="681.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">#</text>
-<text x="1229.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Toggle layer #</text>
-<text x="1188.5" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰌨 </text>
-<text x="1203.5" y="710.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">#</text>
-<text x="1229.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Make # the only active layer</text>
+<text x="436.5" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰹾</text>
+<text x="472.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Delete</text>
+<text x="437.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󱊷</text>
+<text x="472.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Escape</text>
+<text x="820.5" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰏦</text>
+<text x="855.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Pause</text>
+<text x="820.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰹑</text>
+<text x="855.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Print Screen</text>
+<text x="1197.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰹍 </text>
+<text x="1213.0" y="681.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">#</text>
+<text x="1238.0" y="682.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Toggle layer #</text>
+<text x="1197.5" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰌨 </text>
+<text x="1212.5" y="710.50425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">#</text>
+<text x="1238.0" y="711.00425" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Make # the only active layer</text>
 </svg>

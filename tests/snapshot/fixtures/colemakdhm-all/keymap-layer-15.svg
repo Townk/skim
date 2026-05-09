@@ -163,13 +163,13 @@
 <text x="45.0" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">L </text>
 <text x="55.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
 <text x="79.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Left mouse button</text>
-<text x="424.5" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">R </text>
-<text x="435.5" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
-<text x="459.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Right mouse button</text>
-<text x="803.0" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">M </text>
-<text x="817.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
-<text x="839.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Middle mouse button</text>
-<text x="1183.5" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰙪 </text>
-<text x="1198.5" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700"></text>
-<text x="1219.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Recalibrate pointer sensor</text>
+<text x="427.5" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">R </text>
+<text x="438.5" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
+<text x="462.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Right mouse button</text>
+<text x="809.0" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">M </text>
+<text x="823.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
+<text x="845.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Middle mouse button</text>
+<text x="1192.5" y="639.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰙪 </text>
+<text x="1207.5" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700"></text>
+<text x="1228.0" y="639.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Recalibrate pointer sensor</text>
 </svg>

@@ -169,19 +169,19 @@
 <path d="M43.0,711.8902499999999 L1557.0,711.8902499999999" stroke="#888888" stroke-opacity="0.5" stroke-width="1.2" />
 <text x="48.5" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'DejaVu Sans Condensed', 'DejaVu Sans', 'Apple Symbols', sans-serif" fill="black" opacity="1.0" font-weight="700">⎇</text>
 <text x="79.0" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Alt</text>
-<text x="268.1428571428571" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘴</text>
-<text x="296.1428571428571" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Ctrl</text>
-<text x="483.7857142857143" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘳</text>
-<text x="513.2857142857142" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Command / Window</text>
-<text x="700.9285714285714" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘶</text>
-<text x="730.4285714285714" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Shift</text>
-<text x="913.5714285714286" y="745.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">L </text>
-<text x="923.5714285714286" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
-<text x="947.5714285714286" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Left mouse button</text>
-<text x="1130.2142857142858" y="745.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">R </text>
-<text x="1141.2142857142858" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
-<text x="1164.7142857142858" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Right mouse button</text>
-<text x="1345.857142857143" y="745.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">M </text>
-<text x="1359.857142857143" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
-<text x="1381.857142857143" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Middle mouse button</text>
+<text x="269.8571428571429" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘴</text>
+<text x="297.8571428571429" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Ctrl</text>
+<text x="487.2142857142857" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘳</text>
+<text x="516.7142857142858" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Command / Window</text>
+<text x="706.0714285714286" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰘶</text>
+<text x="735.5714285714286" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Shift</text>
+<text x="920.4285714285714" y="745.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">L </text>
+<text x="930.4285714285714" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
+<text x="954.4285714285714" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Left mouse button</text>
+<text x="1138.7857142857142" y="745.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">R </text>
+<text x="1149.7857142857142" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
+<text x="1173.2857142857142" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Right mouse button</text>
+<text x="1356.142857142857" y="745.3902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="1.0" font-weight="700">M </text>
+<text x="1370.142857142857" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="'Symbols Nerd Font', 'Nerd Fonts', monospace" fill="black" opacity="1.0" font-weight="700">󰳽</text>
+<text x="1392.142857142857" y="745.8902499999999" font-size="13.0" text-anchor="start" dominant-baseline="central" font-family="Roboto, sans-serif" fill="black" opacity="0.75">Middle mouse button</text>
 </svg>
