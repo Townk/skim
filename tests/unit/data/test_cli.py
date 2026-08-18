@@ -399,10 +399,14 @@ class TestOutputFilesWithRenderEngine:
         output = OutputFiles(render_engine=RenderEngine.CAIRO)
         assert output.render_engine == RenderEngine.CAIRO
 
-    def test_use_system_fonts_defaults_to_false(self):
-        """use_system_fonts defaults to False."""
+    def test_use_system_fonts_defaults_to_none(self):
+        """use_system_fonts defaults to None so config values are kept.
+
+        ``None`` means the CLI flag was not given; only an explicit
+        ``True``/``False`` overrides the config-file value.
+        """
         output = OutputFiles()
-        assert output.use_system_fonts is False
+        assert output.use_system_fonts is None
 
     def test_use_system_fonts_can_be_set(self):
         """use_system_fonts can be set to True."""

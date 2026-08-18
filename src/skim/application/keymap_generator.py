@@ -75,10 +75,10 @@ def _derive_default_config_from_keymap(keymap_path: Path) -> SkimConfig:
 
 def _get_config(
     config_path: Path | None,
-    use_system_fonts: bool = False,
+    use_system_fonts: bool | None = None,
     keymap_for_defaults: Path | None = None,
-    show_special_keys_legend: bool = True,
-    show_symbol_legend: bool = True,
+    show_special_keys_legend: bool | None = None,
+    show_symbol_legend: bool | None = None,
     symbol_legend_flow: str | None = None,
     symbol_legend_columns: int | None = None,
     macros_scale: float | None = None,
@@ -101,11 +101,18 @@ def _get_config(
         config_path: Path to the configuration YAML file, or None to use
             default configuration.
         use_system_fonts: Whether to use system fonts instead of embedding
-            fonts in the SVG output.
+            fonts in the SVG output. ``None`` means the CLI flag was not
+            given, so the config-file value is kept.
         keymap_for_defaults: When ``config_path`` is None, the keymap file used
             to derive default ``keyboard.layers`` and ``palette.layers`` so the
             generator behaves like the configurator does for an unconfigured
             keymap. Ignored when ``config_path`` is provided.
+        show_special_keys_legend: Whether to render the macro and tap-dance
+            legend tables. ``None`` means the CLI flag was not given, so the
+            config-file value is kept.
+        show_symbol_legend: Whether to render the symbol legend table.
+            ``None`` means the CLI flag was not given, so the config-file
+            value is kept.
         symbol_legend_flow: Override for the symbol legend flow direction
             (``"row"`` or ``"column"``).  ``None`` means use the config value.
 
@@ -143,13 +150,19 @@ def _get_config(
     )
 
     legends = config.output.style.legend_tables
-    macros_updates: dict = {"show": show_special_keys_legend}
+    macros_updates: dict = {}
+    if show_special_keys_legend is not None:
+        macros_updates["show"] = show_special_keys_legend
     if macros_scale is not None:
         macros_updates["scale"] = macros_scale
-    tap_dances_updates: dict = {"show": show_special_keys_legend}
+    tap_dances_updates: dict = {}
+    if show_special_keys_legend is not None:
+        tap_dances_updates["show"] = show_special_keys_legend
     if tap_dances_scale is not None:
         tap_dances_updates["scale"] = tap_dances_scale
-    symbols_updates: dict = {"show": show_symbol_legend}
+    symbols_updates: dict = {}
+    if show_symbol_legend is not None:
+        symbols_updates["show"] = show_symbol_legend
     if symbols_scale is not None:
         symbols_updates["scale"] = symbols_scale
     if symbol_legend_flow is not None:
@@ -166,9 +179,10 @@ def _get_config(
 
     style_updates: dict = {
         "palette": config.output.style.palette.model_copy(update={"layers": new_layers}),
-        "use_system_fonts": use_system_fonts,
         "legend_tables": new_legends,
     }
+    if use_system_fonts is not None:
+        style_updates["use_system_fonts"] = use_system_fonts
 
     new_style = config.output.style.model_copy(update=style_updates)
 
@@ -282,8 +296,8 @@ def generate_keymap(
     inputs: InputFiles,
     outputs: OutputFiles,
     targets: KeymapGeneratorTargets,
-    show_special_keys_legend: bool = True,
-    show_symbol_legend: bool = True,
+    show_special_keys_legend: bool | None = None,
+    show_symbol_legend: bool | None = None,
     symbol_legend_flow: str | None = None,
     symbol_legend_columns: int | None = None,
     macros_scale: float | None = None,
@@ -351,4 +365,9 @@ def generate_keymap(
         raw_keymap=input_keymap,
         keycode_mappings=keycode_mappings,
     )
-    save_drawings(outputs, drawings, outputs.render_engine)
+    save_drawings(
+        outputs,
+        drawings,
+        outputs.render_engine,
+        use_system_fonts=config.output.style.use_system_fonts,
+    )

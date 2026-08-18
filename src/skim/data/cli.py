@@ -56,7 +56,8 @@ class OutputFiles:
         force_overwrite: Whether to overwrite existing files without
             prompting for confirmation. Defaults to False.
         use_system_fonts: Whether to use system fonts instead of embedding
-            fonts in SVG. Defaults to False.
+            fonts in SVG. ``None`` means the CLI flag was not given and the
+            config-file value should be kept. Defaults to ``None``.
         render_engine: Which render engine to use for non-vector formats.
             Options are CHROMIUM (Playwright) or CAIRO. If None, uses the
             first available engine. Defaults to None.
@@ -77,7 +78,7 @@ class OutputFiles:
     output_dir: Path = field(default_factory=Path)
     output_format: str = "svg"
     force_overwrite: bool = False
-    use_system_fonts: bool = False
+    use_system_fonts: bool | None = None
     render_engine: RenderEngine | None = None
 
 
