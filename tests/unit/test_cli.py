@@ -131,6 +131,50 @@ class TestGenerateCommand:
 
     @patch("skim.cli.generate_keymap")
     @patch("skim.cli.setup_logging")
+    def test_generate_absent_font_and_legend_flags_pass_none(
+        self, mock_setup, mock_generate, tmp_path
+    ):
+        """Absent -F/-N/-Y flags propagate as None so config values are kept.
+
+        Regression: the flags used to default to False/True and clobber the
+        config-file values even when never passed.
+        """
+        runner = CliRunner()
+        result = runner.invoke(main, ["generate", "-o", str(tmp_path)])
+
+        assert result.exit_code == 0
+        outputs = mock_generate.call_args.args[1]
+        assert outputs.use_system_fonts is None
+        assert mock_generate.call_args.kwargs["show_special_keys_legend"] is None
+        assert mock_generate.call_args.kwargs["show_symbol_legend"] is None
+
+    @patch("skim.cli.generate_keymap")
+    @patch("skim.cli.setup_logging")
+    def test_generate_use_system_fonts_flag_propagates_true(
+        self, mock_setup, mock_generate, tmp_path
+    ):
+        """-F propagates True through OutputFiles."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["generate", "-F", "-o", str(tmp_path)])
+
+        assert result.exit_code == 0
+        assert mock_generate.call_args.args[1].use_system_fonts is True
+
+    @patch("skim.cli.generate_keymap")
+    @patch("skim.cli.setup_logging")
+    def test_generate_no_special_keys_and_no_symbols_flags_propagate_false(
+        self, mock_setup, mock_generate, tmp_path
+    ):
+        """-N and -Y propagate False through the legend visibility kwargs."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["generate", "-N", "-Y", "-o", str(tmp_path)])
+
+        assert result.exit_code == 0
+        assert mock_generate.call_args.kwargs["show_special_keys_legend"] is False
+        assert mock_generate.call_args.kwargs["show_symbol_legend"] is False
+
+    @patch("skim.cli.generate_keymap")
+    @patch("skim.cli.setup_logging")
     def test_generate_handles_abort(self, mock_setup, mock_generate):
         """Handles click.Abort gracefully."""
         mock_generate.side_effect = click.Abort()

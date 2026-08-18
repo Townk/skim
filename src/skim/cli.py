@@ -198,6 +198,7 @@ def doctor() -> None:
     "--use-system-fonts",
     "-F",
     is_flag=True,
+    default=None,
     help="Use system fonts instead of embedding fonts in SVG.",
 )
 @click.option(
@@ -217,7 +218,7 @@ def doctor() -> None:
     "--no-special-keys",
     "no_special_keys",
     is_flag=True,
-    default=False,
+    default=None,
     help="Omit the macro and tap-dance legend tables from the rendered SVGs.",
 )
 @click.option(
@@ -225,7 +226,7 @@ def doctor() -> None:
     "--no-symbols",
     "no_symbols",
     is_flag=True,
-    default=False,
+    default=None,
     help="Omit the symbol legend from the rendered SVGs.",
 )
 @click.option(
@@ -328,10 +329,10 @@ def generate(
     output_format: str,
     layer: tuple,
     force: bool,
-    use_system_fonts: bool,
+    use_system_fonts: bool | None,
     render_engine: str | None,
-    no_special_keys: bool,
-    no_symbols: bool,
+    no_special_keys: bool | None,
+    no_symbols: bool | None,
     symbol_legend_flow: str | None,
     symbol_legend_columns: int | None,
     macros_scale: float | None,
@@ -388,8 +389,8 @@ def generate(
             inputs,
             outputs,
             targets,
-            show_special_keys_legend=not no_special_keys,
-            show_symbol_legend=not no_symbols,
+            show_special_keys_legend=None if no_special_keys is None else not no_special_keys,
+            show_symbol_legend=None if no_symbols is None else not no_symbols,
             symbol_legend_flow=symbol_legend_flow,
             symbol_legend_columns=symbol_legend_columns,
             macros_scale=macros_scale,

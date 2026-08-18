@@ -183,6 +183,7 @@ def save_drawings(
     outputs: OutputFiles,
     drawings: dict[str, draw.Drawing],
     render_engine: RenderEngine | None = None,
+    use_system_fonts: bool = False,
 ):
     if not outputs.force_overwrite:
         existing_files = []
@@ -210,5 +211,5 @@ def save_drawings(
         outputs.output_format,
         render_engine,
         convert_text_to_paths,
-        outputs.use_system_fonts,
+        use_system_fonts,
     )

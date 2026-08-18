@@ -68,6 +68,96 @@ class TestGetConfig:
         mock_make_gradient.assert_called_once_with("#FF0000", layer.color_index)
         assert result.output.style.palette.layers[0].gradient is not None
 
+    def _config_with_style(self, **style_kwargs):
+        """Build a SkimConfig carrying the given output.style overrides."""
+        from skim.data.config import Output, Style
+
+        return SkimConfig(output=Output(style=Style(**style_kwargs)))
+
+    @patch("skim.application.keymap_generator.load_skim_config")
+    def test_preserves_config_use_system_fonts_when_flag_absent(self, mock_load):
+        """Keeps the config-file use_system_fonts value when -F is not given.
+
+        Regression: the CLI flag default (False) used to clobber the
+        config-file value even when the flag was never passed.
+        """
+        mock_load.return_value = self._config_with_style(use_system_fonts=True)
+
+        result = _get_config(Path("config.yaml"))
+
+        assert result.output.style.use_system_fonts is True
+
+    @patch("skim.application.keymap_generator.load_skim_config")
+    def test_use_system_fonts_flag_overrides_config(self, mock_load):
+        """-F turns system fonts on even when the config says False."""
+        mock_load.return_value = self._config_with_style(use_system_fonts=False)
+
+        result = _get_config(Path("config.yaml"), use_system_fonts=True)
+
+        assert result.output.style.use_system_fonts is True
+
+    @patch("skim.application.keymap_generator.load_skim_config")
+    def test_use_system_fonts_flag_false_overrides_config(self, mock_load):
+        """Explicitly passing the flag as False still wins over the config."""
+        mock_load.return_value = self._config_with_style(use_system_fonts=True)
+
+        result = _get_config(Path("config.yaml"), use_system_fonts=False)
+
+        assert result.output.style.use_system_fonts is False
+
+    def _config_with_legends(self, macros_show=True, tap_dances_show=True, symbols_show=True):
+        """Build a SkimConfig with explicit legend-table visibility flags."""
+        from skim.data.config import (
+            LegendTables,
+            MacrosLegend,
+            SymbolsLegend,
+            TapDancesLegend,
+        )
+
+        legends = LegendTables(
+            macros=MacrosLegend(show=macros_show),
+            tap_dances=TapDancesLegend(show=tap_dances_show),
+            symbols=SymbolsLegend(show=symbols_show),
+        )
+        return self._config_with_style(legend_tables=legends)
+
+    @patch("skim.application.keymap_generator.load_skim_config")
+    def test_preserves_config_legend_visibility_when_flags_absent(self, mock_load):
+        """Keeps config legend_tables.show values when -N/-Y are not given.
+
+        Regression: the CLI flag defaults (True) used to clobber the
+        config-file values even when the flags were never passed.
+        """
+        mock_load.return_value = self._config_with_legends(False, False, False)
+
+        result = _get_config(Path("config.yaml"))
+
+        assert result.output.style.legend_tables.macros.show is False
+        assert result.output.style.legend_tables.tap_dances.show is False
+        assert result.output.style.legend_tables.symbols.show is False
+
+    @patch("skim.application.keymap_generator.load_skim_config")
+    def test_no_special_keys_flag_overrides_config_legend_visibility(self, mock_load):
+        """-N forces the macro/tap-dance legends off regardless of config."""
+        mock_load.return_value = self._config_with_legends(True, True, True)
+
+        result = _get_config(Path("config.yaml"), show_special_keys_legend=False)
+
+        assert result.output.style.legend_tables.macros.show is False
+        assert result.output.style.legend_tables.tap_dances.show is False
+        assert result.output.style.legend_tables.symbols.show is True
+
+    @patch("skim.application.keymap_generator.load_skim_config")
+    def test_no_symbols_flag_overrides_config_legend_visibility(self, mock_load):
+        """-Y forces the symbol legend off regardless of config."""
+        mock_load.return_value = self._config_with_legends(True, True, True)
+
+        result = _get_config(Path("config.yaml"), show_symbol_legend=False)
+
+        assert result.output.style.legend_tables.macros.show is True
+        assert result.output.style.legend_tables.tap_dances.show is True
+        assert result.output.style.legend_tables.symbols.show is False
+
     @patch("skim.application.keymap_generator.load_skim_config")
     def test_preserves_existing_gradients(self, mock_load):
         """Preserves layer colors that already have gradients."""
@@ -298,7 +388,12 @@ class TestGenerateKeymap:
         mock_draw_keymap.assert_called_once()
         draw_call_args, draw_call_kwargs = mock_draw_keymap.call_args
         assert draw_call_args[:3] == (mock_config, mock_resolved_keymap, targets)
-        mock_save_drawings.assert_called_once_with(outputs, mock_drawings, None)
+        mock_save_drawings.assert_called_once_with(
+            outputs,
+            mock_drawings,
+            None,
+            use_system_fonts=mock_config.output.style.use_system_fonts,
+        )
 
     @patch("skim.application.keymap_generator.logger")
     def test_exits_when_output_path_is_file(self, mock_logger, tmp_path):
