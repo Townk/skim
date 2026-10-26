@@ -741,6 +741,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#base_layer_index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        base_layer_index
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1429,6 +1440,17 @@
     <span class="md-ellipsis">
       
         width
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output-style-layer-indicator-reserve-space" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reserve_space
       
     </span>
   </a>
@@ -2235,6 +2257,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#base_layer_index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        base_layer_index
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2929,6 +2962,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#output-style-layer-indicator-reserve-space" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reserve_space
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3395,7 +3439,8 @@ and Keybard keymaps that can populate non-sequential layers like <code>0, 1, 2, 
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">      </span><span class="nt">variant</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;string&gt;</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">      </span><span class="nt">base_layer_index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;integer&gt;</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
 </code></pre></div>
 <p>Each entry has these fields:</p>
 <hr />
@@ -3517,6 +3562,36 @@ image — typically used to tag the keymap variant (<code>"QWERTY"</code>, <code
 <p><img alt="Layer badge reading &quot;0 LETTERS&quot; with &quot;QWERTY&quot; below" loading="lazy" src="../../_static/options/keyboard-layers/badge-with-variant.svg" width="240" /></p>
 </figure>
 </div>
+<hr />
+<h4 id="base_layer_index"><code>base_layer_index</code><a class="headerlink" href="#base_layer_index" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>integer</code> | <code>null</code></td>
+<td><code>null</code></td>
+<td><code>0</code>–<code>31</code></td>
+</tr>
+</tbody>
+</table>
+<p>The QMK index of the layer this layer's transparent (<code>KC_TRNS</code> / <code>_______</code>)
+keys should fall through to when Skim resolves their displayed labels. By
+default Skim picks the conventional base — layer <code>0</code> for an unfiltered run,
+or the lowest selected index for a layer-filtered run (e.g. <code>skim generate
+-l 2 -l 3</code> uses layer <code>2</code>). Set this when a specific layer's transparent
+keys logically inherit from a layer that is not the run-wide base — for
+example a "numbers" layer stacked on top of a "symbols" layer rather than
+on the alpha base.</p>
+<p>The value must be a <code>index</code> of another layer present in <code>keyboard.layers</code>;
+self-references are rejected at config load time. This option only changes
+the <em>displayed</em> labels; QMK's runtime fall-through behavior on the keyboard
+itself is unaffected.</p>
 <hr />
 <h2 id="keycodes"><code>keycodes</code><a class="headerlink" href="#keycodes" title="Permanent link">&para;</a></h2>
 <p>Customizes how Skim turns raw QMK keycode strings into the labels that
@@ -5122,6 +5197,7 @@ badges in the overview's <code>LAYERS</code> column.</p>
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="nt">layer_indicator</span><span class="p">:</span>
 <a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">      </span><span class="nt">show</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
 <a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">      </span><span class="nt">width</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;float | &quot;N%&quot; | null&gt;</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">      </span><span class="nt">reserve_space</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;boolean&gt;</span>
 </code></pre></div>
 <p>The gap between an outer key's edge and its indicator circle lives
 on <a href="#output-layout-spacing-layer-indicator-spacing"><code>output.layout.spacing.layer_indicator_spacing</code></a>
@@ -5174,6 +5250,30 @@ does this key take me." Set to <code>false</code> to suppress them entirely
 <figcaption>The rose stroke traces the layer indicator circle on the north key.</figcaption>
 <p><img alt="Layer indicator stroke highlighted" loading="lazy" src="../../_static/spacing/layer-indicator-stroke.svg" width="320" /></p>
 </figure>
+<hr />
+<h5 id="output-style-layer-indicator-reserve-space"><code>reserve_space</code><a class="headerlink" href="#output-style-layer-indicator-reserve-space" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Lay every layer image out as if every key had a badge. Each layer
+normally makes room only for the badges it has, so a layer whose inner
+thumb keys switch layers draws its two halves further apart than one
+whose don't. With <code>true</code>, all layer images share one geometry: halves,
+clusters and keys sit at the same coordinates whichever layer is drawn,
+at the cost of the extra room on layers with few badges. Turn it on
+when the images replace each other in place, such as a live overlay of
+the current layer. Has no effect when <code>show</code> is <code>false</code>.</p>
 <hr />
 <h4 id="output-style-legend-tables"><code>legend_tables</code><a class="headerlink" href="#output-style-legend-tables" title="Permanent link">&para;</a></h4>
 <p>Configures the three legend tables Skim renders alongside the

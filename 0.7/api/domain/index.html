@@ -6126,7 +6126,9 @@ and transform the data.</p>
 <div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">KeymapTargetAdapter</span><span class="p">(</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">label_adapter</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="KeycodeLabelAdapter (skim.domain.adapters.keycode_label_adapter.KeycodeLabelAdapter)" href="#skim.domain.adapters.KeycodeLabelAdapter">KeycodeLabelAdapter</a></span><span class="p">,</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">fallthrough_to_layer_zero</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">base_layer_index</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">layer_base_overrides</span><span class="p">:</span> <span class="n"><span title="collections.abc.Mapping">Mapping</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="n"><span title="int">int</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6219,13 +6221,53 @@ to labels.</p>
             <td>
               <div class="doc-md-description">
                 <p>When True (default), transparent keys
-on layers above 0 borrow their display label from the same
-key position on layer 0. Set False to leave transparent keys
-blank.</p>
+on layers other than <code>base_layer_index</code> borrow their display
+label from the same key position on the base layer. Set False
+to leave transparent keys blank.</p>
               </div>
             </td>
             <td>
                   <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>base_layer_index</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>QMK index of the layer used as the source for
+transparent fall-through. Defaults to 0 (the conventional QMK
+base). Set to the lowest QMK index of a layer-filtered run so
+transparent keys don't bleed labels in from filtered-out
+layers.</p>
+              </div>
+            </td>
+            <td>
+                  <code>0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>layer_base_overrides</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Mapping">Mapping</span>[<span title="int">int</span>, <span title="int">int</span>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional per-layer override map keyed by
+QMK layer index. When a layer's QMK index appears here, its
+transparent keys borrow from the mapped base index instead of
+<code>base_layer_index</code>. Layers absent from the map use
+<code>base_layer_index</code>. <code>None</code> (default) means no overrides.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
@@ -6240,11 +6282,7 @@ blank.</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>src/skim/domain/adapters/keymap_target_adapter.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-128">128</a></span>
-<span class="normal"><a href="#__codelineno-0-129">129</a></span>
-<span class="normal"><a href="#__codelineno-0-130">130</a></span>
-<span class="normal"><a href="#__codelineno-0-131">131</a></span>
-<span class="normal"><a href="#__codelineno-0-132">132</a></span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-132">132</a></span>
 <span class="normal"><a href="#__codelineno-0-133">133</a></span>
 <span class="normal"><a href="#__codelineno-0-134">134</a></span>
 <span class="normal"><a href="#__codelineno-0-135">135</a></span>
@@ -6256,23 +6294,55 @@ blank.</p>
 <span class="normal"><a href="#__codelineno-0-141">141</a></span>
 <span class="normal"><a href="#__codelineno-0-142">142</a></span>
 <span class="normal"><a href="#__codelineno-0-143">143</a></span>
-<span class="normal"><a href="#__codelineno-0-144">144</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-128" name="__codelineno-0-128"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-<a id="__codelineno-0-129" name="__codelineno-0-129"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-130" name="__codelineno-0-130"></a>    <span class="n">label_adapter</span><span class="p">:</span> <span class="n">KeycodeLabelAdapter</span><span class="p">,</span>
-<a id="__codelineno-0-131" name="__codelineno-0-131"></a>    <span class="n">fallthrough_to_layer_zero</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-132" name="__codelineno-0-132"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-133" name="__codelineno-0-133"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize the adapter with configuration and label transformer.</span>
-<a id="__codelineno-0-134" name="__codelineno-0-134"></a>
-<a id="__codelineno-0-135" name="__codelineno-0-135"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-136" name="__codelineno-0-136"></a><span class="sd">        label_adapter: The adapter for transforming individual keycodes</span>
-<a id="__codelineno-0-137" name="__codelineno-0-137"></a><span class="sd">            to labels.</span>
-<a id="__codelineno-0-138" name="__codelineno-0-138"></a><span class="sd">        fallthrough_to_layer_zero: When True (default), transparent keys</span>
-<a id="__codelineno-0-139" name="__codelineno-0-139"></a><span class="sd">            on layers above 0 borrow their display label from the same</span>
-<a id="__codelineno-0-140" name="__codelineno-0-140"></a><span class="sd">            key position on layer 0. Set False to leave transparent keys</span>
-<a id="__codelineno-0-141" name="__codelineno-0-141"></a><span class="sd">            blank.</span>
-<a id="__codelineno-0-142" name="__codelineno-0-142"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-143" name="__codelineno-0-143"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_label_adapter</span> <span class="o">=</span> <span class="n">label_adapter</span>
-<a id="__codelineno-0-144" name="__codelineno-0-144"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_fallthrough_to_layer_zero</span> <span class="o">=</span> <span class="n">fallthrough_to_layer_zero</span>
+<span class="normal"><a href="#__codelineno-0-144">144</a></span>
+<span class="normal"><a href="#__codelineno-0-145">145</a></span>
+<span class="normal"><a href="#__codelineno-0-146">146</a></span>
+<span class="normal"><a href="#__codelineno-0-147">147</a></span>
+<span class="normal"><a href="#__codelineno-0-148">148</a></span>
+<span class="normal"><a href="#__codelineno-0-149">149</a></span>
+<span class="normal"><a href="#__codelineno-0-150">150</a></span>
+<span class="normal"><a href="#__codelineno-0-151">151</a></span>
+<span class="normal"><a href="#__codelineno-0-152">152</a></span>
+<span class="normal"><a href="#__codelineno-0-153">153</a></span>
+<span class="normal"><a href="#__codelineno-0-154">154</a></span>
+<span class="normal"><a href="#__codelineno-0-155">155</a></span>
+<span class="normal"><a href="#__codelineno-0-156">156</a></span>
+<span class="normal"><a href="#__codelineno-0-157">157</a></span>
+<span class="normal"><a href="#__codelineno-0-158">158</a></span>
+<span class="normal"><a href="#__codelineno-0-159">159</a></span>
+<span class="normal"><a href="#__codelineno-0-160">160</a></span>
+<span class="normal"><a href="#__codelineno-0-161">161</a></span>
+<span class="normal"><a href="#__codelineno-0-162">162</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-132" name="__codelineno-0-132"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<a id="__codelineno-0-133" name="__codelineno-0-133"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-134" name="__codelineno-0-134"></a>    <span class="n">label_adapter</span><span class="p">:</span> <span class="n">KeycodeLabelAdapter</span><span class="p">,</span>
+<a id="__codelineno-0-135" name="__codelineno-0-135"></a>    <span class="n">fallthrough_to_layer_zero</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-136" name="__codelineno-0-136"></a>    <span class="n">base_layer_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-0-137" name="__codelineno-0-137"></a>    <span class="n">layer_base_overrides</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-138" name="__codelineno-0-138"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-139" name="__codelineno-0-139"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize the adapter with configuration and label transformer.</span>
+<a id="__codelineno-0-140" name="__codelineno-0-140"></a>
+<a id="__codelineno-0-141" name="__codelineno-0-141"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-142" name="__codelineno-0-142"></a><span class="sd">        label_adapter: The adapter for transforming individual keycodes</span>
+<a id="__codelineno-0-143" name="__codelineno-0-143"></a><span class="sd">            to labels.</span>
+<a id="__codelineno-0-144" name="__codelineno-0-144"></a><span class="sd">        fallthrough_to_layer_zero: When True (default), transparent keys</span>
+<a id="__codelineno-0-145" name="__codelineno-0-145"></a><span class="sd">            on layers other than ``base_layer_index`` borrow their display</span>
+<a id="__codelineno-0-146" name="__codelineno-0-146"></a><span class="sd">            label from the same key position on the base layer. Set False</span>
+<a id="__codelineno-0-147" name="__codelineno-0-147"></a><span class="sd">            to leave transparent keys blank.</span>
+<a id="__codelineno-0-148" name="__codelineno-0-148"></a><span class="sd">        base_layer_index: QMK index of the layer used as the source for</span>
+<a id="__codelineno-0-149" name="__codelineno-0-149"></a><span class="sd">            transparent fall-through. Defaults to 0 (the conventional QMK</span>
+<a id="__codelineno-0-150" name="__codelineno-0-150"></a><span class="sd">            base). Set to the lowest QMK index of a layer-filtered run so</span>
+<a id="__codelineno-0-151" name="__codelineno-0-151"></a><span class="sd">            transparent keys don&#39;t bleed labels in from filtered-out</span>
+<a id="__codelineno-0-152" name="__codelineno-0-152"></a><span class="sd">            layers.</span>
+<a id="__codelineno-0-153" name="__codelineno-0-153"></a><span class="sd">        layer_base_overrides: Optional per-layer override map keyed by</span>
+<a id="__codelineno-0-154" name="__codelineno-0-154"></a><span class="sd">            QMK layer index. When a layer&#39;s QMK index appears here, its</span>
+<a id="__codelineno-0-155" name="__codelineno-0-155"></a><span class="sd">            transparent keys borrow from the mapped base index instead of</span>
+<a id="__codelineno-0-156" name="__codelineno-0-156"></a><span class="sd">            ``base_layer_index``. Layers absent from the map use</span>
+<a id="__codelineno-0-157" name="__codelineno-0-157"></a><span class="sd">            ``base_layer_index``. ``None`` (default) means no overrides.</span>
+<a id="__codelineno-0-158" name="__codelineno-0-158"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-159" name="__codelineno-0-159"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_label_adapter</span> <span class="o">=</span> <span class="n">label_adapter</span>
+<a id="__codelineno-0-160" name="__codelineno-0-160"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_fallthrough_to_layer_zero</span> <span class="o">=</span> <span class="n">fallthrough_to_layer_zero</span>
+<a id="__codelineno-0-161" name="__codelineno-0-161"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_base_layer_index</span> <span class="o">=</span> <span class="n">base_layer_index</span>
+<a id="__codelineno-0-162" name="__codelineno-0-162"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_layer_base_overrides</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">layer_base_overrides</span><span class="p">)</span> <span class="k">if</span> <span class="n">layer_base_overrides</span> <span class="k">else</span> <span class="p">{}</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -6322,9 +6392,9 @@ blank.</p>
         <p>Transform an entire keymap from strings to target keys.</p>
 <p>Processes each layer in the keymap, converting raw keycode strings
 to SvalboardTargetKey objects containing display labels and layer
-metadata. When fallthrough is enabled and layer 0 is present, any
-transparent key on a higher layer is rewritten to display the
-layer-0 label at the same position.</p>
+metadata. When fallthrough is enabled and the base layer is present,
+any transparent key on a non-base layer is rewritten to display the
+base layer's label at the same position.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -6419,25 +6489,7 @@ key position.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/domain/adapters/keymap_target_adapter.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-146">146</a></span>
-<span class="normal"><a href="#__codelineno-0-147">147</a></span>
-<span class="normal"><a href="#__codelineno-0-148">148</a></span>
-<span class="normal"><a href="#__codelineno-0-149">149</a></span>
-<span class="normal"><a href="#__codelineno-0-150">150</a></span>
-<span class="normal"><a href="#__codelineno-0-151">151</a></span>
-<span class="normal"><a href="#__codelineno-0-152">152</a></span>
-<span class="normal"><a href="#__codelineno-0-153">153</a></span>
-<span class="normal"><a href="#__codelineno-0-154">154</a></span>
-<span class="normal"><a href="#__codelineno-0-155">155</a></span>
-<span class="normal"><a href="#__codelineno-0-156">156</a></span>
-<span class="normal"><a href="#__codelineno-0-157">157</a></span>
-<span class="normal"><a href="#__codelineno-0-158">158</a></span>
-<span class="normal"><a href="#__codelineno-0-159">159</a></span>
-<span class="normal"><a href="#__codelineno-0-160">160</a></span>
-<span class="normal"><a href="#__codelineno-0-161">161</a></span>
-<span class="normal"><a href="#__codelineno-0-162">162</a></span>
-<span class="normal"><a href="#__codelineno-0-163">163</a></span>
-<span class="normal"><a href="#__codelineno-0-164">164</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-164">164</a></span>
 <span class="normal"><a href="#__codelineno-0-165">165</a></span>
 <span class="normal"><a href="#__codelineno-0-166">166</a></span>
 <span class="normal"><a href="#__codelineno-0-167">167</a></span>
@@ -6458,46 +6510,62 @@ key position.</p>
 <span class="normal"><a href="#__codelineno-0-182">182</a></span>
 <span class="normal"><a href="#__codelineno-0-183">183</a></span>
 <span class="normal"><a href="#__codelineno-0-184">184</a></span>
-<span class="normal"><a href="#__codelineno-0-185">185</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-146" name="__codelineno-0-146"></a><span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keymap</span><span class="p">:</span> <span class="n">SvalboardKeymap</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SvalboardKeymap</span><span class="p">[</span><span class="n">SvalboardTargetKey</span><span class="p">]:</span>
-<a id="__codelineno-0-147" name="__codelineno-0-147"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform an entire keymap from strings to target keys.</span>
-<a id="__codelineno-0-148" name="__codelineno-0-148"></a>
-<a id="__codelineno-0-149" name="__codelineno-0-149"></a><span class="sd">    Processes each layer in the keymap, converting raw keycode strings</span>
-<a id="__codelineno-0-150" name="__codelineno-0-150"></a><span class="sd">    to SvalboardTargetKey objects containing display labels and layer</span>
-<a id="__codelineno-0-151" name="__codelineno-0-151"></a><span class="sd">    metadata. When fallthrough is enabled and layer 0 is present, any</span>
-<a id="__codelineno-0-152" name="__codelineno-0-152"></a><span class="sd">    transparent key on a higher layer is rewritten to display the</span>
-<a id="__codelineno-0-153" name="__codelineno-0-153"></a><span class="sd">    layer-0 label at the same position.</span>
-<a id="__codelineno-0-154" name="__codelineno-0-154"></a>
-<a id="__codelineno-0-155" name="__codelineno-0-155"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-156" name="__codelineno-0-156"></a><span class="sd">        keymap: A keymap containing raw QMK keycode strings at each</span>
-<a id="__codelineno-0-157" name="__codelineno-0-157"></a><span class="sd">            key position.</span>
-<a id="__codelineno-0-158" name="__codelineno-0-158"></a>
-<a id="__codelineno-0-159" name="__codelineno-0-159"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-160" name="__codelineno-0-160"></a><span class="sd">        A new keymap containing SvalboardTargetKey objects at each</span>
-<a id="__codelineno-0-161" name="__codelineno-0-161"></a><span class="sd">        position, ready for rendering.</span>
-<a id="__codelineno-0-162" name="__codelineno-0-162"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-163" name="__codelineno-0-163"></a>    <span class="n">layers</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-164" name="__codelineno-0-164"></a>        <span class="n">idx</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform_layer</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">keymap</span><span class="o">.</span><span class="n">macros</span><span class="p">,</span> <span class="n">keymap</span><span class="o">.</span><span class="n">tap_dances</span><span class="p">)</span>
-<a id="__codelineno-0-165" name="__codelineno-0-165"></a>        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">keymap</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-<a id="__codelineno-0-166" name="__codelineno-0-166"></a>    <span class="p">}</span>
-<a id="__codelineno-0-167" name="__codelineno-0-167"></a>
-<a id="__codelineno-0-168" name="__codelineno-0-168"></a>    <span class="n">base</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<a id="__codelineno-0-169" name="__codelineno-0-169"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fallthrough_to_layer_zero</span> <span class="ow">and</span> <span class="n">base</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-170" name="__codelineno-0-170"></a>        <span class="n">layers</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-171" name="__codelineno-0-171"></a>            <span class="n">idx</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_fallthrough</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span> <span class="k">if</span> <span class="n">idx</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">layer</span>
-<a id="__codelineno-0-172" name="__codelineno-0-172"></a>            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-<a id="__codelineno-0-173" name="__codelineno-0-173"></a>        <span class="p">}</span>
-<a id="__codelineno-0-174" name="__codelineno-0-174"></a>    <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fallthrough_to_layer_zero</span><span class="p">:</span>
-<a id="__codelineno-0-175" name="__codelineno-0-175"></a>        <span class="c1"># Without fall-through, transparent keys would otherwise render</span>
-<a id="__codelineno-0-176" name="__codelineno-0-176"></a>        <span class="c1"># blank.  Stamp the Vial-style ⛛ glyph on each transparent</span>
-<a id="__codelineno-0-177" name="__codelineno-0-177"></a>        <span class="c1"># position so users can still see where the transparent keys</span>
-<a id="__codelineno-0-178" name="__codelineno-0-178"></a>        <span class="c1"># are.  The ghost colour applied at render time uses the same</span>
-<a id="__codelineno-0-179" name="__codelineno-0-179"></a>        <span class="c1"># ``is_transparent`` flag, so the glyph appears faded.</span>
-<a id="__codelineno-0-180" name="__codelineno-0-180"></a>        <span class="n">layers</span> <span class="o">=</span> <span class="p">{</span><span class="n">idx</span><span class="p">:</span> <span class="n">layer</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">_stamp_transparent_glyph</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-<a id="__codelineno-0-181" name="__codelineno-0-181"></a>
-<a id="__codelineno-0-182" name="__codelineno-0-182"></a>    <span class="n">tap_dances</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transform_tap_dance</span><span class="p">(</span><span class="n">td</span><span class="p">)</span> <span class="k">for</span> <span class="n">td</span> <span class="ow">in</span> <span class="n">keymap</span><span class="o">.</span><span class="n">tap_dances</span><span class="p">)</span>
-<a id="__codelineno-0-183" name="__codelineno-0-183"></a>    <span class="n">macros</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transform_macro</span><span class="p">(</span><span class="n">macro</span><span class="p">)</span> <span class="k">for</span> <span class="n">macro</span> <span class="ow">in</span> <span class="n">keymap</span><span class="o">.</span><span class="n">macros</span><span class="p">)</span>
-<a id="__codelineno-0-184" name="__codelineno-0-184"></a>
-<a id="__codelineno-0-185" name="__codelineno-0-185"></a>    <span class="k">return</span> <span class="n">SvalboardKeymap</span><span class="p">(</span><span class="n">layers</span><span class="o">=</span><span class="n">layers</span><span class="p">,</span> <span class="n">tap_dances</span><span class="o">=</span><span class="n">tap_dances</span><span class="p">,</span> <span class="n">macros</span><span class="o">=</span><span class="n">macros</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-185">185</a></span>
+<span class="normal"><a href="#__codelineno-0-186">186</a></span>
+<span class="normal"><a href="#__codelineno-0-187">187</a></span>
+<span class="normal"><a href="#__codelineno-0-188">188</a></span>
+<span class="normal"><a href="#__codelineno-0-189">189</a></span>
+<span class="normal"><a href="#__codelineno-0-190">190</a></span>
+<span class="normal"><a href="#__codelineno-0-191">191</a></span>
+<span class="normal"><a href="#__codelineno-0-192">192</a></span>
+<span class="normal"><a href="#__codelineno-0-193">193</a></span>
+<span class="normal"><a href="#__codelineno-0-194">194</a></span>
+<span class="normal"><a href="#__codelineno-0-195">195</a></span>
+<span class="normal"><a href="#__codelineno-0-196">196</a></span>
+<span class="normal"><a href="#__codelineno-0-197">197</a></span>
+<span class="normal"><a href="#__codelineno-0-198">198</a></span>
+<span class="normal"><a href="#__codelineno-0-199">199</a></span>
+<span class="normal"><a href="#__codelineno-0-200">200</a></span>
+<span class="normal"><a href="#__codelineno-0-201">201</a></span>
+<span class="normal"><a href="#__codelineno-0-202">202</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-164" name="__codelineno-0-164"></a><span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keymap</span><span class="p">:</span> <span class="n">SvalboardKeymap</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SvalboardKeymap</span><span class="p">[</span><span class="n">SvalboardTargetKey</span><span class="p">]:</span>
+<a id="__codelineno-0-165" name="__codelineno-0-165"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform an entire keymap from strings to target keys.</span>
+<a id="__codelineno-0-166" name="__codelineno-0-166"></a>
+<a id="__codelineno-0-167" name="__codelineno-0-167"></a><span class="sd">    Processes each layer in the keymap, converting raw keycode strings</span>
+<a id="__codelineno-0-168" name="__codelineno-0-168"></a><span class="sd">    to SvalboardTargetKey objects containing display labels and layer</span>
+<a id="__codelineno-0-169" name="__codelineno-0-169"></a><span class="sd">    metadata. When fallthrough is enabled and the base layer is present,</span>
+<a id="__codelineno-0-170" name="__codelineno-0-170"></a><span class="sd">    any transparent key on a non-base layer is rewritten to display the</span>
+<a id="__codelineno-0-171" name="__codelineno-0-171"></a><span class="sd">    base layer&#39;s label at the same position.</span>
+<a id="__codelineno-0-172" name="__codelineno-0-172"></a>
+<a id="__codelineno-0-173" name="__codelineno-0-173"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-174" name="__codelineno-0-174"></a><span class="sd">        keymap: A keymap containing raw QMK keycode strings at each</span>
+<a id="__codelineno-0-175" name="__codelineno-0-175"></a><span class="sd">            key position.</span>
+<a id="__codelineno-0-176" name="__codelineno-0-176"></a>
+<a id="__codelineno-0-177" name="__codelineno-0-177"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-178" name="__codelineno-0-178"></a><span class="sd">        A new keymap containing SvalboardTargetKey objects at each</span>
+<a id="__codelineno-0-179" name="__codelineno-0-179"></a><span class="sd">        position, ready for rendering.</span>
+<a id="__codelineno-0-180" name="__codelineno-0-180"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-181" name="__codelineno-0-181"></a>    <span class="n">layers</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-182" name="__codelineno-0-182"></a>        <span class="n">idx</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform_layer</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">keymap</span><span class="o">.</span><span class="n">macros</span><span class="p">,</span> <span class="n">keymap</span><span class="o">.</span><span class="n">tap_dances</span><span class="p">)</span>
+<a id="__codelineno-0-183" name="__codelineno-0-183"></a>        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">keymap</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<a id="__codelineno-0-184" name="__codelineno-0-184"></a>    <span class="p">}</span>
+<a id="__codelineno-0-185" name="__codelineno-0-185"></a>
+<a id="__codelineno-0-186" name="__codelineno-0-186"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fallthrough_to_layer_zero</span><span class="p">:</span>
+<a id="__codelineno-0-187" name="__codelineno-0-187"></a>        <span class="n">layers</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-188" name="__codelineno-0-188"></a>            <span class="n">idx</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_apply_fallthrough</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">layers</span><span class="p">)</span>
+<a id="__codelineno-0-189" name="__codelineno-0-189"></a>            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<a id="__codelineno-0-190" name="__codelineno-0-190"></a>        <span class="p">}</span>
+<a id="__codelineno-0-191" name="__codelineno-0-191"></a>    <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fallthrough_to_layer_zero</span><span class="p">:</span>
+<a id="__codelineno-0-192" name="__codelineno-0-192"></a>        <span class="c1"># Without fall-through, transparent keys would otherwise render</span>
+<a id="__codelineno-0-193" name="__codelineno-0-193"></a>        <span class="c1"># blank.  Stamp the Vial-style ⛛ glyph on each transparent</span>
+<a id="__codelineno-0-194" name="__codelineno-0-194"></a>        <span class="c1"># position so users can still see where the transparent keys</span>
+<a id="__codelineno-0-195" name="__codelineno-0-195"></a>        <span class="c1"># are.  The ghost colour applied at render time uses the same</span>
+<a id="__codelineno-0-196" name="__codelineno-0-196"></a>        <span class="c1"># ``is_transparent`` flag, so the glyph appears faded.</span>
+<a id="__codelineno-0-197" name="__codelineno-0-197"></a>        <span class="n">layers</span> <span class="o">=</span> <span class="p">{</span><span class="n">idx</span><span class="p">:</span> <span class="n">layer</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">_stamp_transparent_glyph</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+<a id="__codelineno-0-198" name="__codelineno-0-198"></a>
+<a id="__codelineno-0-199" name="__codelineno-0-199"></a>    <span class="n">tap_dances</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transform_tap_dance</span><span class="p">(</span><span class="n">td</span><span class="p">)</span> <span class="k">for</span> <span class="n">td</span> <span class="ow">in</span> <span class="n">keymap</span><span class="o">.</span><span class="n">tap_dances</span><span class="p">)</span>
+<a id="__codelineno-0-200" name="__codelineno-0-200"></a>    <span class="n">macros</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transform_macro</span><span class="p">(</span><span class="n">macro</span><span class="p">)</span> <span class="k">for</span> <span class="n">macro</span> <span class="ow">in</span> <span class="n">keymap</span><span class="o">.</span><span class="n">macros</span><span class="p">)</span>
+<a id="__codelineno-0-201" name="__codelineno-0-201"></a>
+<a id="__codelineno-0-202" name="__codelineno-0-202"></a>    <span class="k">return</span> <span class="n">SvalboardKeymap</span><span class="p">(</span><span class="n">layers</span><span class="o">=</span><span class="n">layers</span><span class="p">,</span> <span class="n">tap_dances</span><span class="o">=</span><span class="n">tap_dances</span><span class="p">,</span> <span class="n">macros</span><span class="o">=</span><span class="n">macros</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

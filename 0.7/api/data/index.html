@@ -1013,6 +1013,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#skim.data.config.KeyboardLayer.base_layer_index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        base_layer_index
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1865,6 +1876,17 @@
     <span class="md-ellipsis">
       
         width
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skim.data.config.LayerIndicator.reserve_space" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reserve_space
       
     </span>
   </a>
@@ -4171,6 +4193,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#skim.data.config.KeyboardLayer.base_layer_index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        base_layer_index
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5023,6 +5056,17 @@
     <span class="md-ellipsis">
       
         width
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skim.data.config.LayerIndicator.reserve_space" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reserve_space
       
     </span>
   </a>
@@ -7387,6 +7431,29 @@ in the overview image. Defaults to None if not specified.</p>
               </div>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="base_layer_index
+
+
+  
+      class-attribute
+      instance-attribute
+   (skim.data.config.KeyboardLayer.base_layer_index)" href="#skim.data.config.KeyboardLayer.base_layer_index">base_layer_index</a></code></td>
+            <td>
+                  <code><span title="int">int</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional QMK index of the layer this layer's
+transparent keys should fall through to. <code>None</code> (default)
+means the renderer picks the conventional base — layer 0
+for an unfiltered run, or the lowest selected index for a
+layer-filtered run. Set this to override on a per-layer
+basis. The referenced layer must exist in
+<code>Keyboard.layers</code> and cannot be the layer itself.</p>
+              </div>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -7523,6 +7590,29 @@ in the overview image. Defaults to None if not specified.</p>
 
 <a href="#skim.data.config.KeyboardLayer.variant" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">variant</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="skim.data.config.KeyboardLayer.base_layer_index" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">base_layer_index</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#skim.data.config.KeyboardLayer.base_layer_index" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">base_layer_index</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7939,77 +8029,77 @@ the Pydantic post-init signature).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/data/config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-165">165</a></span>
-<span class="normal"><a href="#__codelineno-0-166">166</a></span>
-<span class="normal"><a href="#__codelineno-0-167">167</a></span>
-<span class="normal"><a href="#__codelineno-0-168">168</a></span>
-<span class="normal"><a href="#__codelineno-0-169">169</a></span>
-<span class="normal"><a href="#__codelineno-0-170">170</a></span>
-<span class="normal"><a href="#__codelineno-0-171">171</a></span>
-<span class="normal"><a href="#__codelineno-0-172">172</a></span>
-<span class="normal"><a href="#__codelineno-0-173">173</a></span>
-<span class="normal"><a href="#__codelineno-0-174">174</a></span>
-<span class="normal"><a href="#__codelineno-0-175">175</a></span>
-<span class="normal"><a href="#__codelineno-0-176">176</a></span>
-<span class="normal"><a href="#__codelineno-0-177">177</a></span>
-<span class="normal"><a href="#__codelineno-0-178">178</a></span>
-<span class="normal"><a href="#__codelineno-0-179">179</a></span>
-<span class="normal"><a href="#__codelineno-0-180">180</a></span>
-<span class="normal"><a href="#__codelineno-0-181">181</a></span>
-<span class="normal"><a href="#__codelineno-0-182">182</a></span>
-<span class="normal"><a href="#__codelineno-0-183">183</a></span>
-<span class="normal"><a href="#__codelineno-0-184">184</a></span>
-<span class="normal"><a href="#__codelineno-0-185">185</a></span>
-<span class="normal"><a href="#__codelineno-0-186">186</a></span>
-<span class="normal"><a href="#__codelineno-0-187">187</a></span>
-<span class="normal"><a href="#__codelineno-0-188">188</a></span>
-<span class="normal"><a href="#__codelineno-0-189">189</a></span>
-<span class="normal"><a href="#__codelineno-0-190">190</a></span>
-<span class="normal"><a href="#__codelineno-0-191">191</a></span>
-<span class="normal"><a href="#__codelineno-0-192">192</a></span>
-<span class="normal"><a href="#__codelineno-0-193">193</a></span>
-<span class="normal"><a href="#__codelineno-0-194">194</a></span>
-<span class="normal"><a href="#__codelineno-0-195">195</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-195">195</a></span>
 <span class="normal"><a href="#__codelineno-0-196">196</a></span>
 <span class="normal"><a href="#__codelineno-0-197">197</a></span>
 <span class="normal"><a href="#__codelineno-0-198">198</a></span>
 <span class="normal"><a href="#__codelineno-0-199">199</a></span>
-<span class="normal"><a href="#__codelineno-0-200">200</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-165" name="__codelineno-0-165"></a><span class="k">def</span><span class="w"> </span><span class="nf">model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-166" name="__codelineno-0-166"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize the layer ID lookup map after model construction.</span>
-<a id="__codelineno-0-167" name="__codelineno-0-167"></a>
-<a id="__codelineno-0-168" name="__codelineno-0-168"></a><span class="sd">    Builds an internal mapping from layer identifiers to their QMK</span>
-<a id="__codelineno-0-169" name="__codelineno-0-169"></a><span class="sd">    firmware indices for efficient layer lookup. If a layer has an</span>
-<a id="__codelineno-0-170" name="__codelineno-0-170"></a><span class="sd">    explicit ``id``, that ID is used as the key. Otherwise, the string</span>
-<a id="__codelineno-0-171" name="__codelineno-0-171"></a><span class="sd">    representation of the layer&#39;s position index is used.</span>
-<a id="__codelineno-0-172" name="__codelineno-0-172"></a>
-<a id="__codelineno-0-173" name="__codelineno-0-173"></a><span class="sd">    This method is called automatically by Pydantic after the model is</span>
-<a id="__codelineno-0-174" name="__codelineno-0-174"></a><span class="sd">    constructed.</span>
-<a id="__codelineno-0-175" name="__codelineno-0-175"></a>
-<a id="__codelineno-0-176" name="__codelineno-0-176"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-177" name="__codelineno-0-177"></a><span class="sd">        context: Pydantic validation context (unused but required by</span>
-<a id="__codelineno-0-178" name="__codelineno-0-178"></a><span class="sd">            the Pydantic post-init signature).</span>
-<a id="__codelineno-0-179" name="__codelineno-0-179"></a>
-<a id="__codelineno-0-180" name="__codelineno-0-180"></a><span class="sd">    Example:</span>
-<a id="__codelineno-0-181" name="__codelineno-0-181"></a><span class="sd">        ```pycon</span>
-<a id="__codelineno-0-182" name="__codelineno-0-182"></a><span class="sd">        &gt;&gt;&gt; keyboard = Keyboard(</span>
-<a id="__codelineno-0-183" name="__codelineno-0-183"></a><span class="sd">        ...     layers=[</span>
-<a id="__codelineno-0-184" name="__codelineno-0-184"></a><span class="sd">        ...         KeyboardLayer(index=0, id=&quot;base&quot;, name=&quot;Base&quot;),</span>
-<a id="__codelineno-0-185" name="__codelineno-0-185"></a><span class="sd">        ...         KeyboardLayer(index=15, name=&quot;Symbols&quot;),</span>
-<a id="__codelineno-0-186" name="__codelineno-0-186"></a><span class="sd">        ...     ]</span>
-<a id="__codelineno-0-187" name="__codelineno-0-187"></a><span class="sd">        ... )</span>
-<a id="__codelineno-0-188" name="__codelineno-0-188"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_index(&quot;base&quot;)</span>
-<a id="__codelineno-0-189" name="__codelineno-0-189"></a><span class="sd">        0</span>
-<a id="__codelineno-0-190" name="__codelineno-0-190"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_index(&quot;1&quot;)  # Second layer has no id, uses QMK index</span>
-<a id="__codelineno-0-191" name="__codelineno-0-191"></a><span class="sd">        15</span>
-<a id="__codelineno-0-192" name="__codelineno-0-192"></a>
-<a id="__codelineno-0-193" name="__codelineno-0-193"></a><span class="sd">        ```</span>
-<a id="__codelineno-0-194" name="__codelineno-0-194"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-195" name="__codelineno-0-195"></a>    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">):</span>
-<a id="__codelineno-0-196" name="__codelineno-0-196"></a>        <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-197" name="__codelineno-0-197"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_layer_id_map</span><span class="p">[</span><span class="n">layer</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">index</span>
-<a id="__codelineno-0-198" name="__codelineno-0-198"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-199" name="__codelineno-0-199"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_layer_id_map</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">index</span>
-<a id="__codelineno-0-200" name="__codelineno-0-200"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_qmk_index_map</span><span class="p">[</span><span class="n">layer</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
+<span class="normal"><a href="#__codelineno-0-200">200</a></span>
+<span class="normal"><a href="#__codelineno-0-201">201</a></span>
+<span class="normal"><a href="#__codelineno-0-202">202</a></span>
+<span class="normal"><a href="#__codelineno-0-203">203</a></span>
+<span class="normal"><a href="#__codelineno-0-204">204</a></span>
+<span class="normal"><a href="#__codelineno-0-205">205</a></span>
+<span class="normal"><a href="#__codelineno-0-206">206</a></span>
+<span class="normal"><a href="#__codelineno-0-207">207</a></span>
+<span class="normal"><a href="#__codelineno-0-208">208</a></span>
+<span class="normal"><a href="#__codelineno-0-209">209</a></span>
+<span class="normal"><a href="#__codelineno-0-210">210</a></span>
+<span class="normal"><a href="#__codelineno-0-211">211</a></span>
+<span class="normal"><a href="#__codelineno-0-212">212</a></span>
+<span class="normal"><a href="#__codelineno-0-213">213</a></span>
+<span class="normal"><a href="#__codelineno-0-214">214</a></span>
+<span class="normal"><a href="#__codelineno-0-215">215</a></span>
+<span class="normal"><a href="#__codelineno-0-216">216</a></span>
+<span class="normal"><a href="#__codelineno-0-217">217</a></span>
+<span class="normal"><a href="#__codelineno-0-218">218</a></span>
+<span class="normal"><a href="#__codelineno-0-219">219</a></span>
+<span class="normal"><a href="#__codelineno-0-220">220</a></span>
+<span class="normal"><a href="#__codelineno-0-221">221</a></span>
+<span class="normal"><a href="#__codelineno-0-222">222</a></span>
+<span class="normal"><a href="#__codelineno-0-223">223</a></span>
+<span class="normal"><a href="#__codelineno-0-224">224</a></span>
+<span class="normal"><a href="#__codelineno-0-225">225</a></span>
+<span class="normal"><a href="#__codelineno-0-226">226</a></span>
+<span class="normal"><a href="#__codelineno-0-227">227</a></span>
+<span class="normal"><a href="#__codelineno-0-228">228</a></span>
+<span class="normal"><a href="#__codelineno-0-229">229</a></span>
+<span class="normal"><a href="#__codelineno-0-230">230</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-195" name="__codelineno-0-195"></a><span class="k">def</span><span class="w"> </span><span class="nf">model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-196" name="__codelineno-0-196"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize the layer ID lookup map after model construction.</span>
+<a id="__codelineno-0-197" name="__codelineno-0-197"></a>
+<a id="__codelineno-0-198" name="__codelineno-0-198"></a><span class="sd">    Builds an internal mapping from layer identifiers to their QMK</span>
+<a id="__codelineno-0-199" name="__codelineno-0-199"></a><span class="sd">    firmware indices for efficient layer lookup. If a layer has an</span>
+<a id="__codelineno-0-200" name="__codelineno-0-200"></a><span class="sd">    explicit ``id``, that ID is used as the key. Otherwise, the string</span>
+<a id="__codelineno-0-201" name="__codelineno-0-201"></a><span class="sd">    representation of the layer&#39;s position index is used.</span>
+<a id="__codelineno-0-202" name="__codelineno-0-202"></a>
+<a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="sd">    This method is called automatically by Pydantic after the model is</span>
+<a id="__codelineno-0-204" name="__codelineno-0-204"></a><span class="sd">    constructed.</span>
+<a id="__codelineno-0-205" name="__codelineno-0-205"></a>
+<a id="__codelineno-0-206" name="__codelineno-0-206"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-207" name="__codelineno-0-207"></a><span class="sd">        context: Pydantic validation context (unused but required by</span>
+<a id="__codelineno-0-208" name="__codelineno-0-208"></a><span class="sd">            the Pydantic post-init signature).</span>
+<a id="__codelineno-0-209" name="__codelineno-0-209"></a>
+<a id="__codelineno-0-210" name="__codelineno-0-210"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-211" name="__codelineno-0-211"></a><span class="sd">        ```pycon</span>
+<a id="__codelineno-0-212" name="__codelineno-0-212"></a><span class="sd">        &gt;&gt;&gt; keyboard = Keyboard(</span>
+<a id="__codelineno-0-213" name="__codelineno-0-213"></a><span class="sd">        ...     layers=[</span>
+<a id="__codelineno-0-214" name="__codelineno-0-214"></a><span class="sd">        ...         KeyboardLayer(index=0, id=&quot;base&quot;, name=&quot;Base&quot;),</span>
+<a id="__codelineno-0-215" name="__codelineno-0-215"></a><span class="sd">        ...         KeyboardLayer(index=15, name=&quot;Symbols&quot;),</span>
+<a id="__codelineno-0-216" name="__codelineno-0-216"></a><span class="sd">        ...     ]</span>
+<a id="__codelineno-0-217" name="__codelineno-0-217"></a><span class="sd">        ... )</span>
+<a id="__codelineno-0-218" name="__codelineno-0-218"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_index(&quot;base&quot;)</span>
+<a id="__codelineno-0-219" name="__codelineno-0-219"></a><span class="sd">        0</span>
+<a id="__codelineno-0-220" name="__codelineno-0-220"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_index(&quot;1&quot;)  # Second layer has no id, uses QMK index</span>
+<a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">        15</span>
+<a id="__codelineno-0-222" name="__codelineno-0-222"></a>
+<a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="sd">        ```</span>
+<a id="__codelineno-0-224" name="__codelineno-0-224"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-225" name="__codelineno-0-225"></a>    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">):</span>
+<a id="__codelineno-0-226" name="__codelineno-0-226"></a>        <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-227" name="__codelineno-0-227"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_layer_id_map</span><span class="p">[</span><span class="n">layer</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">index</span>
+<a id="__codelineno-0-228" name="__codelineno-0-228"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-229" name="__codelineno-0-229"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_layer_id_map</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">index</span>
+<a id="__codelineno-0-230" name="__codelineno-0-230"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_qmk_index_map</span><span class="p">[</span><span class="n">layer</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -8122,81 +8212,81 @@ or an integer index like <code>0</code>, <code>1</code>. If <code>None</code>, r
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/data/config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-202">202</a></span>
-<span class="normal"><a href="#__codelineno-0-203">203</a></span>
-<span class="normal"><a href="#__codelineno-0-204">204</a></span>
-<span class="normal"><a href="#__codelineno-0-205">205</a></span>
-<span class="normal"><a href="#__codelineno-0-206">206</a></span>
-<span class="normal"><a href="#__codelineno-0-207">207</a></span>
-<span class="normal"><a href="#__codelineno-0-208">208</a></span>
-<span class="normal"><a href="#__codelineno-0-209">209</a></span>
-<span class="normal"><a href="#__codelineno-0-210">210</a></span>
-<span class="normal"><a href="#__codelineno-0-211">211</a></span>
-<span class="normal"><a href="#__codelineno-0-212">212</a></span>
-<span class="normal"><a href="#__codelineno-0-213">213</a></span>
-<span class="normal"><a href="#__codelineno-0-214">214</a></span>
-<span class="normal"><a href="#__codelineno-0-215">215</a></span>
-<span class="normal"><a href="#__codelineno-0-216">216</a></span>
-<span class="normal"><a href="#__codelineno-0-217">217</a></span>
-<span class="normal"><a href="#__codelineno-0-218">218</a></span>
-<span class="normal"><a href="#__codelineno-0-219">219</a></span>
-<span class="normal"><a href="#__codelineno-0-220">220</a></span>
-<span class="normal"><a href="#__codelineno-0-221">221</a></span>
-<span class="normal"><a href="#__codelineno-0-222">222</a></span>
-<span class="normal"><a href="#__codelineno-0-223">223</a></span>
-<span class="normal"><a href="#__codelineno-0-224">224</a></span>
-<span class="normal"><a href="#__codelineno-0-225">225</a></span>
-<span class="normal"><a href="#__codelineno-0-226">226</a></span>
-<span class="normal"><a href="#__codelineno-0-227">227</a></span>
-<span class="normal"><a href="#__codelineno-0-228">228</a></span>
-<span class="normal"><a href="#__codelineno-0-229">229</a></span>
-<span class="normal"><a href="#__codelineno-0-230">230</a></span>
-<span class="normal"><a href="#__codelineno-0-231">231</a></span>
-<span class="normal"><a href="#__codelineno-0-232">232</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-232">232</a></span>
 <span class="normal"><a href="#__codelineno-0-233">233</a></span>
 <span class="normal"><a href="#__codelineno-0-234">234</a></span>
 <span class="normal"><a href="#__codelineno-0-235">235</a></span>
 <span class="normal"><a href="#__codelineno-0-236">236</a></span>
 <span class="normal"><a href="#__codelineno-0-237">237</a></span>
 <span class="normal"><a href="#__codelineno-0-238">238</a></span>
-<span class="normal"><a href="#__codelineno-0-239">239</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="k">def</span><span class="w"> </span><span class="nf">layer_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Look up a layer&#39;s QMK firmware index by its identifier.</span>
-<a id="__codelineno-0-204" name="__codelineno-0-204"></a>
-<a id="__codelineno-0-205" name="__codelineno-0-205"></a><span class="sd">    Returns the QMK firmware index of the layer matching the given key.</span>
-<a id="__codelineno-0-206" name="__codelineno-0-206"></a><span class="sd">    The key can be either a layer&#39;s explicit ``id``, the string</span>
-<a id="__codelineno-0-207" name="__codelineno-0-207"></a><span class="sd">    representation of its position index (for layers without an id),</span>
-<a id="__codelineno-0-208" name="__codelineno-0-208"></a><span class="sd">    or an integer index which is converted to string for lookup.</span>
-<a id="__codelineno-0-209" name="__codelineno-0-209"></a>
-<a id="__codelineno-0-210" name="__codelineno-0-210"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-211" name="__codelineno-0-211"></a><span class="sd">        key: The layer identifier to look up. This can be a layer&#39;s</span>
-<a id="__codelineno-0-212" name="__codelineno-0-212"></a><span class="sd">            ``id`` attribute, a string index like ``&quot;0&quot;``, ``&quot;1&quot;``,</span>
-<a id="__codelineno-0-213" name="__codelineno-0-213"></a><span class="sd">            or an integer index like ``0``, ``1``. If ``None``, returns</span>
-<a id="__codelineno-0-214" name="__codelineno-0-214"></a><span class="sd">            ``None``.</span>
-<a id="__codelineno-0-215" name="__codelineno-0-215"></a>
-<a id="__codelineno-0-216" name="__codelineno-0-216"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-217" name="__codelineno-0-217"></a><span class="sd">        The QMK firmware index of the matching layer, or ``None`` if no</span>
-<a id="__codelineno-0-218" name="__codelineno-0-218"></a><span class="sd">        layer matches the given key or if key is ``None``.</span>
-<a id="__codelineno-0-219" name="__codelineno-0-219"></a>
-<a id="__codelineno-0-220" name="__codelineno-0-220"></a><span class="sd">    Example:</span>
-<a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">        ```pycon</span>
-<a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="sd">        &gt;&gt;&gt; keyboard = Keyboard(</span>
-<a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="sd">        ...     layers=[</span>
-<a id="__codelineno-0-224" name="__codelineno-0-224"></a><span class="sd">        ...         KeyboardLayer(index=0, id=&quot;nav&quot;, name=&quot;Navigation&quot;),</span>
-<a id="__codelineno-0-225" name="__codelineno-0-225"></a><span class="sd">        ...         KeyboardLayer(index=15, name=&quot;Symbols&quot;),</span>
-<a id="__codelineno-0-226" name="__codelineno-0-226"></a><span class="sd">        ...     ]</span>
-<a id="__codelineno-0-227" name="__codelineno-0-227"></a><span class="sd">        ... )</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_index(&quot;nav&quot;)</span>
-<a id="__codelineno-0-229" name="__codelineno-0-229"></a><span class="sd">        0</span>
-<a id="__codelineno-0-230" name="__codelineno-0-230"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_index(&quot;1&quot;)</span>
-<a id="__codelineno-0-231" name="__codelineno-0-231"></a><span class="sd">        15</span>
-<a id="__codelineno-0-232" name="__codelineno-0-232"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_index(&quot;unknown&quot;) is None</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233"></a><span class="sd">        True</span>
+<span class="normal"><a href="#__codelineno-0-239">239</a></span>
+<span class="normal"><a href="#__codelineno-0-240">240</a></span>
+<span class="normal"><a href="#__codelineno-0-241">241</a></span>
+<span class="normal"><a href="#__codelineno-0-242">242</a></span>
+<span class="normal"><a href="#__codelineno-0-243">243</a></span>
+<span class="normal"><a href="#__codelineno-0-244">244</a></span>
+<span class="normal"><a href="#__codelineno-0-245">245</a></span>
+<span class="normal"><a href="#__codelineno-0-246">246</a></span>
+<span class="normal"><a href="#__codelineno-0-247">247</a></span>
+<span class="normal"><a href="#__codelineno-0-248">248</a></span>
+<span class="normal"><a href="#__codelineno-0-249">249</a></span>
+<span class="normal"><a href="#__codelineno-0-250">250</a></span>
+<span class="normal"><a href="#__codelineno-0-251">251</a></span>
+<span class="normal"><a href="#__codelineno-0-252">252</a></span>
+<span class="normal"><a href="#__codelineno-0-253">253</a></span>
+<span class="normal"><a href="#__codelineno-0-254">254</a></span>
+<span class="normal"><a href="#__codelineno-0-255">255</a></span>
+<span class="normal"><a href="#__codelineno-0-256">256</a></span>
+<span class="normal"><a href="#__codelineno-0-257">257</a></span>
+<span class="normal"><a href="#__codelineno-0-258">258</a></span>
+<span class="normal"><a href="#__codelineno-0-259">259</a></span>
+<span class="normal"><a href="#__codelineno-0-260">260</a></span>
+<span class="normal"><a href="#__codelineno-0-261">261</a></span>
+<span class="normal"><a href="#__codelineno-0-262">262</a></span>
+<span class="normal"><a href="#__codelineno-0-263">263</a></span>
+<span class="normal"><a href="#__codelineno-0-264">264</a></span>
+<span class="normal"><a href="#__codelineno-0-265">265</a></span>
+<span class="normal"><a href="#__codelineno-0-266">266</a></span>
+<span class="normal"><a href="#__codelineno-0-267">267</a></span>
+<span class="normal"><a href="#__codelineno-0-268">268</a></span>
+<span class="normal"><a href="#__codelineno-0-269">269</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-232" name="__codelineno-0-232"></a><span class="k">def</span><span class="w"> </span><span class="nf">layer_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-233" name="__codelineno-0-233"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Look up a layer&#39;s QMK firmware index by its identifier.</span>
 <a id="__codelineno-0-234" name="__codelineno-0-234"></a>
-<a id="__codelineno-0-235" name="__codelineno-0-235"></a><span class="sd">        ```</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-237" name="__codelineno-0-237"></a>    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-238" name="__codelineno-0-238"></a>        <span class="k">return</span> <span class="kc">None</span>
-<a id="__codelineno-0-239" name="__codelineno-0-239"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layer_id_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<a id="__codelineno-0-235" name="__codelineno-0-235"></a><span class="sd">    Returns the QMK firmware index of the layer matching the given key.</span>
+<a id="__codelineno-0-236" name="__codelineno-0-236"></a><span class="sd">    The key can be either a layer&#39;s explicit ``id``, the string</span>
+<a id="__codelineno-0-237" name="__codelineno-0-237"></a><span class="sd">    representation of its position index (for layers without an id),</span>
+<a id="__codelineno-0-238" name="__codelineno-0-238"></a><span class="sd">    or an integer index which is converted to string for lookup.</span>
+<a id="__codelineno-0-239" name="__codelineno-0-239"></a>
+<a id="__codelineno-0-240" name="__codelineno-0-240"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-241" name="__codelineno-0-241"></a><span class="sd">        key: The layer identifier to look up. This can be a layer&#39;s</span>
+<a id="__codelineno-0-242" name="__codelineno-0-242"></a><span class="sd">            ``id`` attribute, a string index like ``&quot;0&quot;``, ``&quot;1&quot;``,</span>
+<a id="__codelineno-0-243" name="__codelineno-0-243"></a><span class="sd">            or an integer index like ``0``, ``1``. If ``None``, returns</span>
+<a id="__codelineno-0-244" name="__codelineno-0-244"></a><span class="sd">            ``None``.</span>
+<a id="__codelineno-0-245" name="__codelineno-0-245"></a>
+<a id="__codelineno-0-246" name="__codelineno-0-246"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-247" name="__codelineno-0-247"></a><span class="sd">        The QMK firmware index of the matching layer, or ``None`` if no</span>
+<a id="__codelineno-0-248" name="__codelineno-0-248"></a><span class="sd">        layer matches the given key or if key is ``None``.</span>
+<a id="__codelineno-0-249" name="__codelineno-0-249"></a>
+<a id="__codelineno-0-250" name="__codelineno-0-250"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-251" name="__codelineno-0-251"></a><span class="sd">        ```pycon</span>
+<a id="__codelineno-0-252" name="__codelineno-0-252"></a><span class="sd">        &gt;&gt;&gt; keyboard = Keyboard(</span>
+<a id="__codelineno-0-253" name="__codelineno-0-253"></a><span class="sd">        ...     layers=[</span>
+<a id="__codelineno-0-254" name="__codelineno-0-254"></a><span class="sd">        ...         KeyboardLayer(index=0, id=&quot;nav&quot;, name=&quot;Navigation&quot;),</span>
+<a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="sd">        ...         KeyboardLayer(index=15, name=&quot;Symbols&quot;),</span>
+<a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="sd">        ...     ]</span>
+<a id="__codelineno-0-257" name="__codelineno-0-257"></a><span class="sd">        ... )</span>
+<a id="__codelineno-0-258" name="__codelineno-0-258"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_index(&quot;nav&quot;)</span>
+<a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="sd">        0</span>
+<a id="__codelineno-0-260" name="__codelineno-0-260"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_index(&quot;1&quot;)</span>
+<a id="__codelineno-0-261" name="__codelineno-0-261"></a><span class="sd">        15</span>
+<a id="__codelineno-0-262" name="__codelineno-0-262"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_index(&quot;unknown&quot;) is None</span>
+<a id="__codelineno-0-263" name="__codelineno-0-263"></a><span class="sd">        True</span>
+<a id="__codelineno-0-264" name="__codelineno-0-264"></a>
+<a id="__codelineno-0-265" name="__codelineno-0-265"></a><span class="sd">        ```</span>
+<a id="__codelineno-0-266" name="__codelineno-0-266"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-267" name="__codelineno-0-267"></a>    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-268" name="__codelineno-0-268"></a>        <span class="k">return</span> <span class="kc">None</span>
+<a id="__codelineno-0-269" name="__codelineno-0-269"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layer_id_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -8303,65 +8393,65 @@ indices in the firmware are non-sequential (e.g., 0, 1, 2, 15).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/data/config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-241">241</a></span>
-<span class="normal"><a href="#__codelineno-0-242">242</a></span>
-<span class="normal"><a href="#__codelineno-0-243">243</a></span>
-<span class="normal"><a href="#__codelineno-0-244">244</a></span>
-<span class="normal"><a href="#__codelineno-0-245">245</a></span>
-<span class="normal"><a href="#__codelineno-0-246">246</a></span>
-<span class="normal"><a href="#__codelineno-0-247">247</a></span>
-<span class="normal"><a href="#__codelineno-0-248">248</a></span>
-<span class="normal"><a href="#__codelineno-0-249">249</a></span>
-<span class="normal"><a href="#__codelineno-0-250">250</a></span>
-<span class="normal"><a href="#__codelineno-0-251">251</a></span>
-<span class="normal"><a href="#__codelineno-0-252">252</a></span>
-<span class="normal"><a href="#__codelineno-0-253">253</a></span>
-<span class="normal"><a href="#__codelineno-0-254">254</a></span>
-<span class="normal"><a href="#__codelineno-0-255">255</a></span>
-<span class="normal"><a href="#__codelineno-0-256">256</a></span>
-<span class="normal"><a href="#__codelineno-0-257">257</a></span>
-<span class="normal"><a href="#__codelineno-0-258">258</a></span>
-<span class="normal"><a href="#__codelineno-0-259">259</a></span>
-<span class="normal"><a href="#__codelineno-0-260">260</a></span>
-<span class="normal"><a href="#__codelineno-0-261">261</a></span>
-<span class="normal"><a href="#__codelineno-0-262">262</a></span>
-<span class="normal"><a href="#__codelineno-0-263">263</a></span>
-<span class="normal"><a href="#__codelineno-0-264">264</a></span>
-<span class="normal"><a href="#__codelineno-0-265">265</a></span>
-<span class="normal"><a href="#__codelineno-0-266">266</a></span>
-<span class="normal"><a href="#__codelineno-0-267">267</a></span>
-<span class="normal"><a href="#__codelineno-0-268">268</a></span>
-<span class="normal"><a href="#__codelineno-0-269">269</a></span>
-<span class="normal"><a href="#__codelineno-0-270">270</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-241" name="__codelineno-0-241"></a><span class="k">def</span><span class="w"> </span><span class="nf">qmk_index_to_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qmk_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-242" name="__codelineno-0-242"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Look up a layer&#39;s position by its QMK firmware index.</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243"></a>
-<a id="__codelineno-0-244" name="__codelineno-0-244"></a><span class="sd">    Returns the zero-based position of the layer in the layers tuple</span>
-<a id="__codelineno-0-245" name="__codelineno-0-245"></a><span class="sd">    that has the given QMK firmware index. This is useful when layer</span>
-<a id="__codelineno-0-246" name="__codelineno-0-246"></a><span class="sd">    indices in the firmware are non-sequential (e.g., 0, 1, 2, 15).</span>
-<a id="__codelineno-0-247" name="__codelineno-0-247"></a>
-<a id="__codelineno-0-248" name="__codelineno-0-248"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-249" name="__codelineno-0-249"></a><span class="sd">        qmk_idx: The QMK firmware layer index to look up.</span>
-<a id="__codelineno-0-250" name="__codelineno-0-250"></a>
-<a id="__codelineno-0-251" name="__codelineno-0-251"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-252" name="__codelineno-0-252"></a><span class="sd">        The position of the matching layer in the layers tuple, or</span>
-<a id="__codelineno-0-253" name="__codelineno-0-253"></a><span class="sd">        ``None`` if no layer has the given QMK index.</span>
-<a id="__codelineno-0-254" name="__codelineno-0-254"></a>
-<a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="sd">    Example:</span>
-<a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="sd">        ```pycon</span>
-<a id="__codelineno-0-257" name="__codelineno-0-257"></a><span class="sd">        &gt;&gt;&gt; keyboard = Keyboard(</span>
-<a id="__codelineno-0-258" name="__codelineno-0-258"></a><span class="sd">        ...     layers=[</span>
-<a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="sd">        ...         KeyboardLayer(index=0, name=&quot;Base&quot;),</span>
-<a id="__codelineno-0-260" name="__codelineno-0-260"></a><span class="sd">        ...         KeyboardLayer(index=15, name=&quot;Mouse&quot;),</span>
-<a id="__codelineno-0-261" name="__codelineno-0-261"></a><span class="sd">        ...     ]</span>
-<a id="__codelineno-0-262" name="__codelineno-0-262"></a><span class="sd">        ... )</span>
-<a id="__codelineno-0-263" name="__codelineno-0-263"></a><span class="sd">        &gt;&gt;&gt; keyboard.qmk_index_to_position(15)</span>
-<a id="__codelineno-0-264" name="__codelineno-0-264"></a><span class="sd">        1</span>
-<a id="__codelineno-0-265" name="__codelineno-0-265"></a><span class="sd">        &gt;&gt;&gt; keyboard.qmk_index_to_position(5) is None</span>
-<a id="__codelineno-0-266" name="__codelineno-0-266"></a><span class="sd">        True</span>
-<a id="__codelineno-0-267" name="__codelineno-0-267"></a>
-<a id="__codelineno-0-268" name="__codelineno-0-268"></a><span class="sd">        ```</span>
-<a id="__codelineno-0-269" name="__codelineno-0-269"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-270" name="__codelineno-0-270"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qmk_index_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">qmk_idx</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-271">271</a></span>
+<span class="normal"><a href="#__codelineno-0-272">272</a></span>
+<span class="normal"><a href="#__codelineno-0-273">273</a></span>
+<span class="normal"><a href="#__codelineno-0-274">274</a></span>
+<span class="normal"><a href="#__codelineno-0-275">275</a></span>
+<span class="normal"><a href="#__codelineno-0-276">276</a></span>
+<span class="normal"><a href="#__codelineno-0-277">277</a></span>
+<span class="normal"><a href="#__codelineno-0-278">278</a></span>
+<span class="normal"><a href="#__codelineno-0-279">279</a></span>
+<span class="normal"><a href="#__codelineno-0-280">280</a></span>
+<span class="normal"><a href="#__codelineno-0-281">281</a></span>
+<span class="normal"><a href="#__codelineno-0-282">282</a></span>
+<span class="normal"><a href="#__codelineno-0-283">283</a></span>
+<span class="normal"><a href="#__codelineno-0-284">284</a></span>
+<span class="normal"><a href="#__codelineno-0-285">285</a></span>
+<span class="normal"><a href="#__codelineno-0-286">286</a></span>
+<span class="normal"><a href="#__codelineno-0-287">287</a></span>
+<span class="normal"><a href="#__codelineno-0-288">288</a></span>
+<span class="normal"><a href="#__codelineno-0-289">289</a></span>
+<span class="normal"><a href="#__codelineno-0-290">290</a></span>
+<span class="normal"><a href="#__codelineno-0-291">291</a></span>
+<span class="normal"><a href="#__codelineno-0-292">292</a></span>
+<span class="normal"><a href="#__codelineno-0-293">293</a></span>
+<span class="normal"><a href="#__codelineno-0-294">294</a></span>
+<span class="normal"><a href="#__codelineno-0-295">295</a></span>
+<span class="normal"><a href="#__codelineno-0-296">296</a></span>
+<span class="normal"><a href="#__codelineno-0-297">297</a></span>
+<span class="normal"><a href="#__codelineno-0-298">298</a></span>
+<span class="normal"><a href="#__codelineno-0-299">299</a></span>
+<span class="normal"><a href="#__codelineno-0-300">300</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-271" name="__codelineno-0-271"></a><span class="k">def</span><span class="w"> </span><span class="nf">qmk_index_to_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qmk_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-272" name="__codelineno-0-272"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Look up a layer&#39;s position by its QMK firmware index.</span>
+<a id="__codelineno-0-273" name="__codelineno-0-273"></a>
+<a id="__codelineno-0-274" name="__codelineno-0-274"></a><span class="sd">    Returns the zero-based position of the layer in the layers tuple</span>
+<a id="__codelineno-0-275" name="__codelineno-0-275"></a><span class="sd">    that has the given QMK firmware index. This is useful when layer</span>
+<a id="__codelineno-0-276" name="__codelineno-0-276"></a><span class="sd">    indices in the firmware are non-sequential (e.g., 0, 1, 2, 15).</span>
+<a id="__codelineno-0-277" name="__codelineno-0-277"></a>
+<a id="__codelineno-0-278" name="__codelineno-0-278"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-279" name="__codelineno-0-279"></a><span class="sd">        qmk_idx: The QMK firmware layer index to look up.</span>
+<a id="__codelineno-0-280" name="__codelineno-0-280"></a>
+<a id="__codelineno-0-281" name="__codelineno-0-281"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-282" name="__codelineno-0-282"></a><span class="sd">        The position of the matching layer in the layers tuple, or</span>
+<a id="__codelineno-0-283" name="__codelineno-0-283"></a><span class="sd">        ``None`` if no layer has the given QMK index.</span>
+<a id="__codelineno-0-284" name="__codelineno-0-284"></a>
+<a id="__codelineno-0-285" name="__codelineno-0-285"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-286" name="__codelineno-0-286"></a><span class="sd">        ```pycon</span>
+<a id="__codelineno-0-287" name="__codelineno-0-287"></a><span class="sd">        &gt;&gt;&gt; keyboard = Keyboard(</span>
+<a id="__codelineno-0-288" name="__codelineno-0-288"></a><span class="sd">        ...     layers=[</span>
+<a id="__codelineno-0-289" name="__codelineno-0-289"></a><span class="sd">        ...         KeyboardLayer(index=0, name=&quot;Base&quot;),</span>
+<a id="__codelineno-0-290" name="__codelineno-0-290"></a><span class="sd">        ...         KeyboardLayer(index=15, name=&quot;Mouse&quot;),</span>
+<a id="__codelineno-0-291" name="__codelineno-0-291"></a><span class="sd">        ...     ]</span>
+<a id="__codelineno-0-292" name="__codelineno-0-292"></a><span class="sd">        ... )</span>
+<a id="__codelineno-0-293" name="__codelineno-0-293"></a><span class="sd">        &gt;&gt;&gt; keyboard.qmk_index_to_position(15)</span>
+<a id="__codelineno-0-294" name="__codelineno-0-294"></a><span class="sd">        1</span>
+<a id="__codelineno-0-295" name="__codelineno-0-295"></a><span class="sd">        &gt;&gt;&gt; keyboard.qmk_index_to_position(5) is None</span>
+<a id="__codelineno-0-296" name="__codelineno-0-296"></a><span class="sd">        True</span>
+<a id="__codelineno-0-297" name="__codelineno-0-297"></a>
+<a id="__codelineno-0-298" name="__codelineno-0-298"></a><span class="sd">        ```</span>
+<a id="__codelineno-0-299" name="__codelineno-0-299"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-300" name="__codelineno-0-300"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qmk_index_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">qmk_idx</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -8455,57 +8545,57 @@ position in the layers tuple.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/data/config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-272">272</a></span>
-<span class="normal"><a href="#__codelineno-0-273">273</a></span>
-<span class="normal"><a href="#__codelineno-0-274">274</a></span>
-<span class="normal"><a href="#__codelineno-0-275">275</a></span>
-<span class="normal"><a href="#__codelineno-0-276">276</a></span>
-<span class="normal"><a href="#__codelineno-0-277">277</a></span>
-<span class="normal"><a href="#__codelineno-0-278">278</a></span>
-<span class="normal"><a href="#__codelineno-0-279">279</a></span>
-<span class="normal"><a href="#__codelineno-0-280">280</a></span>
-<span class="normal"><a href="#__codelineno-0-281">281</a></span>
-<span class="normal"><a href="#__codelineno-0-282">282</a></span>
-<span class="normal"><a href="#__codelineno-0-283">283</a></span>
-<span class="normal"><a href="#__codelineno-0-284">284</a></span>
-<span class="normal"><a href="#__codelineno-0-285">285</a></span>
-<span class="normal"><a href="#__codelineno-0-286">286</a></span>
-<span class="normal"><a href="#__codelineno-0-287">287</a></span>
-<span class="normal"><a href="#__codelineno-0-288">288</a></span>
-<span class="normal"><a href="#__codelineno-0-289">289</a></span>
-<span class="normal"><a href="#__codelineno-0-290">290</a></span>
-<span class="normal"><a href="#__codelineno-0-291">291</a></span>
-<span class="normal"><a href="#__codelineno-0-292">292</a></span>
-<span class="normal"><a href="#__codelineno-0-293">293</a></span>
-<span class="normal"><a href="#__codelineno-0-294">294</a></span>
-<span class="normal"><a href="#__codelineno-0-295">295</a></span>
-<span class="normal"><a href="#__codelineno-0-296">296</a></span>
-<span class="normal"><a href="#__codelineno-0-297">297</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-272" name="__codelineno-0-272"></a><span class="k">def</span><span class="w"> </span><span class="nf">layer_qmk_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<a id="__codelineno-0-273" name="__codelineno-0-273"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the QMK firmware index for a layer at a given position.</span>
-<a id="__codelineno-0-274" name="__codelineno-0-274"></a>
-<a id="__codelineno-0-275" name="__codelineno-0-275"></a><span class="sd">    Returns the QMK firmware layer index for the layer at the given</span>
-<a id="__codelineno-0-276" name="__codelineno-0-276"></a><span class="sd">    position in the layers tuple.</span>
-<a id="__codelineno-0-277" name="__codelineno-0-277"></a>
-<a id="__codelineno-0-278" name="__codelineno-0-278"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-279" name="__codelineno-0-279"></a><span class="sd">        position: The zero-based position of the layer in the layers tuple.</span>
-<a id="__codelineno-0-280" name="__codelineno-0-280"></a>
-<a id="__codelineno-0-281" name="__codelineno-0-281"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-282" name="__codelineno-0-282"></a><span class="sd">        The QMK firmware layer index.</span>
-<a id="__codelineno-0-283" name="__codelineno-0-283"></a>
-<a id="__codelineno-0-284" name="__codelineno-0-284"></a><span class="sd">    Example:</span>
-<a id="__codelineno-0-285" name="__codelineno-0-285"></a><span class="sd">        ```pycon</span>
-<a id="__codelineno-0-286" name="__codelineno-0-286"></a><span class="sd">        &gt;&gt;&gt; keyboard = Keyboard(</span>
-<a id="__codelineno-0-287" name="__codelineno-0-287"></a><span class="sd">        ...     layers=[</span>
-<a id="__codelineno-0-288" name="__codelineno-0-288"></a><span class="sd">        ...         KeyboardLayer(index=0, name=&quot;Base&quot;),</span>
-<a id="__codelineno-0-289" name="__codelineno-0-289"></a><span class="sd">        ...         KeyboardLayer(index=15, name=&quot;Mouse&quot;),</span>
-<a id="__codelineno-0-290" name="__codelineno-0-290"></a><span class="sd">        ...     ]</span>
-<a id="__codelineno-0-291" name="__codelineno-0-291"></a><span class="sd">        ... )</span>
-<a id="__codelineno-0-292" name="__codelineno-0-292"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_qmk_index(1)</span>
-<a id="__codelineno-0-293" name="__codelineno-0-293"></a><span class="sd">        15</span>
-<a id="__codelineno-0-294" name="__codelineno-0-294"></a>
-<a id="__codelineno-0-295" name="__codelineno-0-295"></a><span class="sd">        ```</span>
-<a id="__codelineno-0-296" name="__codelineno-0-296"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-297" name="__codelineno-0-297"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">position</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-302">302</a></span>
+<span class="normal"><a href="#__codelineno-0-303">303</a></span>
+<span class="normal"><a href="#__codelineno-0-304">304</a></span>
+<span class="normal"><a href="#__codelineno-0-305">305</a></span>
+<span class="normal"><a href="#__codelineno-0-306">306</a></span>
+<span class="normal"><a href="#__codelineno-0-307">307</a></span>
+<span class="normal"><a href="#__codelineno-0-308">308</a></span>
+<span class="normal"><a href="#__codelineno-0-309">309</a></span>
+<span class="normal"><a href="#__codelineno-0-310">310</a></span>
+<span class="normal"><a href="#__codelineno-0-311">311</a></span>
+<span class="normal"><a href="#__codelineno-0-312">312</a></span>
+<span class="normal"><a href="#__codelineno-0-313">313</a></span>
+<span class="normal"><a href="#__codelineno-0-314">314</a></span>
+<span class="normal"><a href="#__codelineno-0-315">315</a></span>
+<span class="normal"><a href="#__codelineno-0-316">316</a></span>
+<span class="normal"><a href="#__codelineno-0-317">317</a></span>
+<span class="normal"><a href="#__codelineno-0-318">318</a></span>
+<span class="normal"><a href="#__codelineno-0-319">319</a></span>
+<span class="normal"><a href="#__codelineno-0-320">320</a></span>
+<span class="normal"><a href="#__codelineno-0-321">321</a></span>
+<span class="normal"><a href="#__codelineno-0-322">322</a></span>
+<span class="normal"><a href="#__codelineno-0-323">323</a></span>
+<span class="normal"><a href="#__codelineno-0-324">324</a></span>
+<span class="normal"><a href="#__codelineno-0-325">325</a></span>
+<span class="normal"><a href="#__codelineno-0-326">326</a></span>
+<span class="normal"><a href="#__codelineno-0-327">327</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-302" name="__codelineno-0-302"></a><span class="k">def</span><span class="w"> </span><span class="nf">layer_qmk_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-303" name="__codelineno-0-303"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the QMK firmware index for a layer at a given position.</span>
+<a id="__codelineno-0-304" name="__codelineno-0-304"></a>
+<a id="__codelineno-0-305" name="__codelineno-0-305"></a><span class="sd">    Returns the QMK firmware layer index for the layer at the given</span>
+<a id="__codelineno-0-306" name="__codelineno-0-306"></a><span class="sd">    position in the layers tuple.</span>
+<a id="__codelineno-0-307" name="__codelineno-0-307"></a>
+<a id="__codelineno-0-308" name="__codelineno-0-308"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-309" name="__codelineno-0-309"></a><span class="sd">        position: The zero-based position of the layer in the layers tuple.</span>
+<a id="__codelineno-0-310" name="__codelineno-0-310"></a>
+<a id="__codelineno-0-311" name="__codelineno-0-311"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-312" name="__codelineno-0-312"></a><span class="sd">        The QMK firmware layer index.</span>
+<a id="__codelineno-0-313" name="__codelineno-0-313"></a>
+<a id="__codelineno-0-314" name="__codelineno-0-314"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-315" name="__codelineno-0-315"></a><span class="sd">        ```pycon</span>
+<a id="__codelineno-0-316" name="__codelineno-0-316"></a><span class="sd">        &gt;&gt;&gt; keyboard = Keyboard(</span>
+<a id="__codelineno-0-317" name="__codelineno-0-317"></a><span class="sd">        ...     layers=[</span>
+<a id="__codelineno-0-318" name="__codelineno-0-318"></a><span class="sd">        ...         KeyboardLayer(index=0, name=&quot;Base&quot;),</span>
+<a id="__codelineno-0-319" name="__codelineno-0-319"></a><span class="sd">        ...         KeyboardLayer(index=15, name=&quot;Mouse&quot;),</span>
+<a id="__codelineno-0-320" name="__codelineno-0-320"></a><span class="sd">        ...     ]</span>
+<a id="__codelineno-0-321" name="__codelineno-0-321"></a><span class="sd">        ... )</span>
+<a id="__codelineno-0-322" name="__codelineno-0-322"></a><span class="sd">        &gt;&gt;&gt; keyboard.layer_qmk_index(1)</span>
+<a id="__codelineno-0-323" name="__codelineno-0-323"></a><span class="sd">        15</span>
+<a id="__codelineno-0-324" name="__codelineno-0-324"></a>
+<a id="__codelineno-0-325" name="__codelineno-0-325"></a><span class="sd">        ```</span>
+<a id="__codelineno-0-326" name="__codelineno-0-326"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-327" name="__codelineno-0-327"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">position</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -8705,9 +8795,9 @@ overrides, this is the display label.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/data/config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-330">330</a></span>
-<span class="normal"><a href="#__codelineno-0-331">331</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-330" name="__codelineno-0-330"></a><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<a id="__codelineno-0-331" name="__codelineno-0-331"></a>    <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">keycode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-360">360</a></span>
+<span class="normal"><a href="#__codelineno-0-361">361</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-360" name="__codelineno-0-360"></a><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-361" name="__codelineno-0-361"></a>    <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">keycode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -8936,9 +9026,9 @@ in the TUI.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/data/config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-352">352</a></span>
-<span class="normal"><a href="#__codelineno-0-353">353</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-352" name="__codelineno-0-352"></a><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<a id="__codelineno-0-353" name="__codelineno-0-353"></a>    <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">preview</span><span class="p">))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-382">382</a></span>
+<span class="normal"><a href="#__codelineno-0-383">383</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-382" name="__codelineno-0-382"></a><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-383" name="__codelineno-0-383"></a>    <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">preview</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -9167,9 +9257,9 @@ in the TUI.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/data/config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-374">374</a></span>
-<span class="normal"><a href="#__codelineno-0-375">375</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-374" name="__codelineno-0-374"></a><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<a id="__codelineno-0-375" name="__codelineno-0-375"></a>    <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">preview</span><span class="p">))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-404">404</a></span>
+<span class="normal"><a href="#__codelineno-0-405">405</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-404" name="__codelineno-0-404"></a><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-405" name="__codelineno-0-405"></a>    <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">preview</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -9620,41 +9710,41 @@ Defaults to an empty dict (no overrides).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/data/config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-462">462</a></span>
-<span class="normal"><a href="#__codelineno-0-463">463</a></span>
-<span class="normal"><a href="#__codelineno-0-464">464</a></span>
-<span class="normal"><a href="#__codelineno-0-465">465</a></span>
-<span class="normal"><a href="#__codelineno-0-466">466</a></span>
-<span class="normal"><a href="#__codelineno-0-467">467</a></span>
-<span class="normal"><a href="#__codelineno-0-468">468</a></span>
-<span class="normal"><a href="#__codelineno-0-469">469</a></span>
-<span class="normal"><a href="#__codelineno-0-470">470</a></span>
-<span class="normal"><a href="#__codelineno-0-471">471</a></span>
-<span class="normal"><a href="#__codelineno-0-472">472</a></span>
-<span class="normal"><a href="#__codelineno-0-473">473</a></span>
-<span class="normal"><a href="#__codelineno-0-474">474</a></span>
-<span class="normal"><a href="#__codelineno-0-475">475</a></span>
-<span class="normal"><a href="#__codelineno-0-476">476</a></span>
-<span class="normal"><a href="#__codelineno-0-477">477</a></span>
-<span class="normal"><a href="#__codelineno-0-478">478</a></span>
-<span class="normal"><a href="#__codelineno-0-479">479</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-462" name="__codelineno-0-462"></a><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<a id="__codelineno-0-463" name="__codelineno-0-463"></a>    <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span>
-<a id="__codelineno-0-464" name="__codelineno-0-464"></a>        <span class="p">(</span>
-<a id="__codelineno-0-465" name="__codelineno-0-465"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">pre_process</span><span class="p">,</span>
-<a id="__codelineno-0-466" name="__codelineno-0-466"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">overrides</span><span class="p">,</span>
-<a id="__codelineno-0-467" name="__codelineno-0-467"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">macros</span><span class="p">,</span>
-<a id="__codelineno-0-468" name="__codelineno-0-468"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">tap_dances</span><span class="p">,</span>
-<a id="__codelineno-0-469" name="__codelineno-0-469"></a>            <span class="nb">tuple</span><span class="p">(</span>
-<a id="__codelineno-0-470" name="__codelineno-0-470"></a>                <span class="p">(</span><span class="n">cat</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">items</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
-<a id="__codelineno-0-471" name="__codelineno-0-471"></a>                <span class="k">for</span> <span class="n">cat</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol_descriptions</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-<a id="__codelineno-0-472" name="__codelineno-0-472"></a>            <span class="p">),</span>
-<a id="__codelineno-0-473" name="__codelineno-0-473"></a>            <span class="nb">tuple</span><span class="p">(</span>
-<a id="__codelineno-0-474" name="__codelineno-0-474"></a>                <span class="p">(</span><span class="n">cat</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">items</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
-<a id="__codelineno-0-475" name="__codelineno-0-475"></a>                <span class="k">for</span> <span class="n">cat</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">function_descriptions</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-<a id="__codelineno-0-476" name="__codelineno-0-476"></a>            <span class="p">),</span>
-<a id="__codelineno-0-477" name="__codelineno-0-477"></a>            <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol_legend_aliases</span><span class="o">.</span><span class="n">items</span><span class="p">())),</span>
-<a id="__codelineno-0-478" name="__codelineno-0-478"></a>        <span class="p">)</span>
-<a id="__codelineno-0-479" name="__codelineno-0-479"></a>    <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-492">492</a></span>
+<span class="normal"><a href="#__codelineno-0-493">493</a></span>
+<span class="normal"><a href="#__codelineno-0-494">494</a></span>
+<span class="normal"><a href="#__codelineno-0-495">495</a></span>
+<span class="normal"><a href="#__codelineno-0-496">496</a></span>
+<span class="normal"><a href="#__codelineno-0-497">497</a></span>
+<span class="normal"><a href="#__codelineno-0-498">498</a></span>
+<span class="normal"><a href="#__codelineno-0-499">499</a></span>
+<span class="normal"><a href="#__codelineno-0-500">500</a></span>
+<span class="normal"><a href="#__codelineno-0-501">501</a></span>
+<span class="normal"><a href="#__codelineno-0-502">502</a></span>
+<span class="normal"><a href="#__codelineno-0-503">503</a></span>
+<span class="normal"><a href="#__codelineno-0-504">504</a></span>
+<span class="normal"><a href="#__codelineno-0-505">505</a></span>
+<span class="normal"><a href="#__codelineno-0-506">506</a></span>
+<span class="normal"><a href="#__codelineno-0-507">507</a></span>
+<span class="normal"><a href="#__codelineno-0-508">508</a></span>
+<span class="normal"><a href="#__codelineno-0-509">509</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-492" name="__codelineno-0-492"></a><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-493" name="__codelineno-0-493"></a>    <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span>
+<a id="__codelineno-0-494" name="__codelineno-0-494"></a>        <span class="p">(</span>
+<a id="__codelineno-0-495" name="__codelineno-0-495"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">pre_process</span><span class="p">,</span>
+<a id="__codelineno-0-496" name="__codelineno-0-496"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">overrides</span><span class="p">,</span>
+<a id="__codelineno-0-497" name="__codelineno-0-497"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">macros</span><span class="p">,</span>
+<a id="__codelineno-0-498" name="__codelineno-0-498"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">tap_dances</span><span class="p">,</span>
+<a id="__codelineno-0-499" name="__codelineno-0-499"></a>            <span class="nb">tuple</span><span class="p">(</span>
+<a id="__codelineno-0-500" name="__codelineno-0-500"></a>                <span class="p">(</span><span class="n">cat</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">items</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
+<a id="__codelineno-0-501" name="__codelineno-0-501"></a>                <span class="k">for</span> <span class="n">cat</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol_descriptions</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+<a id="__codelineno-0-502" name="__codelineno-0-502"></a>            <span class="p">),</span>
+<a id="__codelineno-0-503" name="__codelineno-0-503"></a>            <span class="nb">tuple</span><span class="p">(</span>
+<a id="__codelineno-0-504" name="__codelineno-0-504"></a>                <span class="p">(</span><span class="n">cat</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">items</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
+<a id="__codelineno-0-505" name="__codelineno-0-505"></a>                <span class="k">for</span> <span class="n">cat</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">function_descriptions</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+<a id="__codelineno-0-506" name="__codelineno-0-506"></a>            <span class="p">),</span>
+<a id="__codelineno-0-507" name="__codelineno-0-507"></a>            <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol_legend_aliases</span><span class="o">.</span><span class="n">items</span><span class="p">())),</span>
+<a id="__codelineno-0-508" name="__codelineno-0-508"></a>        <span class="p">)</span>
+<a id="__codelineno-0-509" name="__codelineno-0-509"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -10918,6 +11008,30 @@ property of the indicator itself.</p>
               </div>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="reserve_space
+
+
+  
+      class-attribute
+      instance-attribute
+   (skim.data.config.LayerIndicator.reserve_space)" href="#skim.data.config.LayerIndicator.reserve_space">reserve_space</a></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Lay every layer image out as if every key had
+a badge, so all layer images share one geometry: the
+halves, clusters and keys sit at the same coordinates
+whichever layer is drawn. Off by default, when each
+layer only makes room for the badges it has, and a layer
+without (say) inner-thumb badges draws its halves closer
+together. Turn it on when the images are swapped in place
+of each other, e.g. a live layer overlay.</p>
+              </div>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -11015,6 +11129,29 @@ property of the indicator itself.</p>
   
       module-attribute
    (skim.data.config.SpacingValue)" href="#skim.data.config.SpacingValue">SpacingValue</a></span> <span class="o">=</span> <span class="n"><span title="pydantic.Field">Field</span></span><span class="p">(</span><span class="n"><span title="pydantic.Field(default)">default</span></span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="skim.data.config.LayerIndicator.reserve_space" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">reserve_space</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#skim.data.config.LayerIndicator.reserve_space" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">reserve_space</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -11730,71 +11867,71 @@ key positions.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/data/config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-919">919</a></span>
-<span class="normal"><a href="#__codelineno-0-920">920</a></span>
-<span class="normal"><a href="#__codelineno-0-921">921</a></span>
-<span class="normal"><a href="#__codelineno-0-922">922</a></span>
-<span class="normal"><a href="#__codelineno-0-923">923</a></span>
-<span class="normal"><a href="#__codelineno-0-924">924</a></span>
-<span class="normal"><a href="#__codelineno-0-925">925</a></span>
-<span class="normal"><a href="#__codelineno-0-926">926</a></span>
-<span class="normal"><a href="#__codelineno-0-927">927</a></span>
-<span class="normal"><a href="#__codelineno-0-928">928</a></span>
-<span class="normal"><a href="#__codelineno-0-929">929</a></span>
-<span class="normal"><a href="#__codelineno-0-930">930</a></span>
-<span class="normal"><a href="#__codelineno-0-931">931</a></span>
-<span class="normal"><a href="#__codelineno-0-932">932</a></span>
-<span class="normal"><a href="#__codelineno-0-933">933</a></span>
-<span class="normal"><a href="#__codelineno-0-934">934</a></span>
-<span class="normal"><a href="#__codelineno-0-935">935</a></span>
-<span class="normal"><a href="#__codelineno-0-936">936</a></span>
-<span class="normal"><a href="#__codelineno-0-937">937</a></span>
-<span class="normal"><a href="#__codelineno-0-938">938</a></span>
-<span class="normal"><a href="#__codelineno-0-939">939</a></span>
-<span class="normal"><a href="#__codelineno-0-940">940</a></span>
-<span class="normal"><a href="#__codelineno-0-941">941</a></span>
-<span class="normal"><a href="#__codelineno-0-942">942</a></span>
-<span class="normal"><a href="#__codelineno-0-943">943</a></span>
-<span class="normal"><a href="#__codelineno-0-944">944</a></span>
-<span class="normal"><a href="#__codelineno-0-945">945</a></span>
-<span class="normal"><a href="#__codelineno-0-946">946</a></span>
-<span class="normal"><a href="#__codelineno-0-947">947</a></span>
-<span class="normal"><a href="#__codelineno-0-948">948</a></span>
-<span class="normal"><a href="#__codelineno-0-949">949</a></span>
-<span class="normal"><a href="#__codelineno-0-950">950</a></span>
-<span class="normal"><a href="#__codelineno-0-951">951</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-919" name="__codelineno-0-919"></a><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-920" name="__codelineno-0-920"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the color for a specific cluster position.</span>
-<a id="__codelineno-0-921" name="__codelineno-0-921"></a>
-<a id="__codelineno-0-922" name="__codelineno-0-922"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-923" name="__codelineno-0-923"></a><span class="sd">        index: Position index from 0-5 corresponding to cluster</span>
-<a id="__codelineno-0-924" name="__codelineno-0-924"></a><span class="sd">            key positions.</span>
-<a id="__codelineno-0-925" name="__codelineno-0-925"></a>
-<a id="__codelineno-0-926" name="__codelineno-0-926"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-927" name="__codelineno-0-927"></a><span class="sd">        The CSS colour string for the gradient stop at ``index``.</span>
-<a id="__codelineno-0-928" name="__codelineno-0-928"></a><span class="sd">        When ``gradient`` is ``None`` (the user-facing schema&#39;s</span>
-<a id="__codelineno-0-929" name="__codelineno-0-929"></a><span class="sd">        &quot;let Skim derive it&quot; case), falls back to ``base_color``</span>
-<a id="__codelineno-0-930" name="__codelineno-0-930"></a><span class="sd">        for every position so the lookup never fails. The</span>
-<a id="__codelineno-0-931" name="__codelineno-0-931"></a><span class="sd">        keymap-generation pipeline replaces ``None`` gradients</span>
-<a id="__codelineno-0-932" name="__codelineno-0-932"></a><span class="sd">        with auto-derived 6-stop tuples before rendering, so the</span>
-<a id="__codelineno-0-933" name="__codelineno-0-933"></a><span class="sd">        fallback only kicks in for callers that bypass that</span>
-<a id="__codelineno-0-934" name="__codelineno-0-934"></a><span class="sd">        pipeline (tests, introspection, the TUI&#39;s pre-fill path).</span>
-<a id="__codelineno-0-935" name="__codelineno-0-935"></a>
-<a id="__codelineno-0-936" name="__codelineno-0-936"></a><span class="sd">    Raises:</span>
-<a id="__codelineno-0-937" name="__codelineno-0-937"></a><span class="sd">        IndexError: If index is outside the valid range (0-5).</span>
-<a id="__codelineno-0-938" name="__codelineno-0-938"></a>
-<a id="__codelineno-0-939" name="__codelineno-0-939"></a><span class="sd">    Example:</span>
-<a id="__codelineno-0-940" name="__codelineno-0-940"></a><span class="sd">        ```pycon</span>
-<a id="__codelineno-0-941" name="__codelineno-0-941"></a><span class="sd">        &gt;&gt;&gt; layer = LayerColor(base_color=&quot;#FFF&quot;)</span>
-<a id="__codelineno-0-942" name="__codelineno-0-942"></a><span class="sd">        &gt;&gt;&gt; layer[0]</span>
-<a id="__codelineno-0-943" name="__codelineno-0-943"></a><span class="sd">        &#39;#FFF&#39;</span>
-<a id="__codelineno-0-944" name="__codelineno-0-944"></a>
-<a id="__codelineno-0-945" name="__codelineno-0-945"></a><span class="sd">        ```</span>
-<a id="__codelineno-0-946" name="__codelineno-0-946"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-947" name="__codelineno-0-947"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">:</span>
-<a id="__codelineno-0-948" name="__codelineno-0-948"></a>        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gradient index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> out of range (0-5)&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-949" name="__codelineno-0-949"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient</span><span class="p">:</span>
-<a id="__codelineno-0-950" name="__codelineno-0-950"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_color</span>
-<a id="__codelineno-0-951" name="__codelineno-0-951"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-958">958</a></span>
+<span class="normal"><a href="#__codelineno-0-959">959</a></span>
+<span class="normal"><a href="#__codelineno-0-960">960</a></span>
+<span class="normal"><a href="#__codelineno-0-961">961</a></span>
+<span class="normal"><a href="#__codelineno-0-962">962</a></span>
+<span class="normal"><a href="#__codelineno-0-963">963</a></span>
+<span class="normal"><a href="#__codelineno-0-964">964</a></span>
+<span class="normal"><a href="#__codelineno-0-965">965</a></span>
+<span class="normal"><a href="#__codelineno-0-966">966</a></span>
+<span class="normal"><a href="#__codelineno-0-967">967</a></span>
+<span class="normal"><a href="#__codelineno-0-968">968</a></span>
+<span class="normal"><a href="#__codelineno-0-969">969</a></span>
+<span class="normal"><a href="#__codelineno-0-970">970</a></span>
+<span class="normal"><a href="#__codelineno-0-971">971</a></span>
+<span class="normal"><a href="#__codelineno-0-972">972</a></span>
+<span class="normal"><a href="#__codelineno-0-973">973</a></span>
+<span class="normal"><a href="#__codelineno-0-974">974</a></span>
+<span class="normal"><a href="#__codelineno-0-975">975</a></span>
+<span class="normal"><a href="#__codelineno-0-976">976</a></span>
+<span class="normal"><a href="#__codelineno-0-977">977</a></span>
+<span class="normal"><a href="#__codelineno-0-978">978</a></span>
+<span class="normal"><a href="#__codelineno-0-979">979</a></span>
+<span class="normal"><a href="#__codelineno-0-980">980</a></span>
+<span class="normal"><a href="#__codelineno-0-981">981</a></span>
+<span class="normal"><a href="#__codelineno-0-982">982</a></span>
+<span class="normal"><a href="#__codelineno-0-983">983</a></span>
+<span class="normal"><a href="#__codelineno-0-984">984</a></span>
+<span class="normal"><a href="#__codelineno-0-985">985</a></span>
+<span class="normal"><a href="#__codelineno-0-986">986</a></span>
+<span class="normal"><a href="#__codelineno-0-987">987</a></span>
+<span class="normal"><a href="#__codelineno-0-988">988</a></span>
+<span class="normal"><a href="#__codelineno-0-989">989</a></span>
+<span class="normal"><a href="#__codelineno-0-990">990</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-958" name="__codelineno-0-958"></a><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-959" name="__codelineno-0-959"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the color for a specific cluster position.</span>
+<a id="__codelineno-0-960" name="__codelineno-0-960"></a>
+<a id="__codelineno-0-961" name="__codelineno-0-961"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-962" name="__codelineno-0-962"></a><span class="sd">        index: Position index from 0-5 corresponding to cluster</span>
+<a id="__codelineno-0-963" name="__codelineno-0-963"></a><span class="sd">            key positions.</span>
+<a id="__codelineno-0-964" name="__codelineno-0-964"></a>
+<a id="__codelineno-0-965" name="__codelineno-0-965"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-966" name="__codelineno-0-966"></a><span class="sd">        The CSS colour string for the gradient stop at ``index``.</span>
+<a id="__codelineno-0-967" name="__codelineno-0-967"></a><span class="sd">        When ``gradient`` is ``None`` (the user-facing schema&#39;s</span>
+<a id="__codelineno-0-968" name="__codelineno-0-968"></a><span class="sd">        &quot;let Skim derive it&quot; case), falls back to ``base_color``</span>
+<a id="__codelineno-0-969" name="__codelineno-0-969"></a><span class="sd">        for every position so the lookup never fails. The</span>
+<a id="__codelineno-0-970" name="__codelineno-0-970"></a><span class="sd">        keymap-generation pipeline replaces ``None`` gradients</span>
+<a id="__codelineno-0-971" name="__codelineno-0-971"></a><span class="sd">        with auto-derived 6-stop tuples before rendering, so the</span>
+<a id="__codelineno-0-972" name="__codelineno-0-972"></a><span class="sd">        fallback only kicks in for callers that bypass that</span>
+<a id="__codelineno-0-973" name="__codelineno-0-973"></a><span class="sd">        pipeline (tests, introspection, the TUI&#39;s pre-fill path).</span>
+<a id="__codelineno-0-974" name="__codelineno-0-974"></a>
+<a id="__codelineno-0-975" name="__codelineno-0-975"></a><span class="sd">    Raises:</span>
+<a id="__codelineno-0-976" name="__codelineno-0-976"></a><span class="sd">        IndexError: If index is outside the valid range (0-5).</span>
+<a id="__codelineno-0-977" name="__codelineno-0-977"></a>
+<a id="__codelineno-0-978" name="__codelineno-0-978"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-979" name="__codelineno-0-979"></a><span class="sd">        ```pycon</span>
+<a id="__codelineno-0-980" name="__codelineno-0-980"></a><span class="sd">        &gt;&gt;&gt; layer = LayerColor(base_color=&quot;#FFF&quot;)</span>
+<a id="__codelineno-0-981" name="__codelineno-0-981"></a><span class="sd">        &gt;&gt;&gt; layer[0]</span>
+<a id="__codelineno-0-982" name="__codelineno-0-982"></a><span class="sd">        &#39;#FFF&#39;</span>
+<a id="__codelineno-0-983" name="__codelineno-0-983"></a>
+<a id="__codelineno-0-984" name="__codelineno-0-984"></a><span class="sd">        ```</span>
+<a id="__codelineno-0-985" name="__codelineno-0-985"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-986" name="__codelineno-0-986"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">:</span>
+<a id="__codelineno-0-987" name="__codelineno-0-987"></a>        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gradient index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> out of range (0-5)&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-988" name="__codelineno-0-988"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient</span><span class="p">:</span>
+<a id="__codelineno-0-989" name="__codelineno-0-989"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_color</span>
+<a id="__codelineno-0-990" name="__codelineno-0-990"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -11869,43 +12006,43 @@ key positions.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/data/config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-953">953</a></span>
-<span class="normal"><a href="#__codelineno-0-954">954</a></span>
-<span class="normal"><a href="#__codelineno-0-955">955</a></span>
-<span class="normal"><a href="#__codelineno-0-956">956</a></span>
-<span class="normal"><a href="#__codelineno-0-957">957</a></span>
-<span class="normal"><a href="#__codelineno-0-958">958</a></span>
-<span class="normal"><a href="#__codelineno-0-959">959</a></span>
-<span class="normal"><a href="#__codelineno-0-960">960</a></span>
-<span class="normal"><a href="#__codelineno-0-961">961</a></span>
-<span class="normal"><a href="#__codelineno-0-962">962</a></span>
-<span class="normal"><a href="#__codelineno-0-963">963</a></span>
-<span class="normal"><a href="#__codelineno-0-964">964</a></span>
-<span class="normal"><a href="#__codelineno-0-965">965</a></span>
-<span class="normal"><a href="#__codelineno-0-966">966</a></span>
-<span class="normal"><a href="#__codelineno-0-967">967</a></span>
-<span class="normal"><a href="#__codelineno-0-968">968</a></span>
-<span class="normal"><a href="#__codelineno-0-969">969</a></span>
-<span class="normal"><a href="#__codelineno-0-970">970</a></span>
-<span class="normal"><a href="#__codelineno-0-971">971</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-953" name="__codelineno-0-953"></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-954" name="__codelineno-0-954"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a string representation of the color configuration.</span>
-<a id="__codelineno-0-955" name="__codelineno-0-955"></a>
-<a id="__codelineno-0-956" name="__codelineno-0-956"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-957" name="__codelineno-0-957"></a><span class="sd">        A JSON-like array string of the colors. For single-color</span>
-<a id="__codelineno-0-958" name="__codelineno-0-958"></a><span class="sd">        mode, returns a single-element array. For gradient mode,</span>
-<a id="__codelineno-0-959" name="__codelineno-0-959"></a><span class="sd">        returns all 6 colors.</span>
-<a id="__codelineno-0-960" name="__codelineno-0-960"></a>
-<a id="__codelineno-0-961" name="__codelineno-0-961"></a><span class="sd">    Example:</span>
-<a id="__codelineno-0-962" name="__codelineno-0-962"></a><span class="sd">        ```pycon</span>
-<a id="__codelineno-0-963" name="__codelineno-0-963"></a><span class="sd">        &gt;&gt;&gt; str(LayerColor(base_color=&quot;#FFF&quot;))</span>
-<a id="__codelineno-0-964" name="__codelineno-0-964"></a><span class="sd">        &#39;[&quot;#FFF&quot;]&#39;</span>
-<a id="__codelineno-0-965" name="__codelineno-0-965"></a>
-<a id="__codelineno-0-966" name="__codelineno-0-966"></a><span class="sd">        ```</span>
-<a id="__codelineno-0-967" name="__codelineno-0-967"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-968" name="__codelineno-0-968"></a>    <span class="n">str_colors</span> <span class="o">=</span> <span class="p">(</span>
-<a id="__codelineno-0-969" name="__codelineno-0-969"></a>        <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">base_color</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">,)</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient</span> <span class="k">else</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&quot;&#39;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient</span><span class="p">)</span>
-<a id="__codelineno-0-970" name="__codelineno-0-970"></a>    <span class="p">)</span>
-<a id="__codelineno-0-971" name="__codelineno-0-971"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">str_colors</span><span class="p">)</span><span class="si">}</span><span class="s2">]&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-992"> 992</a></span>
+<span class="normal"><a href="#__codelineno-0-993"> 993</a></span>
+<span class="normal"><a href="#__codelineno-0-994"> 994</a></span>
+<span class="normal"><a href="#__codelineno-0-995"> 995</a></span>
+<span class="normal"><a href="#__codelineno-0-996"> 996</a></span>
+<span class="normal"><a href="#__codelineno-0-997"> 997</a></span>
+<span class="normal"><a href="#__codelineno-0-998"> 998</a></span>
+<span class="normal"><a href="#__codelineno-0-999"> 999</a></span>
+<span class="normal"><a href="#__codelineno-0-1000">1000</a></span>
+<span class="normal"><a href="#__codelineno-0-1001">1001</a></span>
+<span class="normal"><a href="#__codelineno-0-1002">1002</a></span>
+<span class="normal"><a href="#__codelineno-0-1003">1003</a></span>
+<span class="normal"><a href="#__codelineno-0-1004">1004</a></span>
+<span class="normal"><a href="#__codelineno-0-1005">1005</a></span>
+<span class="normal"><a href="#__codelineno-0-1006">1006</a></span>
+<span class="normal"><a href="#__codelineno-0-1007">1007</a></span>
+<span class="normal"><a href="#__codelineno-0-1008">1008</a></span>
+<span class="normal"><a href="#__codelineno-0-1009">1009</a></span>
+<span class="normal"><a href="#__codelineno-0-1010">1010</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-992" name="__codelineno-0-992"></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-993" name="__codelineno-0-993"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a string representation of the color configuration.</span>
+<a id="__codelineno-0-994" name="__codelineno-0-994"></a>
+<a id="__codelineno-0-995" name="__codelineno-0-995"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-996" name="__codelineno-0-996"></a><span class="sd">        A JSON-like array string of the colors. For single-color</span>
+<a id="__codelineno-0-997" name="__codelineno-0-997"></a><span class="sd">        mode, returns a single-element array. For gradient mode,</span>
+<a id="__codelineno-0-998" name="__codelineno-0-998"></a><span class="sd">        returns all 6 colors.</span>
+<a id="__codelineno-0-999" name="__codelineno-0-999"></a>
+<a id="__codelineno-0-1000" name="__codelineno-0-1000"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-1001" name="__codelineno-0-1001"></a><span class="sd">        ```pycon</span>
+<a id="__codelineno-0-1002" name="__codelineno-0-1002"></a><span class="sd">        &gt;&gt;&gt; str(LayerColor(base_color=&quot;#FFF&quot;))</span>
+<a id="__codelineno-0-1003" name="__codelineno-0-1003"></a><span class="sd">        &#39;[&quot;#FFF&quot;]&#39;</span>
+<a id="__codelineno-0-1004" name="__codelineno-0-1004"></a>
+<a id="__codelineno-0-1005" name="__codelineno-0-1005"></a><span class="sd">        ```</span>
+<a id="__codelineno-0-1006" name="__codelineno-0-1006"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-1007" name="__codelineno-0-1007"></a>    <span class="n">str_colors</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-1008" name="__codelineno-0-1008"></a>        <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">base_color</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">,)</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient</span> <span class="k">else</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&quot;&#39;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient</span><span class="p">)</span>
+<a id="__codelineno-0-1009" name="__codelineno-0-1009"></a>    <span class="p">)</span>
+<a id="__codelineno-0-1010" name="__codelineno-0-1010"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">str_colors</span><span class="p">)</span><span class="si">}</span><span class="s2">]&quot;</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -15162,63 +15299,63 @@ least 1 SVG unit (sub-pixel gaps are invisible anyway).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/skim/data/config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-530">530</a></span>
-<span class="normal"><a href="#__codelineno-0-531">531</a></span>
-<span class="normal"><a href="#__codelineno-0-532">532</a></span>
-<span class="normal"><a href="#__codelineno-0-533">533</a></span>
-<span class="normal"><a href="#__codelineno-0-534">534</a></span>
-<span class="normal"><a href="#__codelineno-0-535">535</a></span>
-<span class="normal"><a href="#__codelineno-0-536">536</a></span>
-<span class="normal"><a href="#__codelineno-0-537">537</a></span>
-<span class="normal"><a href="#__codelineno-0-538">538</a></span>
-<span class="normal"><a href="#__codelineno-0-539">539</a></span>
-<span class="normal"><a href="#__codelineno-0-540">540</a></span>
-<span class="normal"><a href="#__codelineno-0-541">541</a></span>
-<span class="normal"><a href="#__codelineno-0-542">542</a></span>
-<span class="normal"><a href="#__codelineno-0-543">543</a></span>
-<span class="normal"><a href="#__codelineno-0-544">544</a></span>
-<span class="normal"><a href="#__codelineno-0-545">545</a></span>
-<span class="normal"><a href="#__codelineno-0-546">546</a></span>
-<span class="normal"><a href="#__codelineno-0-547">547</a></span>
-<span class="normal"><a href="#__codelineno-0-548">548</a></span>
-<span class="normal"><a href="#__codelineno-0-549">549</a></span>
-<span class="normal"><a href="#__codelineno-0-550">550</a></span>
-<span class="normal"><a href="#__codelineno-0-551">551</a></span>
-<span class="normal"><a href="#__codelineno-0-552">552</a></span>
-<span class="normal"><a href="#__codelineno-0-553">553</a></span>
-<span class="normal"><a href="#__codelineno-0-554">554</a></span>
-<span class="normal"><a href="#__codelineno-0-555">555</a></span>
-<span class="normal"><a href="#__codelineno-0-556">556</a></span>
-<span class="normal"><a href="#__codelineno-0-557">557</a></span>
-<span class="normal"><a href="#__codelineno-0-558">558</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-530" name="__codelineno-0-530"></a><span class="k">def</span><span class="w"> </span><span class="nf">resolve_spacing</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">default_proportion</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<a id="__codelineno-0-531" name="__codelineno-0-531"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve a :data:`SpacingValue` to absolute SVG units.</span>
-<a id="__codelineno-0-532" name="__codelineno-0-532"></a>
-<a id="__codelineno-0-533" name="__codelineno-0-533"></a><span class="sd">    Implements the magnitude rule:</span>
-<a id="__codelineno-0-534" name="__codelineno-0-534"></a>
-<a id="__codelineno-0-535" name="__codelineno-0-535"></a><span class="sd">    - ``None`` → ``base * default_proportion`` (renderer&#39;s built-in).</span>
-<a id="__codelineno-0-536" name="__codelineno-0-536"></a><span class="sd">    - ``value &lt; 1.0`` → ``base * value`` (proportion of base).</span>
-<a id="__codelineno-0-537" name="__codelineno-0-537"></a><span class="sd">    - ``value &gt;= 1.0`` → ``value`` (absolute SVG units).</span>
-<a id="__codelineno-0-538" name="__codelineno-0-538"></a>
-<a id="__codelineno-0-539" name="__codelineno-0-539"></a><span class="sd">    The ``1.0`` boundary is conventional: proportions live in</span>
-<a id="__codelineno-0-540" name="__codelineno-0-540"></a><span class="sd">    ``[0, 1)``, and any meaningful spacing in this codebase is at</span>
-<a id="__codelineno-0-541" name="__codelineno-0-541"></a><span class="sd">    least 1 SVG unit (sub-pixel gaps are invisible anyway).</span>
-<a id="__codelineno-0-542" name="__codelineno-0-542"></a>
-<a id="__codelineno-0-543" name="__codelineno-0-543"></a><span class="sd">    Example:</span>
-<a id="__codelineno-0-544" name="__codelineno-0-544"></a><span class="sd">        ```pycon</span>
-<a id="__codelineno-0-545" name="__codelineno-0-545"></a><span class="sd">        &gt;&gt;&gt; resolve_spacing(None, base=1600.0, default_proportion=0.025)</span>
-<a id="__codelineno-0-546" name="__codelineno-0-546"></a><span class="sd">        40.0</span>
-<a id="__codelineno-0-547" name="__codelineno-0-547"></a><span class="sd">        &gt;&gt;&gt; resolve_spacing(0.05, base=1600.0, default_proportion=0.025)</span>
-<a id="__codelineno-0-548" name="__codelineno-0-548"></a><span class="sd">        80.0</span>
-<a id="__codelineno-0-549" name="__codelineno-0-549"></a><span class="sd">        &gt;&gt;&gt; resolve_spacing(20, base=1600.0, default_proportion=0.025)</span>
-<a id="__codelineno-0-550" name="__codelineno-0-550"></a><span class="sd">        20.0</span>
-<a id="__codelineno-0-551" name="__codelineno-0-551"></a>
-<a id="__codelineno-0-552" name="__codelineno-0-552"></a><span class="sd">        ```</span>
-<a id="__codelineno-0-553" name="__codelineno-0-553"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-554" name="__codelineno-0-554"></a>    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-555" name="__codelineno-0-555"></a>        <span class="k">return</span> <span class="n">base</span> <span class="o">*</span> <span class="n">default_proportion</span>
-<a id="__codelineno-0-556" name="__codelineno-0-556"></a>    <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
-<a id="__codelineno-0-557" name="__codelineno-0-557"></a>        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">base</span> <span class="o">*</span> <span class="n">value</span><span class="p">)</span>
-<a id="__codelineno-0-558" name="__codelineno-0-558"></a>    <span class="k">return</span> <span class="n">value</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-560">560</a></span>
+<span class="normal"><a href="#__codelineno-0-561">561</a></span>
+<span class="normal"><a href="#__codelineno-0-562">562</a></span>
+<span class="normal"><a href="#__codelineno-0-563">563</a></span>
+<span class="normal"><a href="#__codelineno-0-564">564</a></span>
+<span class="normal"><a href="#__codelineno-0-565">565</a></span>
+<span class="normal"><a href="#__codelineno-0-566">566</a></span>
+<span class="normal"><a href="#__codelineno-0-567">567</a></span>
+<span class="normal"><a href="#__codelineno-0-568">568</a></span>
+<span class="normal"><a href="#__codelineno-0-569">569</a></span>
+<span class="normal"><a href="#__codelineno-0-570">570</a></span>
+<span class="normal"><a href="#__codelineno-0-571">571</a></span>
+<span class="normal"><a href="#__codelineno-0-572">572</a></span>
+<span class="normal"><a href="#__codelineno-0-573">573</a></span>
+<span class="normal"><a href="#__codelineno-0-574">574</a></span>
+<span class="normal"><a href="#__codelineno-0-575">575</a></span>
+<span class="normal"><a href="#__codelineno-0-576">576</a></span>
+<span class="normal"><a href="#__codelineno-0-577">577</a></span>
+<span class="normal"><a href="#__codelineno-0-578">578</a></span>
+<span class="normal"><a href="#__codelineno-0-579">579</a></span>
+<span class="normal"><a href="#__codelineno-0-580">580</a></span>
+<span class="normal"><a href="#__codelineno-0-581">581</a></span>
+<span class="normal"><a href="#__codelineno-0-582">582</a></span>
+<span class="normal"><a href="#__codelineno-0-583">583</a></span>
+<span class="normal"><a href="#__codelineno-0-584">584</a></span>
+<span class="normal"><a href="#__codelineno-0-585">585</a></span>
+<span class="normal"><a href="#__codelineno-0-586">586</a></span>
+<span class="normal"><a href="#__codelineno-0-587">587</a></span>
+<span class="normal"><a href="#__codelineno-0-588">588</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-560" name="__codelineno-0-560"></a><span class="k">def</span><span class="w"> </span><span class="nf">resolve_spacing</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">default_proportion</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<a id="__codelineno-0-561" name="__codelineno-0-561"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve a :data:`SpacingValue` to absolute SVG units.</span>
+<a id="__codelineno-0-562" name="__codelineno-0-562"></a>
+<a id="__codelineno-0-563" name="__codelineno-0-563"></a><span class="sd">    Implements the magnitude rule:</span>
+<a id="__codelineno-0-564" name="__codelineno-0-564"></a>
+<a id="__codelineno-0-565" name="__codelineno-0-565"></a><span class="sd">    - ``None`` → ``base * default_proportion`` (renderer&#39;s built-in).</span>
+<a id="__codelineno-0-566" name="__codelineno-0-566"></a><span class="sd">    - ``value &lt; 1.0`` → ``base * value`` (proportion of base).</span>
+<a id="__codelineno-0-567" name="__codelineno-0-567"></a><span class="sd">    - ``value &gt;= 1.0`` → ``value`` (absolute SVG units).</span>
+<a id="__codelineno-0-568" name="__codelineno-0-568"></a>
+<a id="__codelineno-0-569" name="__codelineno-0-569"></a><span class="sd">    The ``1.0`` boundary is conventional: proportions live in</span>
+<a id="__codelineno-0-570" name="__codelineno-0-570"></a><span class="sd">    ``[0, 1)``, and any meaningful spacing in this codebase is at</span>
+<a id="__codelineno-0-571" name="__codelineno-0-571"></a><span class="sd">    least 1 SVG unit (sub-pixel gaps are invisible anyway).</span>
+<a id="__codelineno-0-572" name="__codelineno-0-572"></a>
+<a id="__codelineno-0-573" name="__codelineno-0-573"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-574" name="__codelineno-0-574"></a><span class="sd">        ```pycon</span>
+<a id="__codelineno-0-575" name="__codelineno-0-575"></a><span class="sd">        &gt;&gt;&gt; resolve_spacing(None, base=1600.0, default_proportion=0.025)</span>
+<a id="__codelineno-0-576" name="__codelineno-0-576"></a><span class="sd">        40.0</span>
+<a id="__codelineno-0-577" name="__codelineno-0-577"></a><span class="sd">        &gt;&gt;&gt; resolve_spacing(0.05, base=1600.0, default_proportion=0.025)</span>
+<a id="__codelineno-0-578" name="__codelineno-0-578"></a><span class="sd">        80.0</span>
+<a id="__codelineno-0-579" name="__codelineno-0-579"></a><span class="sd">        &gt;&gt;&gt; resolve_spacing(20, base=1600.0, default_proportion=0.025)</span>
+<a id="__codelineno-0-580" name="__codelineno-0-580"></a><span class="sd">        20.0</span>
+<a id="__codelineno-0-581" name="__codelineno-0-581"></a>
+<a id="__codelineno-0-582" name="__codelineno-0-582"></a><span class="sd">        ```</span>
+<a id="__codelineno-0-583" name="__codelineno-0-583"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-584" name="__codelineno-0-584"></a>    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-585" name="__codelineno-0-585"></a>        <span class="k">return</span> <span class="n">base</span> <span class="o">*</span> <span class="n">default_proportion</span>
+<a id="__codelineno-0-586" name="__codelineno-0-586"></a>    <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+<a id="__codelineno-0-587" name="__codelineno-0-587"></a>        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">base</span> <span class="o">*</span> <span class="n">value</span><span class="p">)</span>
+<a id="__codelineno-0-588" name="__codelineno-0-588"></a>    <span class="k">return</span> <span class="n">value</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
