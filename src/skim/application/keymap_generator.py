@@ -279,9 +279,7 @@ def _resolve_keymap(
     mappings = load_keycode_mappings(config.keycodes)
     label_adapter: KeycodeLabelAdapter = KeycodeLabelAdapter(config.keyboard, mappings)
     base_layer_index = (
-        min(targets.selected_layers)
-        if targets.selected_layers and not targets.all_layers
-        else 0
+        min(targets.selected_layers) if targets.selected_layers and not targets.all_layers else 0
     )
     layer_base_overrides = {
         layer.index: layer.base_layer_index
