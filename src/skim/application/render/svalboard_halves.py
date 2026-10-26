@@ -28,7 +28,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from skim.data import SplitSidePosition
-from skim.data.keyboard import FingerCluster as FingerClusterData
+from skim.data.keyboard import SVALBOARD_CLUSTER_KEY_COUNT, FingerCluster as FingerClusterData
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
 from .composable import Composable
@@ -123,6 +123,7 @@ def FingerHalf(
     use_layer_colors_on_keys: bool = True,
     show_layer_indicators: bool = True,
     hold_symbol_position: SplitSidePosition = SplitSidePosition.OUTWARD,
+    key_index_base: int | None = None,
     column_gap: float | None = None,
 ):
     """Four finger clusters arranged into one keyboard half.
@@ -160,6 +161,10 @@ def FingerHalf(
     Reports :class:`MetricsComponent[FingerHalfMetrics]` exposing
     each cluster's origin and metrics.
 
+    ``key_index_base`` tags each cluster's keys with their keymap
+    positions (see :func:`FingerCluster`): the index finger's keys
+    start at the base, then middle, ring and pinky follow, six apart.
+
     ``column_gap`` is the horizontal gap between adjacent finger
     clusters and also the drop-amount used when staggering. Defaults
     to ``ctx.document_metrics.column_gap`` — the canonical horizontal
@@ -180,6 +185,7 @@ def FingerHalf(
     #    :class:`RenderPalette` from ``ctx.theme.palette``.
     def _make_cluster(
         cluster: FingerClusterData[SvalboardTargetKey],
+        finger: int,
     ):
         return FingerCluster(
             cluster=cluster,
@@ -190,12 +196,17 @@ def FingerHalf(
             use_layer_colors_on_keys=use_layer_colors_on_keys,
             show_layer_indicators=show_layer_indicators,
             hold_symbol_position=hold_symbol_position,
+            key_index_base=(
+                None
+                if key_index_base is None
+                else key_index_base + finger * SVALBOARD_CLUSTER_KEY_COUNT
+            ),
         )
 
-    index_cluster = _make_cluster(index_data)
-    middle_cluster = _make_cluster(middle_data)
-    ring_cluster = _make_cluster(ring_data)
-    pinky_cluster = _make_cluster(pinky_data)
+    index_cluster = _make_cluster(index_data, 0)
+    middle_cluster = _make_cluster(middle_data, 1)
+    ring_cluster = _make_cluster(ring_data, 2)
+    pinky_cluster = _make_cluster(pinky_data, 3)
 
     # 2. Per-cluster X positions in the half's local frame.
     #    Right hand: clusters in (index, middle, ring, pinky) order

@@ -38,6 +38,8 @@ from __future__ import annotations
 import colorsys
 from dataclasses import dataclass
 
+import drawsvg as draw
+
 from skim.data import LayerColor, SplitSidePosition, resolve_spacing
 from skim.data.keyboard import FingerCluster as FingerClusterData, ThumbCluster as ThumbClusterData
 from skim.domain import SEPARATOR_CHAR, KeyboardSide, KeyDirection, SvalboardTargetKey
@@ -642,6 +644,26 @@ def _compute_slots(
 # ---------------------------------------------------------------------------
 
 
+def _key_index(base: int | None, offset: int) -> int | None:
+    return None if base is None else base + offset
+
+
+def _draw_key(key, d, origin: Point, key_index: int | None) -> None:
+    """Paint ``key`` at ``origin``, inside ``<g data-key="N">`` when tagged.
+
+    The tag lets something outside Skim find a key in the SVG by its
+    keymap position, e.g. a live overlay highlighting the keys being
+    held. It wraps the key's shapes and label only, never its layer
+    indicator, which paints after every key.
+    """
+    if key_index is None:
+        key.draw_at(d, origin)
+        return
+    group = draw.Group(data_key=str(key_index))
+    key.draw_at(group, origin)
+    d.append(group)
+
+
 @Composable(use_context=True)
 def FingerCluster(
     ctx,
@@ -654,6 +676,7 @@ def FingerCluster(
     use_layer_colors_on_keys: bool = True,
     show_layer_indicators: bool = True,
     hold_symbol_position: SplitSidePosition = SplitSidePosition.OUTWARD,
+    key_index_base: int | None = None,
 ):
     """A finger cluster — five (or six) keys laid out in cross shape.
 
@@ -684,6 +707,13 @@ def FingerCluster(
     ``has_double_south`` controls whether a sixth key (the double-
     south trapezoid below the south key) renders. ``Size.height``
     grows accordingly.
+
+    ``key_index_base``, when set, tags each key: its shapes and label
+    paint inside ``<g data-key="N">``, where ``N`` is the key's
+    position in the keymap (see :func:`_draw_key`). The keys take
+    consecutive indices from the base in the cluster's field order —
+    center, north, east, south, west, double-south — the same order
+    :class:`~skim.data.SvalboardLayout` flattens a keymap in.
     """
     palette = ctx.theme.palette
     layer_colors = palette.layers.get(layer_qmk_index)
@@ -855,13 +885,13 @@ def FingerCluster(
             origin.y + slots.double_south_origin.y,
         )
 
-        center.draw_at(d, center_origin)
-        north.draw_at(d, north_origin)
-        east.draw_at(d, east_origin)
-        south.draw_at(d, south_origin)
-        west.draw_at(d, west_origin)
+        _draw_key(center, d, center_origin, _key_index(key_index_base, 0))
+        _draw_key(north, d, north_origin, _key_index(key_index_base, 1))
+        _draw_key(east, d, east_origin, _key_index(key_index_base, 2))
+        _draw_key(south, d, south_origin, _key_index(key_index_base, 3))
+        _draw_key(west, d, west_origin, _key_index(key_index_base, 4))
         if double_south is not None:
-            double_south.draw_at(d, double_south_origin)
+            _draw_key(double_south, d, double_south_origin, _key_index(key_index_base, 5))
 
         # Indicators paint after the keys so the badge sits over any
         # adjacent key edge it overlaps. Each indicator paints at the
@@ -1325,6 +1355,7 @@ def ThumbCluster(
     use_layer_colors_on_keys: bool = True,
     show_layer_indicators: bool = True,
     hold_symbol_position: SplitSidePosition = SplitSidePosition.OUTWARD,
+    key_index_base: int | None = None,
 ):
     """A thumb cluster — six keys laid out in the thumb's reach pattern.
 
@@ -1353,6 +1384,9 @@ def ThumbCluster(
     transform; the composable's caller can do the same with the
     drawn output, or read the per-slot metrics to compute the actual
     extent.
+
+    ``key_index_base`` tags the keys as in :func:`FingerCluster`, in
+    the thumb field order: down, pad, up, nail, knuckle, double-down.
     """
     palette = ctx.theme.palette
     layer_colors = palette.layers.get(layer_qmk_index)
@@ -1557,12 +1591,12 @@ def ThumbCluster(
         # via ``fill-rule="evenodd"`` (see :func:`DownKey`). DD and UP
         # paint on top of the holey Down — their fills cover the
         # cutouts cleanly.
-        down.draw_at(d, down_o)
-        pad.draw_at(d, pad_o)
-        up.draw_at(d, up_o)
-        nail.draw_at(d, nail_o)
-        knuckle.draw_at(d, knuckle_o)
-        double_down.draw_at(d, double_down_o)
+        _draw_key(down, d, down_o, _key_index(key_index_base, 0))
+        _draw_key(pad, d, pad_o, _key_index(key_index_base, 1))
+        _draw_key(up, d, up_o, _key_index(key_index_base, 2))
+        _draw_key(nail, d, nail_o, _key_index(key_index_base, 3))
+        _draw_key(knuckle, d, knuckle_o, _key_index(key_index_base, 4))
+        _draw_key(double_down, d, double_down_o, _key_index(key_index_base, 5))
 
         # Indicators paint above the keys.
         if down_indicator is not None:

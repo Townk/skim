@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Key tags in layer images.** Each key a layer image draws is wrapped
+  in `<g data-key="N">`, where `N` is the key's position in the
+  keymap's flat order (right fingers 0–23, left fingers 24–47, right
+  thumb 48–53, left thumb 54–59). Tools can now find a key in the SVG
+  without knowing Skim's geometry, e.g. a live overlay highlighting the
+  keys being held. The overview image is not tagged, since it draws
+  every layer at once. The rendering itself is unchanged.
+- **`output.style.layer_indicator.reserve_space`** (default `false`).
+  Lays every layer image out as if every key had a layer badge, so all
+  layer images share one geometry instead of each layer making room
+  only for its own badges (which moved the halves apart on layers with
+  inner-thumb layer keys). For images swapped in place of each other,
+  e.g. a live layer overlay.
+
 ## [0.7.4] - 2026-05-08
 
 ### Added

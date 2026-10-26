@@ -18,6 +18,8 @@ other top-level documents.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from skim.data import SvalboardLayout
 from skim.domain import KeyboardSide, SvalboardTargetKey
 
@@ -123,80 +125,125 @@ def KeymapLayer(
         "hold_symbol_position": config.output.style.hold_symbol_position,
     }
 
+    # Each key is tagged with its keymap position (``<g data-key="N">``)
+    # so tools can find it in the SVG; the bases are where each cluster
+    # group starts in the keymap's flat order.
+    # noinspection PyProtectedMember
     left_fingers = FingerHalf(
-        side=KeyboardSide.LEFT, fingers=layer.left.fingers, **common_finger_kwargs
+        side=KeyboardSide.LEFT,
+        fingers=layer.left.fingers,
+        key_index_base=SvalboardLayout._LEFT_FINGER_CLUSTER_KEYS.start,
+        **common_finger_kwargs,
     )
+    # noinspection PyProtectedMember
     right_fingers = FingerHalf(
-        side=KeyboardSide.RIGHT, fingers=layer.right.fingers, **common_finger_kwargs
+        side=KeyboardSide.RIGHT,
+        fingers=layer.right.fingers,
+        key_index_base=SvalboardLayout._RIGHT_FINGER_CLUSTER_KEYS.start,
+        **common_finger_kwargs,
     )
+    # noinspection PyProtectedMember
     left_thumb = ThumbCluster(
-        side=KeyboardSide.LEFT, cluster=layer.left.thumb, **common_thumb_kwargs
+        side=KeyboardSide.LEFT,
+        cluster=layer.left.thumb,
+        key_index_base=SvalboardLayout._LEFT_THUMB_CLUSTER_KEYS.start,
+        **common_thumb_kwargs,
     )
+    # noinspection PyProtectedMember
     right_thumb = ThumbCluster(
-        side=KeyboardSide.RIGHT, cluster=layer.right.thumb, **common_thumb_kwargs
+        side=KeyboardSide.RIGHT,
+        cluster=layer.right.thumb,
+        key_index_base=SvalboardLayout._RIGHT_THUMB_CLUSTER_KEYS.start,
+        **common_thumb_kwargs,
     )
+
+    # The frame: the components whose chrome the layout makes room
+    # for. Normally the drawn ones; with ``reserve_space``, the same
+    # layer with a badge on every key, so every layer image makes the
+    # same room and shares one geometry. Badges only add chrome, never
+    # key size, so the drawn components fit the reserved frame.
+    if (
+        config.output.style.layer_indicator.show
+        and config.output.style.layer_indicator.reserve_space
+    ):
+        badged = layer.map(lambda key: replace(key, layer_switch=qmk_index))
+        frame_left_fingers = FingerHalf(
+            side=KeyboardSide.LEFT, fingers=badged.left.fingers, **common_finger_kwargs
+        )
+        frame_right_fingers = FingerHalf(
+            side=KeyboardSide.RIGHT, fingers=badged.right.fingers, **common_finger_kwargs
+        )
+        frame_left_thumb = ThumbCluster(
+            side=KeyboardSide.LEFT, cluster=badged.left.thumb, **common_thumb_kwargs
+        )
+        frame_right_thumb = ThumbCluster(
+            side=KeyboardSide.RIGHT, cluster=badged.right.thumb, **common_thumb_kwargs
+        )
+    else:
+        frame_left_fingers, frame_right_fingers = left_fingers, right_fingers
+        frame_left_thumb, frame_right_thumb = left_thumb, right_thumb
 
     # Right-edge overflow magnitude (left-side components bleed
     # inward toward the centre). With negative-for-left-overflow
     # offset semantics, ``(overflow_size - size) + overflow_offset``
     # = ``(left + right) + (-left)`` = ``right``.
     left_fingers_right_bleed = (
-        left_fingers.metrics.overflow_size.width - left_fingers.size.width
-    ) + left_fingers.metrics.overflow_offset.x
+        frame_left_fingers.metrics.overflow_size.width - frame_left_fingers.size.width
+    ) + frame_left_fingers.metrics.overflow_offset.x
     left_thumb_right_bleed = (
-        left_thumb.metrics.overflow_size.width - left_thumb.size.width
-    ) + left_thumb.metrics.overflow_offset.x
+        frame_left_thumb.metrics.overflow_size.width - frame_left_thumb.size.width
+    ) + frame_left_thumb.metrics.overflow_offset.x
     # Inward bleed on each side; pull halves apart by the larger of
     # the two so neither side's overflow encroaches the other's.
     inward_bleed = max(
         left_fingers_right_bleed,
         left_thumb_right_bleed,
-        -right_fingers.metrics.overflow_offset.x,
-        -right_thumb.metrics.overflow_offset.x,
+        -frame_right_fingers.metrics.overflow_offset.x,
+        -frame_right_thumb.metrics.overflow_offset.x,
     )
 
     # Bottom overflow magnitude on finger halves (south-pointing
     # south-key indicators below the cluster) — analogous to
     # right-edge overflow above.
     left_fingers_bottom_bleed = (
-        left_fingers.metrics.overflow_size.height - left_fingers.size.height
-    ) + left_fingers.metrics.overflow_offset.y
+        frame_left_fingers.metrics.overflow_size.height - frame_left_fingers.size.height
+    ) + frame_left_fingers.metrics.overflow_offset.y
     right_fingers_bottom_bleed = (
-        right_fingers.metrics.overflow_size.height - right_fingers.size.height
-    ) + right_fingers.metrics.overflow_offset.y
+        frame_right_fingers.metrics.overflow_size.height - frame_right_fingers.size.height
+    ) + frame_right_fingers.metrics.overflow_offset.y
     fingers_bottom_bleed = max(left_fingers_bottom_bleed, right_fingers_bottom_bleed)
 
     # Top overflow magnitude on thumb clusters (DD-key NORTH
     # indicator above the cluster).
     thumbs_top_bleed = max(
-        -left_thumb.metrics.overflow_offset.y,
-        -right_thumb.metrics.overflow_offset.y,
+        -frame_left_thumb.metrics.overflow_offset.y,
+        -frame_right_thumb.metrics.overflow_offset.y,
     )
 
     # Bottom overflow on thumb clusters — rare, but kept symmetric.
     left_thumb_bottom_bleed = (
-        left_thumb.metrics.overflow_size.height - left_thumb.size.height
-    ) + left_thumb.metrics.overflow_offset.y
+        frame_left_thumb.metrics.overflow_size.height - frame_left_thumb.size.height
+    ) + frame_left_thumb.metrics.overflow_offset.y
     right_thumb_bottom_bleed = (
-        right_thumb.metrics.overflow_size.height - right_thumb.size.height
-    ) + right_thumb.metrics.overflow_offset.y
+        frame_right_thumb.metrics.overflow_size.height - frame_right_thumb.size.height
+    ) + frame_right_thumb.metrics.overflow_offset.y
     thumbs_bottom_bleed = max(left_thumb_bottom_bleed, right_thumb_bottom_bleed)
 
     # Origins.
-    left_fingers_x = -left_fingers.metrics.overflow_offset.x
+    left_fingers_x = -frame_left_fingers.metrics.overflow_offset.x
     right_fingers_x = (
-        left_fingers_x + left_fingers.size.width + min_horizontal_gap + 2 * inward_bleed
+        left_fingers_x + frame_left_fingers.size.width + min_horizontal_gap + 2 * inward_bleed
     )
     fingers_y = max(
-        -left_fingers.metrics.overflow_offset.y,
-        -right_fingers.metrics.overflow_offset.y,
+        -frame_left_fingers.metrics.overflow_offset.y,
+        -frame_right_fingers.metrics.overflow_offset.y,
     )
 
-    left_thumb_x = (left_fingers_x + left_fingers.size.width) - left_thumb.size.width
+    left_thumb_x = (left_fingers_x + frame_left_fingers.size.width) - frame_left_thumb.size.width
     right_thumb_x = right_fingers_x
     thumbs_y = (
         fingers_y
-        + left_fingers.size.height
+        + frame_left_fingers.size.height
         + fingers_bottom_bleed
         + min_vertical_gap
         + thumbs_top_bleed
@@ -214,9 +261,9 @@ def KeymapLayer(
     # only.
     size = Size(
         right_fingers_x
-        + right_fingers.metrics.overflow_offset.x
-        + right_fingers.metrics.overflow_size.width,
-        thumbs_y + right_thumb.size.height + thumbs_bottom_bleed,
+        + frame_right_fingers.metrics.overflow_offset.x
+        + frame_right_fingers.metrics.overflow_size.width,
+        thumbs_y + frame_right_thumb.size.height + thumbs_bottom_bleed,
     )
 
     def draw_at(d, origin):

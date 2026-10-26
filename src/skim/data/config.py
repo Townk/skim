@@ -820,6 +820,14 @@ class LayerIndicator(BaseModel):
             ``True``.
         width: Stroke width of the indicator circle. Default:
             ``2.0 / 1600`` (~0.125%) of doc width.
+        reserve_space: Lay every layer image out as if every key had
+            a badge, so all layer images share one geometry: the
+            halves, clusters and keys sit at the same coordinates
+            whichever layer is drawn. Off by default, when each
+            layer only makes room for the badges it has, and a layer
+            without (say) inner-thumb badges draws its halves closer
+            together. Turn it on when the images are swapped in place
+            of each other, e.g. a live layer overlay.
 
     Example:
         ```pycon
@@ -836,6 +844,7 @@ class LayerIndicator(BaseModel):
 
     show: bool = True
     width: SpacingValue = Field(default=None)
+    reserve_space: bool = False
 
 
 class Strokes(BaseModel):

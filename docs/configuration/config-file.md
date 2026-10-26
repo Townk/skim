@@ -1567,6 +1567,7 @@ output:
     layer_indicator:
       show: <boolean>
       width: <float | "N%" | null>
+      reserve_space: <boolean>
 ```
 
 The gap between an outer key's edge and its indicator circle lives
@@ -1606,6 +1607,23 @@ Stroke width of the indicator circle outline.
 <figcaption>The rose stroke traces the layer indicator circle on the north key.</figcaption>
 ![Layer indicator stroke highlighted](../_static/spacing/layer-indicator-stroke.svg){ width="320" loading=lazy }
 </figure>
+
+---
+
+##### `reserve_space` { #output-style-layer-indicator-reserve-space }
+
+| Type      | Default |
+| --------- | ------- |
+| `boolean` | `false` |
+
+Lay every layer image out as if every key had a badge. Each layer
+normally makes room only for the badges it has, so a layer whose inner
+thumb keys switch layers draws its two halves further apart than one
+whose don't. With `true`, all layer images share one geometry: halves,
+clusters and keys sit at the same coordinates whichever layer is drawn,
+at the cost of the extra room on layers with few badges. Turn it on
+when the images replace each other in place, such as a live overlay of
+the current layer. Has no effect when `show` is `false`.
 
 ---
 
