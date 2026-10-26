@@ -27,8 +27,9 @@ def test_overview_renders_with_connectors_for_layer_trigger_keymap(tmp_path):
     cfg = config.model_copy(update={"output": new_output})
 
     inputs = InputFiles(keymap=sample)
-    keymap = _resolve_keymap(cfg, _get_input_keymap(inputs, cfg))
-    drawings = draw_keymap(cfg, keymap, KeymapGeneratorTargets(overview=True))
+    targets = KeymapGeneratorTargets(overview=True)
+    keymap = _resolve_keymap(cfg, _get_input_keymap(inputs, cfg), targets)
+    drawings = draw_keymap(cfg, keymap, targets)
 
     overview = drawings["keymap-overview"]
     out = tmp_path / "overview.svg"
@@ -59,8 +60,9 @@ def _render_fixture(tmp_path: Path) -> str:
     cfg = config.model_copy(update={"output": new_output})
 
     inputs = InputFiles(keymap=FIXTURE_PATH)
-    keymap = _resolve_keymap(cfg, _get_input_keymap(inputs, cfg))
-    drawings = draw_keymap(cfg, keymap, KeymapGeneratorTargets(overview=True))
+    targets = KeymapGeneratorTargets(overview=True)
+    keymap = _resolve_keymap(cfg, _get_input_keymap(inputs, cfg), targets)
+    drawings = draw_keymap(cfg, keymap, targets)
 
     overview = drawings["keymap-overview"]
     out = tmp_path / "overview.svg"
